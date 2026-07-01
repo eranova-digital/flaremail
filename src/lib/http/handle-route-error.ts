@@ -1,0 +1,34 @@
+import { EmailSendError, emailSendErrorStatus } from "../messages/send-email";
+import { problemResponse, problemTitle, requestInstance } from "./problem";
+
+export function handleRouteError(error: unknown, request?: Request): Response {
+	const instance = request ? requestInstance(request) : undefined;
+
+	if (error instanceof EmailSendError) {
+		const status = emailSendErrorStatus(error.code);
+		return problemResponse(status, error.message, {
+			code: error.code.replace(/^E_/, "").replace(/_/g, "-").toLowerCase(),
+			instance,
+			title: problemTitle(status),
+		});
+	}
+
+	if (error instanceof Error) {
+		const notFound =
+			/not found/i.test(error.message) ||
+			error.message === "Thread has no messages to reply to";
+		return problemResponse(
+			notFound ? 404 : 400,
+			error.message,
+			{
+				code: notFound ? "not-found" : "bad-request",
+				instance,
+			},
+		);
+	}
+
+	return problemResponse(500, "Internal server error", {
+		code: "internal-error",
+		instance,
+	});
+}
