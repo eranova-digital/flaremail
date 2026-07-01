@@ -1,4 +1,5 @@
 import type { Message, Thread, ThreadMailbox } from "../db/schema";
+import type { ThreadParties } from "../lib/thread-participants";
 import { normalizeMessageId } from "../lib/threading-headers";
 
 export function buildRfcMessageIdToUuidMap(
@@ -113,6 +114,7 @@ export function toThreadDto(
 	thread: Pick<Thread, "id" | "subject">,
 	mailboxView: ThreadMailbox,
 	labelIds: string[],
+	parties?: ThreadParties,
 ) {
 	return {
 		id: thread.id,
@@ -124,6 +126,8 @@ export function toThreadDto(
 		isStarred: mailboxView.isStarred,
 		folder: mailboxView.folder,
 		labelIds,
+		sender: parties?.sender ?? null,
+		participants: parties?.participants ?? [],
 	};
 }
 

@@ -8,6 +8,10 @@ function normalizeApiUrl(raw: string): string {
 		return trimmed;
 	}
 
+	if (trimmed.startsWith("/")) {
+		return trimmed;
+	}
+
 	return `https://${trimmed}`;
 }
 
@@ -19,6 +23,18 @@ export function getApiUrl(): string {
 	}
 
 	return normalizeApiUrl(url);
+}
+
+/** Bearer token from `API_BEARER_TOKEN` in `apps/web/.env`. */
+export function getApiBearerToken(): string {
+	const token = import.meta.env.API_BEARER_TOKEN;
+	if (!token?.trim()) {
+		throw new Error(
+			"API_BEARER_TOKEN is not set. Add it to apps/web/.env",
+		);
+	}
+
+	return token.trim();
 }
 
 /** Build a full URL for a Worker API path. */

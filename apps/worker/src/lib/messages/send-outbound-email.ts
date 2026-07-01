@@ -3,7 +3,8 @@ import { and, eq } from "drizzle-orm";
 import type { Database } from "../../db/client";
 import { attachments, messages, threadMailboxes, threads } from "../../db/schema";
 import { assertCanSendFrom } from "../authorize-mailbox";
-import { findThreadMailbox, refreshThreadMailboxStats } from "../message-mailboxes";
+import { findMessageRowByRfcMessageId } from "../find-message";
+import { findThreadMailbox, linkMessageMailboxes, refreshThreadMailboxStats } from "../message-mailboxes";
 import { loadMailboxForSend } from "../mailbox-queries";
 import { deleteR2Objects } from "../r2-cleanup";
 import {
@@ -39,6 +40,7 @@ import {
 import { resolveReplyRecipients } from "./resolve-reply-recipients";
 import { persistMessage, rollbackNewThread } from "./persist-message";
 import { sendEmail } from "./send-email";
+import { completeDraftSend, draftSendPromoteFromDrafts } from "./complete-draft-send";
 import { replaceStoredMessageContent } from "./update-stored-message";
 
 export type OutboundContext = {
@@ -210,7 +212,37 @@ async function sendAndPersistNewMessage(
 
 		if (persistResult.status === "duplicate") {
 			await rollbackNewThread(ctx.db, threading.threadId, isNewThread);
-			throw new Error("Message-ID conflict while storing outbound message");
+
+			const existing = await findMessageRowByRfcMessageId(
+				ctx.db,
+				rfcMessageId,
+			);
+			if (!existing) {
+				throw new Error("Message-ID conflict while storing outbound message");
+			}
+
+			await linkMessageMailboxes(ctx.db, existing.id, [mailbox.id]);
+
+			const stored = await findMessageById(ctx.db, existing.id);
+			if (!stored) {
+				throw new Error("Stored message not found");
+			}
+
+			await finalizeThreadOnOutboundSend(
+				ctx.db,
+				stored.threadId,
+				{
+					subject: payload.subject,
+					preview,
+					lastMessageAt: now,
+					actualMailboxId: mailbox.id,
+					folder: "sent",
+					markUnread: false,
+				},
+				stored,
+			);
+
+			return stored;
 		}
 
 		const stored = await findMessageById(ctx.db, persistResult.id);
@@ -486,42 +518,32 @@ export async function sendDraftMessage(
 	const result = await sendEmail(ctx.email, sendPayload);
 	const rfcMessageId = canonicalizeSentMessageId(result.messageId);
 
-	await replaceStoredMessageContent(
-		ctx.db,
-		ctx.bucket,
-		messageId,
-		buildOutboundMimeContent({
+	const sent = await completeDraftSend({
+		db: ctx.db,
+		bucket: ctx.bucket,
+		draft,
+		rfcMessageId,
+		mimeContent: buildOutboundMimeContent({
 			from: mailbox.address,
 			payload,
 			rfcMessageId,
 			inReplyTo: draft.inReplyTo,
 			references: draft.references,
 		}),
-		[],
-		{
-			messageId: rfcMessageId,
-			sendStatus: "sent",
-			sentAt: now,
-			receivedAt: now,
-			sendErrorCode: null,
-			sendErrorMessage: null,
-		},
-	);
-
-	const sent = await findMessageById(ctx.db, messageId);
-	if (!sent) {
-		throw new Error("Sent message not found");
-	}
+		attachmentInputs: [],
+		sentAt: now,
+	});
 
 	await finalizeThreadOnOutboundSend(
 		ctx.db,
-		draft.threadId,
+		sent.threadId,
 		{
 			subject: draft.subject,
 			preview: draft.preview,
 			lastMessageAt: now,
 			actualMailboxId: mailbox.id,
-			promoteFromDrafts: true,
+			folder: sent.id !== draft.id ? "sent" : undefined,
+			promoteFromDrafts: draftSendPromoteFromDrafts(draft, sent),
 			markUnread: false,
 		},
 		sent,

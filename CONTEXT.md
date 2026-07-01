@@ -59,6 +59,10 @@ _Avoid_: operation, action endpoint
 A persistent entity exposed with conventional CRUD (domains, mailboxes, labels).
 _Avoid_: entity, record
 
+**Operator**:
+Someone using Flaremail to manage platform **mailboxes** via the Worker API.
+_Avoid_: user, admin account
+
 ## Example dialogue
 
 **Dev:** When a message arrives at `help@company.com` but that's an alias for `support@`, which mailbox owns it?
