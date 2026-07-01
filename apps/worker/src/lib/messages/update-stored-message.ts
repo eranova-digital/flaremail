@@ -32,11 +32,6 @@ export async function replaceStoredMessageContent(
 		.from(attachments)
 		.where(eq(attachments.messageId, messageId));
 
-	const keysToDelete = [
-		existing.rawEmlKey,
-		...existingAttachments.map((attachment) => attachment.storageKey),
-	];
-
 	const storedAttachments = await storeAttachments(
 		bucket,
 		messageId,
@@ -47,6 +42,11 @@ export async function replaceStoredMessageContent(
 		storedAttachments.map((attachment) => attachment.storageKey),
 	);
 	const rawEmlKey = await storeRawEml(bucket, messageId, strippedEml);
+
+	const keysToDelete = [
+		existing.rawEmlKey,
+		...existingAttachments.map((attachment) => attachment.storageKey),
+	].filter((key) => key !== rawEmlKey);
 
 	try {
 		await db.delete(attachments).where(eq(attachments.messageId, messageId));

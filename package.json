@@ -1,6 +1,6 @@
 {
 	"name": "test-worker",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"private": true,
 	"workspaces": [
 		"apps/*"
@@ -19,6 +19,7 @@
 		"db:studio": "npm run db:studio -w @test-worker/worker",
 		"web:dev": "npm run dev -w @test-worker/web",
 		"web:build": "npm run build -w @test-worker/web",
-		"web:start": "npm run start -w @test-worker/web"
+		"web:start": "npm run start -w @test-worker/web",
+		"web:apigen": "npm run api:generate -w @test-worker/web"
 	}
 }

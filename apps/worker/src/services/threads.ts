@@ -1,10 +1,11 @@
 import PostalMime from "postal-mime";
-import { and, asc, desc, eq, ilike, inArray, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, ilike, inArray, isNull, lt, ne, not, or, sql } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import {
 	attachments,
 	labels,
+	mailboxes,
 	messageMailboxes,
 	messages,
 	threadLabels,
@@ -20,6 +21,10 @@ import {
 import { assertMessageVisibleInMailbox } from "../lib/message-mailboxes";
 import { findMessageById } from "../lib/messages/message-queries";
 import type { ThreadFolder } from "../lib/touch-thread";
+import {
+	collectThreadParties,
+	type ThreadParties,
+} from "../lib/thread-participants";
 import {
 	buildRfcMessageIdToUuidMap,
 	resolveInReplyToMessageUuid,
@@ -65,6 +70,52 @@ async function getLabelIdsForThreads(
 	return map;
 }
 
+async function getThreadPartiesForMailbox(
+	db: Database,
+	mailboxId: string,
+	mailboxAddress: string,
+	threadIds: string[],
+): Promise<Map<string, ThreadParties>> {
+	const result = new Map<string, ThreadParties>();
+	if (!threadIds.length) {
+		return result;
+	}
+
+	const rows = await db
+		.select({
+			threadId: messages.threadId,
+			from: messages.from,
+			to: messages.to,
+			cc: messages.cc,
+			receivedAt: messages.receivedAt,
+		})
+		.from(messages)
+		.innerJoin(
+			messageMailboxes,
+			and(
+				eq(messageMailboxes.messageId, messages.id),
+				eq(messageMailboxes.mailboxId, mailboxId),
+			),
+		)
+		.where(inArray(messages.threadId, threadIds));
+
+	const byThread = new Map<string, typeof rows>();
+	for (const row of rows) {
+		const threadMessages = byThread.get(row.threadId) ?? [];
+		threadMessages.push(row);
+		byThread.set(row.threadId, threadMessages);
+	}
+
+	for (const threadId of threadIds) {
+		result.set(
+			threadId,
+			collectThreadParties(byThread.get(threadId) ?? [], mailboxAddress),
+		);
+	}
+
+	return result;
+}
+
 export async function listThreads(
 	db: Database,
 	mailboxId: string,
@@ -80,6 +131,31 @@ export async function listThreads(
 	const conditions = [eq(threadMailboxes.mailboxId, mailboxId)];
 	if (options.folder) {
 		conditions.push(eq(threadMailboxes.folder, options.folder));
+		if (options.folder === "drafts") {
+			conditions.push(
+				not(
+					exists(
+						db
+							.select({ one: sql`1` })
+							.from(messages)
+							.innerJoin(
+								messageMailboxes,
+								eq(messageMailboxes.messageId, messages.id),
+							)
+							.where(
+								and(
+									eq(messages.threadId, threadMailboxes.threadId),
+									eq(messageMailboxes.mailboxId, mailboxId),
+									or(
+										isNull(messages.sendStatus),
+										ne(messages.sendStatus, "draft"),
+									),
+								),
+							),
+					),
+				),
+			);
+		}
 	}
 
 	if (cursor) {
@@ -111,11 +187,29 @@ export async function listThreads(
 		rows.map((row) => row.thread.id),
 	);
 
+	const [mailbox] = await db
+		.select({ address: mailboxes.address })
+		.from(mailboxes)
+		.where(eq(mailboxes.id, mailboxId))
+		.limit(1);
+
+	if (!mailbox) {
+		throw new Error("Mailbox not found");
+	}
+
+	const partiesMap = await getThreadPartiesForMailbox(
+		db,
+		mailboxId,
+		mailbox.address,
+		rows.map((row) => row.thread.id),
+	);
+
 	const items = rows.map((row) =>
 		toThreadDto(
 			row.thread,
 			row.mailboxView,
 			labelMap.get(row.thread.id) ?? [],
+			partiesMap.get(row.thread.id),
 		),
 	);
 
@@ -165,10 +259,27 @@ export async function getThread(
 			and(eq(threadLabels.threadId, threadId), eq(labels.mailboxId, mailboxId)),
 		);
 
+	const [mailbox] = await db
+		.select({ address: mailboxes.address })
+		.from(mailboxes)
+		.where(eq(mailboxes.id, mailboxId))
+		.limit(1);
+
+	if (!mailbox) {
+		throw new Error("Mailbox not found");
+	}
+
+	const parties = (
+		await getThreadPartiesForMailbox(db, mailboxId, mailbox.address, [
+			threadId,
+		])
+	).get(threadId);
+
 	return toThreadDto(
 		row.thread,
 		row.mailboxView,
 		labelRows.map((labelRow) => labelRow.labelId),
+		parties,
 	);
 }
 
@@ -312,7 +423,24 @@ export async function readMessageFull(
 
 	const object = await bucket.get(message.rawEmlKey);
 	if (!object) {
-		throw new Error("Message content not found");
+		return {
+			id: message.id,
+			threadId: message.threadId,
+			subject: message.subject,
+			text: message.textBody,
+			html: null,
+			from: message.from,
+			to: message.to,
+			cc: message.cc,
+			bcc: message.bcc,
+			direction: message.direction,
+			sendStatus: message.sendStatus,
+			rfcMessageId: message.messageId,
+			headers: [],
+			attachments: attachmentRows,
+			sentAt: message.sentAt?.toISOString() ?? null,
+			receivedAt: message.receivedAt.toISOString(),
+		};
 	}
 
 	const parsed = await PostalMime.parse(await object.arrayBuffer());

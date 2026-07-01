@@ -1012,6 +1012,15 @@ components:
           items:
             type: string
             format: uuid
+        sender:
+          type: ["string", "null"]
+          description: From header of the latest message in the thread.
+        participants:
+          type: array
+          description: Unique participant email addresses in the thread, excluding the viewing mailbox.
+          items:
+            type: string
+            format: email
 
     ThreadPage:
       type: object

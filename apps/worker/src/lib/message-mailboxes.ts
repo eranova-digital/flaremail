@@ -12,14 +12,30 @@ import { extractEmailsFromHeaderValue } from "./extract-emails-from-header";
 import type { ThreadFolder, ThreadTouchData } from "./touch-thread";
 
 type MessageVisibilityInput = {
+	direction?: string;
 	from: string;
 	to: string;
 	cc?: string | null;
 	bcc?: string | null;
 	actualMailboxId: string;
-	matchedMailboxId: string | null;
-	sendStatus: string | null;
+	matchedMailboxId?: string | null;
+	sendStatus?: string | null;
 };
+
+export function headerValuesForMessageVisibility(
+	message: Pick<
+		MessageVisibilityInput,
+		"direction" | "from" | "to" | "cc" | "bcc" | "sendStatus"
+	>,
+): Array<string | null | undefined> {
+	if (message.sendStatus === "draft") {
+		return [];
+	}
+
+	return (message.direction ?? "inbound") === "inbound"
+		? [message.to, message.cc, message.bcc]
+		: [message.from, message.to, message.cc, message.bcc];
+}
 
 export async function resolveMessageMailboxIds(
 	db: Database,
@@ -35,14 +51,13 @@ export async function resolveMessageMailboxIds(
 		return [...mailboxIds];
 	}
 
+	const headerValues = headerValuesForMessageVisibility(message);
+
 	const addresses = new Set<string>();
-	for (const email of [
-		...extractEmailsFromHeaderValue(message.from),
-		...extractEmailsFromHeaderValue(message.to),
-		...extractEmailsFromHeaderValue(message.cc),
-		...extractEmailsFromHeaderValue(message.bcc),
-	]) {
-		addresses.add(email);
+	for (const headerValue of headerValues) {
+		for (const email of extractEmailsFromHeaderValue(headerValue)) {
+			addresses.add(email);
+		}
 	}
 
 	if (!addresses.size) {
@@ -184,6 +199,8 @@ export async function refreshThreadMailboxStats(
 				eq(threadMailboxes.mailboxId, mailboxId),
 			),
 		);
+
+	await reconcileThreadFolder(db, threadId, mailboxId);
 }
 
 export async function refreshAllThreadMailboxes(
@@ -210,6 +227,101 @@ export async function refreshAllThreadMailboxes(
 	}
 }
 
+export function folderAfterInboundMessage(
+	existingFolder: ThreadFolder,
+	touchFolder: ThreadFolder | undefined,
+): ThreadFolder | undefined {
+	if (touchFolder === "inbox" && existingFolder === "sent") {
+		return "inbox";
+	}
+
+	return undefined;
+}
+
+const PRESERVED_FOLDERS = new Set<ThreadFolder>(["trash", "spam", "archived"]);
+
+type MessageFolderInput = {
+	sendStatus: string | null;
+	direction: string;
+};
+
+export function folderForNonDraftThread(
+	messageRows: MessageFolderInput[],
+): ThreadFolder {
+	const nonDrafts = messageRows.filter((row) => row.sendStatus !== "draft");
+	const hasInbound = nonDrafts.some((row) => row.direction === "inbound");
+	return hasInbound ? "inbox" : "sent";
+}
+
+export function reconcileThreadFolderFromMessages(
+	existingFolder: ThreadFolder,
+	messageRows: MessageFolderInput[],
+): ThreadFolder | undefined {
+	if (PRESERVED_FOLDERS.has(existingFolder)) {
+		return undefined;
+	}
+
+	if (!messageRows.length) {
+		return undefined;
+	}
+
+	const allDrafts = messageRows.every((row) => row.sendStatus === "draft");
+	if (allDrafts) {
+		return existingFolder === "drafts" ? undefined : "drafts";
+	}
+
+	if (existingFolder === "drafts") {
+		return folderForNonDraftThread(messageRows);
+	}
+
+	return undefined;
+}
+
+export async function reconcileThreadFolder(
+	db: Database,
+	threadId: string,
+	mailboxId: string,
+): Promise<void> {
+	const existing = await findThreadMailbox(db, threadId, mailboxId);
+	if (!existing) {
+		return;
+	}
+
+	const messageRows = await db
+		.select({
+			sendStatus: messages.sendStatus,
+			direction: messages.direction,
+		})
+		.from(messages)
+		.innerJoin(
+			messageMailboxes,
+			and(
+				eq(messageMailboxes.messageId, messages.id),
+				eq(messageMailboxes.mailboxId, mailboxId),
+			),
+		)
+		.where(eq(messages.threadId, threadId));
+
+	const folder = reconcileThreadFolderFromMessages(
+		existing.folder,
+		messageRows,
+	);
+
+	if (!folder || folder === existing.folder) {
+		return;
+	}
+
+	await db
+		.update(threadMailboxes)
+		.set({ folder })
+		.where(
+			and(
+				eq(threadMailboxes.threadId, threadId),
+				eq(threadMailboxes.mailboxId, mailboxId),
+			),
+		);
+}
+
 async function ensureThreadMailbox(
 	db: Database,
 	threadId: string,
@@ -219,10 +331,27 @@ async function ensureThreadMailbox(
 	const existing = await findThreadMailbox(db, threadId, mailboxId);
 
 	if (existing) {
+		const updates: {
+			isRead?: boolean;
+			folder?: ThreadFolder;
+		} = {};
+
 		if (touch.markUnread !== false) {
+			updates.isRead = false;
+		}
+
+		const folder = folderAfterInboundMessage(
+			existing.folder,
+			touch.folder,
+		);
+		if (folder) {
+			updates.folder = folder;
+		}
+
+		if (Object.keys(updates).length > 0) {
 			await db
 				.update(threadMailboxes)
-				.set({ isRead: false })
+				.set(updates)
 				.where(
 					and(
 						eq(threadMailboxes.threadId, threadId),
@@ -310,12 +439,22 @@ export async function promoteThreadMailboxFromDrafts(
 	await refreshThreadMailboxStats(db, threadId, mailboxId);
 }
 
+export function sendRelinkMailboxIds(
+	resolvedMailboxIds: string[],
+	senderMailboxId: string,
+): string[] {
+	return [...new Set([...resolvedMailboxIds, senderMailboxId])];
+}
+
 export async function relinkMessageMailboxesAfterSend(
 	db: Database,
 	message: typeof messages.$inferSelect,
 	touch: ThreadTouchData,
 ): Promise<void> {
-	const mailboxIds = await resolveMessageMailboxIds(db, message);
+	const mailboxIds = sendRelinkMailboxIds(
+		await resolveMessageMailboxIds(db, message),
+		touch.actualMailboxId,
+	);
 	await linkMessageMailboxes(db, message.id, mailboxIds);
 
 	for (const mailboxId of mailboxIds) {
