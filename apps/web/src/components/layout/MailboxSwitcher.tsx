@@ -5,20 +5,54 @@ import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDomains } from "@/hooks/use-domains";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { setLastMailboxId } from "@/lib/mailbox-preference";
 import { isThreadFolder } from "@/lib/folders";
-import type { ThreadFolder } from "@/lib/api/client";
+import type { Mailbox, ThreadFolder } from "@/lib/api/client";
+import {
+	getSelectableMailboxes,
+	resolveSelectableMailbox,
+} from "@/lib/selectable-mailbox";
+
+function groupMailboxesByDomain(
+	mailboxes: Mailbox[],
+	domainNamesById: Map<string, string>,
+) {
+	const groups = new Map<string, Mailbox[]>();
+
+	for (const mailbox of mailboxes) {
+		const domainName =
+			(mailbox.domainId && domainNamesById.get(mailbox.domainId)) ||
+			"Unknown domain";
+		const items = groups.get(domainName) ?? [];
+		items.push(mailbox);
+		groups.set(domainName, items);
+	}
+
+	return [...groups.entries()]
+		.sort(([left], [right]) => left.localeCompare(right))
+		.map(([domainName, items]) => ({
+			domainName,
+			mailboxes: items.sort((left, right) =>
+				(left.address ?? "").localeCompare(right.address ?? ""),
+			),
+		}));
+}
 
 export function MailboxSwitcher() {
 	const navigate = useNavigate();
 	const { mailboxId, folder: folderParam, threadId } = useParams();
 	const [searchParams] = useSearchParams();
 	const mailboxesQuery = useMailboxes();
+	const domainsQuery = useDomains();
 
 	const currentFolder: ThreadFolder =
 		folderParam && isThreadFolder(folderParam)
@@ -27,13 +61,22 @@ export function MailboxSwitcher() {
 				? (searchParams.get("folder") as ThreadFolder)
 				: "inbox";
 
-	if (mailboxesQuery.isLoading) {
+	if (mailboxesQuery.isLoading || domainsQuery.isLoading) {
 		return <Skeleton className="h-9 w-full" />;
 	}
 
-	const mailboxes = mailboxesQuery.data ?? [];
-	const active =
-		mailboxes.find((mailbox) => mailbox.id === mailboxId) ?? mailboxes[0];
+	const mailboxes = getSelectableMailboxes(mailboxesQuery.data ?? []);
+	const domainNamesById = new Map(
+		(domainsQuery.data ?? []).flatMap((domain) =>
+			domain.id && domain.domain ? [[domain.id, domain.domain] as const] : [],
+		),
+	);
+	const shouldGroupByDomain =
+		new Set(mailboxes.map((mailbox) => mailbox.domainId).filter(Boolean)).size > 1;
+	const mailboxGroups = shouldGroupByDomain
+		? groupMailboxesByDomain(mailboxes, domainNamesById)
+		: null;
+	const active = resolveSelectableMailbox(mailboxes, mailboxId ?? null);
 
 	if (!active?.id) {
 		return (
@@ -69,14 +112,33 @@ export function MailboxSwitcher() {
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-				{mailboxes.map((mailbox) => (
-					<DropdownMenuItem
-						key={mailbox.id}
-						onClick={() => mailbox.id && switchMailbox(mailbox.id)}
-					>
-						{mailbox.address}
-					</DropdownMenuItem>
-				))}
+				{mailboxGroups ? (
+					mailboxGroups.map((group, groupIndex) => (
+						<DropdownMenuGroup key={group.domainName}>
+							{groupIndex > 0 ? <DropdownMenuSeparator /> : null}
+							<DropdownMenuLabel className="text-muted-foreground text-xs font-medium">
+								{group.domainName}
+							</DropdownMenuLabel>
+							{group.mailboxes.map((mailbox) => (
+								<DropdownMenuItem
+									key={mailbox.id}
+									onClick={() => mailbox.id && switchMailbox(mailbox.id)}
+								>
+									{mailbox.address}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuGroup>
+					))
+				) : (
+					mailboxes.map((mailbox) => (
+						<DropdownMenuItem
+							key={mailbox.id}
+							onClick={() => mailbox.id && switchMailbox(mailbox.id)}
+						>
+							{mailbox.address}
+						</DropdownMenuItem>
+					))
+				)}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

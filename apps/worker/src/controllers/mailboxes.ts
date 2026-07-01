@@ -59,6 +59,10 @@ export async function handleCreateMailbox({
 					typeof value.aliasTargetId === "string"
 						? value.aliasTargetId
 						: undefined,
+				aliasTargetAddress:
+					typeof value.aliasTargetAddress === "string"
+						? value.aliasTargetAddress
+						: undefined,
 			}),
 		);
 		return jsonResponse(mailbox, 201);

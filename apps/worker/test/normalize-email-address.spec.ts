@@ -59,21 +59,25 @@ describe("resolveConfiguredMailbox", () => {
 		id: "primary-id",
 		type: "primary" as const,
 		aliasTargetId: null,
+		aliasTargetAddress: null,
 	};
 	const secondary = {
 		id: "secondary-id",
 		type: "secondary" as const,
 		aliasTargetId: null,
+		aliasTargetAddress: null,
 	};
 	const shared = {
 		id: "shared-id",
 		type: "shared" as const,
 		aliasTargetId: null,
+		aliasTargetAddress: null,
 	};
 	const alias = {
 		id: "alias-id",
 		type: "alias" as const,
 		aliasTargetId: "primary-id",
+		aliasTargetAddress: null,
 	};
 	const mailboxById = new Map([
 		["primary-id", primary],
@@ -84,6 +88,7 @@ describe("resolveConfiguredMailbox", () => {
 
 	it("resolves primary mailboxes exactly", () => {
 		expect(resolveConfiguredMailbox(primary, mailboxById)).toEqual({
+			action: "store",
 			envelopeTo: "",
 			actualMailboxId: "primary-id",
 			matchedMailboxId: "primary-id",
@@ -93,6 +98,7 @@ describe("resolveConfiguredMailbox", () => {
 
 	it("resolves secondary mailboxes exactly", () => {
 		expect(resolveConfiguredMailbox(secondary, mailboxById)).toEqual({
+			action: "store",
 			envelopeTo: "",
 			actualMailboxId: "secondary-id",
 			matchedMailboxId: "secondary-id",
@@ -102,6 +108,7 @@ describe("resolveConfiguredMailbox", () => {
 
 	it("resolves shared mailboxes exactly", () => {
 		expect(resolveConfiguredMailbox(shared, mailboxById)).toEqual({
+			action: "store",
 			envelopeTo: "",
 			actualMailboxId: "shared-id",
 			matchedMailboxId: "shared-id",
@@ -111,6 +118,7 @@ describe("resolveConfiguredMailbox", () => {
 
 	it("resolves alias mailboxes to their target mailbox", () => {
 		expect(resolveConfiguredMailbox(alias, mailboxById)).toEqual({
+			action: "store",
 			envelopeTo: "",
 			actualMailboxId: "primary-id",
 			matchedMailboxId: "alias-id",
@@ -123,11 +131,13 @@ describe("resolveConfiguredMailbox", () => {
 			id: "sales-alias-id",
 			type: "alias" as const,
 			aliasTargetId: "shared-id",
+			aliasTargetAddress: null,
 		};
 		const map = new Map(mailboxById);
 		map.set("sales-alias-id", salesAlias);
 
 		expect(resolveConfiguredMailbox(salesAlias, map)).toEqual({
+			action: "store",
 			envelopeTo: "",
 			actualMailboxId: "shared-id",
 			matchedMailboxId: "sales-alias-id",
@@ -135,10 +145,33 @@ describe("resolveConfiguredMailbox", () => {
 		});
 	});
 
+	it("forwards alias mailboxes with external targets", () => {
+		const externalAlias = {
+			id: "external-alias-id",
+			type: "alias" as const,
+			aliasTargetId: null,
+			aliasTargetAddress: "patrick@gmail.com",
+		};
+		const map = new Map(mailboxById);
+		map.set("external-alias-id", externalAlias);
+
+		expect(resolveConfiguredMailbox(externalAlias, map)).toEqual({
+			action: "forward",
+			envelopeTo: "",
+			forwardTo: "patrick@gmail.com",
+			matchedMailboxId: "external-alias-id",
+		});
+	});
+
 	it("returns null when alias target is missing", () => {
 		expect(
 			resolveConfiguredMailbox(
-				{ id: "alias-id", type: "alias", aliasTargetId: null },
+				{
+					id: "alias-id",
+					type: "alias",
+					aliasTargetId: null,
+					aliasTargetAddress: null,
+				},
 				mailboxById,
 			),
 		).toBeNull();
@@ -148,6 +181,7 @@ describe("resolveConfiguredMailbox", () => {
 describe("resolveCatchAllMailbox", () => {
 	it("returns catch-all resolution when configured", () => {
 		expect(resolveCatchAllMailbox("shared-id")).toEqual({
+			action: "store",
 			envelopeTo: "",
 			actualMailboxId: "shared-id",
 			matchedMailboxId: null,

@@ -13,17 +13,28 @@ import {
 
 export type MatchedVia = "exact" | "alias" | "catch_all";
 
-export type MailboxResolution = {
+export type StoreMailboxResolution = {
+	action: "store";
 	envelopeTo: string;
 	actualMailboxId: string;
 	matchedMailboxId: string | null;
 	matchedVia: MatchedVia;
 };
 
+export type ForwardMailboxResolution = {
+	action: "forward";
+	envelopeTo: string;
+	forwardTo: string;
+	matchedMailboxId: string;
+};
+
+export type MailboxResolution = StoreMailboxResolution | ForwardMailboxResolution;
+
 type MailboxLookupRow = {
 	id: string;
 	type: MailboxType;
 	aliasTargetId: string | null;
+	aliasTargetAddress: string | null;
 };
 
 export function resolveConfiguredMailbox(
@@ -32,10 +43,20 @@ export function resolveConfiguredMailbox(
 ): MailboxResolution | null {
 	if (isReceivingMailboxType(mailbox.type)) {
 		return {
+			action: "store",
 			envelopeTo: "",
 			actualMailboxId: mailbox.id,
 			matchedMailboxId: mailbox.id,
 			matchedVia: "exact",
+		};
+	}
+
+	if (mailbox.aliasTargetAddress) {
+		return {
+			action: "forward",
+			envelopeTo: "",
+			forwardTo: mailbox.aliasTargetAddress,
+			matchedMailboxId: mailbox.id,
 		};
 	}
 
@@ -49,6 +70,7 @@ export function resolveConfiguredMailbox(
 	}
 
 	return {
+		action: "store",
 		envelopeTo: "",
 		actualMailboxId: target.id,
 		matchedMailboxId: mailbox.id,
@@ -58,12 +80,13 @@ export function resolveConfiguredMailbox(
 
 export function resolveCatchAllMailbox(
 	catchAllMailboxId: string | null,
-): MailboxResolution | null {
+): StoreMailboxResolution | null {
 	if (!catchAllMailboxId) {
 		return null;
 	}
 
 	return {
+		action: "store",
 		envelopeTo: "",
 		actualMailboxId: catchAllMailboxId,
 		matchedMailboxId: null,
@@ -80,6 +103,7 @@ async function findMailboxById(
 			id: mailboxes.id,
 			type: mailboxes.type,
 			aliasTargetId: mailboxes.aliasTargetId,
+			aliasTargetAddress: mailboxes.aliasTargetAddress,
 		})
 		.from(mailboxes)
 		.where(and(eq(mailboxes.id, mailboxId), eq(mailboxes.isActive, true)))
@@ -99,6 +123,7 @@ export async function resolveMailboxForEnvelope(
 			id: mailboxes.id,
 			type: mailboxes.type,
 			aliasTargetId: mailboxes.aliasTargetId,
+			aliasTargetAddress: mailboxes.aliasTargetAddress,
 		})
 		.from(mailboxes)
 		.innerJoin(domains, eq(mailboxes.domainId, domains.id))
@@ -114,10 +139,20 @@ export async function resolveMailboxForEnvelope(
 	if (configuredMailbox) {
 		if (isReceivingMailboxType(configuredMailbox.type)) {
 			return {
+				action: "store",
 				envelopeTo: normalizedEnvelope,
 				actualMailboxId: configuredMailbox.id,
 				matchedMailboxId: configuredMailbox.id,
 				matchedVia: "exact",
+			};
+		}
+
+		if (configuredMailbox.aliasTargetAddress) {
+			return {
+				action: "forward",
+				envelopeTo: normalizedEnvelope,
+				forwardTo: configuredMailbox.aliasTargetAddress,
+				matchedMailboxId: configuredMailbox.id,
 			};
 		}
 
@@ -131,6 +166,7 @@ export async function resolveMailboxForEnvelope(
 		}
 
 		return {
+			action: "store",
 			envelopeTo: normalizedEnvelope,
 			actualMailboxId: target.id,
 			matchedMailboxId: configuredMailbox.id,
@@ -162,6 +198,7 @@ export async function resolveMailboxForEnvelope(
 	}
 
 	return {
+		action: "store",
 		envelopeTo: normalizedEnvelope,
 		actualMailboxId: catchAllTarget.id,
 		matchedMailboxId: null,

@@ -731,6 +731,8 @@ components:
         aliasTargetId:
           type: ["string", "null"]
           format: uuid
+        aliasTargetAddress:
+          type: ["string", "null"]
         isActive:
           type: boolean
 
@@ -749,6 +751,8 @@ components:
         aliasTargetId:
           type: string
           format: uuid
+        aliasTargetAddress:
+          type: string
 
     Label:
       type: object

@@ -78,6 +78,13 @@
       "when": 1782777600000,
       "tag": "0010_drop_cf_email_id",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1782778200000,
+      "tag": "0011_alias_target_address",
+      "breakpoints": true
     }
   ]
 }
