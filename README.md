@@ -11,9 +11,9 @@ Cloudflare Worker that receives inbound email from catch-all routing rules on mu
 
 ## Setup
 
-### 1. Local environment (`.env`)
+### 1. Local environment (`apps/worker/.env`)
 
-Copy `.env.example` to `.env` and set:
+Copy `apps/worker/.env.example` to `apps/worker/.env` and set:
 
 | Variable | Purpose |
 |----------|---------|
@@ -21,7 +21,7 @@ Copy `.env.example` to `.env` and set:
 | `API_BEARER_TOKEN` | Bearer token for `Authorization` on `/api/v1/*` routes |
 
 ```bash
-cp .env.example .env
+cp apps/worker/.env.example apps/worker/.env
 ```
 
 Use `.env` only (not `.dev.vars`) for local secrets ([docs](https://developers.cloudflare.com/workers/configuration/secrets/)).
@@ -35,7 +35,7 @@ Use `.env` only (not `.dev.vars`) for local secrets ([docs](https://developers.c
 
 Hyperdrive does not run during `wrangler dev`. Wrangler still exposes the `HYPERDRIVE` binding, but you must tell it which **direct** Postgres URL to use via `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` ([docs](https://developers.cloudflare.com/hyperdrive/configuration/local-development/)).
 
-`npm run dev` and Vitest call `scripts/sync-local-db-env.mjs`, which sets that variable from `DATABASE_URL`. You only maintain the direct Neon URL in `.env` — do **not** add a separate Hyperdrive connection string for local use.
+`npm run worker:dev` and Vitest call `scripts/sync-local-db-env.mjs`, which sets that variable from `DATABASE_URL`. You only maintain the direct Neon URL in `.env` — do **not** add a separate Hyperdrive connection string for local use.
 
 **Production:** `DATABASE_URL` is not deployed. Set the API secret with:
 
@@ -45,7 +45,23 @@ npx wrangler secret put API_BEARER_TOKEN
 
 `API_BEARER_TOKEN` is listed under `secrets.required` in `wrangler.jsonc`.
 
-### 2. Neon database
+### 2. Web app environment (`apps/web/.env`)
+
+Copy `apps/web/.env.example` to `apps/web/.env` and set:
+
+| Variable | Purpose |
+|----------|---------|
+| `API_URL` | Base URL for the Worker API |
+
+```bash
+cp apps/web/.env.example apps/web/.env
+```
+
+Use a full URL (`http://localhost:8787` for local `worker:dev`) or a hostname (`test-worker.example.workers.dev` — `https://` is added automatically). Access it in code via `getApiUrl()` / `apiUrl()` from `src/lib/api.ts`, or directly as `import.meta.env.API_URL`.
+
+Vite exposes `API_URL` to the client through `envPrefix` in `apps/web/vite.config.ts` (alongside the usual `VITE_*` variables).
+
+### 3. Neon database
 
 Create a Neon project and use the **direct** Postgres connection string (not the serverless HTTP one) as `DATABASE_URL`.
 
@@ -55,7 +71,7 @@ Run migrations:
 npm run db:migrate
 ```
 
-### 3. Hyperdrive
+### 4. Hyperdrive
 
 Create a Hyperdrive config pointing at Neon:
 
@@ -83,10 +99,10 @@ Do **not** put any connection string in `wrangler.jsonc`. Local dev uses the dir
 npx wrangler hyperdrive update <YOUR_HYPERDRIVE_ID> --caching-disabled true
 ```
 
-### 4. Deploy the Worker
+### 5. Deploy the Worker
 
 ```bash
-npm run deploy
+npm run worker:deploy
 ```
 
 #### `API_BEARER_TOKEN` already in use (error 10053)
@@ -115,7 +131,7 @@ npx wrangler secret put API_BEARER_TOKEN
 
 If the token was previously stored as plain text, rotate it when moving to a secret.
 
-### 5. Route catch-all email to the Worker
+### 6. Route catch-all email to the Worker
 
 For each domain in Cloudflare:
 
@@ -132,7 +148,7 @@ Repeat for every domain whose catch-all mail should land in this database.
 Start the dev server:
 
 ```bash
-npm run dev
+npm run worker:dev
 ```
 
 Send a test email to the local email handler:
@@ -180,8 +196,17 @@ Attachment metadata lives in the `attachments` table. Binary content is stored a
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Local Worker + email handler |
-| `npm run deploy` | Deploy to Cloudflare |
+| `npm run worker:dev` | Local Worker + email handler |
+| `npm run worker:deploy` | Deploy to Cloudflare |
+| `npm run worker:test` | Run Worker tests |
+| `npm run worker:typegen` | Regenerate Worker binding types |
+| `npm run worker:cf-typegen` | Regenerate Worker binding types (alias) |
+| `npm run worker:apigen` | Regenerate OpenAPI JSON from `openapi.yaml` |
 | `npm run db:generate` | Generate SQL migrations from schema |
 | `npm run db:migrate` | Apply migrations to Neon |
-| `npm run cf-typegen` | Regenerate Worker binding types |
+| `npm run db:push` | Push schema directly to Neon |
+| `npm run db:pull` | Pull schema from Neon |
+| `npm run db:studio` | Open Drizzle Studio |
+| `npm run web:dev` | Web app dev server |
+| `npm run web:build` | Production web build |
+| `npm run web:start` | Serve production web build |

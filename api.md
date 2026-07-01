@@ -4,7 +4,7 @@ Human-readable reference for the HTTP API exposed by this worker.
 
 Machine-readable spec:
 
-- **OpenAPI 3.1 (YAML):** [`openapi.yaml`](./openapi.yaml)
+- **OpenAPI 3.1 (YAML):** [`openapi.yaml`](./apps/worker/openapi.yaml)
 - **OpenAPI 3.1 (JSON, live):** `GET /api/v1/openapi.json` (no auth)
 
 ## Base URL
@@ -30,7 +30,7 @@ Protected endpoints require a Bearer token:
 Authorization: Bearer <API_BEARER_TOKEN>
 ```
 
-Configure `API_BEARER_TOKEN` in `.env` for local dev and via `wrangler secret put API_BEARER_TOKEN` for deployed Workers (`secrets.required` in `wrangler.jsonc`).
+Configure `API_BEARER_TOKEN` in `apps/worker/.env` for local dev and via `wrangler secret put API_BEARER_TOKEN` for deployed Workers (`secrets.required` in `wrangler.jsonc`).
 
 ## Errors (RFC 9457)
 

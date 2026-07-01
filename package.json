@@ -2,33 +2,23 @@
 	"name": "test-worker",
 	"version": "0.5.0",
 	"private": true,
+	"workspaces": [
+		"apps/*"
+	],
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "node scripts/with-env.mjs wrangler dev",
-		"start": "node scripts/with-env.mjs wrangler dev",
-		"typegen": "wrangler types",
-		"test": "vitest",
-		"openapi:json": "node -e \"const fs=require('fs');const YAML=require('yaml');fs.mkdirSync('src/openapi',{recursive:true});fs.writeFileSync('src/openapi/spec.json',JSON.stringify(YAML.parse(fs.readFileSync('openapi.yaml','utf8')),null,2));\"",
-		"cf-typegen": "wrangler types",
-		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
-		"db:push": "drizzle-kit push"
-	},
-	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.12.4",
-		"@types/node": "^26.0.1",
-		"@types/pg": "^8.20.0",
-		"dotenv": "^17.4.2",
-		"drizzle-kit": "^0.31.10",
-		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.105.0",
-		"yaml": "^2.9.0"
-	},
-	"dependencies": {
-		"drizzle-orm": "^0.45.2",
-		"mimetext": "^3.0.28",
-		"pg": "^8.22.0",
-		"postal-mime": "^2.7.5"
+		"worker:dev": "npm run dev -w @test-worker/worker",
+		"worker:deploy": "npm run deploy -w @test-worker/worker",
+		"worker:test": "npm run test -w @test-worker/worker",
+		"worker:typegen": "npm run typegen -w @test-worker/worker",
+		"worker:cf-typegen": "npm run cf-typegen -w @test-worker/worker",
+		"worker:apigen": "npm run apigen -w @test-worker/worker",
+		"db:generate": "npm run db:generate -w @test-worker/worker",
+		"db:migrate": "npm run db:migrate -w @test-worker/worker",
+		"db:push": "npm run db:push -w @test-worker/worker",
+		"db:pull": "npm run db:pull -w @test-worker/worker",
+		"db:studio": "npm run db:studio -w @test-worker/worker",
+		"web:dev": "npm run dev -w @test-worker/web",
+		"web:build": "npm run build -w @test-worker/web",
+		"web:start": "npm run start -w @test-worker/web"
 	}
 }
