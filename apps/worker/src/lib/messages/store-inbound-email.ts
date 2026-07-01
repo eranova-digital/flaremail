@@ -3,7 +3,7 @@ import type { Email } from "postal-mime";
 import type { Database } from "../../db/client";
 import { findMessageRowByRfcMessageId } from "../find-message";
 import { formatAddress, formatAddressList } from "../format-address";
-import type { MailboxResolution } from "../resolve-mailbox";
+import type { StoreMailboxResolution } from "../resolve-mailbox";
 import { resolveThreadId } from "../resolve-thread-id";
 import { postalAttachmentToStoredInput } from "../store-attachments";
 import { extractThreadingHeaders } from "../threading-headers";
@@ -21,7 +21,7 @@ export async function storeInboundEmail(
 	bucket: R2Bucket,
 	message: ForwardableEmailMessage,
 	parsed: Email,
-	mailbox: MailboxResolution,
+	mailbox: StoreMailboxResolution,
 ): Promise<string> {
 	const threading = extractThreadingHeaders(message.headers, parsed);
 

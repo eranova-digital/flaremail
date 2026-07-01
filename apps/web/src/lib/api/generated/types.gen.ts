@@ -29,6 +29,7 @@ export type Mailbox = {
     address?: string;
     type?: 'primary' | 'secondary' | 'shared' | 'alias';
     aliasTargetId?: string | null;
+    aliasTargetAddress?: string | null;
     isActive?: boolean;
 };
 
@@ -37,6 +38,7 @@ export type CreateMailboxRequest = {
     domainId: string;
     type: 'primary' | 'secondary' | 'shared' | 'alias';
     aliasTargetId?: string;
+    aliasTargetAddress?: string;
 };
 
 export type Label = {

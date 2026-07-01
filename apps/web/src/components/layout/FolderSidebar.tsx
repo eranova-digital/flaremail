@@ -3,6 +3,7 @@ import {
 	FileText,
 	Inbox,
 	Send,
+	Settings,
 	ShieldAlert,
 	Trash2,
 } from "lucide-react";
@@ -75,6 +76,20 @@ export function FolderSidebar() {
 					);
 				})}
 			</nav>
+			<div className="p-2">
+				<NavLink
+					to="/settings"
+					className={({ isActive }) =>
+						cn(
+							"hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+							isActive && "bg-accent text-accent-foreground font-medium",
+						)
+					}
+				>
+					<Settings className="size-4 shrink-0" />
+					Settings
+				</NavLink>
+			</div>
 		</aside>
 	);
 }

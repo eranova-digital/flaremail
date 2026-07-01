@@ -1209,6 +1209,12 @@
             ],
             "format": "uuid"
           },
+          "aliasTargetAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "isActive": {
             "type": "boolean"
           }
@@ -1241,6 +1247,9 @@
           "aliasTargetId": {
             "type": "string",
             "format": "uuid"
+          },
+          "aliasTargetAddress": {
+            "type": "string"
           }
         }
       },

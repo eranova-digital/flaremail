@@ -87,3 +87,14 @@ export function extractThreadingHeaders(
 
 	return { inReplyTo, references, messageId };
 }
+
+export function getMessageIdFromHeaders(headers: Headers): string | null {
+	for (const name of ["Message-ID", "message-id"]) {
+		const value = headers.get(name);
+		if (value?.trim()) {
+			return normalizeMessageId(value);
+		}
+	}
+
+	return null;
+}

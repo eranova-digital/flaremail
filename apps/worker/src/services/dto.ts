@@ -61,6 +61,7 @@ export function toMailboxDto(mailbox: {
 	address: string;
 	type: string;
 	aliasTargetId: string | null;
+	aliasTargetAddress: string | null;
 	isActive: boolean;
 }) {
 	return {
@@ -69,6 +70,7 @@ export function toMailboxDto(mailbox: {
 		address: mailbox.address,
 		type: mailbox.type,
 		aliasTargetId: mailbox.aliasTargetId,
+		aliasTargetAddress: mailbox.aliasTargetAddress,
 		isActive: mailbox.isActive,
 	};
 }

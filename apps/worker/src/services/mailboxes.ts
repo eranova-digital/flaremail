@@ -33,6 +33,7 @@ export async function createMailbox(
 		domainId: string;
 		type: MailboxType;
 		aliasTargetId?: string;
+		aliasTargetAddress?: string;
 	},
 ) {
 	const parsed = parseEmailAddress(input.address);
@@ -54,23 +55,47 @@ export async function createMailbox(
 		throw new Error("Address domain does not match domainId");
 	}
 
+	const aliasTargetId = input.aliasTargetId?.trim() || undefined;
+	const aliasTargetAddressInput = input.aliasTargetAddress?.trim() || undefined;
+
 	if (input.type === "alias") {
-		if (!input.aliasTargetId) {
-			throw new Error("aliasTargetId is required for alias mailboxes");
+		if (!aliasTargetId && !aliasTargetAddressInput) {
+			throw new Error(
+				"aliasTargetId or aliasTargetAddress is required for alias mailboxes",
+			);
 		}
 
-		const [target] = await db
-			.select({ id: mailboxes.id, type: mailboxes.type })
-			.from(mailboxes)
-			.where(eq(mailboxes.id, input.aliasTargetId))
-			.limit(1);
-
-		if (!target || !isReceivingMailboxType(target.type)) {
-			throw new Error("aliasTargetId must reference a receiving mailbox");
+		if (aliasTargetId && aliasTargetAddressInput) {
+			throw new Error(
+				"Provide either aliasTargetId or aliasTargetAddress, not both",
+			);
 		}
-	} else if (input.aliasTargetId) {
-		throw new Error("aliasTargetId is only valid for alias mailboxes");
+
+		if (aliasTargetId) {
+			const [target] = await db
+				.select({ id: mailboxes.id, type: mailboxes.type })
+				.from(mailboxes)
+				.where(eq(mailboxes.id, aliasTargetId))
+				.limit(1);
+
+			if (!target || !isReceivingMailboxType(target.type)) {
+				throw new Error("aliasTargetId must reference a receiving mailbox");
+			}
+		} else if (aliasTargetAddressInput) {
+			const parsedTarget = parseEmailAddress(aliasTargetAddressInput);
+			if (!parsedTarget) {
+				throw new Error("Invalid aliasTargetAddress");
+			}
+		}
+	} else if (aliasTargetId || aliasTargetAddressInput) {
+		throw new Error(
+			"aliasTargetId and aliasTargetAddress are only valid for alias mailboxes",
+		);
 	}
+
+	const normalizedAliasTargetAddress = aliasTargetAddressInput
+		? normalizeEmailAddress(aliasTargetAddressInput)
+		: null;
 
 	const id = crypto.randomUUID();
 	const now = new Date();
@@ -85,7 +110,8 @@ export async function createMailbox(
 				localPart: parsed.localPart,
 				address,
 				type: input.type,
-				aliasTargetId: input.aliasTargetId ?? null,
+				aliasTargetId: aliasTargetId ?? null,
+				aliasTargetAddress: normalizedAliasTargetAddress,
 				isActive: true,
 				createdAt: now,
 				updatedAt: now,

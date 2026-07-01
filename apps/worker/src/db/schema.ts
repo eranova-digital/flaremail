@@ -68,6 +68,7 @@ export const mailboxes = pgTable(
 		address: text("address").notNull().unique(),
 		type: mailboxTypeEnum("type").notNull(),
 		aliasTargetId: uuid("alias_target_id"),
+		aliasTargetAddress: text("alias_target_address"),
 		isActive: boolean("is_active").notNull().default(true),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

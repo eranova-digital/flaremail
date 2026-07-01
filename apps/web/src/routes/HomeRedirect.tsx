@@ -1,12 +1,19 @@
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 
+import { Link } from "react-router-dom";
+
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import {
 	getLastMailboxId,
 	setLastMailboxId,
 } from "@/lib/mailbox-preference";
+import {
+	getSelectableMailboxes,
+	resolveSelectableMailbox,
+} from "@/lib/selectable-mailbox";
 
 export function HomeRedirect() {
 	const mailboxesQuery = useMailboxes();
@@ -19,21 +26,23 @@ export function HomeRedirect() {
 		);
 	}
 
-	const mailboxes = mailboxesQuery.data ?? [];
-	if (mailboxes.length === 0) {
+	const selectableMailboxes = getSelectableMailboxes(mailboxesQuery.data ?? []);
+	if (selectableMailboxes.length === 0) {
 		return (
-			<div className="flex min-h-svh flex-col items-center justify-center gap-2 p-8 text-center">
+			<div className="flex min-h-svh flex-col items-center justify-center gap-4 p-8 text-center">
 				<h1 className="text-xl font-semibold">No mailboxes yet</h1>
 				<p className="text-muted-foreground max-w-md text-sm">
-					Create a mailbox via the Worker API, then reload Flaremail.
+					Add a domain and mailbox to start receiving mail in Flaremail.
 				</p>
+				<Button asChild>
+					<Link to="/settings">Open settings</Link>
+				</Button>
 			</div>
 		);
 	}
 
 	const remembered = getLastMailboxId();
-	const mailbox =
-		mailboxes.find((item) => item.id === remembered) ?? mailboxes[0];
+	const mailbox = resolveSelectableMailbox(selectableMailboxes, remembered);
 
 	if (!mailbox?.id) {
 		return null;
