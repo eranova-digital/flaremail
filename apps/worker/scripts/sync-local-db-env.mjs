@@ -1,4 +1,8 @@
 import { config } from "dotenv";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const workerRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
  * Local `wrangler dev` / Vitest do not connect through Hyperdrive. The Worker still
@@ -13,7 +17,7 @@ import { config } from "dotenv";
 export function syncLocalDbEnv(options = {}) {
 	const { requireDatabaseUrl = false } = options;
 
-	config();
+	config({ path: resolve(workerRoot, ".env") });
 
 	if (!process.env.DATABASE_URL?.trim()) {
 		if (requireDatabaseUrl) {
