@@ -536,7 +536,7 @@ export const searchMessages = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Download attachment
- * Inbound attachments only.
+ * Inbound messages and outbound drafts/sent messages.
  */
 export const downloadAttachment = <ThrowOnError extends boolean = false>(options: Options<DownloadAttachmentData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).get<DownloadAttachmentResponses, DownloadAttachmentErrors, ThrowOnError>({

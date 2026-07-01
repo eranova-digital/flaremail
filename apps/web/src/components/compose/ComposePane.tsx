@@ -7,6 +7,7 @@ import {
 	type ComposeReplyContext,
 	useComposeDraft,
 } from "@/hooks/use-compose-draft";
+import { ComposeAttachments } from "@/components/compose/ComposeAttachments";
 import { getErrorMessage } from "@/lib/api/errors";
 
 type ComposePaneProps = {
@@ -145,6 +146,11 @@ export function ComposePane({
 						}
 					/>
 				</div>
+				<ComposeAttachments
+					attachments={compose.attachments}
+					onChange={compose.updateAttachments}
+					disabled={compose.isSending}
+				/>
 				{compose.saveError ? (
 					<p className="text-destructive text-sm">{compose.saveError}</p>
 				) : null}

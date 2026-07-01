@@ -29,7 +29,7 @@ import {
 	findThreadById,
 } from "./message-queries";
 import { buildPreview } from "./message-utils";
-import { outboundAttachmentsToStoredInputs, loadDraftOutboundPayload } from "./outbound-attachments";
+import { outboundAttachmentsToStoredInputs, loadDraftOutboundPayload, loadStoredAttachmentInputs } from "./outbound-attachments";
 import {
 	formatRecipients,
 	replySubject,
@@ -112,6 +112,7 @@ function resolveReplyPayload(
 		subject: replyBody.subject ?? replySubject(parent.subject),
 		text: replyBody.text,
 		html: replyBody.html,
+		attachments: replyBody.attachments,
 	};
 }
 
@@ -133,7 +134,7 @@ async function sendAndPersistNewMessage(
 	const id = crypto.randomUUID();
 	const now = new Date();
 	const preview = buildPreview(payload.text ?? null);
-	const attachmentInputs: ReturnType<typeof outboundAttachmentsToStoredInputs> = [];
+	const attachmentInputs = outboundAttachmentsToStoredInputs(payload.attachments);
 
 	const threadTouch: ThreadTouchData = {
 		subject: payload.subject,
@@ -155,6 +156,7 @@ async function sendAndPersistNewMessage(
 		payload,
 		inReplyTo: threading.inReplyTo,
 		references: threading.references,
+		attachmentInputs,
 	});
 
 	let rfcMessageId: string;
@@ -275,7 +277,7 @@ async function persistDraftMessage(
 	const id = crypto.randomUUID();
 	const now = new Date();
 	const preview = buildPreview(payload.text ?? null);
-	const attachmentInputs: ReturnType<typeof outboundAttachmentsToStoredInputs> = [];
+	const attachmentInputs = outboundAttachmentsToStoredInputs(payload.attachments);
 
 	const existingMailboxView = threading.isReply
 		? await findThreadMailbox(ctx.db, threading.threadId, mailboxId)
@@ -372,6 +374,7 @@ export async function createDraft(
 			(parent ? replySubject(parent.subject) : ""),
 		text: body.text,
 		html: body.html,
+		attachments: body.attachments,
 	};
 
 	return persistDraftMessage(ctx, body.mailboxId, payload, threading);
@@ -409,7 +412,10 @@ export async function updateDraft(
 
 	const recipients = formatRecipients(body);
 	const preview = buildPreview(body.text ?? null);
-	const attachmentInputs: ReturnType<typeof outboundAttachmentsToStoredInputs> = [];
+	const attachmentInputs =
+		body.attachments !== undefined
+			? outboundAttachmentsToStoredInputs(body.attachments)
+			: await loadStoredAttachmentInputs(ctx.db, ctx.bucket, messageId);
 	const now = new Date();
 
 	await replaceStoredMessageContent(
@@ -507,12 +513,18 @@ export async function sendDraftMessage(
 	await assertCanSendFrom(ctx.db, mailbox.id);
 
 	const payload = await loadDraftOutboundPayload(ctx.bucket, draft);
+	const attachmentInputs = await loadStoredAttachmentInputs(
+		ctx.db,
+		ctx.bucket,
+		messageId,
+	);
 	const now = new Date();
 	const sendPayload = buildEmailSendPayload({
 		from: mailbox.address,
 		payload,
 		inReplyTo: draft.inReplyTo,
 		references: draft.references,
+		attachmentInputs,
 	});
 
 	const result = await sendEmail(ctx.email, sendPayload);
@@ -530,7 +542,7 @@ export async function sendDraftMessage(
 			inReplyTo: draft.inReplyTo,
 			references: draft.references,
 		}),
-		attachmentInputs: [],
+		attachmentInputs,
 		sentAt: now,
 	});
 

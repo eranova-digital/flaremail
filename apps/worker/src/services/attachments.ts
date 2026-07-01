@@ -25,12 +25,24 @@ export async function downloadAttachment(
 	}
 
 	const [message] = await db
-		.select({ direction: messages.direction })
+		.select({
+			direction: messages.direction,
+			sendStatus: messages.sendStatus,
+		})
 		.from(messages)
 		.where(eq(messages.id, row.messageId))
 		.limit(1);
 
-	if (!message || message.direction !== "inbound") {
+	if (!message) {
+		throw new Error("Attachment not found");
+	}
+
+	const canDownload =
+		message.direction === "inbound" ||
+		(message.direction === "outbound" &&
+			(message.sendStatus === "draft" || message.sendStatus === "sent"));
+
+	if (!canDownload) {
 		throw new Error("Attachment not found");
 	}
 
