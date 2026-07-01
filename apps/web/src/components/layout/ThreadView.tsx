@@ -1,8 +1,9 @@
-import { Reply } from "lucide-react";
+import { Paperclip, Reply } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MessageAttachments } from "@/components/message/MessageAttachments";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,19 +55,23 @@ function MessageBody({
 		return null;
 	}
 
-	if (message.html) {
-		return (
-			<div
-				className="prose prose-sm max-w-none"
-				dangerouslySetInnerHTML={{ __html: message.html }}
-			/>
-		);
-	}
-
 	return (
-		<pre className="text-sm whitespace-pre-wrap">
-			{message.text || message.preview || preview || "(empty message)"}
-		</pre>
+		<>
+			{message.html ? (
+				<div
+					className="prose prose-sm max-w-none"
+					dangerouslySetInnerHTML={{ __html: message.html }}
+				/>
+			) : (
+				<pre className="text-sm whitespace-pre-wrap">
+					{message.text || message.preview || preview || "(empty message)"}
+				</pre>
+			)}
+			<MessageAttachments
+				attachments={message.attachments}
+				direction={message.direction}
+			/>
+		</>
 	);
 }
 
@@ -144,6 +149,12 @@ export function ThreadView() {
 											<p className="font-medium">{message.from}</p>
 											{isDraft ? (
 												<Badge variant="secondary">Draft</Badge>
+											) : null}
+											{message.hasAttachments ? (
+												<Paperclip
+													className="text-muted-foreground size-3.5"
+													aria-label="Has attachments"
+												/>
 											) : null}
 										</div>
 										<p className="text-muted-foreground truncate">

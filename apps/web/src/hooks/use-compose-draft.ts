@@ -10,6 +10,11 @@ import {
 	type CreateDraftRequest,
 	type OutboundMessageBody,
 } from "@/lib/api/client";
+import {
+	type ComposeAttachment,
+	composeAttachmentsToOutbound,
+	createStoredAttachment,
+} from "@/lib/compose-attachments";
 
 export type ComposeFields = {
 	to: string;
@@ -37,6 +42,7 @@ function fieldsToPayload(
 	fields: ComposeFields,
 	mailboxId: string,
 	reply?: ComposeReplyContext,
+	attachments?: OutboundMessageBody["attachments"],
 ): CreateDraftRequest {
 	const base: CreateDraftRequest = {
 		mailboxId,
@@ -46,6 +52,10 @@ function fieldsToPayload(
 		subject: fields.subject,
 		text: fields.body,
 	};
+
+	if (attachments) {
+		base.attachments = attachments;
+	}
 
 	if (reply) {
 		return {
@@ -58,23 +68,36 @@ function fieldsToPayload(
 	return base;
 }
 
-function outboundFromFields(fields: ComposeFields): OutboundMessageBody {
-	return {
+function outboundFromFields(
+	fields: ComposeFields,
+	attachments?: OutboundMessageBody["attachments"],
+): OutboundMessageBody {
+	const body: OutboundMessageBody = {
 		to: parseRecipients(fields.to),
 		cc: parseRecipients(fields.cc),
 		bcc: parseRecipients(fields.bcc),
 		subject: fields.subject,
 		text: fields.body,
 	};
+
+	if (attachments) {
+		body.attachments = attachments;
+	}
+
+	return body;
 }
 
-function hasComposeContent(fields: ComposeFields): boolean {
+function hasComposeContent(
+	fields: ComposeFields,
+	attachments: ComposeAttachment[],
+): boolean {
 	return Boolean(
 		fields.to.trim() ||
 			fields.cc.trim() ||
 			fields.bcc.trim() ||
 			fields.subject.trim() ||
-			fields.body.trim(),
+			fields.body.trim() ||
+			attachments.length > 0,
 	);
 }
 
@@ -98,6 +121,7 @@ export function useComposeDraft(
 		subject: "",
 		body: "",
 	});
+	const [attachments, setAttachments] = useState<ComposeAttachment[]>([]);
 	const [initialized, setInitialized] = useState(
 		!reply && !existingDraftId,
 	);
@@ -105,7 +129,10 @@ export function useComposeDraft(
 	const [isSaving, setIsSaving] = useState(false);
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const fieldsRef = useRef(fields);
+	const attachmentsRef = useRef(attachments);
+	const attachmentsDirtyRef = useRef(false);
 	fieldsRef.current = fields;
+	attachmentsRef.current = attachments;
 
 	const createMutation = useMutation({
 		mutationFn: async (payload: CreateDraftRequest) => {
@@ -178,6 +205,15 @@ export function useComposeDraft(
 					subject: draft.subject ?? "",
 					body: draft.text ?? draft.preview ?? "",
 				});
+				setAttachments(
+					(draft.attachments ?? [])
+						.map((attachment) => createStoredAttachment(attachment))
+						.filter(
+							(attachment): attachment is ComposeAttachment =>
+								attachment !== null,
+						),
+				);
+				attachmentsDirtyRef.current = false;
 				setDraftId(existingDraftId);
 				setInitialized(true);
 			} catch {
@@ -235,9 +271,30 @@ export function useComposeDraft(
 		};
 	}, [reply, mailboxId, initialized, existingDraftId]);
 
+	const refreshStoredAttachments = useCallback(
+		async (messageId: string) => {
+			const { data } = await getMessage({
+				throwOnError: true,
+				path: { id: messageId },
+				query: { mailboxId },
+			});
+			const message = assertData(data, "getMessage");
+			const next = (message.attachments ?? [])
+				.map((attachment) => createStoredAttachment(attachment))
+				.filter(
+					(attachment): attachment is ComposeAttachment =>
+						attachment !== null,
+				);
+			attachmentsRef.current = next;
+			setAttachments(next);
+		},
+		[mailboxId],
+	);
+
 	const persistDraft = useCallback(async () => {
 		const current = fieldsRef.current;
-		if (!hasComposeContent(current)) {
+		const currentAttachments = attachmentsRef.current;
+		if (!hasComposeContent(current, currentAttachments)) {
 			return;
 		}
 
@@ -245,19 +302,39 @@ export function useComposeDraft(
 		setSaveError(null);
 
 		try {
+			let outboundAttachments: OutboundMessageBody["attachments"] | undefined;
+			if (!draftId || attachmentsDirtyRef.current) {
+				outboundAttachments = await composeAttachmentsToOutbound(
+					currentAttachments,
+				);
+			}
+
 			if (!draftId) {
 				const created = await createMutation.mutateAsync(
-					fieldsToPayload(current, mailboxId, reply),
+					fieldsToPayload(
+						current,
+						mailboxId,
+						reply,
+						outboundAttachments,
+					),
 				);
 				if (created.id) {
 					setDraftId(created.id);
+					if (outboundAttachments !== undefined) {
+						await refreshStoredAttachments(created.id);
+					}
 				}
 			} else {
 				await updateMutation.mutateAsync({
 					id: draftId,
-					body: outboundFromFields(current),
+					body: outboundFromFields(current, outboundAttachments),
 				});
+				if (outboundAttachments !== undefined) {
+					await refreshStoredAttachments(draftId);
+				}
 			}
+
+			attachmentsDirtyRef.current = false;
 		} catch (error) {
 			setSaveError(
 				error instanceof Error ? error.message : "Failed to save draft",
@@ -265,7 +342,7 @@ export function useComposeDraft(
 		} finally {
 			setIsSaving(false);
 		}
-	}, [createMutation, updateMutation, draftId, mailboxId, reply]);
+	}, [createMutation, updateMutation, draftId, mailboxId, reply, refreshStoredAttachments]);
 
 	const scheduleSave = useCallback(() => {
 		if (timerRef.current) {
@@ -289,15 +366,31 @@ export function useComposeDraft(
 		[scheduleSave],
 	);
 
+	const updateAttachments = useCallback(
+		(next: ComposeAttachment[]) => {
+			attachmentsRef.current = next;
+			attachmentsDirtyRef.current = true;
+			setAttachments(next);
+			scheduleSave();
+		},
+		[scheduleSave],
+	);
+
 	const send = useCallback(async () => {
 		if (timerRef.current) {
 			clearTimeout(timerRef.current);
 		}
 
+		const current = fieldsRef.current;
+		const currentAttachments = attachmentsRef.current;
+		const outboundAttachments = await composeAttachmentsToOutbound(
+			currentAttachments,
+		);
+
 		let id = draftId;
 		if (!id) {
 			const created = await createMutation.mutateAsync(
-				fieldsToPayload(fieldsRef.current, mailboxId, reply),
+				fieldsToPayload(current, mailboxId, reply, outboundAttachments),
 			);
 			id = created.id ?? null;
 			if (id) {
@@ -306,7 +399,7 @@ export function useComposeDraft(
 		} else {
 			await updateMutation.mutateAsync({
 				id,
-				body: outboundFromFields(fieldsRef.current),
+				body: outboundFromFields(current, outboundAttachments),
 			});
 		}
 
@@ -314,6 +407,7 @@ export function useComposeDraft(
 			throw new Error("Draft was not created");
 		}
 
+		attachmentsDirtyRef.current = false;
 		return sendMutation.mutateAsync(id);
 	}, [createMutation, updateMutation, sendMutation, draftId, mailboxId, reply]);
 
@@ -327,7 +421,9 @@ export function useComposeDraft(
 
 	return {
 		fields,
+		attachments,
 		updateFields,
+		updateAttachments,
 		send,
 		isSaving,
 		saveError,

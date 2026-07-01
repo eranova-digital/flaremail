@@ -1028,7 +1028,7 @@
           "Attachments"
         ],
         "summary": "Download attachment",
-        "description": "Inbound attachments only.",
+        "description": "Inbound messages and outbound drafts/sent messages.",
         "operationId": "downloadAttachment",
         "responses": {
           "200": {
@@ -1287,6 +1287,36 @@
           }
         ]
       },
+      "OutboundAttachmentInput": {
+        "type": "object",
+        "required": [
+          "filename",
+          "mimeType",
+          "content"
+        ],
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string",
+            "description": "Base64-encoded file bytes."
+          },
+          "disposition": {
+            "type": "string",
+            "enum": [
+              "attachment",
+              "inline"
+            ]
+          },
+          "contentId": {
+            "type": "string"
+          }
+        }
+      },
       "OutboundMessageBody": {
         "type": "object",
         "required": [
@@ -1320,6 +1350,12 @@
           },
           "html": {
             "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutboundAttachmentInput"
+            }
           }
         }
       },
@@ -1399,6 +1435,12 @@
           },
           "html": {
             "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutboundAttachmentInput"
+            }
           },
           "replyAll": {
             "type": "boolean",

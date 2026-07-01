@@ -1,6 +1,8 @@
 import { formatEmailAddressList } from "../addresses";
+import { attachmentContentToArrayBuffer } from "../attachment-utils";
 import type { MimeMessageContent } from "./mime-message-content";
 import type { OutboundMessageBody } from "./outbound-payload";
+import type { StoredAttachmentInput } from "./stored-attachment-input";
 
 export type OutboundThreadingParams = {
 	inReplyTo?: string | null;
@@ -10,6 +12,7 @@ export type OutboundThreadingParams = {
 export type OutboundSendParams = OutboundThreadingParams & {
 	from: string;
 	payload: OutboundMessageBody;
+	attachmentInputs?: StoredAttachmentInput[];
 };
 
 export type OutboundMimeParams = OutboundSendParams & {
@@ -33,6 +36,40 @@ export type EmailSendBuilderPayload = {
 		contentId?: string;
 	}[];
 };
+
+function storedAttachmentsToEmailAttachments(
+	attachmentInputs: StoredAttachmentInput[] | undefined,
+): EmailSendBuilderPayload["attachments"] {
+	if (!attachmentInputs?.length) {
+		return undefined;
+	}
+
+	return attachmentInputs.map((attachment, index) => {
+		const filename = attachment.filename?.trim() || `attachment-${index + 1}`;
+		const base = {
+			filename,
+			type: attachment.mimeType || "application/octet-stream",
+			content: attachmentContentToArrayBuffer(attachment.content),
+		};
+
+		if (
+			attachment.disposition === "inline" &&
+			typeof attachment.contentId === "string" &&
+			attachment.contentId.trim()
+		) {
+			return {
+				...base,
+				disposition: "inline" as const,
+				contentId: attachment.contentId.trim(),
+			};
+		}
+
+		return {
+			...base,
+			disposition: "attachment" as const,
+		};
+	});
+}
 
 function referencesHeaderValue(
 	references: string[] | null | undefined,
@@ -107,5 +144,6 @@ export function buildEmailSendPayload(
 		text: params.payload.text,
 		html: params.payload.html,
 		headers,
+		attachments: storedAttachmentsToEmailAttachments(params.attachmentInputs),
 	};
 }

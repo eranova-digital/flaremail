@@ -51,6 +51,17 @@ export type EmailAddress = string | {
     name?: string;
 };
 
+export type OutboundAttachmentInput = {
+    filename: string;
+    mimeType: string;
+    /**
+     * Base64-encoded file bytes.
+     */
+    content: string;
+    disposition?: 'attachment' | 'inline';
+    contentId?: string;
+};
+
 export type OutboundMessageBody = {
     to: Array<EmailAddress>;
     cc?: Array<EmailAddress>;
@@ -58,6 +69,7 @@ export type OutboundMessageBody = {
     subject: string;
     text?: string;
     html?: string;
+    attachments?: Array<OutboundAttachmentInput>;
 };
 
 export type SendMessageRequest = OutboundMessageBody & {
@@ -81,6 +93,7 @@ export type ReplyRequest = {
     subject?: string;
     text?: string;
     html?: string;
+    attachments?: Array<OutboundAttachmentInput>;
     replyAll?: boolean;
 };
 

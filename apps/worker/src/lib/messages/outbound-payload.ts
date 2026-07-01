@@ -1,5 +1,8 @@
 import type { EmailAddressInput } from "../addresses";
 import { formatEmailAddressList, firstEmailAddress } from "../addresses";
+import type { OutboundAttachmentInput } from "./outbound-attachments";
+
+export type { OutboundAttachmentInput } from "./outbound-attachments";
 
 export type OutboundMessageBody = {
 	to: EmailAddressInput[];
@@ -8,6 +11,7 @@ export type OutboundMessageBody = {
 	subject: string;
 	text?: string;
 	html?: string;
+	attachments?: OutboundAttachmentInput[];
 };
 
 export type MailboxScopedBody = {
@@ -29,6 +33,7 @@ export type ReplyBody = MailboxScopedBody & {
 	subject?: string;
 	text?: string;
 	html?: string;
+	attachments?: OutboundAttachmentInput[];
 	replyAll?: boolean;
 };
 
@@ -44,6 +49,69 @@ function parseTextOrHtml(value: Record<string, unknown>): void {
 	if (value.text === undefined && value.html === undefined) {
 		throw new Error("At least one of 'text' or 'html' is required");
 	}
+}
+
+function parseOutboundAttachments(
+	value: unknown,
+): OutboundAttachmentInput[] | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+
+	if (!Array.isArray(value)) {
+		throw new Error("Field 'attachments' must be an array");
+	}
+
+	return value.map((item, index) => {
+		if (!item || typeof item !== "object") {
+			throw new Error(`attachments[${index}] must be an object`);
+		}
+
+		const attachment = item as Record<string, unknown>;
+
+		if (
+			typeof attachment.filename !== "string" ||
+			!attachment.filename.trim()
+		) {
+			throw new Error(`attachments[${index}].filename is required`);
+		}
+
+		if (
+			typeof attachment.mimeType !== "string" ||
+			!attachment.mimeType.trim()
+		) {
+			throw new Error(`attachments[${index}].mimeType is required`);
+		}
+
+		if (typeof attachment.content !== "string" || !attachment.content.trim()) {
+			throw new Error(`attachments[${index}].content is required`);
+		}
+
+		const disposition = attachment.disposition;
+		if (
+			disposition !== undefined &&
+			disposition !== "attachment" &&
+			disposition !== "inline"
+		) {
+			throw new Error(
+				`attachments[${index}].disposition must be 'attachment' or 'inline'`,
+			);
+		}
+
+		return {
+			filename: attachment.filename.trim(),
+			mimeType: attachment.mimeType.trim(),
+			content: attachment.content.replace(/\s+/g, ""),
+			disposition:
+				disposition === "inline" || disposition === "attachment"
+					? disposition
+					: undefined,
+			contentId:
+				typeof attachment.contentId === "string"
+					? attachment.contentId
+					: undefined,
+		};
+	});
 }
 
 export function parseOutboundMessageBody(body: unknown): OutboundMessageBody {
@@ -70,6 +138,7 @@ export function parseOutboundMessageBody(body: unknown): OutboundMessageBody {
 		subject: value.subject.trim(),
 		text: typeof value.text === "string" ? value.text : undefined,
 		html: typeof value.html === "string" ? value.html : undefined,
+		attachments: parseOutboundAttachments(value.attachments),
 	};
 }
 
@@ -121,6 +190,7 @@ export function parseCreateDraftBody(body: unknown): CreateDraftBody {
 		subject: typeof value.subject === "string" ? value.subject.trim() : "",
 		text: typeof value.text === "string" ? value.text : undefined,
 		html: typeof value.html === "string" ? value.html : undefined,
+		attachments: parseOutboundAttachments(value.attachments),
 		threadId: typeof value.threadId === "string" ? value.threadId : undefined,
 		inReplyToMessageId:
 			typeof value.inReplyToMessageId === "string"
@@ -149,6 +219,7 @@ export function parseReplyBody(body: unknown): ReplyBody {
 				: undefined,
 		text: typeof value.text === "string" ? value.text : undefined,
 		html: typeof value.html === "string" ? value.html : undefined,
+		attachments: parseOutboundAttachments(value.attachments),
 		replyAll: value.replyAll === true,
 	};
 }
