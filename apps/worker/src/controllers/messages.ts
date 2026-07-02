@@ -6,6 +6,7 @@ import { outboundContext } from "../lib/http/route-helpers";
 import type { RouteContext } from "../lib/http/router";
 import {
 	parseCreateDraftBody,
+	parseForwardBody,
 	parseOutboundMessageBody,
 	parseReplyBody,
 	parseSendMessageBody,
@@ -14,6 +15,7 @@ import {
 	createDraft,
 	deleteDraft,
 	directSend,
+	forwardMessage,
 	replyToMessage,
 	sendDraftMessage,
 	updateDraft,
@@ -125,6 +127,27 @@ export async function handleReplyToMessage({
 		const payload = parseReplyBody(body);
 		const message = await withDb(env, async (db) =>
 			replyToMessage({ ...outboundContext(env), db }, params.id, payload),
+		);
+		return jsonResponse(toSendResponse(message), 201);
+	} catch (error) {
+		return handleRouteError(error, request);
+	}
+}
+
+export async function handleForwardToMessage({
+	request,
+	env,
+	params,
+}: RouteContext): Promise<Response> {
+	const body = await parseJsonBody(request);
+	if (body instanceof Response) {
+		return body;
+	}
+
+	try {
+		const payload = parseForwardBody(body);
+		const message = await withDb(env, async (db) =>
+			forwardMessage({ ...outboundContext(env), db }, params.id, payload),
 		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {

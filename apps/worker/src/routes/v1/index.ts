@@ -16,6 +16,7 @@ import {
 import {
 	handleCreateDraft,
 	handleDeleteDraft,
+	handleForwardToMessage,
 	handleReplyToMessage,
 	handleSendDraft,
 	handleSendMessage,
@@ -108,6 +109,11 @@ export const v1Routes: RouteDefinition[] = [
 		method: "POST",
 		path: `${prefix}/messages/:id/reply`,
 		handler: handleReplyToMessage,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/messages/:id/forward`,
+		handler: handleForwardToMessage,
 	},
 	{
 		method: "GET",

@@ -7,6 +7,7 @@ export function ComposePage() {
 	const { mailboxId } = useParams();
 	const [searchParams] = useSearchParams();
 	const replyTo = searchParams.get("replyTo") ?? undefined;
+	const forwardTo = searchParams.get("forward") ?? undefined;
 	const draftId = searchParams.get("draftId") ?? undefined;
 	const threadId = searchParams.get("threadId") ?? undefined;
 	const folder = searchParams.get("folder") ?? "inbox";
@@ -20,7 +21,9 @@ export function ComposePage() {
 			? `/m/${mailboxId}/threads/${threadId}?folder=${folder}`
 			: replyTo && threadId
 				? `/m/${mailboxId}/threads/${threadId}?folder=${folder}`
-				: `/m/${mailboxId}/${folder}`;
+				: forwardTo && threadId
+					? `/m/${mailboxId}/threads/${threadId}?folder=${folder}`
+					: `/m/${mailboxId}/${folder}`;
 
 	return (
 		<ComposePane
@@ -31,9 +34,10 @@ export function ComposePage() {
 					? { inReplyToMessageId: replyTo, threadId: threadId ?? undefined }
 					: undefined
 			}
+			forward={forwardTo ? { messageId: forwardTo } : undefined}
 			onClose={() => navigate(backTo)}
 			onSent={() => {
-				if (threadId) {
+				if (replyTo && threadId) {
 					navigate(`/m/${mailboxId}/threads/${threadId}?folder=inbox`);
 					return;
 				}
