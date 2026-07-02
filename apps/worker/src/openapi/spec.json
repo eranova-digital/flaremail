@@ -717,6 +717,45 @@
         }
       }
     },
+    "/messages/{id}/forward": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Messages"
+        ],
+        "summary": "Forward message",
+        "operationId": "forwardToMessage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForwardRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Forward sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendCommandResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/messages/{id}/preview": {
       "parameters": [
         {
@@ -1454,6 +1493,63 @@
           "replyAll": {
             "type": "boolean",
             "default": false
+          }
+        }
+      },
+      "ForwardRequest": {
+        "type": "object",
+        "required": [
+          "mailboxId",
+          "to"
+        ],
+        "properties": {
+          "mailboxId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailAddress"
+            }
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailAddress"
+            }
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailAddress"
+            }
+          },
+          "subject": {
+            "type": "string",
+            "description": "Optional. When omitted, defaults to `Fwd: <parent subject>`. Does not prepend another `Fwd:` when the parent subject already starts with `Fwd:`.\n"
+          },
+          "text": {
+            "type": "string"
+          },
+          "html": {
+            "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutboundAttachmentInput"
+            }
+          },
+          "includeAttachments": {
+            "type": "boolean",
+            "default": true,
+            "description": "When true, copies attachments from the forwarded message."
+          },
+          "includeQuotedBody": {
+            "type": "boolean",
+            "default": true,
+            "description": "When true, appends a quoted copy of the parent message below the optional intro text. Set false when the client already included the quote in `text`/`html`.\n"
           }
         }
       },

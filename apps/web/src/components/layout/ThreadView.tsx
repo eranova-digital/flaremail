@@ -1,4 +1,4 @@
-import { Paperclip, Reply } from "lucide-react";
+import { Forward, Paperclip, Reply } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
@@ -199,18 +199,32 @@ export function ThreadView() {
 												</Button>
 											</>
 										) : (
-											<Button
-												variant="ghost"
-												size="sm"
-												onClick={() =>
-													navigate(
-														`/m/${mailboxId}/compose?replyTo=${message.id}&threadId=${threadId}&folder=${folder}`,
-													)
-												}
-											>
-												<Reply className="size-4" />
-												Reply
-											</Button>
+											<>
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() =>
+														navigate(
+															`/m/${mailboxId}/compose?replyTo=${message.id}&threadId=${threadId}&folder=${folder}`,
+														)
+													}
+												>
+													<Reply className="size-4" />
+													Reply
+												</Button>
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() =>
+														navigate(
+															`/m/${mailboxId}/compose?forward=${message.id}&threadId=${threadId}&folder=${folder}`,
+														)
+													}
+												>
+													<Forward className="size-4" />
+													Forward
+												</Button>
+											</>
 										)}
 									</div>
 								</div>

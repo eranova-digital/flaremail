@@ -4,16 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	type ComposeForwardContext,
 	type ComposeReplyContext,
 	useComposeDraft,
 } from "@/hooks/use-compose-draft";
 import { ComposeAttachments } from "@/components/compose/ComposeAttachments";
+import { ComposeForwardSource } from "@/components/compose/ComposeForwardSource";
 import { getErrorMessage } from "@/lib/api/errors";
 
 type ComposePaneProps = {
 	mailboxId: string;
 	existingDraftId?: string;
 	reply?: ComposeReplyContext;
+	forward?: ComposeForwardContext;
 	onClose: () => void;
 	onSent: () => void;
 };
@@ -22,10 +25,11 @@ export function ComposePane({
 	mailboxId,
 	existingDraftId,
 	reply,
+	forward,
 	onClose,
 	onSent,
 }: ComposePaneProps) {
-	const compose = useComposeDraft(mailboxId, { reply, existingDraftId });
+	const compose = useComposeDraft(mailboxId, { reply, forward, existingDraftId });
 
 	const handleSend = async () => {
 		try {
@@ -44,7 +48,9 @@ export function ComposePane({
 					? "Loading draft…"
 					: reply
 						? "Preparing reply…"
-						: "Loading…"}
+						: forward
+							? "Preparing forward…"
+							: "Loading…"}
 			</div>
 		);
 	}
@@ -57,7 +63,9 @@ export function ComposePane({
 						? "Edit draft"
 						: reply
 							? "Reply"
-							: "New message"}
+							: forward
+								? "Forward"
+								: "New message"}
 				</h2>
 				<div className="flex items-center gap-2">
 					{compose.isSaving ? (
@@ -133,9 +141,12 @@ export function ComposePane({
 						}
 					/>
 				</div>
+				{compose.forwardSource ? (
+					<ComposeForwardSource source={compose.forwardSource} />
+				) : null}
 				<div className="space-y-2">
 					<label className="text-sm font-medium" htmlFor="compose-body">
-						Body
+						{compose.forwardSource ? "Message" : "Body"}
 					</label>
 					<Textarea
 						id="compose-body"

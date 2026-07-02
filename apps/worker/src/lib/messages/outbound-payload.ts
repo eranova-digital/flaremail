@@ -37,6 +37,18 @@ export type ReplyBody = MailboxScopedBody & {
 	replyAll?: boolean;
 };
 
+export type ForwardBody = MailboxScopedBody & {
+	to: EmailAddressInput[];
+	cc?: EmailAddressInput[];
+	bcc?: EmailAddressInput[];
+	subject?: string;
+	text?: string;
+	html?: string;
+	attachments?: OutboundAttachmentInput[];
+	includeAttachments?: boolean;
+	includeQuotedBody?: boolean;
+};
+
 function requireMailboxId(value: Record<string, unknown>): string {
 	if (typeof value.mailboxId !== "string" || !value.mailboxId.trim()) {
 		throw new Error("Field 'mailboxId' is required");
@@ -221,6 +233,35 @@ export function parseReplyBody(body: unknown): ReplyBody {
 		html: typeof value.html === "string" ? value.html : undefined,
 		attachments: parseOutboundAttachments(value.attachments),
 		replyAll: value.replyAll === true,
+	};
+}
+
+export function parseForwardBody(body: unknown): ForwardBody {
+	if (!body || typeof body !== "object") {
+		throw new Error("Request body must be an object");
+	}
+
+	const value = body as Record<string, unknown>;
+	const mailboxId = requireMailboxId(value);
+
+	if (!Array.isArray(value.to) || value.to.length === 0) {
+		throw new Error("Field 'to' must be a non-empty array");
+	}
+
+	return {
+		mailboxId,
+		to: value.to as EmailAddressInput[],
+		cc: value.cc as EmailAddressInput[] | undefined,
+		bcc: value.bcc as EmailAddressInput[] | undefined,
+		subject:
+			typeof value.subject === "string" && value.subject.trim()
+				? value.subject.trim()
+				: undefined,
+		text: typeof value.text === "string" ? value.text : undefined,
+		html: typeof value.html === "string" ? value.html : undefined,
+		attachments: parseOutboundAttachments(value.attachments),
+		includeAttachments: value.includeAttachments !== false,
+		includeQuotedBody: value.includeQuotedBody !== false,
 	};
 }
 

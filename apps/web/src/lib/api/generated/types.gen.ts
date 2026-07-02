@@ -99,6 +99,30 @@ export type ReplyRequest = {
     replyAll?: boolean;
 };
 
+export type ForwardRequest = {
+    mailboxId: string;
+    to: Array<EmailAddress>;
+    cc?: Array<EmailAddress>;
+    bcc?: Array<EmailAddress>;
+    /**
+     * Optional. When omitted, defaults to `Fwd: <parent subject>`. Does not prepend another `Fwd:` when the parent subject already starts with `Fwd:`.
+     *
+     */
+    subject?: string;
+    text?: string;
+    html?: string;
+    attachments?: Array<OutboundAttachmentInput>;
+    /**
+     * When true, copies attachments from the forwarded message.
+     */
+    includeAttachments?: boolean;
+    /**
+     * When true, appends a quoted copy of the parent message below the optional intro text. Set false when the client already included the quote in `text`/`html`.
+     *
+     */
+    includeQuotedBody?: boolean;
+};
+
 export type ThreadMessagePreview = {
     id?: string;
     subject?: string | null;
@@ -790,6 +814,33 @@ export type ReplyToMessageResponses = {
 };
 
 export type ReplyToMessageResponse = ReplyToMessageResponses[keyof ReplyToMessageResponses];
+
+export type ForwardToMessageData = {
+    body: ForwardRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/messages/{id}/forward';
+};
+
+export type ForwardToMessageErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ForwardToMessageError = ForwardToMessageErrors[keyof ForwardToMessageErrors];
+
+export type ForwardToMessageResponses = {
+    /**
+     * Forward sent
+     */
+    201: SendCommandResponse;
+};
+
+export type ForwardToMessageResponse = ForwardToMessageResponses[keyof ForwardToMessageResponses];
 
 export type GetMessagePreviewData = {
     body?: never;

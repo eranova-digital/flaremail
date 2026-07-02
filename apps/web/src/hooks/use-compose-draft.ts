@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { assertData } from "@/lib/api/errors";
 import {
 	createDraft,
+	forwardToMessage,
 	getMessage,
 	sendDraft,
 	updateDraft,
@@ -15,6 +16,7 @@ import {
 	composeAttachmentsToOutbound,
 	createStoredAttachment,
 } from "@/lib/compose-attachments";
+import { forwardSubject } from "@/lib/forward-quote";
 
 export type ComposeFields = {
 	to: string;
@@ -27,6 +29,20 @@ export type ComposeFields = {
 export type ComposeReplyContext = {
 	inReplyToMessageId: string;
 	threadId?: string;
+};
+
+export type ComposeForwardContext = {
+	messageId: string;
+};
+
+export type ForwardSource = {
+	messageId: string;
+	from?: string | null;
+	subject?: string | null;
+	preview?: string | null;
+	sentAt?: string | null;
+	receivedAt?: string | null;
+	attachments: ComposeAttachment[];
 };
 
 const AUTOSAVE_MS = 1500;
@@ -105,11 +121,14 @@ export function useComposeDraft(
 	mailboxId: string,
 	options?: {
 		reply?: ComposeReplyContext;
+		forward?: ComposeForwardContext;
 		existingDraftId?: string;
 	},
 ) {
 	const reply = options?.reply;
+	const forward = options?.forward;
 	const existingDraftId = options?.existingDraftId;
+	const isForwardMode = Boolean(forward);
 	const queryClient = useQueryClient();
 	const [draftId, setDraftId] = useState<string | null>(
 		existingDraftId ?? null,
@@ -122,8 +141,11 @@ export function useComposeDraft(
 		body: "",
 	});
 	const [attachments, setAttachments] = useState<ComposeAttachment[]>([]);
+	const [forwardSource, setForwardSource] = useState<ForwardSource | null>(
+		null,
+	);
 	const [initialized, setInitialized] = useState(
-		!reply && !existingDraftId,
+		!reply && !forward && !existingDraftId,
 	);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
@@ -176,6 +198,23 @@ export function useComposeDraft(
 					queryKey: ["thread-messages", mailboxId],
 				});
 			}
+		},
+	});
+
+	const forwardMutation = useMutation({
+		mutationFn: async (body: {
+			messageId: string;
+			payload: Parameters<typeof forwardToMessage>[0]["body"];
+		}) => {
+			const { data } = await forwardToMessage({
+				throwOnError: true,
+				path: { id: body.messageId },
+				body: body.payload,
+			});
+			return assertData(data, "forwardToMessage");
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["threads", mailboxId] });
 		},
 	});
 
@@ -271,6 +310,61 @@ export function useComposeDraft(
 		};
 	}, [reply, mailboxId, initialized, existingDraftId]);
 
+	useEffect(() => {
+		if (!forward || initialized || existingDraftId) {
+			return;
+		}
+
+		let cancelled = false;
+
+		void (async () => {
+			try {
+				const { data } = await getMessage({
+					throwOnError: true,
+					path: { id: forward.messageId },
+					query: { mailboxId },
+				});
+				const parent = assertData(data, "getMessage");
+				if (cancelled) {
+					return;
+				}
+
+				const forwardedAttachments = (parent.attachments ?? [])
+					.map((attachment) => createStoredAttachment(attachment))
+					.filter(
+						(attachment): attachment is ComposeAttachment =>
+							attachment !== null,
+					);
+
+				setFields({
+					to: "",
+					cc: "",
+					bcc: "",
+					subject: forwardSubject(parent.subject),
+					body: "",
+				});
+				setForwardSource({
+					messageId: forward.messageId,
+					from: parent.from,
+					subject: parent.subject,
+					preview: parent.preview,
+					sentAt: parent.sentAt,
+					receivedAt: parent.receivedAt,
+					attachments: forwardedAttachments,
+				});
+				setInitialized(true);
+			} catch {
+				if (!cancelled) {
+					setInitialized(true);
+				}
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [forward, mailboxId, initialized, existingDraftId]);
+
 	const refreshStoredAttachments = useCallback(
 		async (messageId: string) => {
 			const { data } = await getMessage({
@@ -292,6 +386,10 @@ export function useComposeDraft(
 	);
 
 	const persistDraft = useCallback(async () => {
+		if (isForwardMode) {
+			return;
+		}
+
 		const current = fieldsRef.current;
 		const currentAttachments = attachmentsRef.current;
 		if (!hasComposeContent(current, currentAttachments)) {
@@ -342,9 +440,13 @@ export function useComposeDraft(
 		} finally {
 			setIsSaving(false);
 		}
-	}, [createMutation, updateMutation, draftId, mailboxId, reply, refreshStoredAttachments]);
+	}, [createMutation, updateMutation, draftId, mailboxId, reply, refreshStoredAttachments, isForwardMode]);
 
 	const scheduleSave = useCallback(() => {
+		if (isForwardMode) {
+			return;
+		}
+
 		if (timerRef.current) {
 			clearTimeout(timerRef.current);
 		}
@@ -352,7 +454,7 @@ export function useComposeDraft(
 		timerRef.current = setTimeout(() => {
 			void persistDraft();
 		}, AUTOSAVE_MS);
-	}, [persistDraft]);
+	}, [persistDraft, isForwardMode]);
 
 	const updateFields = useCallback(
 		(patch: Partial<ComposeFields>) => {
@@ -387,6 +489,28 @@ export function useComposeDraft(
 			currentAttachments,
 		);
 
+		if (forward) {
+			const recipients = parseRecipients(current.to);
+			if (recipients.length === 0) {
+				throw new Error("Recipient is required");
+			}
+
+			return forwardMutation.mutateAsync({
+				messageId: forward.messageId,
+				payload: {
+					mailboxId,
+					to: recipients,
+					cc: parseRecipients(current.cc),
+					bcc: parseRecipients(current.bcc),
+					subject: current.subject,
+					text: current.body,
+					attachments: outboundAttachments,
+					includeAttachments: true,
+					includeQuotedBody: true,
+				},
+			});
+		}
+
 		let id = draftId;
 		if (!id) {
 			const created = await createMutation.mutateAsync(
@@ -409,7 +533,16 @@ export function useComposeDraft(
 
 		attachmentsDirtyRef.current = false;
 		return sendMutation.mutateAsync(id);
-	}, [createMutation, updateMutation, sendMutation, draftId, mailboxId, reply]);
+	}, [
+		createMutation,
+		updateMutation,
+		sendMutation,
+		forwardMutation,
+		draftId,
+		mailboxId,
+		reply,
+		forward,
+	]);
 
 	useEffect(() => {
 		return () => {
@@ -422,13 +555,14 @@ export function useComposeDraft(
 	return {
 		fields,
 		attachments,
+		forwardSource,
 		updateFields,
 		updateAttachments,
 		send,
 		isSaving,
 		saveError,
-		isSending: sendMutation.isPending,
-		sendError: sendMutation.error,
+		isSending: sendMutation.isPending || forwardMutation.isPending,
+		sendError: sendMutation.error ?? forwardMutation.error,
 		initialized,
 		draftId,
 	};

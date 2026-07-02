@@ -1,10 +1,16 @@
 import { and, eq } from "drizzle-orm";
+import PostalMime from "postal-mime";
 
 import type { Database } from "../../db/client";
 import { attachments, messages, threadMailboxes, threads } from "../../db/schema";
 import { assertCanSendFrom } from "../authorize-mailbox";
 import { findMessageRowByRfcMessageId } from "../find-message";
-import { findThreadMailbox, linkMessageMailboxes, refreshThreadMailboxStats } from "../message-mailboxes";
+import {
+	assertMessageVisibleInMailbox,
+	findThreadMailbox,
+	linkMessageMailboxes,
+	refreshThreadMailboxStats,
+} from "../message-mailboxes";
 import { loadMailboxForSend } from "../mailbox-queries";
 import { deleteR2Objects } from "../r2-cleanup";
 import {
@@ -19,6 +25,13 @@ import {
 } from "../touch-thread";
 import { buildReplyThreading } from "./build-reply-threading";
 import {
+	buildForwardBodyHtml,
+	buildForwardBodyText,
+	buildForwardQuotedHtml,
+	buildForwardQuotedText,
+	forwardSubject,
+} from "./build-forward-content";
+import {
 	buildEmailSendPayload,
 	buildOutboundMimeContent,
 } from "./build-outbound-mime";
@@ -29,12 +42,13 @@ import {
 	findThreadById,
 } from "./message-queries";
 import { buildPreview } from "./message-utils";
-import { outboundAttachmentsToStoredInputs, loadDraftOutboundPayload, loadStoredAttachmentInputs } from "./outbound-attachments";
+import { outboundAttachmentsToStoredInputs, loadDraftOutboundPayload, loadStoredAttachmentInputs, storedInputsToOutboundAttachments, type OutboundAttachmentInput } from "./outbound-attachments";
 import {
 	formatRecipients,
 	replySubject,
 	type CreateDraftBody,
 	type OutboundMessageBody,
+	type ForwardBody,
 	type ReplyBody,
 } from "./outbound-payload";
 import { resolveReplyRecipients } from "./resolve-reply-recipients";
@@ -644,5 +658,107 @@ export async function replyToMessage(
 			isReply: true,
 		},
 		mailboxView?.folder === "drafts" ? "sent" : (mailboxView?.folder ?? "inbox"),
+	);
+}
+
+async function loadParentContentForForward(
+	ctx: OutboundContext,
+	parent: typeof messages.$inferSelect,
+): Promise<{ text: string | null; html: string | null }> {
+	const object = await ctx.bucket.get(parent.rawEmlKey);
+	if (!object) {
+		return {
+			text: parent.textBody,
+			html: null,
+		};
+	}
+
+	const parsed = await PostalMime.parse(await object.arrayBuffer());
+	return {
+		text: parsed.text ?? parent.textBody,
+		html: parsed.html ?? null,
+	};
+}
+
+function mergeForwardAttachments(
+	userAttachments: OutboundAttachmentInput[] | undefined,
+	parentAttachments: OutboundAttachmentInput[],
+): OutboundAttachmentInput[] | undefined {
+	const merged = [...(userAttachments ?? []), ...parentAttachments];
+	return merged.length > 0 ? merged : undefined;
+}
+
+export async function forwardMessage(
+	ctx: OutboundContext,
+	messageId: string,
+	body: ForwardBody,
+) {
+	await assertMessageVisibleInMailbox(ctx.db, messageId, body.mailboxId);
+
+	const parent = await findMessageById(ctx.db, messageId);
+	if (!parent) {
+		throw new Error("Message not found");
+	}
+
+	const mailbox = await loadMailboxForSend(ctx.db, body.mailboxId);
+	if (!mailbox) {
+		throw new Error("Mailbox not found or cannot send");
+	}
+
+	const parentContent = await loadParentContentForForward(ctx, parent);
+	const quotedText = buildForwardQuotedText({
+		from: parent.from,
+		subject: parent.subject,
+		text: parentContent.text,
+		sentAt: parent.sentAt,
+		receivedAt: parent.receivedAt,
+	});
+	const quotedHtml = buildForwardQuotedHtml({
+		from: parent.from,
+		subject: parent.subject,
+		html: parentContent.html,
+		text: parentContent.text,
+		sentAt: parent.sentAt,
+		receivedAt: parent.receivedAt,
+	});
+
+	const text = body.includeQuotedBody
+		? buildForwardBodyText(body.text, quotedText)
+		: body.text;
+	const html = body.includeQuotedBody
+		? buildForwardBodyHtml(body.html, quotedHtml)
+		: body.html;
+
+	const parentAttachments = body.includeAttachments
+		? storedInputsToOutboundAttachments(
+				await loadStoredAttachmentInputs(ctx.db, ctx.bucket, messageId),
+			)
+		: [];
+
+	const payload: OutboundMessageBody = {
+		to: body.to,
+		cc: body.cc,
+		bcc: body.bcc,
+		subject: body.subject ?? forwardSubject(parent.subject),
+		text,
+		html,
+		attachments: mergeForwardAttachments(body.attachments, parentAttachments),
+	};
+
+	if (!payload.text && !payload.html) {
+		throw new Error("At least one of 'text' or 'html' is required");
+	}
+
+	return sendAndPersistNewMessage(
+		ctx,
+		body.mailboxId,
+		payload,
+		{
+			threadId: crypto.randomUUID(),
+			inReplyTo: null,
+			references: null,
+			isReply: false,
+		},
+		"sent",
 	);
 }

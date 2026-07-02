@@ -31,6 +31,29 @@ export function outboundAttachmentsToStoredInputs(
 	}));
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+	const bytes = new Uint8Array(buffer);
+	let binary = "";
+	for (const byte of bytes) {
+		binary += String.fromCharCode(byte);
+	}
+
+	return btoa(binary);
+}
+
+export function storedInputsToOutboundAttachments(
+	attachmentInputs: StoredAttachmentInput[],
+): OutboundAttachmentInput[] {
+	return attachmentInputs.map((attachment, index) => ({
+		filename: attachment.filename?.trim() || `attachment-${index + 1}`,
+		mimeType: attachment.mimeType || "application/octet-stream",
+		content: arrayBufferToBase64(attachment.content),
+		disposition:
+			attachment.disposition === "inline" ? "inline" : "attachment",
+		contentId: attachment.contentId ?? undefined,
+	}));
+}
+
 export async function loadStoredAttachmentInputs(
 	db: Database,
 	bucket: R2Bucket,
