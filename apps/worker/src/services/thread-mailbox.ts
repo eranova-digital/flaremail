@@ -1,5 +1,5 @@
 export {
 	assertMessageVisibleInMailbox,
+	assertThreadInMailbox,
 	findThreadMailbox,
-} from "../lib/message-mailboxes";
-export { assertThreadInMailbox } from "./thread-mailbox-assert";
+} from "./thread-mailbox-access";

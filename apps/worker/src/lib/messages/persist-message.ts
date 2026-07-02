@@ -6,8 +6,8 @@ import { buildStrippedEml } from "../build-stripped-eml";
 import {
 	linkMessageMailboxes,
 	resolveMessageMailboxIds,
-	syncThreadMailboxesAfterMessage,
 } from "../message-mailboxes";
+import { onMessagePersisted } from "../thread-mailbox-sync";
 import { deleteR2Objects } from "../r2-cleanup";
 import { storeAttachments } from "../store-attachments";
 import { storeRawEml } from "../store-raw-eml";
@@ -77,7 +77,7 @@ export async function persistMessage(
 
 			const mailboxIds = await resolveMessageMailboxIds(input.db, input.row);
 			await linkMessageMailboxes(input.db, inserted.id, mailboxIds);
-			await syncThreadMailboxesAfterMessage(
+			await onMessagePersisted(
 				input.db,
 				input.threadId,
 				inserted.id,

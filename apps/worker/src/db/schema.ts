@@ -143,7 +143,7 @@ export const labels = pgTable(
 		id: uuid("id").primaryKey(),
 		mailboxId: uuid("mailbox_id")
 			.notNull()
-			.references(() => mailboxes.id),
+			.references(() => mailboxes.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		color: text("color"),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -194,6 +194,7 @@ export const messages = pgTable(
 			.references(() => mailboxes.id),
 		matchedMailboxId: uuid("matched_mailbox_id").references(
 			() => mailboxes.id,
+			{ onDelete: "set null" },
 		),
 		matchedVia: matchedViaEnum("matched_via").notNull(),
 		cc: text("cc"),
@@ -244,7 +245,7 @@ export const attachments = pgTable(
 		id: uuid("id").primaryKey(),
 		messageId: uuid("message_id")
 			.notNull()
-			.references(() => messages.id),
+			.references(() => messages.id, { onDelete: "cascade" }),
 		filename: text("filename"),
 		mimeType: text("mime_type").notNull(),
 		sizeBytes: integer("size_bytes").notNull(),

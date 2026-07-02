@@ -1,0 +1,308 @@
+import { and, eq } from "drizzle-orm";
+import PostalMime from "postal-mime";
+
+import { messages, threadMailboxes } from "../../db/schema";
+import { assertCanSendFrom } from "../authorize-mailbox";
+import {
+	assertMessageVisibleInMailbox,
+	findThreadMailbox,
+} from "../message-mailboxes";
+import { loadMailboxForSend } from "../mailbox-queries";
+import { finalizeThreadOnOutboundSend } from "../touch-thread-outbound";
+import { buildReplyThreading } from "./build-reply-threading";
+import {
+	buildForwardBodyHtml,
+	buildForwardBodyText,
+	buildForwardQuotedHtml,
+	buildForwardQuotedText,
+	forwardSubject,
+} from "./build-forward-content";
+import {
+	buildEmailSendPayload,
+	buildOutboundMimeContent,
+} from "./build-outbound-mime";
+import { canonicalizeSentMessageId } from "./message-id";
+import { findMessageById } from "./message-queries";
+import { completeDraftSend, draftSendPromoteFromDrafts } from "./complete-draft-send";
+import type { OutboundContext } from "./outbound-context";
+import {
+	loadDraftOutboundPayload,
+	loadStoredAttachmentInputs,
+	storedInputsToOutboundAttachments,
+	type OutboundAttachmentInput,
+} from "./outbound-attachments";
+import type { ForwardBody, OutboundMessageBody, ReplyBody } from "./outbound-payload";
+import { sendAndPersistNewMessage } from "./outbound-persist";
+import { resolveReplyPayload } from "./outbound-threading";
+import { resolveReplyRecipients } from "./resolve-reply-recipients";
+import { sendEmail } from "./send-email";
+
+export async function sendDraftMessage(
+	ctx: OutboundContext,
+	messageId: string,
+) {
+	const [draft] = await ctx.db
+		.select()
+		.from(messages)
+		.where(
+			and(
+				eq(messages.id, messageId),
+				eq(messages.direction, "outbound"),
+				eq(messages.sendStatus, "draft"),
+			),
+		)
+		.limit(1);
+
+	if (!draft) {
+		throw new Error("Draft not found");
+	}
+
+	const mailbox = await loadMailboxForSend(ctx.db, draft.actualMailboxId);
+	if (!mailbox) {
+		throw new Error("Mailbox not found or cannot send");
+	}
+
+	await assertCanSendFrom(ctx.db, mailbox.id);
+
+	const payload = await loadDraftOutboundPayload(ctx.bucket, draft);
+	const attachmentInputs = await loadStoredAttachmentInputs(
+		ctx.db,
+		ctx.bucket,
+		messageId,
+	);
+	const now = new Date();
+	const sendPayload = buildEmailSendPayload({
+		from: mailbox.address,
+		payload,
+		inReplyTo: draft.inReplyTo,
+		references: draft.references,
+		attachmentInputs,
+	});
+
+	const result = await sendEmail(ctx.email, sendPayload);
+	const rfcMessageId = canonicalizeSentMessageId(result.messageId);
+
+	const sent = await completeDraftSend({
+		db: ctx.db,
+		bucket: ctx.bucket,
+		draft,
+		rfcMessageId,
+		mimeContent: buildOutboundMimeContent({
+			from: mailbox.address,
+			payload,
+			rfcMessageId,
+			inReplyTo: draft.inReplyTo,
+			references: draft.references,
+		}),
+		attachmentInputs,
+		sentAt: now,
+	});
+
+	await finalizeThreadOnOutboundSend(
+		ctx.db,
+		sent.threadId,
+		{
+			subject: draft.subject,
+			preview: draft.preview,
+			lastMessageAt: now,
+			actualMailboxId: mailbox.id,
+			folder: sent.id !== draft.id ? "sent" : undefined,
+			promoteFromDrafts: draftSendPromoteFromDrafts(draft, sent),
+			markUnread: false,
+		},
+		sent,
+	);
+
+	return sent;
+}
+
+export async function directSend(
+	ctx: OutboundContext,
+	mailboxId: string,
+	body: OutboundMessageBody,
+) {
+	return sendAndPersistNewMessage(
+		ctx,
+		mailboxId,
+		body,
+		{
+			threadId: crypto.randomUUID(),
+			inReplyTo: null,
+			references: null,
+			isReply: false,
+		},
+		"sent",
+	);
+}
+
+export async function replyToMessage(
+	ctx: OutboundContext,
+	messageId: string,
+	body: ReplyBody,
+) {
+	const parent = await findMessageById(ctx.db, messageId);
+	if (!parent) {
+		throw new Error("Message not found");
+	}
+
+	const mailbox = await loadMailboxForSend(ctx.db, body.mailboxId);
+	if (!mailbox) {
+		throw new Error("Mailbox not found or cannot send");
+	}
+
+	const [threadLink] = await ctx.db
+		.select({ threadId: threadMailboxes.threadId })
+		.from(threadMailboxes)
+		.where(
+			and(
+				eq(threadMailboxes.threadId, parent.threadId),
+				eq(threadMailboxes.mailboxId, body.mailboxId),
+			),
+		)
+		.limit(1);
+
+	if (!threadLink) {
+		throw new Error("Thread not found");
+	}
+
+	const replyHeaders = buildReplyThreading({
+		messageId: parent.messageId,
+		references: parent.references,
+	});
+
+	const resolvedRecipients = await resolveReplyRecipients(
+		ctx.bucket,
+		parent,
+		mailbox.address,
+		body.replyAll === true,
+		{
+			to: body.to,
+			cc: body.cc,
+			bcc: body.bcc,
+		},
+	);
+
+	const mailboxView = await findThreadMailbox(
+		ctx.db,
+		parent.threadId,
+		body.mailboxId,
+	);
+	const payload = resolveReplyPayload(body, parent, resolvedRecipients);
+
+	return sendAndPersistNewMessage(
+		ctx,
+		body.mailboxId,
+		payload,
+		{
+			threadId: parent.threadId,
+			inReplyTo: replyHeaders.inReplyTo,
+			references: replyHeaders.references,
+			isReply: true,
+		},
+		mailboxView?.folder === "drafts"
+			? "sent"
+			: (mailboxView?.folder ?? "inbox"),
+	);
+}
+
+async function loadParentContentForForward(
+	ctx: OutboundContext,
+	parent: typeof messages.$inferSelect,
+): Promise<{ text: string | null; html: string | null }> {
+	const object = await ctx.bucket.get(parent.rawEmlKey);
+	if (!object) {
+		return {
+			text: parent.textBody,
+			html: null,
+		};
+	}
+
+	const parsed = await PostalMime.parse(await object.arrayBuffer());
+	return {
+		text: parsed.text ?? parent.textBody,
+		html: parsed.html ?? null,
+	};
+}
+
+function mergeForwardAttachments(
+	userAttachments: OutboundAttachmentInput[] | undefined,
+	parentAttachments: OutboundAttachmentInput[],
+): OutboundAttachmentInput[] | undefined {
+	const merged = [...(userAttachments ?? []), ...parentAttachments];
+	return merged.length > 0 ? merged : undefined;
+}
+
+export async function forwardMessage(
+	ctx: OutboundContext,
+	messageId: string,
+	body: ForwardBody,
+) {
+	await assertMessageVisibleInMailbox(ctx.db, messageId, body.mailboxId);
+
+	const parent = await findMessageById(ctx.db, messageId);
+	if (!parent) {
+		throw new Error("Message not found");
+	}
+
+	const mailbox = await loadMailboxForSend(ctx.db, body.mailboxId);
+	if (!mailbox) {
+		throw new Error("Mailbox not found or cannot send");
+	}
+
+	const parentContent = await loadParentContentForForward(ctx, parent);
+	const quotedText = buildForwardQuotedText({
+		from: parent.from,
+		subject: parent.subject,
+		text: parentContent.text,
+		sentAt: parent.sentAt,
+		receivedAt: parent.receivedAt,
+	});
+	const quotedHtml = buildForwardQuotedHtml({
+		from: parent.from,
+		subject: parent.subject,
+		html: parentContent.html,
+		text: parentContent.text,
+		sentAt: parent.sentAt,
+		receivedAt: parent.receivedAt,
+	});
+
+	const text = body.includeQuotedBody
+		? buildForwardBodyText(body.text, quotedText)
+		: body.text;
+	const html = body.includeQuotedBody
+		? buildForwardBodyHtml(body.html, quotedHtml)
+		: body.html;
+
+	const parentAttachments = body.includeAttachments
+		? storedInputsToOutboundAttachments(
+				await loadStoredAttachmentInputs(ctx.db, ctx.bucket, messageId),
+			)
+		: [];
+
+	const payload: OutboundMessageBody = {
+		to: body.to,
+		cc: body.cc,
+		bcc: body.bcc,
+		subject: body.subject ?? forwardSubject(parent.subject),
+		text,
+		html,
+		attachments: mergeForwardAttachments(body.attachments, parentAttachments),
+	};
+
+	if (!payload.text && !payload.html) {
+		throw new Error("At least one of 'text' or 'html' is required");
+	}
+
+	return sendAndPersistNewMessage(
+		ctx,
+		body.mailboxId,
+		payload,
+		{
+			threadId: crypto.randomUUID(),
+			inReplyTo: null,
+			references: null,
+			isReply: false,
+		},
+		"sent",
+	);
+}

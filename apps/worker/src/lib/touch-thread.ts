@@ -2,14 +2,9 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import { messages, threads } from "../db/schema";
+import type { ThreadFolder } from "./mailbox-types";
 
-export type ThreadFolder =
-	| "inbox"
-	| "spam"
-	| "trash"
-	| "archived"
-	| "drafts"
-	| "sent";
+export type { ThreadFolder } from "./mailbox-types";
 
 export type ThreadTouchData = {
 	subject: string | null;

@@ -15,12 +15,12 @@ export async function purgeDraftMessage(
 		.from(attachments)
 		.where(eq(attachments.messageId, draft.id));
 
+	const threadId = draft.threadId;
+	await db.delete(attachments).where(eq(attachments.messageId, draft.id));
+	await db.delete(messages).where(eq(messages.id, draft.id));
+	await deleteThreadIfEmpty(db, threadId);
 	await deleteR2Objects(bucket, [
 		draft.rawEmlKey,
 		...storedAttachments.map((attachment) => attachment.storageKey),
 	]);
-
-	const threadId = draft.threadId;
-	await db.delete(messages).where(eq(messages.id, draft.id));
-	await deleteThreadIfEmpty(db, threadId);
 }

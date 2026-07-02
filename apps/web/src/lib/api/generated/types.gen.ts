@@ -140,6 +140,25 @@ export type ThreadMessagePreview = {
      * Parent message id within the thread, when this message is a reply.
      */
     inReplyTo?: string | null;
+    /**
+     * Present when includeBody=true on list thread messages.
+     */
+    text?: string | null;
+    /**
+     * Present when includeBody=true on list thread messages.
+     */
+    html?: string | null;
+    /**
+     * Present when includeBody=true on list thread messages.
+     */
+    attachments?: Array<{
+        id?: string;
+        filename?: string | null;
+        mimeType?: string;
+        sizeBytes?: number;
+        disposition?: string | null;
+        contentId?: string | null;
+    }>;
 };
 
 export type ThreadMessagesResponse = {
@@ -997,6 +1016,10 @@ export type ListThreadMessagesData = {
     };
     query: {
         mailboxId: string;
+        /**
+         * When true, includes full message text, html, and attachments for each message.
+         */
+        includeBody?: boolean;
     };
     url: '/threads/{id}/messages';
 };

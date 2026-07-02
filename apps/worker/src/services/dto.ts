@@ -104,6 +104,30 @@ export function toThreadMessagePreview(
 	};
 }
 
+export function toThreadMessageWithBody(
+	message: Message,
+	inReplyTo: string | null,
+	body: {
+		text: string | null;
+		html: string | null;
+		attachments: Array<{
+			id: string;
+			filename: string | null;
+			mimeType: string;
+			sizeBytes: number;
+			disposition: string | null;
+			contentId: string | null;
+		}>;
+	},
+) {
+	return {
+		...toThreadMessagePreview(message, inReplyTo),
+		text: body.text,
+		html: body.html,
+		attachments: body.attachments,
+	};
+}
+
 export function toSendResponse(message: Message) {
 	return {
 		id: message.id,

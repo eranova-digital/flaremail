@@ -947,6 +947,16 @@
         },
         {
           "$ref": "#/components/parameters/MailboxIdQuery"
+        },
+        {
+          "name": "includeBody",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false
+          },
+          "description": "When true, includes full message text, html, and attachments for each message."
         }
       ],
       "get": {
@@ -1621,6 +1631,57 @@
             ],
             "format": "uuid",
             "description": "Parent message id within the thread, when this message is a reply."
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Present when includeBody=true on list thread messages."
+          },
+          "html": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Present when includeBody=true on list thread messages."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Present when includeBody=true on list thread messages.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "filename": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "mimeType": {
+                  "type": "string"
+                },
+                "sizeBytes": {
+                  "type": "integer"
+                },
+                "disposition": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "contentId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
           }
         }
       },
