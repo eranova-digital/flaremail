@@ -21,16 +21,61 @@ export type Domain = {
     isActive?: boolean;
     catchAllEnabled?: boolean;
     catchAllMailboxId?: string | null;
+    readiness?: DomainReadinessSummary;
+};
+
+export type DomainReadinessSummary = {
+    badge?: 'checking' | 'fail' | 'healthy' | 'unhealthy';
+    latestRunId?: string | null;
+    latestRunStartedAt?: string | null;
+    latestRunFinishedAt?: string | null;
+};
+
+export type DomainValidationRunSummary = {
+    id?: string;
+    status?: 'checking' | 'completed';
+    badge?: 'checking' | 'fail' | 'healthy' | 'unhealthy';
+    startedAt?: string;
+    finishedAt?: string | null;
+};
+
+export type DomainValidationCheck = {
+    checkKey?: 'mx' | 'dmarc_rua' | 'loop_send' | 'loop_receive';
+    tier?: 'critical' | 'advisory';
+    status?: 'pending' | 'passed' | 'failed' | 'skipped';
+    code?: string | null;
+    message?: string | null;
+    checkedAt?: string | null;
+};
+
+export type DomainValidationLogEvent = {
+    id?: string;
+    level?: 'info' | 'warning' | 'error';
+    stage?: 'dns' | 'send' | 'receive' | 'summary';
+    code?: string | null;
+    message?: string;
+    createdAt?: string;
+};
+
+export type DomainValidationRunDetail = DomainValidationRunSummary & {
+    domainId?: string;
+    receiveDeadlineAt?: string | null;
+    checks?: Array<DomainValidationCheck>;
+    logs?: Array<DomainValidationLogEvent>;
 };
 
 export type Mailbox = {
     id?: string;
     domainId?: string;
     address?: string;
-    type?: 'primary' | 'secondary' | 'shared' | 'alias';
+    type?: 'primary' | 'secondary' | 'shared' | 'alias' | 'system';
     aliasTargetId?: string | null;
     aliasTargetAddress?: string | null;
     isActive?: boolean;
+    /**
+     * True for platform-provisioned addresses that cannot be edited or deleted.
+     */
+    isSystemManaged?: boolean;
 };
 
 export type CreateMailboxRequest = {
@@ -394,6 +439,90 @@ export type UpdateDomainResponses = {
 };
 
 export type UpdateDomainResponse = UpdateDomainResponses[keyof UpdateDomainResponses];
+
+export type ListDomainValidationRunsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/domains/{id}/validation-runs';
+};
+
+export type ListDomainValidationRunsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListDomainValidationRunsError = ListDomainValidationRunsErrors[keyof ListDomainValidationRunsErrors];
+
+export type ListDomainValidationRunsResponses = {
+    /**
+     * Validation run history
+     */
+    200: {
+        items?: Array<DomainValidationRunSummary>;
+    };
+};
+
+export type ListDomainValidationRunsResponse = ListDomainValidationRunsResponses[keyof ListDomainValidationRunsResponses];
+
+export type CreateDomainValidationRunData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/domains/{id}/validation-runs';
+};
+
+export type CreateDomainValidationRunErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CreateDomainValidationRunError = CreateDomainValidationRunErrors[keyof CreateDomainValidationRunErrors];
+
+export type CreateDomainValidationRunResponses = {
+    /**
+     * Validation run
+     */
+    200: DomainValidationRunDetail;
+};
+
+export type CreateDomainValidationRunResponse = CreateDomainValidationRunResponses[keyof CreateDomainValidationRunResponses];
+
+export type GetDomainValidationRunData = {
+    body?: never;
+    path: {
+        id: string;
+        runId: string;
+    };
+    query?: never;
+    url: '/domains/{id}/validation-runs/{runId}';
+};
+
+export type GetDomainValidationRunErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetDomainValidationRunError = GetDomainValidationRunErrors[keyof GetDomainValidationRunErrors];
+
+export type GetDomainValidationRunResponses = {
+    /**
+     * Validation run detail
+     */
+    200: DomainValidationRunDetail;
+};
+
+export type GetDomainValidationRunResponse = GetDomainValidationRunResponses[keyof GetDomainValidationRunResponses];
 
 export type ListMailboxesData = {
     body?: never;

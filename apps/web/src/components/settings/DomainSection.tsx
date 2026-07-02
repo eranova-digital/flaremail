@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Activity, Trash2 } from "lucide-react";
 
+import { ReadinessBadge } from "@/components/settings/domain-validation/ReadinessBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,20 +143,32 @@ function DomainRow({ domain }: { domain: Domain }) {
 					<p className="font-medium">{domain.domain}</p>
 					<div className="flex flex-wrap gap-1.5">
 						<StatusBadge active={domain.isActive ?? false} />
+						<ReadinessBadge readiness={domain.readiness} />
 						{domain.catchAllEnabled ? (
 							<Badge variant="secondary">Catch-all</Badge>
 						) : null}
 					</div>
 				</div>
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={handleDelete}
-					disabled={isPending}
-					aria-label={`Delete ${domain.domain}`}
-				>
-					<Trash2 className="text-destructive size-4" />
-				</Button>
+				<div className="flex items-center gap-1">
+					<Button variant="ghost" size="icon" asChild>
+						<Link
+							to={`/settings/domains/${domain.id}/validation`}
+							aria-label={`View validation for ${domain.domain}`}
+							title="View domain validation"
+						>
+							<Activity className="size-4" />
+						</Link>
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={handleDelete}
+						disabled={isPending}
+						aria-label={`Delete ${domain.domain}`}
+					>
+						<Trash2 className="text-destructive size-4" />
+					</Button>
+				</div>
 			</div>
 
 			<div className="flex flex-wrap items-center gap-4 text-sm">

@@ -18,6 +18,13 @@ export function useDomains() {
 			const { data } = await listDomains({ throwOnError: true });
 			return assertData(data, "listDomains").items ?? [];
 		},
+		refetchInterval: (query) => {
+			const domains = query.state.data;
+			if (!domains?.some((domain) => domain.readiness?.badge === "checking")) {
+				return false;
+			}
+			return 15_000;
+		},
 	});
 }
 

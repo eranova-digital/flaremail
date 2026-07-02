@@ -17,6 +17,7 @@ export const mailboxTypeEnum = pgEnum("mailbox_type", [
 	"secondary",
 	"shared",
 	"alias",
+	"system",
 ]);
 export const matchedViaEnum = pgEnum("matched_via", [
 	"exact",
@@ -41,6 +42,44 @@ export const threadFolderEnum = pgEnum("thread_folder", [
 	"archived",
 	"drafts",
 	"sent",
+]);
+
+export const domainReadinessBadgeEnum = pgEnum("domain_readiness_badge", [
+	"checking",
+	"fail",
+	"healthy",
+	"unhealthy",
+]);
+export const domainValidationRunStatusEnum = pgEnum(
+	"domain_validation_run_status",
+	["checking", "completed"],
+);
+export const validationCheckKeyEnum = pgEnum("validation_check_key", [
+	"mx",
+	"dmarc_rua",
+	"loop_send",
+	"loop_receive",
+]);
+export const validationCheckStatusEnum = pgEnum("validation_check_status", [
+	"pending",
+	"passed",
+	"failed",
+	"skipped",
+]);
+export const validationCheckTierEnum = pgEnum("validation_check_tier", [
+	"critical",
+	"advisory",
+]);
+export const validationLogLevelEnum = pgEnum("validation_log_level", [
+	"info",
+	"warning",
+	"error",
+]);
+export const validationLogStageEnum = pgEnum("validation_log_stage", [
+	"dns",
+	"send",
+	"receive",
+	"summary",
 ]);
 
 export const domains = pgTable("domains", {
@@ -256,6 +295,86 @@ export const attachments = pgTable(
 	(table) => [index("attachments_message_id_idx").on(table.messageId)],
 );
 
+export const domainValidationRuns = pgTable(
+	"domain_validation_runs",
+	{
+		id: uuid("id").primaryKey(),
+		domainId: uuid("domain_id")
+			.notNull()
+			.references(() => domains.id, { onDelete: "cascade" }),
+		status: domainValidationRunStatusEnum("status").notNull().default("checking"),
+		badge: domainReadinessBadgeEnum("badge").notNull().default("checking"),
+		token: text("token").notNull().unique(),
+		receiveDeadlineAt: timestamp("receive_deadline_at", { withTimezone: true }),
+		startedAt: timestamp("started_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		finishedAt: timestamp("finished_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("domain_validation_runs_domain_id_started_at_idx").on(
+			table.domainId,
+			table.startedAt,
+		),
+		index("domain_validation_runs_status_receive_deadline_at_idx").on(
+			table.status,
+			table.receiveDeadlineAt,
+		),
+	],
+);
+
+export const domainValidationChecks = pgTable(
+	"domain_validation_checks",
+	{
+		id: uuid("id").primaryKey(),
+		runId: uuid("run_id")
+			.notNull()
+			.references(() => domainValidationRuns.id, { onDelete: "cascade" }),
+		checkKey: validationCheckKeyEnum("check_key").notNull(),
+		tier: validationCheckTierEnum("tier").notNull(),
+		status: validationCheckStatusEnum("status").notNull().default("pending"),
+		code: text("code"),
+		message: text("message"),
+		checkedAt: timestamp("checked_at", { withTimezone: true }),
+	},
+	(table) => [
+		uniqueIndex("domain_validation_checks_run_id_check_key_idx").on(
+			table.runId,
+			table.checkKey,
+		),
+		index("domain_validation_checks_run_id_idx").on(table.runId),
+	],
+);
+
+export const domainValidationLogEvents = pgTable(
+	"domain_validation_log_events",
+	{
+		id: uuid("id").primaryKey(),
+		runId: uuid("run_id")
+			.notNull()
+			.references(() => domainValidationRuns.id, { onDelete: "cascade" }),
+		level: validationLogLevelEnum("level").notNull(),
+		stage: validationLogStageEnum("stage").notNull(),
+		code: text("code"),
+		message: text("message").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("domain_validation_log_events_run_id_created_at_idx").on(
+			table.runId,
+			table.createdAt,
+		),
+	],
+);
+
 export type Domain = typeof domains.$inferSelect;
 export type NewDomain = typeof domains.$inferInsert;
 export type Mailbox = typeof mailboxes.$inferSelect;
@@ -270,3 +389,8 @@ export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
 export type Attachment = typeof attachments.$inferSelect;
 export type NewAttachment = typeof attachments.$inferInsert;
+export type DomainValidationRun = typeof domainValidationRuns.$inferSelect;
+export type NewDomainValidationRun = typeof domainValidationRuns.$inferInsert;
+export type DomainValidationCheck = typeof domainValidationChecks.$inferSelect;
+export type DomainValidationLogEvent =
+	typeof domainValidationLogEvents.$inferSelect;

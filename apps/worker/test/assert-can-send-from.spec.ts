@@ -34,4 +34,20 @@ describe("assertCanSendFrom", () => {
 			assertCanSendFrom(db as never, "mailbox-id"),
 		).resolves.toBeUndefined();
 	});
+
+	it("allows system mailboxes", async () => {
+		const db = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						limit: async () => [{ type: "system", isActive: true }],
+					}),
+				}),
+			}),
+		};
+
+		await expect(
+			assertCanSendFrom(db as never, "mailbox-id"),
+		).resolves.toBeUndefined();
+	});
 });

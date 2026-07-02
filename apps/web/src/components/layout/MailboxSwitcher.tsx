@@ -1,6 +1,7 @@
-import { ChevronDown, Mail } from "lucide-react";
+import { ChevronDown, Mail, ShieldCheck } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -16,35 +17,39 @@ import { useDomains } from "@/hooks/use-domains";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { setLastMailboxId } from "@/lib/mailbox-preference";
 import { isThreadFolder } from "@/lib/folders";
+import { cn } from "@/lib/utils";
 import type { Mailbox, ThreadFolder } from "@/lib/api/client";
 import {
 	getSelectableMailboxes,
 	resolveSelectableMailbox,
 } from "@/lib/selectable-mailbox";
+import { groupMailboxesByDomain } from "@/lib/sort-mailboxes";
 
-function groupMailboxesByDomain(
-	mailboxes: Mailbox[],
-	domainNamesById: Map<string, string>,
-) {
-	const groups = new Map<string, Mailbox[]>();
+function isSystemMailbox(mailbox: Mailbox): boolean {
+	return mailbox.isSystemManaged ?? mailbox.type === "system";
+}
 
-	for (const mailbox of mailboxes) {
-		const domainName =
-			(mailbox.domainId && domainNamesById.get(mailbox.domainId)) ||
-			"Unknown domain";
-		const items = groups.get(domainName) ?? [];
-		items.push(mailbox);
-		groups.set(domainName, items);
-	}
+function MailboxOptionLabel({ mailbox }: { mailbox: Mailbox }) {
+	const isSystem = isSystemMailbox(mailbox);
 
-	return [...groups.entries()]
-		.sort(([left], [right]) => left.localeCompare(right))
-		.map(([domainName, items]) => ({
-			domainName,
-			mailboxes: items.sort((left, right) =>
-				(left.address ?? "").localeCompare(right.address ?? ""),
-			),
-		}));
+	return (
+		<span
+			className={cn(
+				"flex min-w-0 flex-1 items-center gap-2",
+				isSystem && "text-muted-foreground",
+			)}
+		>
+			<span className="truncate">{mailbox.address}</span>
+			{isSystem ? (
+				<Badge
+					variant="secondary"
+					className="ml-auto shrink-0 px-1.5 py-0 text-[10px] font-medium"
+				>
+					System
+				</Badge>
+			) : null}
+		</span>
+	);
 }
 
 export function MailboxSwitcher() {
@@ -97,6 +102,8 @@ export function MailboxSwitcher() {
 		navigate(`/m/${nextMailboxId}/${currentFolder}`);
 	};
 
+	const activeIsSystem = isSystemMailbox(active);
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -105,7 +112,11 @@ export function MailboxSwitcher() {
 					className="w-full justify-between gap-2 font-normal"
 				>
 					<span className="flex min-w-0 items-center gap-2">
-						<Mail className="size-4 shrink-0" />
+						{activeIsSystem ? (
+							<ShieldCheck className="size-4 shrink-0" />
+						) : (
+							<Mail className="size-4 shrink-0" />
+						)}
 						<span className="truncate">{active.address}</span>
 					</span>
 					<ChevronDown className="size-4 shrink-0 opacity-50" />
@@ -124,7 +135,7 @@ export function MailboxSwitcher() {
 									key={mailbox.id}
 									onClick={() => mailbox.id && switchMailbox(mailbox.id)}
 								>
-									{mailbox.address}
+									<MailboxOptionLabel mailbox={mailbox} />
 								</DropdownMenuItem>
 							))}
 						</DropdownMenuGroup>
@@ -135,7 +146,7 @@ export function MailboxSwitcher() {
 							key={mailbox.id}
 							onClick={() => mailbox.id && switchMailbox(mailbox.id)}
 						>
-							{mailbox.address}
+							<MailboxOptionLabel mailbox={mailbox} />
 						</DropdownMenuItem>
 					))
 				)}

@@ -40,7 +40,7 @@ export async function handleCreateDomain({
 
 	try {
 		const domain = await withDb(env, (db) =>
-			createDomain(db, value.domain as string),
+			createDomain(db, value.domain as string, env.EMAIL),
 		);
 		return jsonResponse(domain, 201);
 	} catch (error) {

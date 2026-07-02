@@ -9,8 +9,21 @@ import {
 	normalizeEmailAddress,
 	parseEmailAddress,
 } from "../lib/normalize-email-address";
+import {
+	assertMailboxMutable,
+	isSystemManagedLocalPart,
+} from "../lib/system-mailboxes";
 import { deleteMailboxCascade } from "./cascade-delete";
 import { toMailboxDto } from "./dto";
+
+async function getMailboxRow(db: Database, id: string) {
+	const [row] = await db.select().from(mailboxes).where(eq(mailboxes.id, id)).limit(1);
+	if (!row) {
+		throw new Error("Mailbox not found");
+	}
+
+	return row;
+}
 
 export async function listMailboxes(db: Database) {
 	const rows = await db.select().from(mailboxes).orderBy(mailboxes.address);
@@ -53,6 +66,14 @@ export async function createMailbox(
 
 	if (normalizeEmailAddress(parsed.domain) !== normalizeEmailAddress(domain.name)) {
 		throw new Error("Address domain does not match domainId");
+	}
+
+	if (input.type === "system") {
+		throw new Error("System mailboxes are provisioned automatically");
+	}
+
+	if (isSystemManagedLocalPart(parsed.localPart)) {
+		throw new Error("Address is reserved for system mailboxes");
 	}
 
 	const aliasTargetId = input.aliasTargetId?.trim() || undefined;
@@ -129,7 +150,8 @@ export async function updateMailbox(
 	id: string,
 	patch: { isActive?: boolean },
 ) {
-	await getMailbox(db, id);
+	const existing = await getMailboxRow(db, id);
+	assertMailboxMutable(existing);
 	const now = new Date();
 
 	const [row] = await db
@@ -153,6 +175,7 @@ export async function removeMailbox(
 	bucket: R2Bucket,
 	id: string,
 ): Promise<void> {
-	await getMailbox(db, id);
+	const existing = await getMailboxRow(db, id);
+	assertMailboxMutable(existing);
 	await deleteMailboxCascade(db, bucket, id);
 }

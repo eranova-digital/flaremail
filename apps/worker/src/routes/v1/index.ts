@@ -7,6 +7,11 @@ import {
 	handleUpdateDomain,
 } from "../../controllers/domains";
 import {
+	handleCreateValidationRun,
+	handleGetValidationRun,
+	handleListValidationRuns,
+} from "../../controllers/domain-validation";
+import {
 	handleCreateMailbox,
 	handleDeleteMailbox,
 	handleGetMailbox,
@@ -47,6 +52,21 @@ export const v1Routes: RouteDefinition[] = [
 	{ method: "GET", path: `${prefix}/domains/:id`, handler: handleGetDomain },
 	{ method: "PATCH", path: `${prefix}/domains/:id`, handler: handleUpdateDomain },
 	{ method: "DELETE", path: `${prefix}/domains/:id`, handler: handleDeleteDomain },
+	{
+		method: "GET",
+		path: `${prefix}/domains/:id/validation-runs`,
+		handler: handleListValidationRuns,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/domains/:id/validation-runs`,
+		handler: handleCreateValidationRun,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/domains/:id/validation-runs/:runId`,
+		handler: handleGetValidationRun,
+	},
 
 	{ method: "GET", path: `${prefix}/mailboxes`, handler: handleListMailboxes },
 	{ method: "POST", path: `${prefix}/mailboxes`, handler: handleCreateMailbox },

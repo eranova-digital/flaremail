@@ -67,6 +67,22 @@ _Avoid_: entity, record
 Someone using Flaremail to manage platform **mailboxes** via the Worker API.
 _Avoid_: user, admin account
 
+**Domain readiness**:
+Advisory health of a **domain**'s mail configuration and flow (DNS checks and a loop email). Does not affect whether mail is accepted or sent.
+_Avoid_: routing status, domain health (ambiguous)
+
+**Domain readiness badge**:
+Derived summary of the latest **domain validation run**: `checking`, `fail`, `healthy`, or `unhealthy`.
+_Avoid_: domain status, validation state
+
+**Domain validation run**:
+One execution of **domain readiness** checks for a **domain**, with per-check results and log events.
+_Avoid_: health check job, verify pass
+
+**Validation check**:
+A single test within a **domain validation run** (e.g. MX exists, DMARC rua, loop send, loop receive).
+_Avoid_: probe, diagnostic step
+
 ## Example dialogue
 
 **Dev:** When a message arrives at `help@company.com` but that's an alias for `support@`, which mailbox owns it?

@@ -43,10 +43,11 @@ describe("buildEmailAddress", () => {
 });
 
 describe("isReceivingMailboxType", () => {
-	it("treats primary, secondary, and shared as receiving mailboxes", () => {
+	it("treats primary, secondary, shared, and system as receiving mailboxes", () => {
 		expect(isReceivingMailboxType("primary")).toBe(true);
 		expect(isReceivingMailboxType("secondary")).toBe(true);
 		expect(isReceivingMailboxType("shared")).toBe(true);
+		expect(isReceivingMailboxType("system")).toBe(true);
 	});
 
 	it("treats alias as non-receiving", () => {

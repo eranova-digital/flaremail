@@ -4,8 +4,8 @@ import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
-import type { MailboxType } from "../lib/mailbox-types";
-import { MAILBOX_TYPES } from "../lib/mailbox-types";
+import type { MailboxType, UserCreatableMailboxType } from "../lib/mailbox-types";
+import { USER_CREATABLE_MAILBOX_TYPES } from "../lib/mailbox-types";
 import {
 	createMailbox,
 	getMailbox,
@@ -44,7 +44,7 @@ export async function handleCreateMailbox({
 	}
 	if (
 		typeof value.type !== "string" ||
-		!MAILBOX_TYPES.includes(value.type as MailboxType)
+		!USER_CREATABLE_MAILBOX_TYPES.includes(value.type as UserCreatableMailboxType)
 	) {
 		return validationError(request, "Field 'type' is invalid");
 	}

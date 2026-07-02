@@ -1,6 +1,8 @@
 import PostalMime from 'postal-mime';
 
 import { withDb } from './db/client';
+import { tryConsumeValidationInbound } from './lib/domain-validation/consume-inbound';
+import { processTimedOutValidationRuns } from './lib/domain-validation/run-engine';
 import { resolveMailboxForEnvelope } from './lib/resolve-mailbox';
 import { storeInboundEmail } from './lib/messages/store-inbound-email';
 import {
@@ -13,6 +15,16 @@ export default {
 	async email(message, env, ctx): Promise<void> {
 		try {
 			await withDb(env, async (db) => {
+				const raw = await new Response(message.raw).arrayBuffer();
+				const parsed = await PostalMime.parse(raw);
+
+				if (await tryConsumeValidationInbound(db, message, parsed)) {
+					console.log(
+						`Consumed validation email: ${message.from} -> ${message.to}`,
+					);
+					return;
+				}
+
 				const resolution = await resolveMailboxForEnvelope(db, message.to);
 				if (!resolution) {
 					message.setReject('Unknown recipient');
@@ -37,8 +49,6 @@ export default {
 					return;
 				}
 
-				const raw = await new Response(message.raw).arrayBuffer();
-				const parsed = await PostalMime.parse(raw);
 				const threading = extractThreadingHeaders(message.headers, parsed);
 
 				if (!threading.messageId) {
@@ -65,5 +75,18 @@ export default {
 
 	async fetch(request, env): Promise<Response> {
 		return handleFetchRequest(request, env);
+	},
+
+	async scheduled(_controller, env, _ctx): Promise<void> {
+		try {
+			const processed = await withDb(env, (db) =>
+				processTimedOutValidationRuns(db),
+			);
+			if (processed > 0) {
+				console.log(`Processed ${processed} timed-out validation run(s)`);
+			}
+		} catch (error) {
+			console.error('Scheduled validation processor error:', error);
+		}
 	},
 } satisfies ExportedHandler<Env>;

@@ -8,7 +8,7 @@ export type SendMailbox = {
 	id: string;
 	address: string;
 	domain: string;
-	type: "primary" | "secondary" | "shared";
+	type: "primary" | "secondary" | "shared" | "system";
 };
 
 export async function loadMailboxForSend(

@@ -3,14 +3,26 @@ export const MAILBOX_TYPES = [
 	"secondary",
 	"shared",
 	"alias",
+	"system",
 ] as const;
 
 export type MailboxType = (typeof MAILBOX_TYPES)[number];
+
+export const USER_CREATABLE_MAILBOX_TYPES = [
+	"primary",
+	"secondary",
+	"shared",
+	"alias",
+] as const;
+
+export type UserCreatableMailboxType =
+	(typeof USER_CREATABLE_MAILBOX_TYPES)[number];
 
 export const RECEIVING_MAILBOX_TYPES = [
 	"primary",
 	"secondary",
 	"shared",
+	"system",
 ] as const;
 
 export type ReceivingMailboxType = (typeof RECEIVING_MAILBOX_TYPES)[number];
@@ -18,7 +30,7 @@ export type ReceivingMailboxType = (typeof RECEIVING_MAILBOX_TYPES)[number];
 export function isReceivingMailboxType(
 	type: MailboxType,
 ): type is ReceivingMailboxType {
-	return type !== "alias";
+	return (RECEIVING_MAILBOX_TYPES as readonly string[]).includes(type);
 }
 
 export const THREAD_FOLDERS = [
