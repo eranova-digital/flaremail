@@ -28,6 +28,8 @@ type ComboboxProps = {
 	emptyText?: string;
 	disabled?: boolean;
 	className?: string;
+	allowCustom?: boolean;
+	customOptionLabel?: (query: string) => string;
 };
 
 export function Combobox({
@@ -40,12 +42,32 @@ export function Combobox({
 	emptyText = "No results found.",
 	disabled = false,
 	className,
+	allowCustom = false,
+	customOptionLabel = (query) => `Use "${query}"`,
 }: ComboboxProps) {
 	const [open, setOpen] = useState(false);
+	const [search, setSearch] = useState("");
 	const selected = options.find((option) => option.value === value);
+	const displayLabel = selected?.label ?? value;
+	const hasValue = Boolean(displayLabel);
+	const trimmedSearch = search.trim();
+	const matchesExistingOption = options.some(
+		(option) =>
+			option.value === trimmedSearch ||
+			option.label.toLowerCase() === trimmedSearch.toLowerCase(),
+	);
+	const showCustomOption = allowCustom && trimmedSearch && !matchesExistingOption;
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover
+			open={open}
+			onOpenChange={(nextOpen) => {
+				setOpen(nextOpen);
+				if (!nextOpen) {
+					setSearch("");
+				}
+			}}
+		>
 			<PopoverTrigger asChild>
 				<Button
 					id={id}
@@ -55,17 +77,21 @@ export function Combobox({
 					disabled={disabled}
 					className={cn(
 						"w-full justify-between font-normal",
-						!selected && "text-muted-foreground",
+						!hasValue && "text-muted-foreground",
 						className,
 					)}
 				>
-					<span className="truncate">{selected?.label ?? placeholder}</span>
+					<span className="truncate">{displayLabel || placeholder}</span>
 					<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
 				<Command>
-					<CommandInput placeholder={searchPlaceholder} />
+					<CommandInput
+						placeholder={searchPlaceholder}
+						value={search}
+						onValueChange={setSearch}
+					/>
 					<CommandList>
 						<CommandEmpty>{emptyText}</CommandEmpty>
 						<CommandGroup>
@@ -76,6 +102,7 @@ export function Combobox({
 									onSelect={() => {
 										onValueChange(option.value === value ? "" : option.value);
 										setOpen(false);
+										setSearch("");
 									}}
 								>
 									<Check
@@ -87,6 +114,25 @@ export function Combobox({
 									<span className="truncate">{option.label}</span>
 								</CommandItem>
 							))}
+							{showCustomOption ? (
+								<CommandItem
+									key={`custom-${trimmedSearch}`}
+									value={trimmedSearch}
+									onSelect={() => {
+										onValueChange(trimmedSearch);
+										setOpen(false);
+										setSearch("");
+									}}
+								>
+									<Check
+										className={cn(
+											"size-4",
+											value === trimmedSearch ? "opacity-100" : "opacity-0",
+										)}
+									/>
+									<span className="truncate">{customOptionLabel(trimmedSearch)}</span>
+								</CommandItem>
+							) : null}
 						</CommandGroup>
 					</CommandList>
 				</Command>

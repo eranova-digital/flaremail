@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import {
 	InputGroupInput,
 	InputGroupText,
 } from "@/components/ui/input-group";
-import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -28,6 +27,13 @@ import {
 } from "@/hooks/use-mailboxes";
 import type { CreateMailboxRequest, Mailbox } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
+import {
+	groupMailboxesByDomain,
+	sortMailboxes,
+	type MailboxDomainGroup,
+	type MailboxTypeGroup,
+} from "@/lib/sort-mailboxes";
+import { cn } from "@/lib/utils";
 
 const MAILBOX_TYPES: CreateMailboxRequest["type"][] = [
 	"primary",
@@ -40,13 +46,49 @@ const emptyForm = {
 	localPart: "",
 	domainId: "",
 	type: "primary" as CreateMailboxRequest["type"],
-	aliasTargetKind: "internal" as "internal" | "external",
-	aliasTargetId: "",
-	aliasTargetAddress: "",
+	aliasTarget: "",
 };
 
 function sanitizeLocalPart(value: string): string {
 	return value.replace(/@/g, "");
+}
+
+function isValidEmailAddress(value: string): boolean {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+type ResolvedAliasTarget =
+	| { kind: "internal"; aliasTargetId: string }
+	| { kind: "external"; aliasTargetAddress: string }
+	| { kind: "invalid" };
+
+function resolveAliasTarget(
+	input: string,
+	receivingMailboxes: Mailbox[],
+): ResolvedAliasTarget {
+	const trimmed = input.trim();
+	if (!trimmed) {
+		return { kind: "invalid" };
+	}
+
+	const normalized = trimmed.toLowerCase();
+	const byId = receivingMailboxes.find((mailbox) => mailbox.id === trimmed);
+	if (byId?.id) {
+		return { kind: "internal", aliasTargetId: byId.id };
+	}
+
+	const byAddress = receivingMailboxes.find(
+		(mailbox) => mailbox.address?.toLowerCase() === normalized,
+	);
+	if (byAddress?.id) {
+		return { kind: "internal", aliasTargetId: byAddress.id };
+	}
+
+	if (isValidEmailAddress(trimmed)) {
+		return { kind: "external", aliasTargetAddress: trimmed };
+	}
+
+	return { kind: "invalid" };
 }
 
 export function MailboxSection() {
@@ -54,10 +96,35 @@ export function MailboxSection() {
 	const domainsQuery = useDomains();
 	const createMailbox = useCreateMailbox();
 	const [form, setForm] = useState(emptyForm);
+	const [collapsedTypeSections, setCollapsedTypeSections] = useState<
+		Record<string, boolean>
+	>({});
 
 	const domains = domainsQuery.data ?? [];
-	const receivingMailboxes = (mailboxesQuery.data ?? []).filter(
-		(mailbox) => mailbox.type !== "alias",
+	const mailboxes = mailboxesQuery.data ?? [];
+	const domainNamesById = useMemo(
+		() =>
+			new Map(
+				domains.flatMap((domain) =>
+					domain.id && domain.domain
+						? [[domain.id, domain.domain] as const]
+						: [],
+				),
+			),
+		[domains],
+	);
+	const mailboxGroups = useMemo(
+		() => groupMailboxesByDomain(mailboxes, domainNamesById),
+		[mailboxes, domainNamesById],
+	);
+	const shouldGroupByDomain = mailboxGroups.length > 1;
+	const receivingMailboxes = useMemo(
+		() =>
+			sortMailboxes(
+				mailboxes.filter((mailbox) => mailbox.type !== "alias"),
+				domainNamesById,
+			),
+		[mailboxes, domainNamesById],
 	);
 
 	const handleCreate = (event: React.FormEvent) => {
@@ -76,10 +143,16 @@ export function MailboxSection() {
 		};
 
 		if (form.type === "alias") {
-			if (form.aliasTargetKind === "internal") {
-				body.aliasTargetId = form.aliasTargetId;
+			const resolvedAliasTarget = resolveAliasTarget(
+				form.aliasTarget,
+				receivingMailboxes,
+			);
+			if (resolvedAliasTarget.kind === "internal") {
+				body.aliasTargetId = resolvedAliasTarget.aliasTargetId;
+			} else if (resolvedAliasTarget.kind === "external") {
+				body.aliasTargetAddress = resolvedAliasTarget.aliasTargetAddress;
 			} else {
-				body.aliasTargetAddress = form.aliasTargetAddress.trim();
+				return;
 			}
 		}
 
@@ -88,13 +161,39 @@ export function MailboxSection() {
 		});
 	};
 
+	const resolvedAliasTarget = useMemo(
+		() =>
+			form.type === "alias"
+				? resolveAliasTarget(form.aliasTarget, receivingMailboxes)
+				: null,
+		[form.type, form.aliasTarget, receivingMailboxes],
+	);
+
 	const canSubmit =
 		form.localPart.trim() &&
 		form.domainId &&
-		(form.type !== "alias" ||
-			(form.aliasTargetKind === "internal"
-				? Boolean(form.aliasTargetId)
-				: Boolean(form.aliasTargetAddress.trim())));
+		(form.type !== "alias" || resolvedAliasTarget?.kind !== "invalid");
+
+	const isTypeSectionCollapsed = (domainKey: string, type: string) => {
+		const key = `${domainKey}:${type}`;
+		if (key in collapsedTypeSections) {
+			return collapsedTypeSections[key];
+		}
+
+		return type === "system";
+	};
+
+	const toggleTypeSection = (domainKey: string, type: string) => {
+		const key = `${domainKey}:${type}`;
+		setCollapsedTypeSections((current) => ({
+			...current,
+			[key]: !isTypeSectionCollapsed(domainKey, type),
+		}));
+	};
+
+	const resolveAliasTargetLabel = (mailbox: Mailbox) =>
+		mailbox.aliasTargetAddress ??
+		mailboxes.find((item) => item.id === mailbox.aliasTargetId)?.address;
 
 	const aliasTargetOptions = receivingMailboxes.flatMap((mailbox) =>
 		mailbox.id && mailbox.address
@@ -172,9 +271,7 @@ export function MailboxSection() {
 								setForm((current) => ({
 									...current,
 									type: type as CreateMailboxRequest["type"],
-									aliasTargetKind: "internal",
-									aliasTargetId: "",
-									aliasTargetAddress: "",
+									aliasTarget: "",
 								}))
 							}
 							disabled={createMailbox.isPending}
@@ -193,74 +290,29 @@ export function MailboxSection() {
 					</div>
 
 					{form.type === "alias" ? (
-						<>
-							<div className="space-y-1">
-								<label className="text-sm font-medium" htmlFor="alias-target-kind">
-									Alias target type
-								</label>
-								<Select
-									value={form.aliasTargetKind}
-									onValueChange={(aliasTargetKind) =>
-										setForm((current) => ({
-											...current,
-											aliasTargetKind: aliasTargetKind as "internal" | "external",
-											aliasTargetId: "",
-											aliasTargetAddress: "",
-										}))
-									}
-									disabled={createMailbox.isPending}
-								>
-									<SelectTrigger id="alias-target-kind">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="internal">Internal mailbox</SelectItem>
-										<SelectItem value="external">External address</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-
-							<div className="space-y-1 sm:col-span-2">
-								<label className="text-sm font-medium" htmlFor="alias-target">
-									Alias target
-								</label>
-								{form.aliasTargetKind === "internal" ? (
-									<Combobox
-										id="alias-target"
-										value={form.aliasTargetId}
-										onValueChange={(aliasTargetId) =>
-											setForm((current) => ({ ...current, aliasTargetId }))
-										}
-										options={aliasTargetOptions}
-										placeholder="Select target mailbox…"
-										searchPlaceholder="Search mailboxes…"
-										emptyText="No mailboxes found."
-										disabled={createMailbox.isPending}
-									/>
-								) : (
-									<Input
-										id="alias-target"
-										type="email"
-										placeholder="patrick@gmail.com"
-										value={form.aliasTargetAddress}
-										onChange={(event) =>
-											setForm((current) => ({
-												...current,
-												aliasTargetAddress: event.target.value,
-											}))
-										}
-										disabled={createMailbox.isPending}
-										autoComplete="off"
-										spellCheck={false}
-									/>
-								)}
-								{form.aliasTargetKind === "external" ? (
-									<p className="text-muted-foreground text-xs">
-										Mail to this alias is forwarded externally and not stored.
-									</p>
-								) : null}
-							</div>
-						</>
+						<div className="space-y-1 sm:col-span-2">
+							<label className="text-sm font-medium" htmlFor="alias-target">
+								Alias target
+							</label>
+							<Combobox
+								id="alias-target"
+								value={form.aliasTarget}
+								onValueChange={(aliasTarget) =>
+									setForm((current) => ({ ...current, aliasTarget }))
+								}
+								options={aliasTargetOptions}
+								allowCustom
+								placeholder="Select or enter target address…"
+								searchPlaceholder="Search mailboxes or enter email…"
+								emptyText="No mailboxes found."
+								disabled={createMailbox.isPending}
+							/>
+							{resolvedAliasTarget?.kind === "external" ? (
+								<p className="text-muted-foreground text-xs">
+									Mail to this alias is forwarded externally and not stored.
+								</p>
+							) : null}
+						</div>
 					) : null}
 				</div>
 
@@ -288,28 +340,110 @@ export function MailboxSection() {
 				</div>
 			) : mailboxesQuery.isError ? (
 				<p className="text-destructive text-sm">{getErrorMessage(mailboxesQuery.error)}</p>
-			) : (mailboxesQuery.data ?? []).length === 0 ? (
+			) : mailboxes.length === 0 ? (
 				<p className="text-muted-foreground text-sm">No mailboxes yet. Add one above.</p>
 			) : (
-				<ul className="divide-border divide-y rounded-md border">
-					{(mailboxesQuery.data ?? []).map((mailbox) => (
+				<div className="space-y-4">
+					{mailboxGroups.map((group) => (
+						<MailboxDomainCard
+							key={group.domainId ?? group.domainName}
+							group={group}
+							showDomainHeader={shouldGroupByDomain}
+							isTypeSectionCollapsed={isTypeSectionCollapsed}
+							onToggleTypeSection={toggleTypeSection}
+							resolveAliasTargetLabel={resolveAliasTargetLabel}
+						/>
+					))}
+				</div>
+			)}
+		</section>
+	);
+}
+
+function MailboxDomainCard({
+	group,
+	showDomainHeader,
+	isTypeSectionCollapsed,
+	onToggleTypeSection,
+	resolveAliasTargetLabel,
+}: {
+	group: MailboxDomainGroup;
+	showDomainHeader: boolean;
+	isTypeSectionCollapsed: (domainKey: string, type: string) => boolean;
+	onToggleTypeSection: (domainKey: string, type: string) => void;
+	resolveAliasTargetLabel: (mailbox: Mailbox) => string | undefined;
+}) {
+	const domainKey = group.domainId ?? group.domainName;
+
+	return (
+		<div className="rounded-md border">
+			{showDomainHeader ? (
+				<div className="bg-muted/40 text-muted-foreground border-b px-4 py-2 text-sm font-medium">
+					{group.domainName}
+				</div>
+			) : null}
+
+			{group.typeGroups.map((typeGroup) => (
+				<MailboxTypeSection
+					key={typeGroup.type}
+					domainKey={domainKey}
+					typeGroup={typeGroup}
+					isCollapsed={isTypeSectionCollapsed(domainKey, typeGroup.type)}
+					onToggle={() => onToggleTypeSection(domainKey, typeGroup.type)}
+					resolveAliasTargetLabel={resolveAliasTargetLabel}
+				/>
+			))}
+		</div>
+	);
+}
+
+function MailboxTypeSection({
+	domainKey,
+	typeGroup,
+	isCollapsed,
+	onToggle,
+	resolveAliasTargetLabel,
+}: {
+	domainKey: string;
+	typeGroup: MailboxTypeGroup;
+	isCollapsed: boolean;
+	onToggle: () => void;
+	resolveAliasTargetLabel: (mailbox: Mailbox) => string | undefined;
+}) {
+	const sectionId = `${domainKey}-${typeGroup.type}-mailboxes`;
+
+	return (
+		<div className="border-b last:border-b-0">
+			<button
+				type="button"
+				onClick={onToggle}
+				aria-expanded={!isCollapsed}
+				aria-controls={sectionId}
+				className="bg-muted/20 text-muted-foreground hover:bg-muted/35 flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium transition-colors"
+			>
+				<ChevronDown
+					className={cn(
+						"size-4 shrink-0 transition-transform",
+						isCollapsed && "-rotate-90",
+					)}
+				/>
+				<span className="text-foreground capitalize">{typeGroup.type}</span>
+				<span className="font-normal">({typeGroup.mailboxes.length})</span>
+			</button>
+
+			{!isCollapsed ? (
+				<ul id={sectionId} className="divide-border divide-y">
+					{typeGroup.mailboxes.map((mailbox) => (
 						<MailboxRow
 							key={mailbox.id}
 							mailbox={mailbox}
-							domainName={
-								domains.find((domain) => domain.id === mailbox.domainId)?.domain
-							}
-							aliasTargetLabel={
-								mailbox.aliasTargetAddress ??
-								mailboxesQuery.data?.find(
-									(item) => item.id === mailbox.aliasTargetId,
-								)?.address
-							}
+							showType={false}
+							aliasTargetLabel={resolveAliasTargetLabel(mailbox)}
 						/>
 					))}
 				</ul>
-			)}
-		</section>
+			) : null}
+		</div>
 	);
 }
 
@@ -317,10 +451,14 @@ function MailboxRow({
 	mailbox,
 	domainName,
 	aliasTargetLabel,
+	showDomain = true,
+	showType = true,
 }: {
 	mailbox: Mailbox;
 	domainName?: string;
 	aliasTargetLabel?: string;
+	showDomain?: boolean;
+	showType?: boolean;
 }) {
 	const updateMailbox = useUpdateMailbox();
 	const deleteMailbox = useDeleteMailbox();
@@ -348,6 +486,7 @@ function MailboxRow({
 
 	const isPending = updateMailbox.isPending || deleteMailbox.isPending;
 	const mutationError = updateMailbox.error ?? deleteMailbox.error;
+	const isSystemManaged = mailbox.isSystemManaged ?? false;
 
 	return (
 		<li className="space-y-2 p-4">
@@ -355,10 +494,15 @@ function MailboxRow({
 				<div className="min-w-0 space-y-1">
 					<p className="truncate font-medium">{mailbox.address}</p>
 					<div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-						{domainName ? <span>{domainName}</span> : null}
-						{mailbox.type ? (
+						{showDomain && domainName ? <span>{domainName}</span> : null}
+						{showType && mailbox.type ? (
 							<Badge variant="outline" className="text-xs">
 								{mailbox.type}
+							</Badge>
+						) : null}
+						{isSystemManaged ? (
+							<Badge variant="secondary" className="text-xs">
+								system managed
 							</Badge>
 						) : null}
 						{mailbox.type === "alias" && aliasTargetLabel ? (
@@ -370,27 +514,29 @@ function MailboxRow({
 					</div>
 				</div>
 
-				<div className="flex shrink-0 items-center gap-2">
-					<label className="flex items-center gap-1.5 text-sm">
-						<input
-							type="checkbox"
-							checked={mailbox.isActive ?? false}
-							onChange={handleToggleActive}
+				{isSystemManaged ? null : (
+					<div className="flex shrink-0 items-center gap-2">
+						<label className="flex items-center gap-1.5 text-sm">
+							<input
+								type="checkbox"
+								checked={mailbox.isActive ?? false}
+								onChange={handleToggleActive}
+								disabled={isPending}
+								className="size-4 rounded border"
+							/>
+							<span className="sr-only sm:not-sr-only">Active</span>
+						</label>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={handleDelete}
 							disabled={isPending}
-							className="size-4 rounded border"
-						/>
-						<span className="sr-only sm:not-sr-only">Active</span>
-					</label>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={handleDelete}
-						disabled={isPending}
-						aria-label={`Delete ${mailbox.address}`}
-					>
-						<Trash2 className="text-destructive size-4" />
-					</Button>
-				</div>
+							aria-label={`Delete ${mailbox.address}`}
+						>
+							<Trash2 className="text-destructive size-4" />
+						</Button>
+					</div>
+				)}
 			</div>
 
 			{mutationError ? (

@@ -210,6 +210,103 @@
         }
       }
     },
+    "/domains/{id}/validation-runs": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Domains"
+        ],
+        "summary": "List domain validation runs",
+        "operationId": "listDomainValidationRuns",
+        "responses": {
+          "200": {
+            "description": "Validation run history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DomainValidationRunSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Domains"
+        ],
+        "summary": "Start or return active domain validation run",
+        "operationId": "createDomainValidationRun",
+        "responses": {
+          "200": {
+            "description": "Validation run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainValidationRunDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/domains/{id}/validation-runs/{runId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        },
+        {
+          "name": "runId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Domains"
+        ],
+        "summary": "Get domain validation run detail",
+        "operationId": "getDomainValidationRun",
+        "responses": {
+          "200": {
+            "description": "Validation run detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainValidationRunDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/mailboxes": {
       "get": {
         "tags": [
@@ -1225,8 +1322,208 @@
               "null"
             ],
             "format": "uuid"
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/DomainReadinessSummary"
           }
         }
+      },
+      "DomainReadinessSummary": {
+        "type": "object",
+        "properties": {
+          "badge": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "checking",
+              "fail",
+              "healthy",
+              "unhealthy"
+            ]
+          },
+          "latestRunId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "latestRunStartedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "latestRunFinishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "DomainValidationRunSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "checking",
+              "completed"
+            ]
+          },
+          "badge": {
+            "type": "string",
+            "enum": [
+              "checking",
+              "fail",
+              "healthy",
+              "unhealthy"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "DomainValidationCheck": {
+        "type": "object",
+        "properties": {
+          "checkKey": {
+            "type": "string",
+            "enum": [
+              "mx",
+              "dmarc_rua",
+              "loop_send",
+              "loop_receive"
+            ]
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "advisory"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "passed",
+              "failed",
+              "skipped"
+            ]
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "checkedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "DomainValidationLogEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "info",
+              "warning",
+              "error"
+            ]
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "dns",
+              "send",
+              "receive",
+              "summary"
+            ]
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DomainValidationRunDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DomainValidationRunSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "domainId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "receiveDeadlineAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "checks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainValidationCheck"
+                }
+              },
+              "logs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainValidationLogEvent"
+                }
+              }
+            }
+          }
+        ]
       },
       "Mailbox": {
         "type": "object",
@@ -1248,7 +1545,8 @@
               "primary",
               "secondary",
               "shared",
-              "alias"
+              "alias",
+              "system"
             ]
           },
           "aliasTargetId": {
@@ -1266,6 +1564,10 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "isSystemManaged": {
+            "type": "boolean",
+            "description": "True for platform-provisioned addresses that cannot be edited or deleted."
           }
         }
       },

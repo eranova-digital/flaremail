@@ -63,7 +63,7 @@ export function ThreadList() {
 	const threads = threadsQuery.data?.items ?? [];
 
 	return (
-		<div className="flex h-full min-w-0 max-w-md flex-col border-r">
+		<div className="flex h-full w-md flex-col border-r">
 			<div className="flex items-center justify-between border-b px-4 py-3">
 				<h2 className="font-medium">{FOLDER_LABELS[activeFolder]}</h2>
 				<Badge variant="secondary">{threads.length}</Badge>
@@ -75,43 +75,28 @@ export function ThreadList() {
 					<ul>
 						{threads.map((thread) => {
 							const selected = thread.id === threadId;
-							const displayName =
-								thread.participants?.join(", ") ||
-								thread.sender ||
-								"(unknown)";
+							const displayName = thread.participants?.join(', ') || thread.sender || '(unknown)';
 
 							return (
 								<li key={thread.id}>
 									<button
 										type="button"
-										onClick={() =>
-											navigate(
-												`/m/${mailboxId}/threads/${thread.id}?folder=${activeFolder}`,
-											)
-										}
+										onClick={() => navigate(`/m/${mailboxId}/threads/${thread.id}?folder=${activeFolder}`)}
 										className={cn(
-											"hover:bg-accent/60 w-full border-b px-4 py-3 text-left transition-colors",
-											selected && "bg-accent",
-											!thread.isRead && "font-semibold",
+											'hover:bg-accent/60 w-full border-b px-4 py-3 text-left transition-colors',
+											selected && 'bg-accent',
+											!thread.isRead && 'font-semibold',
 										)}
 									>
 										<div className="flex items-start justify-between gap-2">
 											<p className="truncate text-sm">{displayName}</p>
 											<div className="flex shrink-0 items-center gap-1">
-												{thread.isStarred ? (
-													<Star className="size-3.5 fill-current text-amber-500" />
-												) : null}
-												<span className="text-muted-foreground text-xs whitespace-nowrap">
-													{formatWhen(thread.lastMessageAt)}
-												</span>
+												{thread.isStarred ? <Star className="size-3.5 fill-current text-amber-500" /> : null}
+												<span className="text-muted-foreground text-xs whitespace-nowrap">{formatWhen(thread.lastMessageAt)}</span>
 											</div>
 										</div>
-										<p className="text-muted-foreground mt-1 truncate text-xs">
-											{thread.subject || "(no subject)"}
-										</p>
-										<p className="text-muted-foreground mt-1 truncate text-xs">
-											{thread.preview || "No preview"}
-										</p>
+										<p className="text-muted-foreground mt-1 truncate text-xs">{thread.subject || '(no subject)'}</p>
+										<p className="text-muted-foreground mt-1 truncate text-xs">{thread.preview || 'No preview'}</p>
 									</button>
 								</li>
 							);

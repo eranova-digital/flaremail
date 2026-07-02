@@ -1,0 +1,88 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import {
+	createDomainValidationRun,
+	getDomain,
+	getDomainValidationRun,
+	listDomainValidationRuns,
+} from "@/lib/api/client";
+import { assertData } from "@/lib/api/errors";
+import { queryKeys } from "@/lib/query-keys";
+
+export function useDomain(domainId: string | undefined) {
+	return useQuery({
+		queryKey: queryKeys.domain(domainId ?? ""),
+		enabled: Boolean(domainId),
+		queryFn: async () => {
+			const { data } = await getDomain({
+				throwOnError: true,
+				path: { id: domainId! },
+			});
+			return assertData(data, "getDomain");
+		},
+		refetchInterval: (query) =>
+			query.state.data?.readiness?.badge === "checking" ? 15_000 : false,
+	});
+}
+
+export function useDomainValidationRuns(domainId: string | undefined) {
+	return useQuery({
+		queryKey: queryKeys.domainValidationRuns(domainId ?? ""),
+		enabled: Boolean(domainId),
+		queryFn: async () => {
+			const { data } = await listDomainValidationRuns({
+				throwOnError: true,
+				path: { id: domainId! },
+			});
+			return assertData(data, "listDomainValidationRuns").items ?? [];
+		},
+		refetchInterval: (query) =>
+			query.state.data?.some((run) => run.status === "checking") ? 15_000 : false,
+	});
+}
+
+export function useDomainValidationRun(
+	domainId: string | undefined,
+	runId: string | null | undefined,
+	enabled = true,
+) {
+	return useQuery({
+		queryKey: queryKeys.domainValidationRun(domainId ?? "", runId ?? ""),
+		enabled: Boolean(domainId && runId && enabled),
+		queryFn: async () => {
+			const { data } = await getDomainValidationRun({
+				throwOnError: true,
+				path: { id: domainId!, runId: runId! },
+			});
+			return assertData(data, "getDomainValidationRun");
+		},
+		refetchInterval: (query) =>
+			query.state.data?.status === "checking" ? 15_000 : false,
+	});
+}
+
+export function useRecheckDomain() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (domainId: string) => {
+			const { data } = await createDomainValidationRun({
+				throwOnError: true,
+				path: { id: domainId },
+			});
+			return assertData(data, "createDomainValidationRun");
+		},
+		onSuccess: (run, domainId) => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.domains });
+			queryClient.invalidateQueries({ queryKey: queryKeys.domain(domainId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.domainValidationRuns(domainId),
+			});
+			if (run.id) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.domainValidationRun(domainId, run.id),
+				});
+			}
+		},
+	});
+}
