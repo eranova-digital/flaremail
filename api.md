@@ -173,6 +173,17 @@ No `verified` field — use `isActive` only.
 
 No upload or outbound attachment APIs in v1.
 
+### Deletion matrix
+
+Hard deletes preserve database integrity first. R2 object deletion runs after the database delete and is best-effort.
+
+| Delete target | Deleted | Preserved / reassigned | Blocked when |
+|---------------|---------|------------------------|--------------|
+| Domain | The domain, its mailboxes, dependent aliases in any domain, labels, private messages, attachments, and DB visibility rows | Messages also visible to remaining non-alias mailboxes move `actualMailboxId` to the oldest remaining visible non-alias mailbox | — |
+| Mailbox | The mailbox, aliases that target it, labels, private messages, attachments, and DB visibility rows | Messages also visible to remaining non-alias mailboxes move `actualMailboxId` to the oldest remaining visible non-alias mailbox. Messages that only referenced a deleted alias via `matchedMailboxId` keep `matchedVia`/`envelopeTo` history and clear `matchedMailboxId` | The mailbox or a dependent alias is an enabled domain catch-all target |
+| Alias mailbox | The alias mailbox and its UI/visibility rows | Target-owned messages remain; `matchedMailboxId` is cleared while `matchedVia=alias` and `envelopeTo` remain as history | The alias is an enabled domain catch-all target |
+| Draft | The draft message, attachments, and R2 objects | Other thread mailbox state is refreshed; empty draft-only threads are removed | — |
+
 ## Messages
 
 ### Read

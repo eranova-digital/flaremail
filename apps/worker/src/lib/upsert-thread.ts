@@ -5,5 +5,5 @@ export {
 	type ThreadTouchData,
 } from "./touch-thread";
 
-export { syncThreadMailboxesAfterMessage as finalizeThreadAfterInboundMessage } from "./message-mailboxes";
+export { onMessagePersisted as finalizeThreadAfterInboundMessage } from "./thread-mailbox-sync";
 export { prepareThreadForMessage as prepareThreadForInboundMessage } from "./touch-thread";

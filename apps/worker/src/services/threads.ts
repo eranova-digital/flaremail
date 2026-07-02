@@ -3,7 +3,6 @@ import { and, asc, desc, eq, exists, ilike, inArray, isNull, lt, ne, not, or, sq
 
 import type { Database } from "../db/client";
 import {
-	attachments,
 	labels,
 	mailboxes,
 	messageMailboxes,
@@ -19,6 +18,7 @@ import {
 	parseLimit,
 } from "../lib/http/cursor-pagination";
 import { assertMessageVisibleInMailbox } from "../lib/message-mailboxes";
+import { loadMessageBody } from "../lib/messages/message-body";
 import { findMessageById } from "../lib/messages/message-queries";
 import type { ThreadFolder } from "../lib/touch-thread";
 import {
@@ -31,8 +31,9 @@ import {
 	toMessagePreview,
 	toThreadDto,
 	toThreadMessagePreview,
+	toThreadMessageWithBody,
 } from "./dto";
-import { assertThreadInMailbox } from "./thread-mailbox-assert";
+import { assertThreadInMailbox } from "./thread-mailbox-access";
 
 async function getLabelIdsForThreads(
 	db: Database,
@@ -287,6 +288,7 @@ export async function listThreadMessages(
 	db: Database,
 	threadId: string,
 	mailboxId: string,
+	options?: { bucket?: R2Bucket; includeBody?: boolean },
 ) {
 	const thread = await getThread(db, threadId, mailboxId);
 
@@ -306,14 +308,25 @@ export async function listThreadMessages(
 	const messageRows = rows.map((row) => row.message);
 	const rfcMessageIdToUuid = buildRfcMessageIdToUuidMap(messageRows);
 
+	const mapped = await Promise.all(
+		messageRows.map(async (message) => {
+			const inReplyTo = resolveInReplyToMessageUuid(
+				message.inReplyTo,
+				rfcMessageIdToUuid,
+			);
+
+			if (options?.includeBody && options.bucket) {
+				const body = await loadMessageBody(db, options.bucket, message);
+				return toThreadMessageWithBody(message, inReplyTo, body);
+			}
+
+			return toThreadMessagePreview(message, inReplyTo);
+		}),
+	);
+
 	return {
 		thread,
-		messages: messageRows.map((message) =>
-			toThreadMessagePreview(
-				message,
-				resolveInReplyToMessageUuid(message.inReplyTo, rfcMessageIdToUuid),
-			),
-		),
+		messages: mapped,
 	};
 }
 
@@ -409,48 +422,18 @@ export async function readMessageFull(
 		throw new Error("Message not found");
 	}
 
-	const attachmentRows = await db
-		.select({
-			id: attachments.id,
-			filename: attachments.filename,
-			mimeType: attachments.mimeType,
-			sizeBytes: attachments.sizeBytes,
-			disposition: attachments.disposition,
-			contentId: attachments.contentId,
-		})
-		.from(attachments)
-		.where(eq(attachments.messageId, messageId));
-
+	const body = await loadMessageBody(db, bucket, message);
 	const object = await bucket.get(message.rawEmlKey);
-	if (!object) {
-		return {
-			id: message.id,
-			threadId: message.threadId,
-			subject: message.subject,
-			text: message.textBody,
-			html: null,
-			from: message.from,
-			to: message.to,
-			cc: message.cc,
-			bcc: message.bcc,
-			direction: message.direction,
-			sendStatus: message.sendStatus,
-			rfcMessageId: message.messageId,
-			headers: [],
-			attachments: attachmentRows,
-			sentAt: message.sentAt?.toISOString() ?? null,
-			receivedAt: message.receivedAt.toISOString(),
-		};
-	}
-
-	const parsed = await PostalMime.parse(await object.arrayBuffer());
+	const parsed = object
+		? await PostalMime.parse(await object.arrayBuffer())
+		: null;
 
 	return {
 		id: message.id,
 		threadId: message.threadId,
-		subject: parsed.subject ?? message.subject,
-		text: parsed.text ?? message.textBody,
-		html: parsed.html ?? null,
+		subject: parsed?.subject ?? message.subject,
+		text: body.text,
+		html: body.html,
 		from: message.from,
 		to: message.to,
 		cc: message.cc,
@@ -458,11 +441,11 @@ export async function readMessageFull(
 		direction: message.direction,
 		sendStatus: message.sendStatus,
 		rfcMessageId: message.messageId,
-		headers: (parsed.headers ?? []).map((header) => ({
+		headers: (parsed?.headers ?? []).map((header) => ({
 			name: header.key,
 			value: header.value,
 		})),
-		attachments: attachmentRows,
+		attachments: body.attachments,
 		sentAt: message.sentAt?.toISOString() ?? null,
 		receivedAt: message.receivedAt.toISOString(),
 	};

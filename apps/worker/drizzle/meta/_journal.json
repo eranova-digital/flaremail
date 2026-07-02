@@ -85,6 +85,13 @@
       "when": 1782778200000,
       "tag": "0011_alias_target_address",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1782778800000,
+      "tag": "0012_deletion_matrix_guards",
+      "breakpoints": true
     }
   ]
 }

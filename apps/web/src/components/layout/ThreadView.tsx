@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThreadActions } from "@/components/layout/ThreadActions";
-import { useMessage, useSendDraft, useThreadMessages } from "@/hooks/use-thread";
+import { useSendDraft, useThreadMessages } from "@/hooks/use-thread";
 import { isThreadFolder } from "@/lib/folders";
 import { getErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
@@ -18,59 +18,58 @@ function isDraftMessage(sendStatus?: string | null): boolean {
 }
 
 function MessageBody({
-	mailboxId,
-	messageId,
-	isDraft,
 	preview,
+	text,
+	html,
+	attachments,
+	direction,
 }: {
-	mailboxId: string;
-	messageId: string;
-	isDraft: boolean;
 	preview?: string | null;
+	text?: string | null;
+	html?: string | null;
+	attachments?: Array<{
+		id?: string;
+		filename?: string | null;
+		mimeType?: string;
+		sizeBytes?: number;
+	}>;
+	direction?: "inbound" | "outbound";
 }) {
-	const messageQuery = useMessage(mailboxId, messageId);
-
-	if (messageQuery.isLoading) {
-		return <Skeleton className="h-24 w-full" />;
-	}
-
-	if (messageQuery.isError) {
-		if (isDraft && preview) {
-			return (
-				<pre className="text-sm whitespace-pre-wrap text-muted-foreground">
-					{preview}
-				</pre>
-			);
-		}
-
+	if (!text && !html && !preview) {
 		return (
-			<p className="text-destructive text-sm">
-				{getErrorMessage(messageQuery.error)}
-			</p>
+			<pre className="text-sm whitespace-pre-wrap text-muted-foreground">
+				(empty message)
+			</pre>
 		);
-	}
-
-	const message = messageQuery.data;
-	if (!message) {
-		return null;
 	}
 
 	return (
 		<>
-			{message.html ? (
+			{html ? (
 				<div
 					className="prose prose-sm max-w-none"
-					dangerouslySetInnerHTML={{ __html: message.html }}
+					dangerouslySetInnerHTML={{ __html: html }}
 				/>
 			) : (
 				<pre className="text-sm whitespace-pre-wrap">
-					{message.text || message.preview || preview || "(empty message)"}
+					{text || preview || "(empty message)"}
 				</pre>
 			)}
-			<MessageAttachments
-				attachments={message.attachments}
-				direction={message.direction}
-			/>
+			{attachments && attachments.length > 0 && direction ? (
+				<MessageAttachments
+					attachments={attachments.filter(
+						(
+							attachment,
+						): attachment is {
+							id: string;
+							filename?: string | null;
+							mimeType: string;
+							sizeBytes: number;
+						} => Boolean(attachment.id && attachment.mimeType),
+					)}
+					direction={direction}
+				/>
+			) : null}
 		</>
 	);
 }
@@ -81,7 +80,9 @@ export function ThreadView() {
 	const [searchParams] = useSearchParams();
 	const folderParam = searchParams.get("folder") ?? "inbox";
 	const folder = isThreadFolder(folderParam) ? folderParam : "inbox";
-	const messagesQuery = useThreadMessages(mailboxId ?? "", threadId);
+	const messagesQuery = useThreadMessages(mailboxId ?? "", threadId, {
+		includeBody: true,
+	});
 	const sendDraftMutation = useSendDraft(mailboxId ?? "", threadId);
 
 	if (!mailboxId || !threadId) {
@@ -229,14 +230,13 @@ export function ThreadView() {
 									</div>
 								</div>
 								<Separator className="mb-3" />
-								{message.id ? (
-									<MessageBody
-										mailboxId={mailboxId}
-										messageId={message.id}
-										isDraft={isDraft}
-										preview={message.preview}
-									/>
-								) : null}
+								<MessageBody
+									preview={message.preview}
+									text={message.text}
+									html={message.html}
+									attachments={message.attachments}
+									direction={message.direction}
+								/>
 							</article>
 						);
 					})}

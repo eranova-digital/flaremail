@@ -20,3 +20,35 @@ export function isReceivingMailboxType(
 ): type is ReceivingMailboxType {
 	return type !== "alias";
 }
+
+export const THREAD_FOLDERS = [
+	"inbox",
+	"spam",
+	"trash",
+	"archived",
+	"drafts",
+	"sent",
+] as const;
+
+export type ThreadFolder = (typeof THREAD_FOLDERS)[number];
+
+export const THREAD_ACTIONS = [
+	"archive",
+	"trash",
+	"spam",
+	"restore",
+	"mark-read",
+	"mark-unread",
+	"star",
+	"unstar",
+] as const;
+
+export type ThreadAction = (typeof THREAD_ACTIONS)[number];
+
+export function isThreadFolder(value: string): value is ThreadFolder {
+	return (THREAD_FOLDERS as readonly string[]).includes(value);
+}
+
+export function isThreadAction(value: string): value is ThreadAction {
+	return (THREAD_ACTIONS as readonly string[]).includes(value);
+}

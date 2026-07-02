@@ -2,20 +2,12 @@ import { and, eq } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import { threadMailboxes } from "../db/schema";
-import type { ThreadFolder } from "../lib/touch-thread";
-import { findThreadMailbox } from "./thread-mailbox";
+import type { ThreadFolder, ThreadAction } from "../lib/mailbox-types";
+import { findThreadMailbox } from "./thread-mailbox-access";
+
+export type { ThreadAction } from "../lib/mailbox-types";
 
 const DESTRUCTIVE_FOLDERS = new Set<ThreadFolder>(["trash", "spam", "archived"]);
-
-export type ThreadAction =
-	| "archive"
-	| "trash"
-	| "spam"
-	| "restore"
-	| "mark-read"
-	| "mark-unread"
-	| "star"
-	| "unstar";
 
 async function getThreadMailboxOrThrow(
 	db: Database,

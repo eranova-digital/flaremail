@@ -2,12 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { assertData } from "@/lib/api/errors";
 import {
-	getMessage,
 	getThread,
 	listThreadMessages,
 	runThreadAction,
 	sendDraft,
 } from "@/lib/api/client";
+import { invalidateMailboxThreads } from "@/lib/invalidate-mailbox";
 import { queryKeys } from "@/lib/query-keys";
 
 export function useSendDraft(mailboxId: string, threadId?: string) {
@@ -22,15 +22,7 @@ export function useSendDraft(mailboxId: string, threadId?: string) {
 			return assertData(data, "sendDraft");
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["threads", mailboxId] });
-			if (threadId) {
-				queryClient.invalidateQueries({
-					queryKey: queryKeys.threadMessages(mailboxId, threadId),
-				});
-				queryClient.invalidateQueries({
-					queryKey: queryKeys.thread(mailboxId, threadId),
-				});
-			}
+			invalidateMailboxThreads(queryClient, mailboxId, threadId);
 		},
 	});
 }
@@ -53,33 +45,25 @@ export function useThread(mailboxId: string, threadId: string | undefined) {
 export function useThreadMessages(
 	mailboxId: string,
 	threadId: string | undefined,
+	options?: { includeBody?: boolean },
 ) {
 	return useQuery({
-		queryKey: queryKeys.threadMessages(mailboxId, threadId ?? ""),
+		queryKey: [
+			...queryKeys.threadMessages(mailboxId, threadId ?? ""),
+			options?.includeBody ? "with-body" : "preview-only",
+		],
 		queryFn: async () => {
 			const { data } = await listThreadMessages({
 				throwOnError: true,
 				path: { id: threadId! },
-				query: { mailboxId },
+				query: {
+					mailboxId,
+					includeBody: options?.includeBody,
+				},
 			});
 			return assertData(data, "listThreadMessages");
 		},
 		enabled: Boolean(mailboxId && threadId),
-	});
-}
-
-export function useMessage(mailboxId: string, messageId: string | undefined) {
-	return useQuery({
-		queryKey: queryKeys.message(mailboxId, messageId ?? ""),
-		queryFn: async () => {
-			const { data } = await getMessage({
-				throwOnError: true,
-				path: { id: messageId! },
-				query: { mailboxId },
-			});
-			return assertData(data, "getMessage");
-		},
-		enabled: Boolean(mailboxId && messageId),
 	});
 }
 
@@ -101,17 +85,7 @@ export function useThreadAction(
 			return assertData(data, "runThreadAction");
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["threads", mailboxId],
-			});
-			if (threadId) {
-				queryClient.invalidateQueries({
-					queryKey: queryKeys.thread(mailboxId, threadId),
-				});
-				queryClient.invalidateQueries({
-					queryKey: queryKeys.threadMessages(mailboxId, threadId),
-				});
-			}
+			invalidateMailboxThreads(queryClient, mailboxId, threadId);
 		},
 	});
 }

@@ -20,6 +20,7 @@
 		"web:dev": "npm run dev -w @test-worker/web",
 		"web:build": "npm run build -w @test-worker/web",
 		"web:start": "npm run start -w @test-worker/web",
+		"web:test": "npm run test -w @test-worker/web",
 		"web:apigen": "npm run api:generate -w @test-worker/web"
 	}
 }

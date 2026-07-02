@@ -1,11 +1,12 @@
 import type { Database } from "../db/client";
 import type { messages } from "../db/schema";
 import {
-	promoteThreadMailboxFromDrafts,
-	refreshAllThreadMailboxes,
-	relinkMessageMailboxesAfterSend,
-} from "./message-mailboxes";
+	onDraftDeleted,
+	onOutboundSent,
+} from "./thread-mailbox-sync";
 import type { ThreadTouchData } from "./touch-thread";
+
+export { onDraftDeleted, onMessagePersisted, onOutboundSent } from "./thread-mailbox-sync";
 
 export async function finalizeThreadOnOutboundSend(
 	db: Database,
@@ -13,25 +14,12 @@ export async function finalizeThreadOnOutboundSend(
 	data: ThreadTouchData & { promoteFromDrafts?: boolean },
 	message?: typeof messages.$inferSelect,
 ): Promise<void> {
-	if (message) {
-		await relinkMessageMailboxesAfterSend(db, message, data);
-	}
-
-	if (data.promoteFromDrafts) {
-		await promoteThreadMailboxFromDrafts(db, threadId, data.actualMailboxId, {
-			subject: data.subject,
-			preview: data.preview,
-			lastMessageAt: data.lastMessageAt,
-		});
-		return;
-	}
-
-	await refreshAllThreadMailboxes(db, threadId);
+	await onOutboundSent(db, threadId, data, message);
 }
 
 export async function refreshThreadAfterDraftDelete(
 	db: Database,
 	threadId: string,
 ): Promise<void> {
-	await refreshAllThreadMailboxes(db, threadId);
+	await onDraftDeleted(db, threadId);
 }

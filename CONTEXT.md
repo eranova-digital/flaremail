@@ -35,6 +35,10 @@ _Avoid_: compose session, unsent email
 A thread's placement in the mailbox UI (`inbox`, `sent`, `drafts`, `archived`, `trash`, `spam`).
 _Avoid_: label, category
 
+**Hard delete**:
+A permanent removal of a resource and any private data that only remains meaningful through that resource. Shared message visibility for other **mailboxes** is preserved when ownership can move to another visible non-alias **mailbox**.
+_Avoid_: soft delete, trash
+
 **Label**:
 A user-defined tag applied to a thread within one mailbox.
 _Avoid_: folder, category
