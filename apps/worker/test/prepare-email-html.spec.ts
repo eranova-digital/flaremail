@@ -15,6 +15,25 @@ describe("prepareEmailHtml", () => {
 		expect(html).toContain("background-color:#f3f4f6");
 	});
 
+	it("inlines quote styling and tags cite blockquotes as gmail quotes", async () => {
+		const { html } = await prepareEmailHtml(
+			'<p>Reply</p><blockquote type="cite" class="quote"><p>On date, someone wrote:</p><p>Original</p></blockquote>',
+		);
+
+		expect(html).toContain("border-left:1px solid #ccc");
+		expect(html).toContain("padding-left:1ex");
+		expect(html).toContain("gmail_quote");
+	});
+
+	it("styles plain blockquotes without adding the gmail quote class", async () => {
+		const { html } = await prepareEmailHtml(
+			"<blockquote><p>Just a quote</p></blockquote>",
+		);
+
+		expect(html).toContain("border-left:1px solid #ccc");
+		expect(html).not.toContain("gmail_quote");
+	});
+
 	it("converts data url images to cid inline attachments", async () => {
 		const dataUrl =
 			"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
