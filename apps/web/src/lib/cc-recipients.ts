@@ -86,22 +86,17 @@ export function formatAddedCcRecipients(recipients: string[]): string {
 	return recipients.join(", ");
 }
 
-/**
- * Builds a compact "to" line combining the message's To and Cc recipients.
- * The viewing mailbox is shown as "me" (and listed first), and duplicates are
- * removed so it reads like `me, another@cc.address`.
- */
-export function formatRecipientList(
-	to?: string | null,
-	cc?: string | null,
+function formatAddressField(
+	label: "To" | "CC" | "BCC",
+	value?: string | null,
 	selfAddress?: string | null,
-): string {
+): string | null {
 	const self = selfAddress?.trim().toLowerCase() ?? "";
 	const seen = new Set<string>();
 	const labels: string[] = [];
 	let hasMe = false;
 
-	for (const address of [...parseAddresses(to), ...parseAddresses(cc)]) {
+	for (const address of parseAddresses(value)) {
 		if (self && address === self) {
 			hasMe = true;
 			continue;
@@ -113,5 +108,28 @@ export function formatRecipientList(
 		labels.push(address);
 	}
 
-	return (hasMe ? ["me", ...labels] : labels).join(", ");
+	const parts = hasMe ? ["me", ...labels] : labels;
+	if (parts.length === 0) {
+		return null;
+	}
+
+	return `${label}: ${parts.join(", ")}`;
+}
+
+/**
+ * Builds a compact recipient line with To, CC, and BCC distinguished.
+ */
+export function formatRecipientList(
+	to?: string | null,
+	cc?: string | null,
+	bcc?: string | null,
+	selfAddress?: string | null,
+): string {
+	return [
+		formatAddressField("To", to, selfAddress),
+		formatAddressField("CC", cc, selfAddress),
+		formatAddressField("BCC", bcc, selfAddress),
+	]
+		.filter((segment): segment is string => segment !== null)
+		.join(", ");
 }

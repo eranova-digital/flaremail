@@ -65,27 +65,36 @@ describe("formatAddedCcRecipients", () => {
 });
 
 describe("formatRecipientList", () => {
-	it("shows the viewing mailbox as 'me' and lists it first", () => {
+	it("shows the viewing mailbox as 'me' in the To field", () => {
 		expect(
 			formatRecipientList(
 				"alice@example.com, me@eranova.ro",
 				null,
+				null,
 				"me@eranova.ro",
 			),
-		).toBe("me, alice@example.com");
+		).toBe("To: me, alice@example.com");
 	});
 
-	it("combines to and cc recipients without duplicates", () => {
+	it("distinguishes to, cc, and bcc recipients", () => {
 		expect(
 			formatRecipientList(
-				"alice@example.com",
-				"alice@example.com, bob@example.com",
-				"me@eranova.ro",
+				"patrick@eranova.ro",
+				"contact@eranova.ro",
+				"denis@eranova.ro, paula@borcean.ro",
 			),
-		).toBe("alice@example.com, bob@example.com");
+		).toBe(
+			"To: patrick@eranova.ro, CC: contact@eranova.ro, BCC: denis@eranova.ro, paula@borcean.ro",
+		);
+	});
+
+	it("omits empty recipient fields", () => {
+		expect(
+			formatRecipientList("alice@example.com", null, null, "me@eranova.ro"),
+		).toBe("To: alice@example.com");
 	});
 
 	it("returns an empty string when there are no recipients", () => {
-		expect(formatRecipientList(null, null, "me@eranova.ro")).toBe("");
+		expect(formatRecipientList(null, null, null, "me@eranova.ro")).toBe("");
 	});
 });

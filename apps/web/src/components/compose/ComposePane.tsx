@@ -1,10 +1,11 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { RecipientCombobox } from "@/components/compose/RecipientCombobox";
+import { ComposeEditor } from "@/components/compose/ComposeEditor";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	type ComposeForwardContext,
 	type ComposeReplyContext,
@@ -59,15 +60,32 @@ export function ComposePane({
 		onDraftIdChange?.(compose.draftId);
 		return () => onDraftIdChange?.(null);
 	}, [compose.draftId, onDraftIdChange]);
+
 	const isReply = Boolean(reply);
 	const isReplyAll = Boolean(reply?.replyAll);
-	const hasCcBcc = Boolean(
-		compose.fields.cc.trim() || compose.fields.bcc.trim(),
-	);
-	const [showCcBcc, setShowCcBcc] = useState(false);
+	const hasCc = Boolean(compose.fields.cc.trim());
+	const hasBcc = Boolean(compose.fields.bcc.trim());
+	const [showCc, setShowCc] = useState(false);
+	const [showBcc, setShowBcc] = useState(false);
 	const [showSubjectEditor, setShowSubjectEditor] = useState(false);
+
+	useEffect(() => {
+		if (hasCc) {
+			setShowCc(true);
+		}
+	}, [hasCc]);
+
+	useEffect(() => {
+		if (hasBcc) {
+			setShowBcc(true);
+		}
+	}, [hasBcc]);
+
 	const showToField = !isReply;
-	const showCcBccFields = !isReply || isReplyAll || showCcBcc || hasCcBcc;
+	const showCcField = showCc || hasCc;
+	const showBccField = showBcc || hasBcc;
+	const showCcBccRow = showCcField || showBccField;
+	const showCcBccButtons = !showCcField || !showBccField;
 	const canSend =
 		Boolean(compose.fields.subject.trim()) &&
 		(isReply || Boolean(compose.fields.to.trim()));
@@ -238,62 +256,105 @@ export function ComposePane({
 	);
 
 	const fields = (
-		<div className={cn("space-y-3", !isInline && "overflow-auto p-4")}>
+		<div className="space-y-3">
 			{showToField ? (
 				<div className="space-y-2">
-					<label className="text-sm font-medium" htmlFor="compose-to">
-						To
-					</label>
-					<Input
+					<div className="flex items-center justify-between gap-2">
+						<label className="text-sm font-medium" htmlFor="compose-to">
+							To
+						</label>
+						{showCcBccButtons ? (
+							<div className="flex items-center gap-1">
+								{!showCcField ? (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="text-muted-foreground h-7 px-2"
+										onClick={() => setShowCc(true)}
+									>
+										Cc
+									</Button>
+								) : null}
+								{!showBccField ? (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="text-muted-foreground h-7 px-2"
+										onClick={() => setShowBcc(true)}
+									>
+										Bcc
+									</Button>
+								) : null}
+							</div>
+						) : null}
+					</div>
+					<RecipientCombobox
 						id="compose-to"
 						value={compose.fields.to}
-						onChange={(event) =>
-							compose.updateFields({ to: event.target.value })
-						}
+						onValueChange={(to) => compose.updateFields({ to })}
 						placeholder="recipient@example.com"
 					/>
 				</div>
 			) : null}
-			{isReply && !showCcBccFields ? (
-				<Button
-					type="button"
-					variant="link"
-					size="sm"
-					className="text-muted-foreground h-auto p-0"
-					onClick={() => setShowCcBcc(true)}
-				>
-					Cc / Bcc
-				</Button>
-			) : null}
-			{showCcBccFields ? (
-				<>
-					<div className="space-y-2">
-						<label className="text-sm font-medium" htmlFor="compose-cc">
+			{!showToField && showCcBccButtons ? (
+				<div className="flex items-center gap-1">
+					{!showCcField ? (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="text-muted-foreground h-7 px-2"
+							onClick={() => setShowCc(true)}
+						>
 							Cc
-						</label>
-						<Input
-							id="compose-cc"
-							value={compose.fields.cc}
-							onChange={(event) =>
-								compose.updateFields({ cc: event.target.value })
-							}
-							placeholder={isReply ? "Optional" : undefined}
-						/>
-					</div>
-					<div className="space-y-2">
-						<label className="text-sm font-medium" htmlFor="compose-bcc">
+						</Button>
+					) : null}
+					{!showBccField ? (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="text-muted-foreground h-7 px-2"
+							onClick={() => setShowBcc(true)}
+						>
 							Bcc
-						</label>
-						<Input
-							id="compose-bcc"
-							value={compose.fields.bcc}
-							onChange={(event) =>
-								compose.updateFields({ bcc: event.target.value })
-							}
-							placeholder={isReply ? "Optional" : undefined}
-						/>
-					</div>
-				</>
+						</Button>
+					) : null}
+				</div>
+			) : null}
+			{showCcBccRow ? (
+				<div className="flex gap-3">
+					{showCcField ? (
+						<div className="min-w-0 flex-1 space-y-2">
+							<label className="text-sm font-medium" htmlFor="compose-cc">
+								Cc
+							</label>
+							<RecipientCombobox
+								id="compose-cc"
+								value={compose.fields.cc}
+								onValueChange={(cc) => compose.updateFields({ cc })}
+								placeholder={isReply ? "Optional" : "cc@example.com"}
+								onEmptyBlur={() => setShowCc(false)}
+							/>
+						</div>
+					) : null}
+					{showBccField ? (
+						<div className="min-w-0 flex-1 space-y-2">
+							<label className="text-sm font-medium" htmlFor="compose-bcc">
+								Bcc
+							</label>
+							<RecipientCombobox
+								id="compose-bcc"
+								value={compose.fields.bcc}
+								onValueChange={(bcc) => compose.updateFields({ bcc })}
+								placeholder={isReply ? "Optional" : "bcc@example.com"}
+								onEmptyBlur={() => setShowBcc(false)}
+							/>
+						</div>
+					) : null}
+				</div>
 			) : null}
 			{isReply ? (
 				showSubjectEditor ? (
@@ -341,12 +402,15 @@ export function ComposePane({
 				<label className="text-sm font-medium" htmlFor="compose-body">
 					{compose.forwardSource ? "Message" : "Body"}
 				</label>
-				<Textarea
+				<ComposeEditor
+					key={`${compose.draftId ?? "new"}-${compose.initialized}`}
 					id="compose-body"
 					className={cn(isInline ? "min-h-[160px]" : "min-h-[280px]")}
-					value={compose.fields.body}
-					onChange={(event) =>
-						compose.updateFields({ body: event.target.value })
+					initialHtml={compose.fields.bodyHtml}
+					placeholder="Write your message…"
+					disabled={compose.isSending}
+					onChange={({ html, text }) =>
+						compose.updateFields({ bodyHtml: html, body: text })
 					}
 				/>
 			</div>
@@ -383,7 +447,9 @@ export function ComposePane({
 	return (
 		<div className="flex h-full flex-col">
 			{header}
-			{fields}
+			<div className="min-h-0 flex-1 overflow-auto">
+				<div className="p-4">{fields}</div>
+			</div>
 		</div>
 	);
 }

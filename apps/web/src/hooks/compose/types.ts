@@ -4,6 +4,11 @@ import type {
 } from "@/lib/api/client";
 import type { ComposeAttachment } from "@/lib/compose-attachments";
 import type { ReplyQuoteParent } from "@/lib/build-reply-quote";
+import {
+	composeBodyFromMessage,
+	composeBodyHasContent,
+	isEmptyEditorHtml,
+} from "@/lib/compose-body";
 
 export type { ReplyQuoteParent };
 
@@ -13,6 +18,7 @@ export type ComposeFields = {
 	bcc: string;
 	subject: string;
 	body: string;
+	bodyHtml: string;
 };
 
 export type ComposeReplyContext = {
@@ -44,6 +50,7 @@ export const EMPTY_FIELDS: ComposeFields = {
 	bcc: "",
 	subject: "",
 	body: "",
+	bodyHtml: "<p></p>",
 };
 
 export function parseRecipients(value: string): CreateDraftRequest["to"] {
@@ -51,6 +58,10 @@ export function parseRecipients(value: string): CreateDraftRequest["to"] {
 		.split(",")
 		.map((part) => part.trim())
 		.filter(Boolean);
+}
+
+export function formatRecipients(recipients: string[]): string {
+	return recipients.join(", ");
 }
 
 export function fieldsToPayload(
@@ -67,6 +78,10 @@ export function fieldsToPayload(
 		subject: fields.subject,
 		text: fields.body,
 	};
+
+	if (!isEmptyEditorHtml(fields.bodyHtml)) {
+		base.html = fields.bodyHtml;
+	}
 
 	if (attachments) {
 		base.attachments = attachments;
@@ -96,6 +111,10 @@ export function outboundFromFields(
 		text: fields.body,
 	};
 
+	if (!isEmptyEditorHtml(fields.bodyHtml)) {
+		body.html = fields.bodyHtml;
+	}
+
 	if (attachments) {
 		body.attachments = attachments;
 	}
@@ -120,7 +139,7 @@ export function hasComposeContent(
 			fields.cc.trim() ||
 			fields.bcc.trim() ||
 			fields.subject.trim() ||
-			fields.body.trim() ||
+			composeBodyHasContent(fields.body, fields.bodyHtml) ||
 			attachments.length > 0,
 	);
 }
@@ -170,13 +189,17 @@ export function messageToFields(message: {
 	bcc?: string | null;
 	subject?: string | null;
 	text?: string | null;
+	html?: string | null;
 	preview?: string | null;
 }): ComposeFields {
+	const { body, bodyHtml } = composeBodyFromMessage(message);
+
 	return {
 		to: message.to ?? "",
 		cc: message.cc ?? "",
 		bcc: message.bcc ?? "",
 		subject: message.subject ?? "",
-		body: message.text ?? message.preview ?? "",
+		body,
+		bodyHtml,
 	};
 }

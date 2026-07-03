@@ -180,6 +180,7 @@ export type ThreadMessagePreview = {
     from?: string;
     to?: string;
     cc?: string | null;
+    bcc?: string | null;
     direction?: 'inbound' | 'outbound';
     sendStatus?: string | null;
     hasHtml?: boolean;
@@ -231,6 +232,7 @@ export type MessagePreview = {
     from?: string;
     to?: string;
     cc?: string | null;
+    bcc?: string | null;
     direction?: 'inbound' | 'outbound';
     sendStatus?: string | null;
     hasHtml?: boolean;

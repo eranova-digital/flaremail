@@ -28,11 +28,13 @@ import type { OutboundContext } from "./outbound-context";
 import {
 	loadDraftOutboundPayload,
 	loadStoredAttachmentInputs,
+	outboundAttachmentsToStoredInputs,
 	storedInputsToOutboundAttachments,
 	type OutboundAttachmentInput,
 } from "./outbound-attachments";
 import type { ForwardBody, OutboundMessageBody, ReplyBody } from "./outbound-payload";
 import { sendAndPersistNewMessage } from "./outbound-persist";
+import { prepareOutboundMessageBody } from "./prepare-email-html";
 import { resolveReplyPayload } from "./outbound-threading";
 import { resolveReplyRecipients } from "./resolve-reply-recipients";
 import { sendEmail } from "./send-email";
@@ -64,12 +66,20 @@ export async function sendDraftMessage(
 
 	await assertCanSendFrom(ctx.db, mailbox.id);
 
-	const payload = await loadDraftOutboundPayload(ctx.bucket, draft);
-	const attachmentInputs = await loadStoredAttachmentInputs(
+	const rawPayload = await loadDraftOutboundPayload(ctx.bucket, draft);
+	const payload = await prepareOutboundMessageBody(rawPayload);
+	const storedAttachmentInputs = await loadStoredAttachmentInputs(
 		ctx.db,
 		ctx.bucket,
 		messageId,
 	);
+	// `prepareOutboundMessageBody` converts base64 `data:` images embedded in the
+	// draft HTML into CID inline attachments. Persist and send them alongside the
+	// draft's real file attachments so external clients can render inline images.
+	const attachmentInputs = [
+		...storedAttachmentInputs,
+		...outboundAttachmentsToStoredInputs(payload.attachments),
+	];
 	const now = new Date();
 	const sendPayload = buildEmailSendPayload({
 		from: mailbox.address,

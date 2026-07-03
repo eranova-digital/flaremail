@@ -8,7 +8,14 @@ import {
 	hasComposeSubject,
 } from "@/hooks/compose/types";
 
-const emptyFields = { to: "", cc: "", bcc: "", subject: "", body: "" };
+const emptyFields = {
+	to: "",
+	cc: "",
+	bcc: "",
+	subject: "",
+	body: "",
+	bodyHtml: "<p></p>",
+};
 
 describe("hasComposeSubject", () => {
 	it("returns false when subject is blank", () => {

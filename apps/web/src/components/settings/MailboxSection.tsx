@@ -4,7 +4,7 @@ import { ChevronDown, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Combobox } from "@/components/ui/combobox";
+import { LegacyCombobox } from "@/components/ui/legacy-combobox";
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -297,7 +297,7 @@ export function MailboxSection() {
 							<label className="text-sm font-medium" htmlFor="alias-target">
 								Alias target
 							</label>
-							<Combobox
+							<LegacyCombobox
 								id="alias-target"
 								value={form.aliasTarget}
 								onValueChange={(aliasTarget) =>

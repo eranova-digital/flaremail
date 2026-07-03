@@ -6,6 +6,7 @@ export function ComposePage() {
 	const navigate = useNavigate();
 	const { mailboxId } = useParams();
 	const [searchParams] = useSearchParams();
+
 	const replyTo = searchParams.get("replyTo") ?? undefined;
 	const forwardTo = searchParams.get("forward") ?? undefined;
 	const draftId = searchParams.get("draftId") ?? undefined;

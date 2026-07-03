@@ -34,6 +34,7 @@ export function useComposeAutosave({
 	setAttachments,
 	reply,
 	isForwardMode,
+	sealedRef,
 }: {
 	mailboxId: string;
 	draftId: string | null;
@@ -45,6 +46,7 @@ export function useComposeAutosave({
 	setAttachments: (attachments: ComposeAttachment[]) => void;
 	reply?: ComposeReplyContext;
 	isForwardMode: boolean;
+	sealedRef: React.MutableRefObject<boolean>;
 }) {
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +103,7 @@ export function useComposeAutosave({
 	);
 
 	const persistDraft = useCallback(async (): Promise<boolean> => {
-		if (isForwardMode) {
+		if (isForwardMode || sealedRef.current) {
 			return false;
 		}
 
@@ -191,7 +193,7 @@ export function useComposeAutosave({
 	}, [persistDraft]);
 
 	const scheduleSave = useCallback(() => {
-		if (isForwardMode) {
+		if (isForwardMode || sealedRef.current) {
 			return;
 		}
 

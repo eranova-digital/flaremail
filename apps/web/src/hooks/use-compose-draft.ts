@@ -53,6 +53,11 @@ export function useComposeDraft(
 	const attachmentsRef = useRef(attachments);
 	const attachmentsDirtyRef = useRef(false);
 	const draftIdRef = useRef(draftId);
+	// Once a send starts succeeding the draft is promoted to a sent message.
+	// Any autosave that fires afterwards would target a message that is no longer
+	// a draft (the server rejects it) and its state churn can starve the router
+	// navigation. Sealing stops autosaves for the rest of this composer's life.
+	const sealedRef = useRef(false);
 	fieldsRef.current = fields;
 	attachmentsRef.current = attachments;
 	draftIdRef.current = draftId;
@@ -77,6 +82,7 @@ export function useComposeDraft(
 		setAttachments,
 		reply,
 		isForwardMode,
+		sealedRef,
 	});
 
 	const { send, isSending, sendError } = useComposeSend({
@@ -94,6 +100,7 @@ export function useComposeDraft(
 		createMutation,
 		updateMutation,
 		flushPendingSave,
+		sealedRef,
 	});
 
 	const deleteDraftMutation = useDeleteDraft(mailboxId, invalidationThreadId);

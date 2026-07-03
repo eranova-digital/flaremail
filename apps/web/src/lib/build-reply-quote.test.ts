@@ -14,7 +14,19 @@ describe("buildReplyQuotedText", () => {
 		});
 
 		expect(quoted).toMatch(
-			/^On Thu, 2 Jul 2026 at \d{2}:\d{2}, <patrick@borcean\.ro> wrote:\n\nThis is the x email test\.$/,
+			/^On Thu, 2 Jul 2026 at \d{2}:\d{2}, <patrick@borcean\.ro> wrote:\n> This is the x email test\.$/,
+		);
+	});
+
+	it("prefixes every line of the quoted body with '>'", () => {
+		const quoted = buildReplyQuotedText({
+			from: "alice@example.com",
+			text: "Hi Bob,\n\nDo you think you'll have the report ready by tomorrow?\n\nThanks,\nAlice",
+			sentAt: "2026-07-03T07:15:00.000Z",
+		});
+
+		expect(quoted).toContain(
+			"> Hi Bob,\n>\n> Do you think you'll have the report ready by tomorrow?\n>\n> Thanks,\n> Alice",
 		);
 	});
 
@@ -36,7 +48,7 @@ This is the x email test.`,
 
 describe("ensureReplyQuoteBody", () => {
 	const quote =
-		"On Thu, 2 Jul 2026 at 18:14, <patrick@borcean.ro> wrote:\n\nThis is the x email test.";
+		"On Thu, 2 Jul 2026 at 18:14, <patrick@borcean.ro> wrote:\n> This is the x email test.";
 
 	it("prepends blank lines before the quote for an empty body", () => {
 		expect(ensureReplyQuoteBody("", quote)).toBe(`\n\n${quote}`);

@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { MessageAttachments } from "@/components/message/MessageAttachments";
+import { hydrateInlineImagesForDisplay } from "@/lib/email-html";
 import { getPlainTextSource, parseReplyBody } from "@/lib/parse-reply-body";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ type MessageBodyProps = {
 		filename?: string | null;
 		mimeType?: string;
 		sizeBytes?: number;
+		disposition?: string | null;
+		contentId?: string | null;
 	}>;
 	direction?: "inbound" | "outbound";
 };
@@ -25,6 +28,25 @@ export function MessageBody({
 	direction,
 }: MessageBodyProps) {
 	const [showQuote, setShowQuote] = useState(false);
+	const [displayHtml, setDisplayHtml] = useState(html ?? "");
+
+	useEffect(() => {
+		if (!html) {
+			setDisplayHtml("");
+			return;
+		}
+
+		let cancelled = false;
+		void hydrateInlineImagesForDisplay(html, attachments ?? []).then((next) => {
+			if (!cancelled) {
+				setDisplayHtml(next);
+			}
+		});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [attachments, html]);
 
 	const plainSource = useMemo(
 		() => getPlainTextSource(text, html, preview),
@@ -41,7 +63,7 @@ export function MessageBody({
 
 	if (!text && !html && !preview) {
 		return (
-			<pre className="text-sm whitespace-pre-wrap text-muted-foreground">
+			<pre className="text-muted-foreground text-sm whitespace-pre-wrap">
 				(empty message)
 			</pre>
 		);
@@ -54,8 +76,8 @@ export function MessageBody({
 			</pre>
 		) : html ? (
 			<div
-				className="prose prose-sm max-w-none"
-				dangerouslySetInnerHTML={{ __html: html }}
+				className="message-html-body text-sm"
+				dangerouslySetInnerHTML={{ __html: displayHtml || html }}
 			/>
 		) : (
 			<pre className="text-sm whitespace-pre-wrap">
@@ -97,7 +119,9 @@ export function MessageBody({
 							filename?: string | null;
 							mimeType: string;
 							sizeBytes: number;
-						} => Boolean(attachment.id && attachment.mimeType),
+						} =>
+							Boolean(attachment.id && attachment.mimeType) &&
+							attachment.disposition !== "inline",
 					)}
 					direction={direction}
 				/>

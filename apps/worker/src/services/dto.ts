@@ -191,6 +191,7 @@ export function toMessagePreview(message: Message) {
 		from: message.from,
 		to: message.to,
 		cc: message.cc,
+		bcc: message.bcc,
 		direction: message.direction,
 		sendStatus: message.sendStatus,
 		hasHtml: message.hasHtml,
