@@ -1,6 +1,8 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { ComposePane } from "@/components/compose/ComposePane";
+import { isThreadFolder } from "@/lib/folders";
+import { labelListPath, threadPath } from "@/lib/mailbox-routes";
 
 export function ComposePage() {
 	const navigate = useNavigate();
@@ -11,7 +13,9 @@ export function ComposePage() {
 	const forwardTo = searchParams.get("forward") ?? undefined;
 	const draftId = searchParams.get("draftId") ?? undefined;
 	const threadId = searchParams.get("threadId") ?? undefined;
-	const folder = searchParams.get("folder") ?? "inbox";
+	const folderParam = searchParams.get("folder") ?? "inbox";
+	const folder = isThreadFolder(folderParam) ? folderParam : "inbox";
+	const labelId = searchParams.get("label") ?? undefined;
 
 	if (!mailboxId) {
 		return null;
@@ -19,12 +23,14 @@ export function ComposePage() {
 
 	const backTo =
 		draftId && threadId
-			? `/m/${mailboxId}/threads/${threadId}?folder=${folder}`
+			? threadPath(mailboxId, threadId, { folder, labelId })
 			: replyTo && threadId
-				? `/m/${mailboxId}/threads/${threadId}?folder=${folder}`
+				? threadPath(mailboxId, threadId, { folder, labelId })
 				: forwardTo && threadId
-					? `/m/${mailboxId}/threads/${threadId}?folder=${folder}`
-					: `/m/${mailboxId}/${folder}`;
+					? threadPath(mailboxId, threadId, { folder, labelId })
+					: labelId
+						? labelListPath(mailboxId, labelId)
+						: `/m/${mailboxId}/${folder}`;
 
 	return (
 		<ComposePane
@@ -43,11 +49,14 @@ export function ComposePage() {
 				const sentThreadId = result.threadId ?? threadId;
 				if (sentThreadId) {
 					navigate(
-						`/m/${mailboxId}/threads/${sentThreadId}?folder=${replyTo || forwardTo ? "inbox" : "sent"}`,
+						threadPath(mailboxId, sentThreadId, {
+							folder: replyTo || forwardTo ? "inbox" : "sent",
+							labelId,
+						}),
 					);
 					return;
 				}
-				navigate(`/m/${mailboxId}/sent`);
+				navigate(labelId ? labelListPath(mailboxId, labelId) : `/m/${mailboxId}/sent`);
 			}}
 		/>
 	);

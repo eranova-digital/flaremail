@@ -8,8 +8,14 @@ export const queryKeys = {
 		["domain-validation-runs", domainId] as const,
 	domain: (domainId: string) => ["domain", domainId] as const,
 	mailboxes: ["mailboxes"] as const,
+	labels: (mailboxId: string) => ["labels", mailboxId] as const,
 	threads: (mailboxId: string, folder: ThreadFolder, cursor?: string | null) =>
 		["threads", mailboxId, folder, cursor ?? null] as const,
+	threadsByLabel: (
+		mailboxId: string,
+		labelId: string,
+		folder: ThreadFolder,
+	) => ["threads-by-label", mailboxId, labelId, folder] as const,
 	thread: (mailboxId: string, threadId: string) =>
 		["thread", mailboxId, threadId] as const,
 	threadMessages: (mailboxId: string, threadId: string) =>

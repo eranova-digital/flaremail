@@ -123,6 +123,7 @@ export async function listThreads(
 	mailboxId: string,
 	options: {
 		folder?: ThreadFolder | null;
+		labelId?: string | null;
 		cursor?: string | null;
 		limit?: number;
 	},
@@ -131,6 +132,23 @@ export async function listThreads(
 	const cursor = decodeCursor(options.cursor ?? null);
 
 	const conditions = [eq(threadMailboxes.mailboxId, mailboxId)];
+	if (options.labelId) {
+		conditions.push(
+			exists(
+				db
+					.select({ one: sql`1` })
+					.from(threadLabels)
+					.innerJoin(labels, eq(labels.id, threadLabels.labelId))
+					.where(
+						and(
+							eq(threadLabels.threadId, threadMailboxes.threadId),
+							eq(threadLabels.labelId, options.labelId),
+							eq(labels.mailboxId, mailboxId),
+						),
+					),
+			),
+		);
+	}
 	if (options.folder) {
 		conditions.push(eq(threadMailboxes.folder, options.folder));
 		if (options.folder === "drafts") {

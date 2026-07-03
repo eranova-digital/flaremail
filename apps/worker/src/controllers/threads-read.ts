@@ -37,10 +37,13 @@ export async function handleListThreads({
 		return validationError(request, "Invalid folder query parameter");
 	}
 
+	const labelId = url.searchParams.get("labelId");
+
 	try {
 		const result = await withDb(env, (db) =>
 			listThreads(db, mailboxId, {
 				folder,
+				labelId,
 				cursor: url.searchParams.get("cursor"),
 				limit: parseLimit(url.searchParams.get("limit")),
 			}),

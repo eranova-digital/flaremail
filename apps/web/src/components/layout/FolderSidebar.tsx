@@ -14,6 +14,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { MailboxSwitcher } from '@/components/layout/MailboxSwitcher';
+import { LabelsSection } from '@/components/layout/LabelsSection';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -61,15 +62,17 @@ function withTooltip(collapsed: boolean, label: string, trigger: ReactElement): 
 
 export function FolderSidebar() {
 	const navigate = useNavigate();
-	const { mailboxId, folder: folderParam } = useParams();
+	const { mailboxId, folder: folderParam, labelId } = useParams();
 	const [searchParams] = useSearchParams();
 	const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 	const activeFolder =
-		folderParam && isThreadFolder(folderParam)
-			? folderParam
-			: isThreadFolder(searchParams.get('folder') ?? '')
-				? (searchParams.get('folder') as ThreadFolder)
-				: 'inbox';
+		labelId
+			? null
+			: folderParam && isThreadFolder(folderParam)
+				? folderParam
+				: isThreadFolder(searchParams.get('folder') ?? '')
+					? (searchParams.get('folder') as ThreadFolder)
+					: 'inbox';
 
 	if (!mailboxId) {
 		return null;
@@ -115,7 +118,7 @@ export function FolderSidebar() {
 					)}
 				</div>
 				<Separator />
-				<nav className={cn('flex-1 space-y-1 p-2', collapsed && 'px-2')}>
+				<nav className={cn('min-h-0 flex-1 space-y-1 overflow-y-auto p-2', collapsed && 'px-2')}>
 					{FOLDERS.map((item) => {
 						const Icon = FOLDER_ICONS[item];
 						const link = (
@@ -125,7 +128,8 @@ export function FolderSidebar() {
 									cn(
 										'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
 										collapsed && 'justify-center px-0',
-										(isActive || activeFolder === item) && 'bg-accent text-accent-foreground font-medium',
+										(isActive || (!labelId && activeFolder === item)) &&
+											'bg-accent text-accent-foreground font-medium',
 									)
 								}
 							>
@@ -135,6 +139,11 @@ export function FolderSidebar() {
 						);
 						return <div key={item}>{withTooltip(collapsed, FOLDER_LABELS[item], link)}</div>;
 					})}
+					<Separator className="my-2" />
+					<LabelsSection
+						collapsed={collapsed}
+						withTooltip={(label, trigger) => withTooltip(collapsed, label, trigger)}
+					/>
 				</nav>
 				<div className={cn('p-2', collapsed && 'px-2')}>
 					{withTooltip(
