@@ -9,8 +9,6 @@ import type { Message } from "../src/db/schema";
 
 function message(overrides: Partial<Message> & Pick<Message, "id" | "messageId">): Message {
 	return {
-		id: overrides.id,
-		messageId: overrides.messageId,
 		threadId: "thread-1",
 		direction: "inbound",
 		sendStatus: null,
@@ -21,7 +19,7 @@ function message(overrides: Partial<Message> & Pick<Message, "id" | "messageId">
 		envelopeTo: "recipient@example.com",
 		actualMailboxId: "mailbox-1",
 		matchedMailboxId: "mailbox-1",
-		matchedVia: "envelope",
+		matchedVia: "exact",
 		cc: null,
 		bcc: null,
 		subject: "Hello",

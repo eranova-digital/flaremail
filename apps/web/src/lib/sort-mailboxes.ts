@@ -97,7 +97,7 @@ export function groupMailboxesByDomain(
 	mailboxes: Mailbox[],
 	domainNamesById: Map<string, string>,
 ): MailboxDomainGroup[] {
-	const groups = new Map<string, MailboxDomainGroup>();
+	const groups = new Map<string, Omit<MailboxDomainGroup, "typeGroups">>();
 
 	for (const mailbox of mailboxes) {
 		const domainName =

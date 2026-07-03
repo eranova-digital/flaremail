@@ -31,7 +31,7 @@ export function attachmentStorageKey(
 }
 
 export function attachmentContentToArrayBuffer(
-	content: ArrayBuffer | Uint8Array | string,
+	content: ArrayBuffer | ArrayBufferView | string,
 ): ArrayBuffer {
 	if (typeof content === "string") {
 		const bytes = new TextEncoder().encode(content);

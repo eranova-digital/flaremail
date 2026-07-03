@@ -30,7 +30,7 @@ describe("RFC 9457 problem details", () => {
 
 		expect(response.status).toBe(404);
 		expect(response.headers.get("Content-Type")).toContain(PROBLEM_CONTENT_TYPE);
-		const body = await response.json();
+		const body = (await response.json()) as Record<string, unknown>;
 		expect(body.title).toBe("Not Found");
 	});
 });

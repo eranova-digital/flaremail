@@ -34,7 +34,7 @@ describe("v1 API auth", () => {
 
 		expect(response.status).toBe(401);
 		expect(response.headers.get("Content-Type")).toContain(PROBLEM_CONTENT_TYPE);
-		const body = await response.json();
+		const body = (await response.json()) as Record<string, unknown>;
 		expect(body).toMatchObject({
 			type: "/api/v1/problems/unauthorized",
 			title: "Unauthorized",
@@ -77,7 +77,7 @@ describe("v1 API auth", () => {
 
 		expect(response.status).toBe(400);
 		expect(response.headers.get("Content-Type")).toContain(PROBLEM_CONTENT_TYPE);
-		const body = await response.json();
+		const body = (await response.json()) as Record<string, unknown>;
 		expect(body).toMatchObject({
 			type: expect.stringContaining("/api/v1/problems/"),
 			title: "Bad Request",
@@ -96,7 +96,7 @@ describe("v1 API auth", () => {
 		await waitOnExecutionContext(ctx);
 
 		expect(response.status).toBe(400);
-		const body = await response.json();
+		const body = (await response.json()) as Record<string, unknown>;
 		expect(body.code).toBe("missing-query-parameter");
 	});
 
@@ -110,7 +110,7 @@ describe("v1 API auth", () => {
 		await waitOnExecutionContext(ctx);
 
 		expect(response.status).toBe(400);
-		const body = await response.json();
+		const body = (await response.json()) as Record<string, unknown>;
 		expect(body.code).toBe("missing-query-parameter");
 	});
 
@@ -133,7 +133,10 @@ describe("v1 API auth", () => {
 		await waitOnExecutionContext(ctx);
 
 		expect(response.status).toBe(200);
-		const spec = await response.json();
+		const spec = (await response.json()) as {
+			openapi: unknown;
+			paths: Record<string, unknown>;
+		};
 		expect(spec.openapi).toBe("3.1.0");
 		expect(spec.paths["/messages/send"]).toBeDefined();
 	});

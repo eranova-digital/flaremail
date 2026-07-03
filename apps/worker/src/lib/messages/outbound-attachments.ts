@@ -47,7 +47,9 @@ export function storedInputsToOutboundAttachments(
 	return attachmentInputs.map((attachment, index) => ({
 		filename: attachment.filename?.trim() || `attachment-${index + 1}`,
 		mimeType: attachment.mimeType || "application/octet-stream",
-		content: arrayBufferToBase64(attachment.content),
+		content: arrayBufferToBase64(
+			attachmentContentToArrayBuffer(attachment.content),
+		),
 		disposition:
 			attachment.disposition === "inline" ? "inline" : "attachment",
 		contentId: attachment.contentId ?? undefined,
