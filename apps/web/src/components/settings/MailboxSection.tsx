@@ -3,6 +3,7 @@ import { ChevronDown, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
 import {
 	InputGroup,
@@ -210,7 +211,9 @@ export function MailboxSection() {
 				</p>
 			</div>
 
-			<form onSubmit={handleCreate} className="space-y-3 rounded-md border p-4">
+			<Card className="gap-0 rounded-md py-0">
+				<CardContent className="p-0">
+					<form onSubmit={handleCreate} className="space-y-3 p-4">
 				<div className="grid gap-3 sm:grid-cols-2">
 					<div className="space-y-1 sm:col-span-2">
 						<label className="text-sm font-medium" htmlFor="mailbox-local-part">
@@ -326,7 +329,9 @@ export function MailboxSection() {
 				{domains.length === 0 ? (
 					<p className="text-muted-foreground text-sm">Add a domain first.</p>
 				) : null}
-			</form>
+					</form>
+				</CardContent>
+			</Card>
 
 			{createMailbox.isError ? (
 				<p className="text-destructive text-sm">{getErrorMessage(createMailbox.error)}</p>
@@ -376,7 +381,7 @@ function MailboxDomainCard({
 	const domainKey = group.domainId ?? group.domainName;
 
 	return (
-		<div className="rounded-md border">
+		<Card className="gap-0 overflow-hidden rounded-md py-0">
 			{showDomainHeader ? (
 				<div className="bg-muted/40 text-muted-foreground border-b px-4 py-2 text-sm font-medium">
 					{group.domainName}
@@ -393,7 +398,7 @@ function MailboxDomainCard({
 					resolveAliasTargetLabel={resolveAliasTargetLabel}
 				/>
 			))}
-		</div>
+		</Card>
 	);
 }
 

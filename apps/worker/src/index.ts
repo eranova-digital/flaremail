@@ -4,6 +4,7 @@ import { withDb } from './db/client';
 import { tryConsumeValidationInbound } from './lib/domain-validation/consume-inbound';
 import { processTimedOutValidationRuns } from './lib/domain-validation/run-engine';
 import { resolveMailboxForEnvelope } from './lib/resolve-mailbox';
+import { isSelfSentLoopback } from './lib/messages/self-loopback';
 import { storeInboundEmail } from './lib/messages/store-inbound-email';
 import {
 	extractThreadingHeaders,
@@ -53,6 +54,17 @@ export default {
 
 				if (!threading.messageId) {
 					message.setReject('Message-ID header is required');
+					return;
+				}
+
+				// Our own outbound mail (e.g. CC'ing an internal mailbox) loops back
+				// through Email Routing. The outbound send already makes it visible to
+				// internal recipients, so drop the duplicate copy instead of storing a
+				// conflicting inbound row.
+				if (await isSelfSentLoopback(db, parsed, message)) {
+					console.log(
+						`Skipped self-sent loopback ${threading.messageId}: ${message.from} -> ${resolution.envelopeTo}`,
+					);
 					return;
 				}
 

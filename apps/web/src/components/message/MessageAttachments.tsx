@@ -1,20 +1,33 @@
-import { Download, FileIcon, ImageIcon, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Download, FileIcon, Loader2 } from 'lucide-react';
+import { useEffect, useState, type MouseEvent } from 'react';
 
-import { Button } from "@/components/ui/button";
-import type { MessageFull } from "@/lib/api/client";
-import { saveAttachmentFile, fetchAttachmentBlob } from "@/lib/attachments";
-import { getErrorMessage } from "@/lib/api/errors";
-import { formatFileSize } from "@/lib/format-bytes";
-import { cn } from "@/lib/utils";
+import {
+	AttachmentPreviewDialog,
+	toPreviewSourceFromStored,
+} from '@/components/attachment/AttachmentPreviewDialog';
+import {
+	Attachment,
+	AttachmentAction,
+	AttachmentActions,
+	AttachmentContent,
+	AttachmentDescription,
+	AttachmentGroup,
+	AttachmentMedia,
+	AttachmentTitle,
+	AttachmentTrigger,
+} from '@/components/ui/attachment';
+import type { MessageFull } from '@/lib/api/client';
+import { saveAttachmentFile, fetchAttachmentBlob } from '@/lib/attachments';
+import { getErrorMessage } from '@/lib/api/errors';
+import {
+	formatAttachmentDescription,
+	isImageMimeType,
+} from '@/lib/format-attachment';
+import { cn } from '@/lib/utils';
 
-type Attachment = NonNullable<MessageFull["attachments"]>[number];
+type Attachment = NonNullable<MessageFull['attachments']>[number];
 
-function isImageMimeType(mimeType?: string): boolean {
-	return Boolean(mimeType?.startsWith("image/"));
-}
-
-function AttachmentImagePreview({ attachmentId }: { attachmentId: string }) {
+function AttachmentImagePreview({ attachmentId, alt }: { attachmentId: string; alt: string }) {
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
@@ -47,44 +60,40 @@ function AttachmentImagePreview({ attachmentId }: { attachmentId: string }) {
 	}, [attachmentId]);
 
 	if (error) {
-		return (
-			<p className="text-destructive text-xs">{error}</p>
-		);
+		return <FileIcon className="size-4" />;
 	}
 
 	if (!previewUrl) {
-		return <SkeletonBar className="h-40 w-full max-w-md" />;
+		return <div className="bg-muted size-full animate-pulse" />;
 	}
 
-	return (
-		<img
-			src={previewUrl}
-			alt=""
-			className="max-h-64 max-w-full rounded-md border object-contain"
-		/>
-	);
+	return <img src={previewUrl} alt={alt} />;
 }
 
-function SkeletonBar({ className }: { className?: string }) {
-	return (
-		<div
-			className={cn(
-				"bg-muted animate-pulse rounded-md",
-				className,
-			)}
-		/>
-	);
-}
-
-function AttachmentRow({ attachment }: { attachment: Attachment }) {
+function MessageAttachmentCard({ attachment }: { attachment: Attachment }) {
+	const [previewOpen, setPreviewOpen] = useState(false);
 	const [downloading, setDownloading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const filename = attachment.filename?.trim() || "attachment";
-	const sizeLabel = formatFileSize(attachment.sizeBytes);
+	const filename = attachment.filename?.trim() || 'attachment';
+	const description = formatAttachmentDescription(
+		filename,
+		attachment.mimeType,
+		attachment.sizeBytes,
+	);
 	const isImage = isImageMimeType(attachment.mimeType);
+	const previewSource =
+		attachment.id
+			? toPreviewSourceFromStored({
+					id: attachment.id,
+					filename,
+					mimeType: attachment.mimeType,
+					sizeBytes: attachment.sizeBytes,
+				})
+			: null;
 
-	const handleDownload = async () => {
+	const handleDownload = async (event: MouseEvent) => {
+		event.stopPropagation();
 		if (!attachment.id) {
 			return;
 		}
@@ -102,44 +111,50 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
 	};
 
 	return (
-		<li className="bg-muted/40 rounded-md border p-3">
-			<div className="flex items-start justify-between gap-3">
-				<div className="flex min-w-0 items-start gap-2">
-					{isImage ? (
-						<ImageIcon className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+		<>
+			<Attachment
+				state={error ? 'error' : 'done'}
+				orientation={isImage ? 'vertical' : 'horizontal'}
+				className={cn(isImage && 'w-30')}
+			>
+				<AttachmentMedia variant={isImage ? 'image' : 'icon'}>
+					{isImage && attachment.id ? (
+						<AttachmentImagePreview attachmentId={attachment.id} alt={filename} />
 					) : (
-						<FileIcon className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+						<FileIcon />
 					)}
-					<div className="min-w-0">
-						<p className="truncate text-sm font-medium">{filename}</p>
-						<p className="text-muted-foreground text-xs">
-							{[attachment.mimeType, sizeLabel].filter(Boolean).join(" · ")}
-						</p>
-						{error ? (
-							<p className="text-destructive mt-1 text-xs">{error}</p>
-						) : null}
-					</div>
-				</div>
-				<Button
-					variant="outline"
-					size="sm"
-					disabled={downloading || !attachment.id}
-					onClick={() => void handleDownload()}
-				>
-					{downloading ? (
-						<Loader2 className="size-4 animate-spin" />
-					) : (
-						<Download className="size-4" />
-					)}
-					Download
-				</Button>
-			</div>
-			{isImage && attachment.id ? (
-				<div className="mt-3">
-					<AttachmentImagePreview attachmentId={attachment.id} />
-				</div>
-			) : null}
-		</li>
+				</AttachmentMedia>
+				<AttachmentContent>
+					<AttachmentTitle>{filename}</AttachmentTitle>
+					<AttachmentDescription>
+						{error ?? description}
+					</AttachmentDescription>
+				</AttachmentContent>
+				<AttachmentActions>
+					<AttachmentAction
+						aria-label={`Download ${filename}`}
+						disabled={downloading || !attachment.id}
+						onClick={(event) => void handleDownload(event)}
+					>
+						{downloading ? (
+							<Loader2 className="size-3.5 animate-spin" />
+						) : (
+							<Download className="size-3.5" />
+						)}
+					</AttachmentAction>
+				</AttachmentActions>
+				<AttachmentTrigger
+					aria-label={`Preview ${filename}`}
+					disabled={!attachment.id}
+					onClick={() => setPreviewOpen(true)}
+				/>
+			</Attachment>
+			<AttachmentPreviewDialog
+				source={previewSource}
+				open={previewOpen}
+				onOpenChange={setPreviewOpen}
+			/>
+		</>
 	);
 }
 
@@ -147,10 +162,10 @@ export function MessageAttachments({
 	attachments,
 	direction,
 }: {
-	attachments?: MessageFull["attachments"];
-	direction?: MessageFull["direction"];
+	attachments?: MessageFull['attachments'];
+	direction?: MessageFull['direction'];
 }) {
-	if (direction !== "inbound" && direction !== "outbound") {
+	if (direction !== 'inbound' && direction !== 'outbound') {
 		return null;
 	}
 
@@ -159,16 +174,35 @@ export function MessageAttachments({
 		return null;
 	}
 
+	// Images render as tall, portrait-oriented cards while other files render as
+	// wide, horizontal cards. Mixing them in one row looks uneven, so split them
+	// into separate rows (images first, then files).
+	const imageItems = items.filter((attachment) =>
+		isImageMimeType(attachment.mimeType),
+	);
+	const fileItems = items.filter(
+		(attachment) => !isImageMimeType(attachment.mimeType),
+	);
+
 	return (
 		<div className="mt-4 space-y-2">
 			<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-				{items.length} attachment{items.length === 1 ? "" : "s"}
+				{items.length} attachment{items.length === 1 ? '' : 's'}
 			</p>
-			<ul className="space-y-2">
-				{items.map((attachment) => (
-					<AttachmentRow key={attachment.id} attachment={attachment} />
-				))}
-			</ul>
+			{imageItems.length > 0 ? (
+				<AttachmentGroup>
+					{imageItems.map((attachment) => (
+						<MessageAttachmentCard key={attachment.id} attachment={attachment} />
+					))}
+				</AttachmentGroup>
+			) : null}
+			{fileItems.length > 0 ? (
+				<AttachmentGroup>
+					{fileItems.map((attachment) => (
+						<MessageAttachmentCard key={attachment.id} attachment={attachment} />
+					))}
+				</AttachmentGroup>
+			) : null}
 		</div>
 	);
 }

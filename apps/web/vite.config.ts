@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => {
 		resolve: {
 			alias: {
 				"@": path.resolve(__dirname, "./src"),
+				// email-reply-parser imports Node's "module" builtin for an optional
+				// re2 require. Shim it so the browser bundle loads and falls back to
+				// native RegExp.
+				module: path.resolve(__dirname, "./src/lib/shims/module.ts"),
 			},
 		},
 		server: {

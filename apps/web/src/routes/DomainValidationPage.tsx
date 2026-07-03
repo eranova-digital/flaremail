@@ -7,6 +7,7 @@ import { ValidationCheckCard } from "@/components/settings/domain-validation/Val
 import { ValidationLogs } from "@/components/settings/domain-validation/ValidationLogs";
 import { ValidationRunHistory } from "@/components/settings/domain-validation/ValidationRunHistory";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	useDomain,
@@ -91,7 +92,8 @@ export function DomainValidationPage() {
 							{getErrorMessage(domainQuery.error)}
 						</p>
 					) : (
-						<section className="space-y-3 rounded-lg border p-5">
+						<Card className="gap-0 rounded-lg py-0">
+							<CardContent className="space-y-3 p-5">
 							<div className="flex flex-wrap items-center gap-2">
 								<h2 className="text-lg font-medium">Overall status</h2>
 								{badge ? <ReadinessBadge readiness={{ badge }} /> : null}
@@ -112,7 +114,8 @@ export function DomainValidationPage() {
 								Readiness is advisory only. It does not block sending, receiving, or
 								mailbox management for this domain.
 							</p>
-						</section>
+							</CardContent>
+						</Card>
 					)}
 
 					<section className="space-y-4">
@@ -195,7 +198,9 @@ export function DomainValidationPage() {
 					)}
 
 					{selectedRun ? (
-						<dl className="text-muted-foreground space-y-2 rounded-md border p-4 text-sm">
+						<Card className="gap-0 rounded-md py-0">
+							<CardContent className="p-0">
+								<dl className="text-muted-foreground space-y-2 p-4 text-sm">
 							<div>
 								<dt className="text-xs uppercase tracking-wide">Started</dt>
 								<dd>{formatValidationTimestamp(selectedRun.startedAt)}</dd>
@@ -212,7 +217,9 @@ export function DomainValidationPage() {
 									</dd>
 								</div>
 							) : null}
-						</dl>
+								</dl>
+							</CardContent>
+						</Card>
 					) : null}
 				</aside>
 			</main>

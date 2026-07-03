@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
 	TooltipContent,
-	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useThread, useThreadAction } from "@/hooks/use-thread";
@@ -42,8 +41,7 @@ export function ThreadActions({
 	};
 
 	return (
-		<TooltipProvider delayDuration={300}>
-			<div className="flex flex-wrap gap-1">
+		<div className="flex flex-wrap gap-1">
 				{thread.isRead ? (
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -158,6 +156,5 @@ export function ThreadActions({
 					</Tooltip>
 				) : null}
 			</div>
-		</TooltipProvider>
 	);
 }

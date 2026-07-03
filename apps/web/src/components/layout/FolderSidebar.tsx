@@ -1,11 +1,24 @@
-import { Archive, FileText, Inbox, Send, Settings, ShieldAlert, Trash2 } from 'lucide-react';
+import {
+	Archive,
+	FileText,
+	Inbox,
+	PanelLeftClose,
+	PanelLeftOpen,
+	Pencil,
+	Send,
+	Settings,
+	ShieldAlert,
+	Trash2,
+} from 'lucide-react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import { MailboxSwitcher } from '@/components/layout/MailboxSwitcher';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { MailboxSwitcher } from '@/components/layout/MailboxSwitcher';
-import { FOLDER_LABELS, FOLDERS, isThreadFolder } from '@/lib/folders';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ThreadFolder } from '@/lib/api/client';
+import { FOLDER_LABELS, FOLDERS, isThreadFolder } from '@/lib/folders';
 import { cn } from '@/lib/utils';
 
 const FOLDER_ICONS: Record<ThreadFolder, typeof Inbox> = {
@@ -17,10 +30,40 @@ const FOLDER_ICONS: Record<ThreadFolder, typeof Inbox> = {
 	spam: ShieldAlert,
 };
 
+const SIDEBAR_COLLAPSED_KEY = 'flaremail:sidebar-collapsed';
+
+function useSidebarCollapsed(): [boolean, () => void] {
+	const [collapsed, setCollapsed] = useState<boolean>(() => {
+		if (typeof window === 'undefined') {
+			return false;
+		}
+		return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+	});
+
+	useEffect(() => {
+		window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+	}, [collapsed]);
+
+	return [collapsed, () => setCollapsed((value) => !value)];
+}
+
+function withTooltip(collapsed: boolean, label: string, trigger: ReactElement): ReactElement {
+	if (!collapsed) {
+		return trigger;
+	}
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>{trigger}</TooltipTrigger>
+			<TooltipContent side="right">{label}</TooltipContent>
+		</Tooltip>
+	);
+}
+
 export function FolderSidebar() {
 	const navigate = useNavigate();
 	const { mailboxId, folder: folderParam } = useParams();
 	const [searchParams] = useSearchParams();
+	const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 	const activeFolder =
 		folderParam && isThreadFolder(folderParam)
 			? folderParam
@@ -33,51 +76,86 @@ export function FolderSidebar() {
 	}
 
 	return (
-		<aside className="bg-muted/30 flex h-full w-3xs shrink-0 flex-col border-r">
-			<div className="space-y-3 p-3">
-				<div className="px-1">
-					<h1 className="text-lg font-semibold tracking-tight">Flaremail</h1>
+		<TooltipProvider delayDuration={0}>
+			<aside
+				className={cn(
+					'bg-muted/30 flex h-full shrink-0 flex-col border-r transition-[width] duration-200 ease-in-out',
+					collapsed ? 'w-14' : 'w-56',
+				)}
+			>
+				<div className={cn('space-y-3 p-3', collapsed && 'px-2')}>
+					<div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between px-1')}>
+						{!collapsed ? <h1 className="text-lg font-semibold tracking-tight">Flaremail</h1> : null}
+						{withTooltip(
+							collapsed,
+							'Expand sidebar',
+							<Button
+								variant="ghost"
+								size="icon"
+								className="size-8 shrink-0"
+								aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+								onClick={toggleCollapsed}
+							>
+								{collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+							</Button>,
+						)}
+					</div>
+					{!collapsed ? <MailboxSwitcher /> : null}
+					{withTooltip(
+						collapsed,
+						'Compose',
+						<Button
+							className={cn(collapsed ? 'size-10 p-0' : 'w-full')}
+							size={collapsed ? 'icon' : 'default'}
+							onClick={() => navigate(`/m/${mailboxId}/compose`)}
+							aria-label="Compose"
+						>
+							{collapsed ? <Pencil className="size-4" /> : 'Compose'}
+						</Button>,
+					)}
 				</div>
-				<MailboxSwitcher />
-				<Button className="w-full" onClick={() => navigate(`/m/${mailboxId}/compose`)}>
-					Compose
-				</Button>
-			</div>
-			<Separator />
-			<nav className="flex-1 space-y-1 p-2">
-				{FOLDERS.map((item) => {
-					const Icon = FOLDER_ICONS[item];
-					return (
+				<Separator />
+				<nav className={cn('flex-1 space-y-1 p-2', collapsed && 'px-2')}>
+					{FOLDERS.map((item) => {
+						const Icon = FOLDER_ICONS[item];
+						const link = (
+							<NavLink
+								to={`/m/${mailboxId}/${item}`}
+								className={({ isActive }) =>
+									cn(
+										'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+										collapsed && 'justify-center px-0',
+										(isActive || activeFolder === item) && 'bg-accent text-accent-foreground font-medium',
+									)
+								}
+							>
+								<Icon className="size-4 shrink-0" />
+								{!collapsed ? FOLDER_LABELS[item] : null}
+							</NavLink>
+						);
+						return <div key={item}>{withTooltip(collapsed, FOLDER_LABELS[item], link)}</div>;
+					})}
+				</nav>
+				<div className={cn('p-2', collapsed && 'px-2')}>
+					{withTooltip(
+						collapsed,
+						'Settings',
 						<NavLink
-							key={item}
-							to={`/m/${mailboxId}/${item}`}
+							to="/settings"
 							className={({ isActive }) =>
 								cn(
 									'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-									(isActive || activeFolder === item) && 'bg-accent text-accent-foreground font-medium',
+									collapsed && 'justify-center px-0',
+									isActive && 'bg-accent text-accent-foreground font-medium',
 								)
 							}
 						>
-							<Icon className="size-4 shrink-0" />
-							{FOLDER_LABELS[item]}
-						</NavLink>
-					);
-				})}
-			</nav>
-			<div className="p-2">
-				<NavLink
-					to="/settings"
-					className={({ isActive }) =>
-						cn(
-							'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-							isActive && 'bg-accent text-accent-foreground font-medium',
-						)
-					}
-				>
-					<Settings className="size-4 shrink-0" />
-					Settings
-				</NavLink>
-			</div>
-		</aside>
+							<Settings className="size-4 shrink-0" />
+							{!collapsed ? 'Settings' : null}
+						</NavLink>,
+					)}
+				</div>
+			</aside>
+		</TooltipProvider>
 	);
 }

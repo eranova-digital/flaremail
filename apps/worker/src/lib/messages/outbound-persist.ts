@@ -124,10 +124,7 @@ export async function sendAndPersistNewMessage(
 		if (persistResult.status === "duplicate") {
 			await rollbackNewThread(ctx.db, threading.threadId, isNewThread);
 
-			const existing = await findMessageRowByRfcMessageId(
-				ctx.db,
-				rfcMessageId,
-			);
+			const existing = await findMessageRowByRfcMessageId(ctx.db, rfcMessageId);
 			if (!existing) {
 				throw new Error("Message-ID conflict while storing outbound message");
 			}

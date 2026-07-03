@@ -126,6 +126,11 @@ export type SendMessageRequest = OutboundMessageBody & {
 export type CreateDraftRequest = SendMessageRequest & {
     threadId?: string;
     inReplyToMessageId?: string;
+    /**
+     * When replying via draft, include all visible thread participants (From, To, Cc, Reply-To) except the sending mailbox. Ignored when explicit `to` recipients are provided.
+     *
+     */
+    replyAll?: boolean;
 };
 
 export type ReplyRequest = {
@@ -213,6 +218,7 @@ export type ThreadMessagesResponse = {
 
 export type SendCommandResponse = {
     id?: string;
+    threadId?: string;
     rfcMessageId?: string;
     status?: 'draft' | 'sending' | 'sent' | 'failed';
 };
@@ -1047,6 +1053,35 @@ export type GetMessageResponses = {
 };
 
 export type GetMessageResponse = GetMessageResponses[keyof GetMessageResponses];
+
+export type DownloadRawMessageData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query: {
+        mailboxId: string;
+    };
+    url: '/messages/{id}/raw';
+};
+
+export type DownloadRawMessageErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DownloadRawMessageError = DownloadRawMessageErrors[keyof DownloadRawMessageErrors];
+
+export type DownloadRawMessageResponses = {
+    /**
+     * Raw EML bytes
+     */
+    200: Blob | File;
+};
+
+export type DownloadRawMessageResponse = DownloadRawMessageResponses[keyof DownloadRawMessageResponses];
 
 export type ListThreadsData = {
     body?: never;

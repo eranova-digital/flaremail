@@ -1,4 +1,5 @@
 import type { DomainValidationLogEvent } from "@/lib/api/client";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatValidationTimestamp } from "@/lib/domain-validation";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +11,9 @@ export function ValidationLogs({ logs }: { logs: DomainValidationLogEvent[] }) {
 	}
 
 	return (
-		<ul className="divide-border divide-y rounded-md border">
+		<Card className="gap-0 rounded-md py-0">
+			<CardContent className="p-0">
+				<ul className="divide-border divide-y">
 			{logs.map((log) => (
 				<li key={log.id} className="space-y-1 px-4 py-3 text-sm">
 					<div className="flex flex-wrap items-center gap-2">
@@ -38,6 +41,8 @@ export function ValidationLogs({ logs }: { logs: DomainValidationLogEvent[] }) {
 					) : null}
 				</li>
 			))}
-		</ul>
+				</ul>
+			</CardContent>
+		</Card>
 	);
 }

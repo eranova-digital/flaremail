@@ -12,6 +12,19 @@ export class ApiError extends Error {
 	}
 }
 
+export function isNotFoundError(error: unknown): boolean {
+	if (error instanceof ApiError) {
+		return error.status === 404 || error.problem?.code === "not-found";
+	}
+
+	if (error && typeof error === "object") {
+		const problem = error as ProblemDetails;
+		return problem.status === 404 || problem.code === "not-found";
+	}
+
+	return false;
+}
+
 export function getErrorMessage(error: unknown): string {
 	if (error instanceof ApiError) {
 		return error.problem?.detail ?? error.message;

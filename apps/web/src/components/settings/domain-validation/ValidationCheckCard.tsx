@@ -3,6 +3,7 @@ import {
 	getValidationCheckMeta,
 	type ValidationCheckKey,
 } from "@/lib/domain-validation";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 import { CheckStatusBadge } from "./CheckStatusBadge";
@@ -26,13 +27,14 @@ export function ValidationCheckCard({
 					: "Waiting for this step to run.";
 
 	return (
-		<article
+		<Card
 			className={cn(
-				"rounded-lg border p-4",
+				"gap-0 rounded-lg py-0",
 				check.status === "failed" && check.tier === "critical" && "border-foreground/20",
 				check.status === "failed" && check.tier === "advisory" && "border-muted-foreground/30",
 			)}
 		>
+			<CardContent className="space-y-0 p-4">
 			<div className="flex items-start justify-between gap-3">
 				<div className="space-y-1">
 					<div className="flex flex-wrap items-center gap-2">
@@ -68,6 +70,7 @@ export function ValidationCheckCard({
 			{check.code ? (
 				<p className="text-muted-foreground mt-2 font-mono text-xs">{check.code}</p>
 			) : null}
-		</article>
+			</CardContent>
+		</Card>
 	);
 }
