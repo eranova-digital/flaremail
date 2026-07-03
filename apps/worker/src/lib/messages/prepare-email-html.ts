@@ -9,6 +9,11 @@ const HEADER_CELL_STYLE =
 	"border:1px solid #d1d5db;padding:8px;vertical-align:top;background-color:#f3f4f6;font-weight:600;";
 const LINK_STYLE = "color:#2563eb;text-decoration:underline;";
 const PARAGRAPH_STYLE = "margin:0 0 1em 0;";
+// Inline the quote styling so receiving clients render the vertical quote bar.
+// Mail clients strip `class` attributes, so a bare `<blockquote type="cite">`
+// would otherwise show as plain (only browser-default) indented text.
+const BLOCKQUOTE_STYLE =
+	"margin:0 0 0 0.8ex;border-left:1px solid #ccc;padding-left:1ex;color:#555;";
 
 type InlineEmailAttachment = OutboundAttachmentInput & {
 	disposition: "inline";
@@ -116,6 +121,22 @@ export async function prepareEmailHtml(html: string): Promise<{
 		.on("a", {
 			element(element) {
 				element.setAttribute("style", LINK_STYLE);
+			},
+		})
+		.on("blockquote", {
+			element(element) {
+				element.setAttribute("style", BLOCKQUOTE_STYLE);
+
+				// Tag reply quotes with Gmail's class so Gmail-family clients
+				// recognize and collapse the quoted history under the "..." toggle.
+				if (element.getAttribute("type") === "cite") {
+					const existing = element.getAttribute("class") ?? "";
+					const classes = new Set(
+						existing.split(/\s+/).filter(Boolean),
+					);
+					classes.add("gmail_quote");
+					element.setAttribute("class", Array.from(classes).join(" "));
+				}
 			},
 		})
 		.on("p", {

@@ -142,6 +142,54 @@
 	color: var(--muted-foreground);
 }
 
+.compose-editor .reply-quote-block {
+	position: relative;
+	margin-top: 0.75rem;
+}
+
+.compose-editor .reply-quote-block-inner {
+	border-left: 2px solid var(--border);
+	padding-left: 0.75rem;
+	padding-right: 2rem;
+	color: var(--muted-foreground);
+	font-size: 0.875rem;
+	line-height: 1.5;
+}
+
+.compose-editor .reply-quote-attribution {
+	margin: 0 0 0.5rem;
+}
+
+.compose-editor .reply-quote-remove {
+	position: absolute;
+	top: 0;
+	right: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 1.5rem;
+	width: 1.5rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	color: var(--muted-foreground);
+	background: var(--background);
+	opacity: 0;
+	transition:
+		opacity 0.15s ease,
+		color 0.15s ease,
+		background-color 0.15s ease;
+}
+
+.compose-editor .reply-quote-block:hover .reply-quote-remove,
+.compose-editor .reply-quote-remove:focus-visible {
+	opacity: 1;
+}
+
+.compose-editor .reply-quote-remove:hover {
+	color: var(--foreground);
+	background: var(--muted);
+}
+
 .compose-editor .tiptap a {
 	color: var(--primary);
 	text-decoration: underline;

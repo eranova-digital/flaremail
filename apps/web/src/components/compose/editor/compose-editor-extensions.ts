@@ -12,6 +12,7 @@ import { TextStyleKit } from "@tiptap/extension-text-style";
 import StarterKit from "@tiptap/starter-kit";
 
 import { ComposeImage } from "@/components/compose/editor/compose-image";
+import { ComposeReplyQuote } from "@/components/compose/editor/compose-reply-quote";
 
 export function getComposeEditorExtensions(placeholder: string) {
 	return [
@@ -39,6 +40,7 @@ export function getComposeEditorExtensions(placeholder: string) {
 			inline: false,
 			allowBase64: true,
 		}),
+		ComposeReplyQuote,
 		Table.configure({
 			resizable: true,
 		}),

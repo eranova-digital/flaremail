@@ -6,10 +6,11 @@ import {
 	getMessage,
 } from "@/lib/api/client";
 import {
+	buildReplyQuote,
 	buildReplyQuotedText,
 	ensureReplyQuoteBody,
+	ensureReplyQuoteHtml,
 } from "@/lib/build-reply-quote";
-import { plainTextToHtml } from "@/lib/compose-body";
 import { hydrateInlineImagesForEditor } from "@/lib/email-html";
 import {
 	type ComposeAttachment,
@@ -156,13 +157,15 @@ export function useComposeInit(
 				const draft = assertData(data, "getMessage");
 
 				const baseFields = messageToFields(draft);
-				const quotedText = buildReplyQuotedText(parentForQuote);
+				const quote = buildReplyQuote(parentForQuote);
+				const quotedText = quote ? buildReplyQuotedText(parentForQuote) : null;
 				const body = ensureReplyQuoteBody(baseFields.body, quotedText);
+				const bodyHtml = ensureReplyQuoteHtml(baseFields.bodyHtml, quote);
 
 				setFields({
 					...baseFields,
 					body,
-					bodyHtml: plainTextToHtml(body),
+					bodyHtml,
 				});
 				setDraftId(draftRef.id);
 				setInitialized(true);
