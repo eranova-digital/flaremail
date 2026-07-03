@@ -1159,6 +1159,8 @@ components:
           type: string
         cc:
           type: ["string", "null"]
+        bcc:
+          type: ["string", "null"]
         direction:
           type: string
           enum: [inbound, outbound]
@@ -1247,6 +1249,8 @@ components:
         to:
           type: string
         cc:
+          type: ["string", "null"]
+        bcc:
           type: ["string", "null"]
         direction:
           type: string

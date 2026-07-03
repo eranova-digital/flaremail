@@ -9,6 +9,8 @@ import {
 	buildReplyQuotedText,
 	ensureReplyQuoteBody,
 } from "@/lib/build-reply-quote";
+import { plainTextToHtml } from "@/lib/compose-body";
+import { hydrateInlineImagesForEditor } from "@/lib/email-html";
 import {
 	type ComposeAttachment,
 	createStoredAttachment,
@@ -65,7 +67,13 @@ export function useComposeInit(
 					return;
 				}
 
-				setFields(messageToFields(draft));
+				const baseFields = messageToFields(draft);
+				const bodyHtml = await hydrateInlineImagesForEditor(
+					baseFields.bodyHtml,
+					draft.attachments ?? [],
+				);
+
+				setFields({ ...baseFields, bodyHtml });
 				setAttachments(
 					(draft.attachments ?? [])
 						.map((attachment) => createStoredAttachment(attachment))
@@ -149,10 +157,12 @@ export function useComposeInit(
 
 				const baseFields = messageToFields(draft);
 				const quotedText = buildReplyQuotedText(parentForQuote);
+				const body = ensureReplyQuoteBody(baseFields.body, quotedText);
 
 				setFields({
 					...baseFields,
-					body: ensureReplyQuoteBody(baseFields.body, quotedText),
+					body,
+					bodyHtml: plainTextToHtml(body),
 				});
 				setDraftId(draftRef.id);
 				setInitialized(true);

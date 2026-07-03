@@ -9,6 +9,13 @@ export type ReplyQuoteParent = {
 	receivedAt?: string | null;
 };
 
+function quoteLines(text: string): string {
+	return text
+		.split("\n")
+		.map((line) => (line.length > 0 ? `> ${line}` : ">"))
+		.join("\n");
+}
+
 function formatReplyAttribution(from: string, when: Date): string {
 	const day = when.toLocaleDateString("en-GB", { weekday: "short" });
 	const date = when.toLocaleDateString("en-GB", {
@@ -44,7 +51,7 @@ export function buildReplyQuotedText(parent: ReplyQuoteParent): string | null {
 	const when = new Date(parent.sentAt ?? parent.receivedAt ?? Date.now());
 	const attribution = formatReplyAttribution(parent.from, when);
 
-	return `${attribution}\n\n${visibleBody}`;
+	return `${attribution}\n${quoteLines(visibleBody)}`;
 }
 
 export function ensureReplyQuoteBody(

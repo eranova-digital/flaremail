@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { assertData } from "@/lib/api/errors";
 import { forwardToMessage, sendDraft } from "@/lib/api/client";
 import { composeAttachmentsToOutbound } from "@/lib/compose-attachments";
+import { isEmptyEditorHtml } from "@/lib/compose-body";
 import { invalidateMailboxThreads } from "@/lib/invalidate-mailbox";
 import {
 	addPendingSend,
@@ -38,6 +39,7 @@ export function useComposeSend({
 	createMutation,
 	updateMutation,
 	flushPendingSave,
+	sealedRef,
 }: {
 	mailboxId: string;
 	draftId: string | null;
@@ -62,6 +64,7 @@ export function useComposeSend({
 		}) => Promise<unknown>;
 	};
 	flushPendingSave: () => Promise<void>;
+	sealedRef: React.MutableRefObject<boolean>;
 }) {
 	const queryClient = useQueryClient();
 	const knownThreadId = reply?.threadId ?? threadId;
@@ -132,6 +135,9 @@ export function useComposeSend({
 					bcc: parseRecipients(current.bcc),
 					subject: current.subject || undefined,
 					text: current.body,
+					html: isEmptyEditorHtml(current.bodyHtml)
+						? undefined
+						: current.bodyHtml,
 					attachments: outboundAttachments,
 					includeAttachments: true,
 					includeQuotedBody: true,
@@ -245,13 +251,20 @@ export function useComposeSend({
 
 		isSubmittingRef.current = true;
 		setIsSubmitting(true);
+		// Seal immediately so no autosave races the send or fires after the draft
+		// has been promoted to a sent message. Unseal only if the send fails, so
+		// the user can keep editing and retry.
+		sealedRef.current = true;
 		try {
 			return await runSend();
+		} catch (error) {
+			sealedRef.current = false;
+			throw error;
 		} finally {
 			isSubmittingRef.current = false;
 			setIsSubmitting(false);
 		}
-	}, [runSend]);
+	}, [runSend, sealedRef]);
 
 	return {
 		send,

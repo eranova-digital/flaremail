@@ -424,7 +424,12 @@ export function ThreadView() {
 							const showSubjectChange = Boolean(!isPendingSend && previousMessage && isSubjectChange(previousMessage.subject, message.subject));
 							const addedCcRecipients = !isPendingSend && message.id ? (ccAdditionsByMessageId.get(message.id) ?? []) : [];
 							const showCcAddition = addedCcRecipients.length > 0;
-							const recipientLine = formatRecipientList(message.to, message.cc, selfAddress);
+							const recipientLine = formatRecipientList(
+								message.to,
+								message.cc,
+								message.bcc,
+								selfAddress,
+							);
 
 							const messageDate = messageTimestamp(message);
 							const previousDate = previousMessage ? messageTimestamp(previousMessage) : null;
@@ -626,7 +631,7 @@ export function ThreadView() {
 											</div>
 											{recipientLine ? (
 												<p className="text-muted-foreground mb-2 truncate text-xs">
-													to: {recipientLine}
+													{recipientLine}
 												</p>
 											) : null}
 											<Separator className="mb-3" />

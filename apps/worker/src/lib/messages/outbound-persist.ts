@@ -21,6 +21,7 @@ import { buildPreview } from "./message-utils";
 import type { OutboundContext } from "./outbound-context";
 import { outboundAttachmentsToStoredInputs } from "./outbound-attachments";
 import { formatRecipients, type OutboundMessageBody } from "./outbound-payload";
+import { prepareOutboundMessageBody } from "./prepare-email-html";
 import type { ThreadingContext } from "./outbound-threading";
 import { persistMessage, rollbackNewThread } from "./persist-message";
 import { sendEmail } from "./send-email";
@@ -32,6 +33,7 @@ export async function sendAndPersistNewMessage(
 	threading: ThreadingContext,
 	threadFolder: ThreadFolder,
 ): Promise<typeof import("../../db/schema").messages.$inferSelect> {
+	const preparedPayload = await prepareOutboundMessageBody(payload);
 	const mailbox = await loadMailboxForSend(ctx.db, mailboxId);
 	if (!mailbox) {
 		throw new Error("Mailbox not found or cannot send");
@@ -39,14 +41,16 @@ export async function sendAndPersistNewMessage(
 
 	await assertCanSendFrom(ctx.db, mailbox.id);
 
-	const recipients = formatRecipients(payload);
+	const recipients = formatRecipients(preparedPayload);
 	const id = crypto.randomUUID();
 	const now = new Date();
-	const preview = buildPreview(payload.text ?? null);
-	const attachmentInputs = outboundAttachmentsToStoredInputs(payload.attachments);
+	const preview = buildPreview(preparedPayload.text ?? null);
+	const attachmentInputs = outboundAttachmentsToStoredInputs(
+		preparedPayload.attachments,
+	);
 
 	const threadTouch: ThreadTouchData = {
-		subject: payload.subject,
+		subject: preparedPayload.subject,
 		preview,
 		lastMessageAt: now,
 		actualMailboxId: mailbox.id,
@@ -62,7 +66,7 @@ export async function sendAndPersistNewMessage(
 
 	const sendPayload = buildEmailSendPayload({
 		from: mailbox.address,
-		payload,
+		payload: preparedPayload,
 		inReplyTo: threading.inReplyTo,
 		references: threading.references,
 		attachmentInputs,
@@ -99,10 +103,10 @@ export async function sendAndPersistNewMessage(
 				matchedVia: "outbound",
 				cc: recipients.cc,
 				bcc: recipients.bcc,
-				subject: payload.subject,
-				textBody: payload.text ?? null,
+				subject: preparedPayload.subject,
+				textBody: preparedPayload.text ?? null,
 				preview,
-				hasHtml: Boolean(payload.html),
+				hasHtml: Boolean(preparedPayload.html),
 				hasAttachments: attachmentInputs.length > 0,
 				sentAt: now,
 				receivedAt: now,
@@ -111,7 +115,7 @@ export async function sendAndPersistNewMessage(
 			},
 			mimeContent: buildOutboundMimeContent({
 				from: mailbox.address,
-				payload,
+				payload: preparedPayload,
 				rfcMessageId,
 				inReplyTo: threading.inReplyTo,
 				references: threading.references,
@@ -140,7 +144,7 @@ export async function sendAndPersistNewMessage(
 				ctx.db,
 				stored.threadId,
 				{
-					subject: payload.subject,
+					subject: preparedPayload.subject,
 					preview,
 					lastMessageAt: now,
 					actualMailboxId: mailbox.id,
