@@ -10,7 +10,8 @@ export function invalidateMailboxThreads(
 	queryClient.invalidateQueries({
 		predicate: (query) =>
 			Array.isArray(query.queryKey) &&
-			query.queryKey[0] === "threads" &&
+			(query.queryKey[0] === "threads" ||
+				query.queryKey[0] === "threads-by-label") &&
 			query.queryKey[1] === mailboxId,
 	});
 

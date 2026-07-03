@@ -8,6 +8,7 @@ import {
 	Trash2,
 } from "lucide-react";
 
+import { ThreadLabelPicker } from "@/components/layout/ThreadLabelPicker";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -91,6 +92,8 @@ export function ThreadActions({
 						{thread.isStarred ? "Unstar" : "Star"}
 					</TooltipContent>
 				</Tooltip>
+
+				<ThreadLabelPicker mailboxId={mailboxId} threadId={threadId} />
 
 				{folder !== "archived" ? (
 					<Tooltip>

@@ -23,6 +23,7 @@ import { isStructuralHtml } from '@/lib/html';
 import { getErrorMessage, isNotFoundError } from '@/lib/api/errors';
 import { formatSubjectForDisplay, isSubjectChange } from '@/lib/subject';
 import { formatAddedCcRecipients, formatRecipientList, getNewCcRecipients, parseAddresses } from '@/lib/cc-recipients';
+import { composePath, labelListPath } from '@/lib/mailbox-routes';
 import type { ThreadMessagePreview } from '@/lib/api/generated';
 import { usePendingSends } from '@/lib/pending-sends';
 import type { SendResult } from '@/lib/thread-messages-cache';
@@ -185,15 +186,19 @@ function getShortPreview(message: ThreadMessagePreview, maxLength = 48): string 
 
 export function ThreadView() {
 	const navigate = useNavigate();
-	const { mailboxId, threadId } = useParams();
+	const { mailboxId, threadId, labelId: labelIdParam } = useParams();
 	const [searchParams] = useSearchParams();
-	const folderParam = searchParams.get('folder') ?? 'inbox';
+	const labelId = labelIdParam ?? searchParams.get('label');
+	const folderFromQuery = searchParams.get('folder');
+	const folderParam = folderFromQuery ?? 'inbox';
 	const folder = isThreadFolder(folderParam) ? folderParam : 'inbox';
 	const messagesQuery = useThreadMessages(mailboxId ?? '', threadId, {
 		includeBody: true,
 	});
 	useSyncOpenThreadFromList(mailboxId ?? '', threadId, folder);
 	const { thread, messages: serverMessages = [] } = messagesQuery.data ?? {};
+	const actionFolder =
+		thread?.folder && isThreadFolder(thread.folder) ? thread.folder : folder;
 	useAutoThreadReadStatus(mailboxId ?? '', threadId, {
 		threadIsRead: thread?.isRead,
 		messages: serverMessages,
@@ -391,7 +396,12 @@ export function ThreadView() {
 
 	if (messagesQuery.isError) {
 		if (isNotFoundError(messagesQuery.error)) {
-			return <Navigate to={`/m/${mailboxId}/${folder}`} replace />;
+			return (
+				<Navigate
+					to={labelId ? labelListPath(mailboxId, labelId) : `/m/${mailboxId}/${folder}`}
+					replace
+				/>
+			);
 		}
 
 		return <div className="text-destructive p-6 text-sm">{getErrorMessage(messagesQuery.error)}</div>;
@@ -407,7 +417,7 @@ export function ThreadView() {
 								{messages.length} message{messages.length === 1 ? '' : 's'}
 							</p>
 						</div>
-						<ThreadActions mailboxId={mailboxId} threadId={threadId} folder={folder} />
+						<ThreadActions mailboxId={mailboxId} threadId={threadId} folder={actionFolder} />
 					</div>
 				</div>
 				<ScrollArea className="flex-1">
@@ -552,7 +562,14 @@ export function ThreadView() {
 																variant="ghost"
 																size="sm"
 																onClick={() =>
-																	navigate(`/m/${mailboxId}/compose?draftId=${message.id}&threadId=${threadId}&folder=${folder}`)
+																	navigate(
+																		composePath(mailboxId, {
+																			draftId: message.id,
+																			threadId,
+																			folder: labelId ? undefined : actionFolder,
+																			label: labelId ?? undefined,
+																		}),
+																	)
 																}
 															>
 																Edit
@@ -623,7 +640,7 @@ export function ThreadView() {
 																</>
 															) : null}
 															{message.id ? (
-																<MessageActionsMenu messageId={message.id} mailboxId={mailboxId} threadId={threadId!} folder={folder} />
+																<MessageActionsMenu messageId={message.id} mailboxId={mailboxId} threadId={threadId!} folder={actionFolder} />
 															) : null}
 														</>
 													)}

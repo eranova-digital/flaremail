@@ -17,6 +17,10 @@ function ValidatedFolderRoute() {
 	return <EmptyReadingPane />;
 }
 
+function LabelReadingPane() {
+	return <EmptyReadingPane />;
+}
+
 export default function App() {
 	return (
 		<Routes>
@@ -30,6 +34,10 @@ export default function App() {
 				<Route index element={<Navigate to="inbox" replace />} />
 				<Route path="compose" element={<ComposePage />} />
 				<Route path="threads/:threadId" element={<ThreadView />} />
+				<Route path="labels/:labelId">
+					<Route index element={<LabelReadingPane />} />
+					<Route path="threads/:threadId" element={<ThreadView />} />
+				</Route>
 				<Route path=":folder" element={<ValidatedFolderRoute />} />
 			</Route>
 		</Routes>

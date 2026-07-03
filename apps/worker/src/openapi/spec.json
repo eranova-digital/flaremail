@@ -978,6 +978,15 @@
             }
           },
           {
+            "name": "labelId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "When set, only threads with this label are returned."
+          },
+          {
             "$ref": "#/components/parameters/Cursor"
           },
           {
@@ -1941,6 +1950,12 @@
               "null"
             ]
           },
+          "bcc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "direction": {
             "type": "string",
             "enum": [
@@ -2053,6 +2068,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "threadId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "rfcMessageId": {
             "type": "string"
           },
@@ -2097,6 +2116,12 @@
             "type": "string"
           },
           "cc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bcc": {
             "type": [
               "string",
               "null"

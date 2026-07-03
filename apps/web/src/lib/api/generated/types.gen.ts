@@ -1091,6 +1091,10 @@ export type ListThreadsData = {
     query: {
         mailboxId: string;
         folder?: ThreadFolder;
+        /**
+         * When set, only threads with this label are returned.
+         */
+        labelId?: string;
         cursor?: string;
         limit?: number;
     };
