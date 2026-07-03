@@ -186,7 +186,7 @@
 
 .compose-editor .tiptap .selectedCell::after {
 	background: color-mix(in oklab, var(--primary) 15%, transparent);
-	content: "";
+	content: '';
 	inset: 0;
 	pointer-events: none;
 	position: absolute;
@@ -209,20 +209,20 @@
 	margin: 1rem 0;
 }
 
-.compose-editor .tiptap [data-type="emoji"] img {
+.compose-editor .tiptap [data-type='emoji'] img {
 	display: inline;
 	height: 1.1em;
 	width: 1.1em;
 	vertical-align: -0.1em;
 }
 
-.compose-editor .tiptap [data-align="center"] {
+.compose-editor .tiptap [data-align='center'] {
 	display: block;
 	margin-left: auto;
 	margin-right: auto;
 }
 
-.compose-editor .tiptap [data-align="right"] {
+.compose-editor .tiptap [data-align='right'] {
 	display: block;
 	margin-left: auto;
 	margin-right: 0;
@@ -234,7 +234,7 @@
 }
 
 .message-html-body p:empty::before {
-	content: "\00a0";
+	content: '\00a0';
 }
 
 .message-html-body a {
@@ -267,12 +267,32 @@
 	max-width: 100%;
 }
 
-.message-html-body img[data-align="center"] {
+.message-html-body img[data-align='center'] {
 	margin-left: auto;
 	margin-right: auto;
 }
 
-.message-html-body img[data-align="right"] {
+.message-html-body img[data-align='right'] {
 	margin-left: auto;
 	margin-right: 0;
+}
+
+*::-webkit-scrollbar {
+	width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+	background: var(--background);
+	border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border-radius: 10px;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+	* {
+		scrollbar-color: var(--border) var(--background);
+	}
 }
