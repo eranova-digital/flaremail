@@ -28,13 +28,7 @@ export type EmailSendBuilderPayload = {
 	text?: string;
 	html?: string;
 	headers?: Record<string, string>;
-	attachments?: {
-		filename: string;
-		type: string;
-		content: string | ArrayBuffer | ArrayBufferView;
-		disposition: "attachment" | "inline";
-		contentId?: string;
-	}[];
+	attachments?: EmailAttachment[];
 };
 
 function storedAttachmentsToEmailAttachments(

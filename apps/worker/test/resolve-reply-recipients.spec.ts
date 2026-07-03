@@ -19,8 +19,8 @@ function mockBucket(body: string): R2Bucket {
 		get: async () =>
 			({
 				arrayBuffer: async () => new TextEncoder().encode(body).buffer,
-			}) as R2ObjectBody,
-	} as R2Bucket;
+			}) as unknown as R2ObjectBody,
+	} as unknown as R2Bucket;
 }
 
 describe("resolveReplyRecipients", () => {

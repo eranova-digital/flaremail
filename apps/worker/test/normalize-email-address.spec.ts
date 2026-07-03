@@ -7,6 +7,7 @@ import {
 } from "../src/lib/normalize-email-address";
 import { isReceivingMailboxType } from "../src/lib/mailbox-types";
 import {
+	type MailboxLookupRow,
 	resolveCatchAllMailbox,
 	resolveConfiguredMailbox,
 } from "../src/lib/resolve-mailbox";
@@ -80,7 +81,7 @@ describe("resolveConfiguredMailbox", () => {
 		aliasTargetId: "primary-id",
 		aliasTargetAddress: null,
 	};
-	const mailboxById = new Map([
+	const mailboxById = new Map<string, MailboxLookupRow>([
 		["primary-id", primary],
 		["secondary-id", secondary],
 		["shared-id", shared],

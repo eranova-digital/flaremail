@@ -85,7 +85,7 @@ export default {
 		}
 	},
 
-	async fetch(request, env): Promise<Response> {
+	async fetch(request, env, _ctx): Promise<Response> {
 		return handleFetchRequest(request, env);
 	},
 

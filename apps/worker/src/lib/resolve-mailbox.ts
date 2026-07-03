@@ -30,7 +30,7 @@ export type ForwardMailboxResolution = {
 
 export type MailboxResolution = StoreMailboxResolution | ForwardMailboxResolution;
 
-type MailboxLookupRow = {
+export type MailboxLookupRow = {
 	id: string;
 	type: MailboxType;
 	aliasTargetId: string | null;

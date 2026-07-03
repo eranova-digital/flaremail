@@ -49,7 +49,7 @@ export function useComposeAutosave({
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const inFlightSaveRef = useRef<Promise<void> | null>(null);
+	const inFlightSaveRef = useRef<Promise<boolean> | null>(null);
 
 	const createMutation = useMutation({
 		mutationFn: async (
