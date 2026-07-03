@@ -2,13 +2,36 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { assertData } from "@/lib/api/errors";
 import {
+	deleteDraft,
 	getThread,
 	listThreadMessages,
 	runThreadAction,
 	sendDraft,
 } from "@/lib/api/client";
 import { invalidateMailboxThreads } from "@/lib/invalidate-mailbox";
+import {
+	addPendingSend,
+	buildPendingMessage,
+	removePendingSend,
+} from "@/lib/pending-sends";
 import { queryKeys } from "@/lib/query-keys";
+import { THREAD_MESSAGES_POLL_MS } from "@/lib/thread-messages-cache";
+
+export function useDeleteDraft(mailboxId: string, threadId?: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (draftId: string) => {
+			await deleteDraft({
+				throwOnError: true,
+				path: { id: draftId },
+			});
+		},
+		onSuccess: () => {
+			invalidateMailboxThreads(queryClient, mailboxId, threadId);
+		},
+	});
+}
 
 export function useSendDraft(mailboxId: string, threadId?: string) {
 	const queryClient = useQueryClient();
@@ -21,8 +44,24 @@ export function useSendDraft(mailboxId: string, threadId?: string) {
 			});
 			return assertData(data, "sendDraft");
 		},
-		onSuccess: () => {
+		onMutate: async (draftId) => {
+			if (!threadId) {
+				return;
+			}
+
+			await queryClient.cancelQueries({
+				queryKey: queryKeys.threadMessages(mailboxId, threadId),
+			});
+			addPendingSend(threadId, buildPendingMessage({ draftId }));
+		},
+		onSettled: async (_data, _error, draftId) => {
 			invalidateMailboxThreads(queryClient, mailboxId, threadId);
+			if (threadId) {
+				await queryClient.invalidateQueries({
+					queryKey: queryKeys.threadMessages(mailboxId, threadId),
+				});
+				removePendingSend(threadId, draftId);
+			}
 		},
 	});
 }
@@ -64,6 +103,7 @@ export function useThreadMessages(
 			return assertData(data, "listThreadMessages");
 		},
 		enabled: Boolean(mailboxId && threadId),
+		refetchInterval: THREAD_MESSAGES_POLL_MS,
 	});
 }
 

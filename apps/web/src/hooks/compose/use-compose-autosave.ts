@@ -15,8 +15,9 @@ import {
 } from "@/lib/compose-attachments";
 import {
 	AUTOSAVE_MS,
+	canAutosaveCompose,
 	fieldsToPayload,
-	hasComposeContent,
+	getSaveBlockedReason,
 	outboundFromFields,
 	type ComposeFields,
 	type ComposeReplyContext,
@@ -25,6 +26,7 @@ import {
 export function useComposeAutosave({
 	mailboxId,
 	draftId,
+	draftIdRef,
 	setDraftId,
 	fieldsRef,
 	attachmentsRef,
@@ -35,6 +37,7 @@ export function useComposeAutosave({
 }: {
 	mailboxId: string;
 	draftId: string | null;
+	draftIdRef: React.MutableRefObject<string | null>;
 	setDraftId: (id: string | null) => void;
 	fieldsRef: React.MutableRefObject<ComposeFields>;
 	attachmentsRef: React.MutableRefObject<ComposeAttachment[]>;
@@ -46,6 +49,7 @@ export function useComposeAutosave({
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const inFlightSaveRef = useRef<Promise<void> | null>(null);
 
 	const createMutation = useMutation({
 		mutationFn: async (
@@ -96,15 +100,21 @@ export function useComposeAutosave({
 		[mailboxId, attachmentsRef, setAttachments],
 	);
 
-	const persistDraft = useCallback(async () => {
+	const persistDraft = useCallback(async (): Promise<boolean> => {
 		if (isForwardMode) {
-			return;
+			return false;
 		}
 
 		const current = fieldsRef.current;
 		const currentAttachments = attachmentsRef.current;
-		if (!hasComposeContent(current, currentAttachments)) {
-			return;
+		const blockedReason = getSaveBlockedReason(
+			current,
+			currentAttachments,
+			Boolean(reply),
+		);
+		if (blockedReason) {
+			setSaveError(blockedReason);
+			return false;
 		}
 
 		setIsSaving(true);
@@ -112,13 +122,14 @@ export function useComposeAutosave({
 
 		try {
 			let outboundAttachments: OutboundMessageBody["attachments"] | undefined;
-			if (!draftId || attachmentsDirtyRef.current) {
+			const id = draftIdRef.current ?? draftId;
+			if (!id || attachmentsDirtyRef.current) {
 				outboundAttachments = await composeAttachmentsToOutbound(
 					currentAttachments,
 				);
 			}
 
-			if (!draftId) {
+			if (!id) {
 				const created = await createMutation.mutateAsync(
 					fieldsToPayload(
 						current,
@@ -128,6 +139,7 @@ export function useComposeAutosave({
 					),
 				);
 				if (created.id) {
+					draftIdRef.current = created.id;
 					setDraftId(created.id);
 					if (outboundAttachments !== undefined) {
 						await refreshStoredAttachments(created.id);
@@ -135,19 +147,21 @@ export function useComposeAutosave({
 				}
 			} else {
 				await updateMutation.mutateAsync({
-					id: draftId,
+					id,
 					body: outboundFromFields(current, outboundAttachments),
 				});
 				if (outboundAttachments !== undefined) {
-					await refreshStoredAttachments(draftId);
+					await refreshStoredAttachments(id);
 				}
 			}
 
 			attachmentsDirtyRef.current = false;
+			return true;
 		} catch (error) {
 			setSaveError(
 				error instanceof Error ? error.message : "Failed to save draft",
 			);
+			return false;
 		} finally {
 			setIsSaving(false);
 		}
@@ -166,8 +180,24 @@ export function useComposeAutosave({
 		setAttachments,
 	]);
 
+	const runPersist = useCallback(() => {
+		const promise = persistDraft().finally(() => {
+			if (inFlightSaveRef.current === promise) {
+				inFlightSaveRef.current = null;
+			}
+		});
+		inFlightSaveRef.current = promise;
+		return promise;
+	}, [persistDraft]);
+
 	const scheduleSave = useCallback(() => {
 		if (isForwardMode) {
+			return;
+		}
+
+		const current = fieldsRef.current;
+		const currentAttachments = attachmentsRef.current;
+		if (!canAutosaveCompose(current, currentAttachments, Boolean(reply))) {
 			return;
 		}
 
@@ -176,15 +206,46 @@ export function useComposeAutosave({
 		}
 
 		timerRef.current = setTimeout(() => {
-			void persistDraft();
+			timerRef.current = null;
+			void runPersist();
 		}, AUTOSAVE_MS);
-	}, [persistDraft, isForwardMode]);
+	}, [runPersist, isForwardMode, reply, fieldsRef, attachmentsRef]);
 
 	const clearScheduledSave = useCallback(() => {
 		if (timerRef.current) {
 			clearTimeout(timerRef.current);
+			timerRef.current = null;
 		}
 	}, []);
+
+	// Cancels any pending autosave and waits for an already-running one to
+	// finish, so callers (e.g. send) can operate on a fully-persisted draft
+	// without racing a concurrent draft update.
+	const flushPendingSave = useCallback(async () => {
+		if (timerRef.current) {
+			clearTimeout(timerRef.current);
+			timerRef.current = null;
+		}
+
+		const inFlight = inFlightSaveRef.current;
+		if (inFlight) {
+			await inFlight;
+		}
+	}, []);
+
+	const saveNow = useCallback(async (): Promise<boolean> => {
+		if (timerRef.current) {
+			clearTimeout(timerRef.current);
+			timerRef.current = null;
+		}
+
+		const inFlight = inFlightSaveRef.current;
+		if (inFlight) {
+			await inFlight;
+		}
+
+		return persistDraft();
+	}, [persistDraft]);
 
 	useEffect(() => {
 		return () => {
@@ -199,6 +260,8 @@ export function useComposeAutosave({
 		saveError,
 		scheduleSave,
 		clearScheduledSave,
+		flushPendingSave,
+		saveNow,
 		createMutation,
 		updateMutation,
 	};

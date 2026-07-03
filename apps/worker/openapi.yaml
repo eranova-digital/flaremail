@@ -544,6 +544,30 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /messages/{id}/raw:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+      - $ref: "#/components/parameters/MailboxIdQuery"
+    get:
+      tags: [Messages]
+      summary: Download raw message
+      description: Returns the stored raw EML bytes from R2.
+      operationId: downloadRawMessage
+      responses:
+        "200":
+          description: Raw EML bytes
+          content:
+            message/rfc822:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: "#/components/responses/Problem"
+
   /threads:
     get:
       tags: [Threads]
@@ -1032,6 +1056,13 @@ components:
             inReplyToMessageId:
               type: string
               format: uuid
+            replyAll:
+              type: boolean
+              default: false
+              description: >
+                When replying via draft, include all visible thread participants
+                (From, To, Cc, Reply-To) except the sending mailbox. Ignored when
+                explicit `to` recipients are provided.
 
     ReplyRequest:
       type: object
@@ -1187,6 +1218,9 @@ components:
       type: object
       properties:
         id:
+          type: string
+          format: uuid
+        threadId:
           type: string
           format: uuid
         rfcMessageId:

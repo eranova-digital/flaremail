@@ -42,7 +42,7 @@ describe("buildEmailSendPayload", () => {
 		});
 
 		expect(payload.from).toBe("patrick@eranova.ro");
-		expect(payload.to).toBe("recipient@example.com");
+		expect(payload.to).toEqual(["recipient@example.com"]);
 		expect(payload.headers?.["Message-ID"]).toBeUndefined();
 	});
 

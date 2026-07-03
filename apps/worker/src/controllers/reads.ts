@@ -8,6 +8,7 @@ export {
 
 export {
 	handleDownloadAttachment,
+	handleDownloadRawMessage,
 	handleGetMessage,
 	handleGetMessagePreview,
 	handleSearch,

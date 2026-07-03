@@ -45,7 +45,7 @@ export async function createDraft(
 			ctx.bucket,
 			parent,
 			mailbox.address,
-			false,
+			body.replyAll === true,
 			{ to, cc, bcc },
 		);
 		to = resolved.to;

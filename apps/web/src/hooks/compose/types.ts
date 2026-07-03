@@ -3,6 +3,9 @@ import type {
 	OutboundMessageBody,
 } from "@/lib/api/client";
 import type { ComposeAttachment } from "@/lib/compose-attachments";
+import type { ReplyQuoteParent } from "@/lib/build-reply-quote";
+
+export type { ReplyQuoteParent };
 
 export type ComposeFields = {
 	to: string;
@@ -15,6 +18,8 @@ export type ComposeFields = {
 export type ComposeReplyContext = {
 	inReplyToMessageId: string;
 	threadId?: string;
+	parentMessage?: ReplyQuoteParent;
+	replyAll?: boolean;
 };
 
 export type ComposeForwardContext = {
@@ -72,6 +77,7 @@ export function fieldsToPayload(
 			...base,
 			inReplyToMessageId: reply.inReplyToMessageId,
 			threadId: reply.threadId,
+			replyAll: reply.replyAll === true ? true : undefined,
 		};
 	}
 
@@ -97,6 +103,14 @@ export function outboundFromFields(
 	return body;
 }
 
+export function hasComposeSubject(fields: ComposeFields): boolean {
+	return Boolean(fields.subject.trim());
+}
+
+export function hasComposeRecipient(fields: ComposeFields): boolean {
+	return Boolean(fields.to.trim());
+}
+
 export function hasComposeContent(
 	fields: ComposeFields,
 	attachments: ComposeAttachment[],
@@ -109,6 +123,45 @@ export function hasComposeContent(
 			fields.body.trim() ||
 			attachments.length > 0,
 	);
+}
+
+export function canAutosaveCompose(
+	fields: ComposeFields,
+	attachments: ComposeAttachment[],
+	isReply: boolean,
+): boolean {
+	if (!hasComposeSubject(fields)) {
+		return false;
+	}
+
+	// Replies resolve their recipients server-side, so the composer's "to" field
+	// isn't required. New messages must have a recipient (the backend rejects an
+	// empty "to"), so don't attempt to save until one is entered.
+	if (!isReply && !hasComposeRecipient(fields)) {
+		return false;
+	}
+
+	return hasComposeContent(fields, attachments);
+}
+
+export function getSaveBlockedReason(
+	fields: ComposeFields,
+	attachments: ComposeAttachment[],
+	isReply: boolean,
+): string | null {
+	if (!hasComposeSubject(fields)) {
+		return "Subject is required";
+	}
+
+	if (!isReply && !hasComposeRecipient(fields)) {
+		return "Recipient is required";
+	}
+
+	if (!hasComposeContent(fields, attachments)) {
+		return "Enter a message to save";
+	}
+
+	return null;
 }
 
 export function messageToFields(message: {

@@ -1,4 +1,5 @@
 import type { DomainValidationRunSummary } from "@/lib/api/client";
+import { Card, CardContent } from "@/components/ui/card";
 import { BADGE_META, formatValidationTimestamp } from "@/lib/domain-validation";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,9 @@ export function ValidationRunHistory({
 	}
 
 	return (
-		<ul className="divide-border divide-y rounded-md border">
+		<Card className="gap-0 rounded-md py-0">
+			<CardContent className="p-0">
+				<ul className="divide-border divide-y">
 			{runs.map((run) => {
 				if (!run.id) {
 					return null;
@@ -58,6 +61,8 @@ export function ValidationRunHistory({
 					</li>
 				);
 			})}
-		</ul>
+				</ul>
+			</CardContent>
+		</Card>
 	);
 }

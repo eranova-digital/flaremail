@@ -29,6 +29,7 @@ export function ComposePage() {
 		<ComposePane
 			mailboxId={mailboxId}
 			existingDraftId={draftId}
+			threadId={threadId}
 			reply={
 				replyTo
 					? { inReplyToMessageId: replyTo, threadId: threadId ?? undefined }
@@ -36,9 +37,13 @@ export function ComposePage() {
 			}
 			forward={forwardTo ? { messageId: forwardTo } : undefined}
 			onClose={() => navigate(backTo)}
-			onSent={() => {
-				if (replyTo && threadId) {
-					navigate(`/m/${mailboxId}/threads/${threadId}?folder=inbox`);
+			onDeleted={() => navigate(backTo)}
+			onSent={(result) => {
+				const sentThreadId = result.threadId ?? threadId;
+				if (sentThreadId) {
+					navigate(
+						`/m/${mailboxId}/threads/${sentThreadId}?folder=${replyTo || forwardTo ? "inbox" : "sent"}`,
+					);
 					return;
 				}
 				navigate(`/m/${mailboxId}/sent`);

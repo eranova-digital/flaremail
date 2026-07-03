@@ -107,8 +107,23 @@ export async function resolveReplyRecipients(
 		cc: parent.cc,
 	});
 
-	const replyTarget =
+	const self = normalizeEmailAddress(sendingMailboxAddress);
+	const replyToOrFrom =
 		participants.replyTo[0] ?? participants.from[0] ?? parent.from;
+
+	// When replying to a message we sent ourselves, the sender is our own
+	// mailbox. Replying to "from" would loop the message back to us — the
+	// recipient ends up equal to the sender, and providers (including
+	// Cloudflare's Email Service) can silently drop it. Reply to the original
+	// recipients instead, mirroring how mail clients treat replying to your own
+	// sent mail.
+	const replyTarget =
+		normalizeEmailAddress(replyToOrFrom) === self
+			? (excludeSelf(
+					uniqueAddresses([...participants.to, ...participants.cc]),
+					sendingMailboxAddress,
+				)[0] ?? replyToOrFrom)
+			: replyToOrFrom;
 
 	if (!replyAll) {
 		return {
@@ -118,20 +133,33 @@ export async function resolveReplyRecipients(
 		};
 	}
 
-	const all = uniqueAddresses([
-		...participants.from,
-		...participants.to,
-		...participants.cc,
-		...participants.replyTo,
-	]);
-
-	const to = excludeSelf(all, sendingMailboxAddress).map((address) =>
-		formatEmailAddress(address),
+	// Reply-all keeps the primary recipients of the message being replied to in
+	// "To" (the original "To" audience), and moves everyone else — the sender,
+	// Reply-To, and any Cc'd participants — into "Cc". This mirrors treating Cc
+	// as "also part of the conversation" rather than promoting them to primary.
+	const toAddresses = excludeSelf(
+		uniqueAddresses(participants.to),
+		sendingMailboxAddress,
+	);
+	const primaryTo = toAddresses.length ? toAddresses : [replyTarget];
+	const primaryToSet = new Set(
+		primaryTo.map((address) => normalizeEmailAddress(address)),
 	);
 
+	const ccAddresses = excludeSelf(
+		uniqueAddresses([
+			...participants.from,
+			...participants.replyTo,
+			...participants.cc,
+		]),
+		sendingMailboxAddress,
+	).filter((address) => !primaryToSet.has(normalizeEmailAddress(address)));
+
 	return {
-		to: to.length ? to : [replyTarget],
-		cc: overrides?.cc,
+		to: primaryTo.map((address) => formatEmailAddress(address)),
+		cc: ccAddresses.length
+			? ccAddresses.map((address) => formatEmailAddress(address))
+			: overrides?.cc,
 		bcc: overrides?.bcc,
 	};
 }

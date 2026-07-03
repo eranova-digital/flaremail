@@ -22,6 +22,7 @@ export type CreateDraftBody = OutboundMessageBody &
 	MailboxScopedBody & {
 		threadId?: string;
 		inReplyToMessageId?: string;
+		replyAll?: boolean;
 	};
 
 export type SendMessageBody = OutboundMessageBody & MailboxScopedBody;
@@ -188,7 +189,10 @@ export function parseCreateDraftBody(body: unknown): CreateDraftBody {
 		};
 	}
 
-	if (!Array.isArray(value.to) || value.to.length === 0) {
+	const to = Array.isArray(value.to) ? (value.to as EmailAddressInput[]) : [];
+	const hasExplicitRecipients = to.length > 0;
+
+	if (!hasExplicitRecipients && typeof value.inReplyToMessageId !== "string") {
 		throw new Error("Field 'to' must be a non-empty array");
 	}
 
@@ -196,7 +200,7 @@ export function parseCreateDraftBody(body: unknown): CreateDraftBody {
 
 	return {
 		mailboxId,
-		to: value.to as EmailAddressInput[],
+		to,
 		cc: value.cc as EmailAddressInput[] | undefined,
 		bcc: value.bcc as EmailAddressInput[] | undefined,
 		subject: typeof value.subject === "string" ? value.subject.trim() : "",
@@ -208,6 +212,7 @@ export function parseCreateDraftBody(body: unknown): CreateDraftBody {
 			typeof value.inReplyToMessageId === "string"
 				? value.inReplyToMessageId
 				: undefined,
+		replyAll: value.replyAll === true,
 	};
 }
 

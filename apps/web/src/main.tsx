@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import { ConfigErrorScreen } from "./components/ConfigErrorScreen";
+import { TooltipProvider } from "./components/ui/tooltip";
 import "./lib/api/client";
 import { getApiBearerToken, getApiUrl } from "./lib/api";
 import "./index.css";
@@ -35,9 +36,11 @@ function Root() {
 
 	return (
 		<QueryClientProvider client={queryClient}>
-			<BrowserRouter>
-				<App />
-			</BrowserRouter>
+			<TooltipProvider delayDuration={300}>
+				<BrowserRouter>
+					<App />
+				</BrowserRouter>
+			</TooltipProvider>
 		</QueryClientProvider>
 	);
 }

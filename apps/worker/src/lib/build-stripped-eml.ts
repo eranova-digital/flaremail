@@ -1,5 +1,6 @@
 import { createMimeMessage } from "mimetext";
 
+import { splitAddressList } from "./addresses";
 import type { MimeMessageContent } from "./messages/mime-message-content";
 
 const MANAGED_HEADER_KEYS = new Set([
@@ -34,16 +35,19 @@ export function buildStrippedEml(
 		mime.setSender(content.from);
 	}
 
-	if (content.to) {
-		mime.setRecipient(content.to);
+	const toAddresses = content.to ? splitAddressList(content.to) : [];
+	if (toAddresses.length) {
+		mime.setRecipient(toAddresses);
 	}
 
-	if (content.cc) {
-		mime.setCc(content.cc);
+	const ccAddresses = content.cc ? splitAddressList(content.cc) : [];
+	if (ccAddresses.length) {
+		mime.setCc(ccAddresses);
 	}
 
-	if (content.bcc) {
-		mime.setBcc(content.bcc);
+	const bccAddresses = content.bcc ? splitAddressList(content.bcc) : [];
+	if (bccAddresses.length) {
+		mime.setBcc(bccAddresses);
 	}
 
 	if (content.subject) {

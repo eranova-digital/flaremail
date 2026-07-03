@@ -31,6 +31,7 @@ import {
 	handleCreateLabel,
 	handleDeleteLabel,
 	handleDownloadAttachment,
+	handleDownloadRawMessage,
 	handleGetLabel,
 	handleGetMessage,
 	handleGetMessagePreview,
@@ -139,6 +140,11 @@ export const v1Routes: RouteDefinition[] = [
 		method: "GET",
 		path: `${prefix}/messages/:id/preview`,
 		handler: handleGetMessagePreview,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/messages/:id/raw`,
+		handler: handleDownloadRawMessage,
 	},
 	{ method: "GET", path: `${prefix}/messages/:id`, handler: handleGetMessage },
 

@@ -19,15 +19,23 @@ export async function saveAttachmentFile(
 	filename: string,
 ): Promise<void> {
 	const blob = await fetchAttachmentBlob(attachmentId);
+	saveBlobAsFile(blob, filename);
+}
+
+export function saveBlobAsFile(blob: Blob, filename: string): void {
 	const url = URL.createObjectURL(blob);
 
 	try {
-		const anchor = document.createElement("a");
+		const anchor = document.createElement('a');
 		anchor.href = url;
 		anchor.download = filename;
-		anchor.rel = "noopener";
+		anchor.rel = 'noopener';
 		anchor.click();
 	} finally {
 		URL.revokeObjectURL(url);
 	}
+}
+
+export function saveLocalFile(file: File, filename: string): void {
+	saveBlobAsFile(file, filename);
 }

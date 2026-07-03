@@ -200,13 +200,35 @@ export function toMessagePreview(message: Message) {
 	};
 }
 
+/**
+ * Direction is stored once per message, but whether a message is "yours"
+ * (rendered on the right) is relative to the viewer. Internal-to-internal mail
+ * is kept as a single outbound row shared with internal recipients, so a
+ * message only counts as outbound for the mailbox that actually sent it.
+ */
+export function resolveViewerDirection(
+	message: Pick<Message, "direction" | "actualMailboxId">,
+	viewerMailboxId?: string,
+): Message["direction"] {
+	if (!viewerMailboxId) {
+		return message.direction;
+	}
+
+	return message.direction === "outbound" &&
+		message.actualMailboxId === viewerMailboxId
+		? "outbound"
+		: "inbound";
+}
+
 export function toThreadMessagePreview(
 	message: Message,
 	inReplyTo: string | null = null,
+	viewerMailboxId?: string,
 ) {
 	const { threadId: _threadId, ...preview } = toMessagePreview(message);
 	return {
 		...preview,
+		direction: resolveViewerDirection(message, viewerMailboxId),
 		inReplyTo,
 	};
 }
@@ -226,9 +248,10 @@ export function toThreadMessageWithBody(
 			contentId: string | null;
 		}>;
 	},
+	viewerMailboxId?: string,
 ) {
 	return {
-		...toThreadMessagePreview(message, inReplyTo),
+		...toThreadMessagePreview(message, inReplyTo, viewerMailboxId),
 		text: body.text,
 		html: body.html,
 		attachments: body.attachments,
@@ -238,6 +261,7 @@ export function toThreadMessageWithBody(
 export function toSendResponse(message: Message) {
 	return {
 		id: message.id,
+		threadId: message.threadId,
 		rfcMessageId: message.messageId,
 		status: message.sendStatus,
 	};

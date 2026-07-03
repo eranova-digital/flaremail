@@ -1,4 +1,4 @@
-import { formatEmailAddressList } from "../addresses";
+import { formatEmailAddress, formatEmailAddressList } from "../addresses";
 import { attachmentContentToArrayBuffer } from "../attachment-utils";
 import type { MimeMessageContent } from "./mime-message-content";
 import type { OutboundMessageBody } from "./outbound-payload";
@@ -31,7 +31,7 @@ export type EmailSendBuilderPayload = {
 	attachments?: {
 		filename: string;
 		type: string;
-		content: string;
+		content: string | ArrayBuffer | ArrayBufferView;
 		disposition: "attachment" | "inline";
 		contentId?: string;
 	}[];
@@ -49,6 +49,9 @@ function storedAttachmentsToEmailAttachments(
 		const base = {
 			filename,
 			type: attachment.mimeType || "application/octet-stream",
+			// The Workers `send_email` binding treats a string as *raw* content
+			// (only the REST API base64-decodes it). Binary attachments must be
+			// passed as an ArrayBuffer.
 			content: attachmentContentToArrayBuffer(attachment.content),
 		};
 
@@ -133,12 +136,12 @@ export function buildEmailSendPayload(
 
 	return {
 		from: params.from,
-		to: formatEmailAddressList(params.payload.to),
+		to: params.payload.to.map(formatEmailAddress),
 		cc: params.payload.cc?.length
-			? formatEmailAddressList(params.payload.cc)
+			? params.payload.cc.map(formatEmailAddress)
 			: undefined,
 		bcc: params.payload.bcc?.length
-			? formatEmailAddressList(params.payload.bcc)
+			? params.payload.bcc.map(formatEmailAddress)
 			: undefined,
 		subject: params.payload.subject,
 		text: params.payload.text,

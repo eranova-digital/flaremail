@@ -28,6 +28,7 @@ import {
 import {
 	buildRfcMessageIdToUuidMap,
 	resolveInReplyToMessageUuid,
+	resolveViewerDirection,
 	toMessagePreview,
 	toThreadDto,
 	toThreadMessagePreview,
@@ -317,10 +318,10 @@ export async function listThreadMessages(
 
 			if (options?.includeBody && options.bucket) {
 				const body = await loadMessageBody(db, options.bucket, message);
-				return toThreadMessageWithBody(message, inReplyTo, body);
+				return toThreadMessageWithBody(message, inReplyTo, body, mailboxId);
 			}
 
-			return toThreadMessagePreview(message, inReplyTo);
+			return toThreadMessagePreview(message, inReplyTo, mailboxId);
 		}),
 	);
 
@@ -438,7 +439,7 @@ export async function readMessageFull(
 		to: message.to,
 		cc: message.cc,
 		bcc: message.bcc,
-		direction: message.direction,
+		direction: resolveViewerDirection(message, mailboxId),
 		sendStatus: message.sendStatus,
 		rfcMessageId: message.messageId,
 		headers: (parsed?.headers ?? []).map((header) => ({

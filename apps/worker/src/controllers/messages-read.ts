@@ -7,6 +7,7 @@ import { validationError } from "../lib/http/problem";
 import { requireQueryParam } from "../lib/http/route-helpers";
 import type { RouteContext } from "../lib/http/router";
 import { downloadAttachment } from "../services/attachments";
+import { downloadRawMessage } from "../services/raw-message";
 import {
 	readMessageFull,
 	readMessagePreview,
@@ -81,6 +82,25 @@ export async function handleSearch({
 			}),
 		);
 		return jsonResponse(result);
+	} catch (error) {
+		return handleRouteError(error, request);
+	}
+}
+
+export async function handleDownloadRawMessage({
+	request,
+	env,
+	params,
+}: RouteContext): Promise<Response> {
+	const mailboxId = requireQueryParam(request, "mailboxId");
+	if (mailboxId instanceof Response) {
+		return mailboxId;
+	}
+
+	try {
+		return await withDb(env, (db) =>
+			downloadRawMessage(db, env.BUCKET, params.id, mailboxId),
+		);
 	} catch (error) {
 		return handleRouteError(error, request);
 	}

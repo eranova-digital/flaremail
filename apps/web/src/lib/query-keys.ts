@@ -18,4 +18,6 @@ export const queryKeys = {
 		["message", mailboxId, messageId] as const,
 	draft: (mailboxId: string, draftId: string) =>
 		["draft", mailboxId, draftId] as const,
+	rawMessage: (mailboxId: string, messageId: string) =>
+		["raw-message", mailboxId, messageId] as const,
 };

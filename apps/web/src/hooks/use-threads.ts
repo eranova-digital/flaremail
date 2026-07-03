@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { assertData } from "@/lib/api/errors";
 import { listThreads, type ThreadFolder } from "@/lib/api/client";
 import { queryKeys } from "@/lib/query-keys";
+import { THREADS_POLL_MS } from "@/lib/thread-messages-cache";
 
 export function useThreads(
 	mailboxId: string,
@@ -24,5 +25,6 @@ export function useThreads(
 			return assertData(data, "listThreads");
 		},
 		enabled: Boolean(mailboxId),
+		refetchInterval: THREADS_POLL_MS,
 	});
 }

@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { assertData } from "@/lib/api/errors";
 import {
 	createDraft,
 	getMessage,
 } from "@/lib/api/client";
+import {
+	buildReplyQuotedText,
+	ensureReplyQuoteBody,
+} from "@/lib/build-reply-quote";
 import {
 	type ComposeAttachment,
 	createStoredAttachment,
@@ -40,6 +44,7 @@ export function useComposeInit(
 	const [initialized, setInitialized] = useState(
 		!reply && !forward && !existingDraftId,
 	);
+	const replyDraftStartedRef = useRef(false);
 
 	useEffect(() => {
 		if (!existingDraftId || initialized) {
@@ -88,23 +93,50 @@ export function useComposeInit(
 			return;
 		}
 
-		let cancelled = false;
+		// Draft creation is a one-time side effect. Guard with a ref so an
+		// unstable `reply` prop identity or StrictMode's double-invoked effects
+		// cannot create duplicate (empty) drafts. setState after unmount is a
+		// safe no-op in React 19, so no cancellation flag is needed here.
+		if (replyDraftStartedRef.current) {
+			return;
+		}
+		replyDraftStartedRef.current = true;
 
 		void (async () => {
 			try {
+				let parentForQuote = reply.parentMessage;
+				if (!parentForQuote) {
+					const { data: parentData } = await getMessage({
+						throwOnError: true,
+						path: { id: reply.inReplyToMessageId },
+						query: { mailboxId },
+					});
+					const parentMessage = assertData(parentData, "getMessage");
+
+					parentForQuote = {
+						from: parentMessage.from ?? "",
+						text: parentMessage.text,
+						html: parentMessage.html,
+						preview: parentMessage.preview,
+						sentAt: parentMessage.sentAt,
+						receivedAt: parentMessage.receivedAt,
+					};
+				}
+
 				const { data: created } = await createDraft({
 					throwOnError: true,
 					body: {
 						mailboxId,
 						inReplyToMessageId: reply.inReplyToMessageId,
 						threadId: reply.threadId,
+						replyAll: reply.replyAll === true ? true : undefined,
 						to: [],
 						subject: "",
 						text: "",
 					},
 				});
 				const draftRef = assertData(created, "createDraft");
-				if (!draftRef.id || cancelled) {
+				if (!draftRef.id) {
 					return;
 				}
 
@@ -114,23 +146,20 @@ export function useComposeInit(
 					query: { mailboxId },
 				});
 				const draft = assertData(data, "getMessage");
-				if (cancelled) {
-					return;
-				}
 
-				setFields(messageToFields(draft));
+				const baseFields = messageToFields(draft);
+				const quotedText = buildReplyQuotedText(parentForQuote);
+
+				setFields({
+					...baseFields,
+					body: ensureReplyQuoteBody(baseFields.body, quotedText),
+				});
 				setDraftId(draftRef.id);
 				setInitialized(true);
 			} catch {
-				if (!cancelled) {
-					setInitialized(true);
-				}
+				setInitialized(true);
 			}
 		})();
-
-		return () => {
-			cancelled = true;
-		};
 	}, [reply, mailboxId, initialized, existingDraftId]);
 
 	useEffect(() => {

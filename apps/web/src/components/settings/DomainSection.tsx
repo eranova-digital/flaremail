@@ -5,6 +5,7 @@ import { Activity, Trash2 } from "lucide-react";
 import { ReadinessBadge } from "@/components/settings/domain-validation/ReadinessBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -77,11 +78,15 @@ export function DomainSection() {
 			) : (domainsQuery.data ?? []).length === 0 ? (
 				<p className="text-muted-foreground text-sm">No domains yet. Add one above.</p>
 			) : (
-				<ul className="divide-border divide-y rounded-md border">
-					{(domainsQuery.data ?? []).map((domain) => (
-						<DomainRow key={domain.id} domain={domain} />
-					))}
-				</ul>
+				<Card className="gap-0 rounded-md py-0">
+					<CardContent className="p-0">
+						<ul className="divide-border divide-y">
+							{(domainsQuery.data ?? []).map((domain) => (
+								<DomainRow key={domain.id} domain={domain} />
+							))}
+						</ul>
+					</CardContent>
+				</Card>
 			)}
 		</section>
 	);
