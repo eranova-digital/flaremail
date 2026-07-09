@@ -25,6 +25,13 @@ export {
 } from "./persistence";
 
 export {
+	planThreadAction,
+	type ThreadActionPlan,
+	type ThreadActionUpdate,
+	type ThreadMailboxSnapshot,
+} from "./plan-thread-action";
+
+export {
 	deleteThreadIfEmpty,
 	onDraftDeleted,
 	onDraftUpdated,
