@@ -12,6 +12,7 @@
 		"api:generate": "openapi-ts"
 	},
 	"dependencies": {
+		"@test-worker/mail-quoting": "*",
 		"@base-ui/react": "^1.6.0",
 		"@floating-ui/dom": "^1.7.6",
 		"@hey-api/client-fetch": "^0.13.1",
