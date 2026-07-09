@@ -2,42 +2,50 @@ import { and, eq } from "drizzle-orm";
 import PostalMime from "postal-mime";
 
 import { messages, threadMailboxes } from "../../db/schema";
-import { assertCanSendFrom } from "../authorize-mailbox";
+import { assertCanSendFrom } from "../../lib/authorize-mailbox";
+import { loadMailboxForSend } from "../../lib/mailbox-queries";
+import { isBlackholeMailboxType } from "../../lib/mailbox-types";
 import {
 	assertMessageVisibleInMailbox,
-	onOutboundSent,
 	findThreadMailbox,
-} from "../thread-mailbox";
-import { isBlackholeMailboxType } from "../mailbox-types";
-import { buildReplyThreading } from "./build-reply-threading";
+	onOutboundSent,
+} from "../../lib/thread-mailbox";
 import {
 	buildForwardBodyHtml,
 	buildForwardBodyText,
 	buildForwardQuotedHtml,
 	buildForwardQuotedText,
 	forwardSubject,
-} from "./build-forward-content";
+} from "../../lib/messages/build-forward-content";
 import {
 	buildEmailSendPayload,
 	buildOutboundMimeContent,
-} from "./build-outbound-mime";
-import { canonicalizeSentMessageId } from "./message-id";
-import { findMessageById } from "./message-queries";
-import { completeDraftSend, draftSendPromoteFromDrafts } from "./complete-draft-send";
-import type { OutboundContext } from "./outbound-context";
+} from "../../lib/messages/build-outbound-mime";
+import { buildReplyThreading } from "../../lib/messages/build-reply-threading";
+import {
+	completeDraftSend,
+	draftSendPromoteFromDrafts,
+} from "../../lib/messages/complete-draft-send";
+import { canonicalizeSentMessageId } from "../../lib/messages/message-id";
+import { findMessageById } from "../../lib/messages/message-queries";
 import {
 	loadDraftOutboundPayload,
 	loadStoredAttachmentInputs,
 	outboundAttachmentsToStoredInputs,
 	storedInputsToOutboundAttachments,
 	type OutboundAttachmentInput,
-} from "./outbound-attachments";
-import type { ForwardBody, OutboundMessageBody, ReplyBody } from "./outbound-payload";
-import { sendAndPersistNewMessage } from "./outbound-persist";
-import { prepareOutboundMessageBody } from "./prepare-email-html";
-import { resolveReplyPayload } from "./outbound-threading";
-import { resolveReplyRecipients } from "./resolve-reply-recipients";
-import { sendEmail } from "./send-email";
+} from "../../lib/messages/outbound-attachments";
+import type { OutboundContext } from "../../lib/messages/outbound-context";
+import type {
+	ForwardBody,
+	OutboundMessageBody,
+	ReplyBody,
+} from "../../lib/messages/outbound-payload";
+import { sendAndPersistNewMessage } from "../../lib/messages/outbound-persist";
+import { resolveReplyPayload } from "../../lib/messages/outbound-threading";
+import { prepareOutboundMessageBody } from "../../lib/messages/prepare-email-html";
+import { resolveReplyRecipients } from "../../lib/messages/resolve-reply-recipients";
+import { sendEmail } from "../../lib/messages/send-email";
 
 export async function sendDraftMessage(
 	ctx: OutboundContext,
@@ -73,9 +81,6 @@ export async function sendDraftMessage(
 		ctx.bucket,
 		messageId,
 	);
-	// `prepareOutboundMessageBody` converts base64 `data:` images embedded in the
-	// draft HTML into CID inline attachments. Persist and send them alongside the
-	// draft's real file attachments so external clients can render inline images.
 	const attachmentInputs = [
 		...storedAttachmentInputs,
 		...outboundAttachmentsToStoredInputs(payload.attachments),
