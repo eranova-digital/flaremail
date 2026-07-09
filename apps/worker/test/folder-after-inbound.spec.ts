@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { folderAfterInboundMessage } from "../src/lib/message-mailboxes";
+import { folderAfterInboundMessage } from "../src/lib/thread-mailbox";
 
 describe("folderAfterInboundMessage", () => {
 	it("moves sent threads to inbox on inbound activity", () => {

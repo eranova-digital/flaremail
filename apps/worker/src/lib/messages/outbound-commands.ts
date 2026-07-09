@@ -5,10 +5,10 @@ import { messages, threadMailboxes } from "../../db/schema";
 import { assertCanSendFrom } from "../authorize-mailbox";
 import {
 	assertMessageVisibleInMailbox,
+	finalizeThreadOnOutboundSend,
 	findThreadMailbox,
-} from "../message-mailboxes";
+} from "../thread-mailbox";
 import { isBlackholeMailboxType } from "../mailbox-types";
-import { finalizeThreadOnOutboundSend } from "../touch-thread-outbound";
 import { buildReplyThreading } from "./build-reply-threading";
 import {
 	buildForwardBodyHtml,

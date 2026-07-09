@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	folderForNonDraftThread,
 	reconcileThreadFolderFromMessages,
-} from "../src/lib/message-mailboxes";
+} from "../src/lib/thread-mailbox";
 
 describe("folderForNonDraftThread", () => {
 	it("uses inbox when any non-draft message is inbound", () => {

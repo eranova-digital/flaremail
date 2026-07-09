@@ -2,7 +2,7 @@ import type { Database } from "../../db/client";
 import type { messages } from "../../db/schema";
 import { findMessageRowByRfcMessageId } from "../find-message";
 import { isUniqueViolation } from "../db/postgres-error";
-import { linkMessageMailboxes } from "../message-mailboxes";
+import { linkMessageMailboxes } from "../thread-mailbox";
 import { findMessageById } from "./message-queries";
 import { purgeDraftMessage } from "./purge-draft-message";
 import type { MimeMessageContent } from "./mime-message-content";

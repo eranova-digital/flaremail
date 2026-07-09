@@ -1,12 +1,11 @@
 import { eq } from "drizzle-orm";
 
-import { attachments, messages, threads } from "../../db/schema";
+import { attachments, messages } from "../../db/schema";
 import { assertCanSendFrom } from "../authorize-mailbox";
-import { refreshThreadMailboxStats } from "../message-mailboxes";
 import { isBlackholeMailboxType } from "../mailbox-types";
 import { loadMailboxForSend } from "../mailbox-queries";
 import { deleteR2Objects } from "../r2-cleanup";
-import { refreshThreadAfterDraftDelete } from "../touch-thread-outbound";
+import { onDraftDeleted, onDraftUpdated } from "../thread-mailbox";
 import { buildOutboundMimeContent } from "./build-outbound-mime";
 import { findDraftById, findMessageById } from "./message-queries";
 import { buildPreview } from "./message-utils";
@@ -130,15 +129,11 @@ export async function updateDraft(
 		},
 	);
 
-	await ctx.db
-		.update(threads)
-		.set({
-			subject: body.subject,
-			updatedAt: now,
-		})
-		.where(eq(threads.id, draft.threadId));
-
-	await refreshThreadMailboxStats(ctx.db, draft.threadId, mailboxId);
+	await onDraftUpdated(ctx.db, draft.threadId, mailboxId, {
+		subject: body.subject,
+		preview,
+		lastMessageAt: now,
+	});
 
 	const updated = await findMessageById(ctx.db, messageId);
 	if (!updated) {
@@ -165,7 +160,7 @@ export async function deleteDraft(
 	const threadId = draft.threadId;
 	await ctx.db.delete(attachments).where(eq(attachments.messageId, messageId));
 	await ctx.db.delete(messages).where(eq(messages.id, messageId));
-	await refreshThreadAfterDraftDelete(ctx.db, threadId);
+	await onDraftDeleted(ctx.db, threadId);
 	await deleteR2Objects(ctx.bucket, [
 		draft.rawEmlKey,
 		...storedAttachments.map((attachment) => attachment.storageKey),

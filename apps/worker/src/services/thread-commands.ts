@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import type { Database } from "../db/client";
 import { threadMailboxes } from "../db/schema";
 import type { ThreadFolder, ThreadAction } from "../lib/mailbox-types";
-import { findThreadMailbox } from "./thread-mailbox-access";
+import { findThreadMailbox } from "../lib/thread-mailbox";
 
 export type { ThreadAction } from "../lib/mailbox-types";
 

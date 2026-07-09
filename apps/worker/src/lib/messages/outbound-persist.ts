@@ -1,17 +1,15 @@
 import { assertCanSendFrom } from "../authorize-mailbox";
 import { findMessageRowByRfcMessageId } from "../find-message";
 import {
+	finalizeThreadOnOutboundSend,
 	findThreadMailbox,
 	linkMessageMailboxes,
-} from "../message-mailboxes";
-import { isBlackholeMailboxType } from "../mailbox-types";
-import { loadMailboxForSend } from "../mailbox-queries";
-import { finalizeThreadOnOutboundSend } from "../touch-thread-outbound";
-import {
 	prepareThreadForMessage,
 	type ThreadFolder,
 	type ThreadTouchData,
-} from "../touch-thread";
+} from "../thread-mailbox";
+import { isBlackholeMailboxType } from "../mailbox-types";
+import { loadMailboxForSend } from "../mailbox-queries";
 import {
 	buildEmailSendPayload,
 	buildOutboundMimeContent,
