@@ -10,15 +10,13 @@ import {
 } from "@/lib/api/client";
 import {
 	type ComposeAttachment,
-	composeAttachmentsToOutbound,
 	createStoredAttachment,
 } from "@/lib/compose-attachments";
+import { persistDraft } from "@/lib/compose/persist-draft";
 import {
 	AUTOSAVE_MS,
 	canAutosaveCompose,
-	fieldsToPayload,
 	getSaveBlockedReason,
-	outboundFromFields,
 	type ComposeFields,
 	type ComposeReplyContext,
 } from "./types";
@@ -102,7 +100,7 @@ export function useComposeAutosave({
 		[mailboxId, attachmentsRef, setAttachments],
 	);
 
-	const persistDraft = useCallback(async (): Promise<boolean> => {
+	const runPersistDraft = useCallback(async (): Promise<boolean> => {
 		if (isForwardMode || sealedRef.current) {
 			return false;
 		}
@@ -123,47 +121,27 @@ export function useComposeAutosave({
 		setSaveError(null);
 
 		try {
-			let outboundAttachments: OutboundMessageBody["attachments"] | undefined;
-			const id = draftIdRef.current ?? draftId;
-			if (!id || attachmentsDirtyRef.current) {
-				outboundAttachments = await composeAttachmentsToOutbound(
-					currentAttachments,
-				);
+			const result = await persistDraft({
+				mailboxId,
+				draftId: draftIdRef.current ?? draftId,
+				fields: current,
+				attachments: currentAttachments,
+				attachmentsDirty: attachmentsDirtyRef.current,
+				reply,
+				createDraft: createMutation.mutateAsync,
+				updateDraft: updateMutation.mutateAsync,
+				refreshAttachments: refreshStoredAttachments,
+			});
+
+			if (!result.ok) {
+				setSaveError(result.error);
+				return false;
 			}
 
-			if (!id) {
-				const created = await createMutation.mutateAsync(
-					fieldsToPayload(
-						current,
-						mailboxId,
-						reply,
-						outboundAttachments,
-					),
-				);
-				if (created.id) {
-					draftIdRef.current = created.id;
-					setDraftId(created.id);
-					if (outboundAttachments !== undefined) {
-						await refreshStoredAttachments(created.id);
-					}
-				}
-			} else {
-				await updateMutation.mutateAsync({
-					id,
-					body: outboundFromFields(current, outboundAttachments),
-				});
-				if (outboundAttachments !== undefined) {
-					await refreshStoredAttachments(id);
-				}
-			}
-
-			attachmentsDirtyRef.current = false;
+			draftIdRef.current = result.draftId;
+			setDraftId(result.draftId);
+			attachmentsDirtyRef.current = result.attachmentsDirty;
 			return true;
-		} catch (error) {
-			setSaveError(
-				error instanceof Error ? error.message : "Failed to save draft",
-			);
-			return false;
 		} finally {
 			setIsSaving(false);
 		}
@@ -178,19 +156,20 @@ export function useComposeAutosave({
 		fieldsRef,
 		attachmentsRef,
 		attachmentsDirtyRef,
+		draftIdRef,
 		setDraftId,
-		setAttachments,
+		sealedRef,
 	]);
 
 	const runPersist = useCallback(() => {
-		const promise = persistDraft().finally(() => {
+		const promise = runPersistDraft().finally(() => {
 			if (inFlightSaveRef.current === promise) {
 				inFlightSaveRef.current = null;
 			}
 		});
 		inFlightSaveRef.current = promise;
 		return promise;
-	}, [persistDraft]);
+	}, [runPersistDraft]);
 
 	const scheduleSave = useCallback(() => {
 		if (isForwardMode || sealedRef.current) {
@@ -211,7 +190,7 @@ export function useComposeAutosave({
 			timerRef.current = null;
 			void runPersist();
 		}, AUTOSAVE_MS);
-	}, [runPersist, isForwardMode, reply, fieldsRef, attachmentsRef]);
+	}, [runPersist, isForwardMode, reply, fieldsRef, attachmentsRef, sealedRef]);
 
 	const clearScheduledSave = useCallback(() => {
 		if (timerRef.current) {
@@ -246,8 +225,8 @@ export function useComposeAutosave({
 			await inFlight;
 		}
 
-		return persistDraft();
-	}, [persistDraft]);
+		return runPersistDraft();
+	}, [runPersistDraft]);
 
 	useEffect(() => {
 		return () => {

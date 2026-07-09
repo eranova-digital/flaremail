@@ -9,11 +9,7 @@ import {
 	sendDraft,
 } from "@/lib/api/client";
 import { invalidateMailboxThreads } from "@/lib/invalidate-mailbox";
-import {
-	addPendingSend,
-	buildPendingMessage,
-	removePendingSend,
-} from "@/lib/pending-sends";
+import { withPendingSend } from "@/lib/compose/with-pending-send";
 import { queryKeys } from "@/lib/query-keys";
 import { THREAD_MESSAGES_POLL_MS } from "@/lib/thread-messages-cache";
 
@@ -37,31 +33,23 @@ export function useSendDraft(mailboxId: string, threadId?: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async (draftId: string) => {
-			const { data } = await sendDraft({
-				throwOnError: true,
-				path: { id: draftId },
-			});
-			return assertData(data, "sendDraft");
-		},
-		onMutate: async (draftId) => {
-			if (!threadId) {
-				return;
-			}
-
-			await queryClient.cancelQueries({
-				queryKey: queryKeys.threadMessages(mailboxId, threadId),
-			});
-			addPendingSend(threadId, buildPendingMessage({ draftId }));
-		},
-		onSettled: async (_data, _error, draftId) => {
+		mutationFn: async (draftId: string) =>
+			withPendingSend(
+				queryClient,
+				mailboxId,
+				threadId,
+				draftId,
+				{},
+				async () => {
+					const { data } = await sendDraft({
+						throwOnError: true,
+						path: { id: draftId },
+					});
+					return assertData(data, "sendDraft");
+				},
+			),
+		onSettled: () => {
 			invalidateMailboxThreads(queryClient, mailboxId, threadId);
-			if (threadId) {
-				await queryClient.invalidateQueries({
-					queryKey: queryKeys.threadMessages(mailboxId, threadId),
-				});
-				removePendingSend(threadId, draftId);
-			}
 		},
 	});
 }

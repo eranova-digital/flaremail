@@ -5,19 +5,13 @@ import { assertData } from "@/lib/api/errors";
 import { forwardToMessage, sendDraft } from "@/lib/api/client";
 import { composeAttachmentsToOutbound } from "@/lib/compose-attachments";
 import { isEmptyEditorHtml } from "@/lib/compose-body";
+import { persistDraft } from "@/lib/compose/persist-draft";
+import { withPendingSend } from "@/lib/compose/with-pending-send";
 import { invalidateMailboxThreads } from "@/lib/invalidate-mailbox";
-import {
-	addPendingSend,
-	buildPendingMessage,
-	removePendingSend,
-} from "@/lib/pending-sends";
-import { queryKeys } from "@/lib/query-keys";
 import type { SendResult } from "@/lib/thread-messages-cache";
 import {
-	fieldsToPayload,
 	hasComposeRecipient,
 	hasComposeSubject,
-	outboundFromFields,
 	parseRecipients,
 	type ComposeFields,
 	type ComposeForwardContext,
@@ -160,70 +154,39 @@ export function useComposeSend({
 		}
 		const currentAttachments = attachmentsRef.current;
 
-		// Only (re)upload attachments when they have unsaved changes or when we
-		// still need to create the draft. Otherwise omit them so the backend
-		// preserves the already-stored attachments instead of re-downloading and
-		// re-uploading them on every send.
-		let id = draftIdRef.current ?? draftId;
-		let outboundAttachments:
-			| Awaited<ReturnType<typeof composeAttachmentsToOutbound>>
-			| undefined;
-		if (!id || attachmentsDirtyRef.current) {
-			outboundAttachments =
-				await composeAttachmentsToOutbound(currentAttachments);
+		const persistResult = await persistDraft({
+			mailboxId,
+			draftId: draftIdRef.current ?? draftId,
+			fields: current,
+			attachments: currentAttachments,
+			attachmentsDirty: attachmentsDirtyRef.current,
+			reply,
+			createDraft: createMutation.mutateAsync,
+			updateDraft: updateMutation.mutateAsync,
+		});
+
+		if (!persistResult.ok) {
+			throw new Error(persistResult.error);
 		}
 
-		if (!id) {
-			const created = await createMutation.mutateAsync(
-				fieldsToPayload(current, mailboxId, reply, outboundAttachments),
-			);
-			id = created.id ?? null;
-			if (id) {
-				draftIdRef.current = id;
-				setDraftId(id);
-			}
-		} else {
-			await updateMutation.mutateAsync({
-				id,
-				body: outboundFromFields(current, outboundAttachments),
-			});
-		}
+		const id = persistResult.draftId;
+		draftIdRef.current = id;
+		setDraftId(id);
+		attachmentsDirtyRef.current = persistResult.attachmentsDirty;
 
-		if (!id) {
-			throw new Error("Draft was not created");
-		}
-
-		attachmentsDirtyRef.current = false;
-
-		if (knownThreadId) {
-			await queryClient.cancelQueries({
-				queryKey: queryKeys.threadMessages(mailboxId, knownThreadId),
-			});
-			addPendingSend(
-				knownThreadId,
-				buildPendingMessage({
-					draftId: id,
-					selfAddress: selfAddress ?? null,
-					to: current.to,
-					inReplyToMessageId: reply?.inReplyToMessageId,
-					hasAttachments: currentAttachments.length > 0,
-				}),
-			);
-		}
-
-		try {
-			const result = await sendMutation.mutateAsync(id);
-			if (knownThreadId) {
-				await queryClient.invalidateQueries({
-					queryKey: queryKeys.threadMessages(mailboxId, knownThreadId),
-				});
-			}
-			return result;
-		} finally {
-			if (knownThreadId) {
-				removePendingSend(knownThreadId, id);
-			}
-		}
+		return withPendingSend(
+			queryClient,
+			mailboxId,
+			knownThreadId,
+			id,
+			{
+				selfAddress: selfAddress ?? null,
+				to: current.to,
+				inReplyToMessageId: reply?.inReplyToMessageId,
+				hasAttachments: currentAttachments.length > 0,
+			},
+			() => sendMutation.mutateAsync(id),
+		);
 	}, [
 		flushPendingSave,
 		createMutation,
