@@ -288,15 +288,4 @@ export function formatRecipients(payload: OutboundMessageBody): {
 	};
 }
 
-export function replySubject(parentSubject: string | null): string {
-	const subject = parentSubject?.trim() ?? "";
-	if (!subject) {
-		return "Re:";
-	}
-
-	if (/^re:/i.test(subject)) {
-		return subject;
-	}
-
-	return `Re: ${subject}`;
-}
+export { replySubject } from "@test-worker/mail-quoting";

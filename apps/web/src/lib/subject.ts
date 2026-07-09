@@ -1,16 +1,6 @@
-const SUBJECT_PREFIX_PATTERN = /^(re|fw|fwd):\s*/i;
+import { normalizeSubjectForComparison } from "@test-worker/mail-quoting";
 
-export function normalizeSubjectForComparison(
-	subject?: string | null,
-): string {
-	let normalized = subject?.trim() ?? "";
-
-	while (SUBJECT_PREFIX_PATTERN.test(normalized)) {
-		normalized = normalized.replace(SUBJECT_PREFIX_PATTERN, "").trim();
-	}
-
-	return normalized;
-}
+export { normalizeSubjectForComparison };
 
 export function isSubjectChange(
 	previousSubject?: string | null,
