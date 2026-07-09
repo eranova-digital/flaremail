@@ -1,15 +1,16 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
-import type { Database } from "../db/client";
+import type { Database } from "../../db/client";
 import {
 	mailboxes,
 	messageMailboxes,
 	messages,
 	threadMailboxes,
 	threads,
-} from "../db/schema";
-import { extractEmailsFromHeaderValue } from "./extract-emails-from-header";
-import type { ThreadFolder, ThreadTouchData } from "./touch-thread";
+} from "../../db/schema";
+import { extractEmailsFromHeaderValue } from "../extract-emails-from-header";
+import type { ThreadFolder } from "../mailbox-types";
+import type { ThreadTouchData } from "./types";
 
 type MessageVisibilityInput = {
 	direction?: string;
@@ -93,27 +94,6 @@ export async function linkMessageMailboxes(
 				.onConflictDoNothing(),
 		),
 	);
-}
-
-export async function assertMessageVisibleInMailbox(
-	db: Database,
-	messageId: string,
-	mailboxId: string,
-): Promise<void> {
-	const [link] = await db
-		.select({ messageId: messageMailboxes.messageId })
-		.from(messageMailboxes)
-		.where(
-			and(
-				eq(messageMailboxes.messageId, messageId),
-				eq(messageMailboxes.mailboxId, mailboxId),
-			),
-		)
-		.limit(1);
-
-	if (!link) {
-		throw new Error("Message not found");
-	}
 }
 
 export async function findThreadMailbox(

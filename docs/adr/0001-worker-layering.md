@@ -15,12 +15,12 @@ Outbound writes lived in `lib/messages/*` while reads lived in `services/threads
 - **lib/** — domain modules (threading, folders, MIME, outbound pipelines, thread-mailbox sync).
 - **db/** — schema and client.
 
-Thread/mailbox lifecycle updates go through `lib/thread-mailbox-sync.ts` (`onMessagePersisted`, `onOutboundSent`, `onDraftDeleted`).
+Thread/mailbox lifecycle updates go through `lib/thread-mailbox/` (`onMessagePersisted`, `onOutboundSent`, `onDraftDeleted`, `onDraftUpdated`).
 
 `ThreadFolder` and `ThreadAction` are defined once in `lib/mailbox-types.ts`.
 
 ## Consequences
 
-- New thread/mailbox side effects must use `thread-mailbox-sync`, not call `message-mailboxes` helpers directly from scattered call sites.
-- Outbound code is split: `draft-lifecycle`, `outbound-persist`, `outbound-commands`, `outbound-threading`.
-- Shallow re-export barrels are removed or collapsed into purposeful modules (`thread-mailbox-access`).
+- New thread/mailbox side effects must use `lib/thread-mailbox`, not call persistence helpers directly from scattered call sites.
+- Outbound commands go through `services/outbound-mail`; internal pipeline remains in `lib/messages/*`.
+- Shallow re-export barrels are removed or collapsed into purposeful modules.

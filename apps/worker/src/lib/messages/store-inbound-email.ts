@@ -10,7 +10,7 @@ import { extractThreadingHeaders } from "../threading-headers";
 import {
 	prepareThreadForMessage,
 	type ThreadTouchData,
-} from "../touch-thread";
+} from "../thread-mailbox";
 import { buildPreview, parseSentAt } from "./message-utils";
 import { persistMessage, rollbackNewThread } from "./persist-message";
 import { postalEmailToMimeContent } from "./postal-to-mime-content";

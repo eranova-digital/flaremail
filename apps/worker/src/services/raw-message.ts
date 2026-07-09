@@ -1,5 +1,5 @@
 import type { Database } from "../db/client";
-import { assertMessageVisibleInMailbox } from "../lib/message-mailboxes";
+import { assertMessageVisibleInMailbox } from "../lib/thread-mailbox";
 import { findMessageById } from "../lib/messages/message-queries";
 
 export async function downloadRawMessage(

@@ -11,7 +11,7 @@ import {
 	threadLabels,
 	threadMailboxes,
 } from "../db/schema";
-import { refreshAllThreadMailboxes } from "../lib/message-mailboxes";
+import { refreshAllThreadMailboxes } from "../lib/thread-mailbox";
 import { deleteR2Objects } from "../lib/r2-cleanup";
 
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];

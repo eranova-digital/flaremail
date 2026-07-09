@@ -4,17 +4,15 @@ import { attachments, messages, type NewMessage } from "../../db/schema";
 import type { Database } from "../../db/client";
 import { buildStrippedEml } from "../build-stripped-eml";
 import {
+	deleteThreadIfEmpty,
 	linkMessageMailboxes,
+	onMessagePersisted,
 	resolveMessageMailboxIds,
-} from "../message-mailboxes";
-import { onMessagePersisted } from "../thread-mailbox-sync";
+	type ThreadTouchData,
+} from "../thread-mailbox";
 import { deleteR2Objects } from "../r2-cleanup";
 import { storeAttachments } from "../store-attachments";
 import { storeRawEml } from "../store-raw-eml";
-import {
-	deleteThreadIfEmpty,
-	type ThreadTouchData,
-} from "../touch-thread";
 import type { MimeMessageContent } from "./mime-message-content";
 import type { StoredAttachmentInput } from "./stored-attachment-input";
 

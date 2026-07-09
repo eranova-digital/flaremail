@@ -4,7 +4,7 @@ import { isUniqueViolation } from "../src/lib/db/postgres-error";
 import {
 	headerValuesForMessageVisibility,
 	sendRelinkMailboxIds,
-} from "../src/lib/message-mailboxes";
+} from "../src/lib/thread-mailbox";
 
 describe("isUniqueViolation", () => {
 	it("detects postgres unique violation codes", () => {

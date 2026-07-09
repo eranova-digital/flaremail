@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import type { Database } from "../../db/client";
 import { attachments, messages } from "../../db/schema";
 import { deleteR2Objects } from "../r2-cleanup";
-import { deleteThreadIfEmpty } from "../touch-thread";
+import { deleteThreadIfEmpty } from "../thread-mailbox";
 
 export async function purgeDraftMessage(
 	db: Database,
