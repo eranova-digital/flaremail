@@ -25,7 +25,7 @@ import { formatSubjectForDisplay, isSubjectChange } from '@/lib/subject';
 import { formatAddedCcRecipients, formatRecipientList, getNewCcRecipients, parseAddresses } from '@/lib/cc-recipients';
 import { composePath, labelListPath } from '@/lib/mailbox-routes';
 import type { ThreadMessagePreview } from '@/lib/api/generated';
-import { usePendingSends } from '@/lib/pending-sends';
+import { usePendingSends } from '@/lib/compose/pending-sends';
 import type { SendResult } from '@/lib/thread-messages-cache';
 import { cn } from '@/lib/utils';
 
