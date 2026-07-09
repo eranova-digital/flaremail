@@ -9,7 +9,13 @@ import {
 	relinkMessageMailboxesAfterSend,
 	syncThreadMailboxesAfterMessage,
 } from "./persistence";
-import type { ThreadTouchData } from "./types";
+import type {
+	DraftDeletedEvent,
+	DraftUpdatedEvent,
+	MessagePersistedEvent,
+	OutboundSentEvent,
+	ThreadTouchData,
+} from "./types";
 
 export async function prepareThreadForMessage(
 	db: Database,
@@ -51,19 +57,21 @@ export async function deleteThreadIfEmpty(
 
 export async function onMessagePersisted(
 	db: Database,
-	threadId: string,
-	messageId: string,
-	touch: ThreadTouchData,
+	event: MessagePersistedEvent,
 ): Promise<void> {
-	await syncThreadMailboxesAfterMessage(db, threadId, messageId, touch);
+	await syncThreadMailboxesAfterMessage(
+		db,
+		event.threadId,
+		event.messageId,
+		event.touch,
+	);
 }
-
 export async function onOutboundSent(
 	db: Database,
-	threadId: string,
-	data: ThreadTouchData & { promoteFromDrafts?: boolean },
-	message?: typeof messages.$inferSelect,
+	event: OutboundSentEvent,
 ): Promise<void> {
+	const { threadId, touch: data, message } = event;
+
 	if (message) {
 		await relinkMessageMailboxesAfterSend(db, message, data);
 	}
@@ -82,10 +90,9 @@ export async function onOutboundSent(
 
 export async function onDraftUpdated(
 	db: Database,
-	threadId: string,
-	mailboxId: string,
-	touch: Pick<ThreadTouchData, "subject" | "preview" | "lastMessageAt">,
+	event: DraftUpdatedEvent,
 ): Promise<void> {
+	const { threadId, mailboxId, touch } = event;
 	const now = new Date();
 
 	await db
@@ -101,13 +108,7 @@ export async function onDraftUpdated(
 
 export async function onDraftDeleted(
 	db: Database,
-	threadId: string,
+	event: DraftDeletedEvent,
 ): Promise<void> {
-	await refreshAllThreadMailboxes(db, threadId);
+	await refreshAllThreadMailboxes(db, event.threadId);
 }
-
-/** @deprecated Use onOutboundSent */
-export const finalizeThreadOnOutboundSend = onOutboundSent;
-
-/** @deprecated Use onDraftDeleted */
-export const refreshThreadAfterDraftDelete = onDraftDeleted;
