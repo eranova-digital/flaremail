@@ -1,7 +1,7 @@
 import type {
 	CreateDraftRequest,
 	OutboundMessageBody,
-} from "@/lib/api/client";
+} from "@/lib/api/generated/types.gen";
 import type { ComposeAttachment } from "@/lib/compose-attachments";
 import { composeAttachmentsToOutbound } from "@/lib/compose-attachments";
 import {

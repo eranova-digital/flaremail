@@ -11,5 +11,9 @@ export default defineConfig({
 	},
 	test: {
 		environment: "jsdom",
+		env: {
+			API_URL: "http://localhost:8787",
+			API_BEARER_TOKEN: "test-token",
+		},
 	},
 });

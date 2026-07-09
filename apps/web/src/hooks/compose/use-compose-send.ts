@@ -3,20 +3,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { assertData } from "@/lib/api/errors";
 import { forwardToMessage, sendDraft } from "@/lib/api/client";
-import { composeAttachmentsToOutbound } from "@/lib/compose-attachments";
-import { isEmptyEditorHtml } from "@/lib/compose-body";
+import { ComposeSendController } from "@/lib/compose/compose-send-controller";
 import { persistDraft } from "@/lib/compose/persist-draft";
 import { withPendingSend } from "@/lib/compose/with-pending-send";
 import { invalidateMailboxThreads } from "@/lib/invalidate-mailbox";
 import type { SendResult } from "@/lib/thread-messages-cache";
-import {
-	hasComposeRecipient,
-	hasComposeSubject,
-	parseRecipients,
-	type ComposeFields,
-	type ComposeForwardContext,
-	type ComposeReplyContext,
-} from "./types";
+import type { ComposeFields, ComposeForwardContext, ComposeReplyContext } from "./types";
 
 export function useComposeSend({
 	mailboxId,
@@ -62,14 +54,7 @@ export function useComposeSend({
 }) {
 	const queryClient = useQueryClient();
 	const knownThreadId = reply?.threadId ?? threadId;
-
-	// Tracks the whole send operation, not just the network mutation. The button
-	// must enter its loading state immediately on click — before the awaited
-	// autosave flush and attachment encoding that precede the mutation — so a
-	// user can't fire multiple sends in that window. The ref guards synchronously
-	// against a double-click landing before React re-renders the disabled button.
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const isSubmittingRef = useRef(false);
 
 	const sendMutation = useMutation({
 		mutationFn: async (id: string) => {
@@ -105,129 +90,84 @@ export function useComposeSend({
 		},
 	});
 
-	const runSend = useCallback(async (): Promise<SendResult> => {
-		if (forward) {
-			const current = fieldsRef.current;
-			if (!hasComposeSubject(current)) {
-				throw new Error("Subject is required");
-			}
-			const recipients = parseRecipients(current.to);
-			if (recipients.length === 0) {
-				throw new Error("Recipient is required");
-			}
-
-			const outboundAttachments = await composeAttachmentsToOutbound(
-				attachmentsRef.current,
-			);
-
-			return forwardMutation.mutateAsync({
-				messageId: forward.messageId,
-				payload: {
-					mailboxId,
-					to: recipients,
-					cc: parseRecipients(current.cc),
-					bcc: parseRecipients(current.bcc),
-					subject: current.subject || undefined,
-					text: current.body,
-					html: isEmptyEditorHtml(current.bodyHtml)
-						? undefined
-						: current.bodyHtml,
-					attachments: outboundAttachments,
-					includeAttachments: true,
-					includeQuotedBody: true,
-				},
-			});
-		}
-
-		// Wait for any in-flight autosave to finish so we never issue a draft
-		// update concurrently with the autosave. Concurrent updates rewrite the
-		// draft's stored attachments and can leave the send unable to find the
-		// attachment content it just referenced.
-		await flushPendingSave();
-
-		const current = fieldsRef.current;
-		if (!hasComposeSubject(current)) {
-			throw new Error("Subject is required");
-		}
-		if (!reply && !hasComposeRecipient(current)) {
-			throw new Error("Recipient is required");
-		}
-		const currentAttachments = attachmentsRef.current;
-
-		const persistResult = await persistDraft({
-			mailboxId,
-			draftId: draftIdRef.current ?? draftId,
-			fields: current,
-			attachments: currentAttachments,
-			attachmentsDirty: attachmentsDirtyRef.current,
-			reply,
-			createDraft: createMutation.mutateAsync,
-			updateDraft: updateMutation.mutateAsync,
-		});
-
-		if (!persistResult.ok) {
-			throw new Error(persistResult.error);
-		}
-
-		const id = persistResult.draftId;
-		draftIdRef.current = id;
-		setDraftId(id);
-		attachmentsDirtyRef.current = persistResult.attachmentsDirty;
-
-		return withPendingSend(
-			queryClient,
-			mailboxId,
-			knownThreadId,
-			id,
-			{
-				selfAddress: selfAddress ?? null,
-				to: current.to,
-				inReplyToMessageId: reply?.inReplyToMessageId,
-				hasAttachments: currentAttachments.length > 0,
-			},
-			() => sendMutation.mutateAsync(id),
-		);
-	}, [
-		flushPendingSave,
-		createMutation,
-		updateMutation,
-		sendMutation,
-		forwardMutation,
-		draftId,
-		draftIdRef,
+	const contextRef = useRef({
 		mailboxId,
+		draftId,
 		reply,
 		forward,
 		knownThreadId,
 		selfAddress,
-		fieldsRef,
-		attachmentsRef,
-		attachmentsDirtyRef,
-		setDraftId,
-		queryClient,
-	]);
+	});
+	contextRef.current = {
+		mailboxId,
+		draftId,
+		reply,
+		forward,
+		knownThreadId,
+		selfAddress,
+	};
+
+	const controllerRef = useRef<ComposeSendController | null>(null);
+	if (!controllerRef.current) {
+		controllerRef.current = new ComposeSendController({
+			get mailboxId() {
+				return contextRef.current.mailboxId;
+			},
+			get draftId() {
+				return draftIdRef.current ?? contextRef.current.draftId;
+			},
+			get reply() {
+				return contextRef.current.reply;
+			},
+			get forward() {
+				return contextRef.current.forward;
+			},
+			get knownThreadId() {
+				return contextRef.current.knownThreadId;
+			},
+			get selfAddress() {
+				return contextRef.current.selfAddress;
+			},
+			flushPendingSave,
+			getFields: () => fieldsRef.current,
+			getAttachments: () => attachmentsRef.current,
+			getAttachmentsDirty: () => attachmentsDirtyRef.current,
+			setDraftId: (id) => {
+				draftIdRef.current = id;
+				setDraftId(id);
+			},
+			setAttachmentsDirty: (dirty) => {
+				attachmentsDirtyRef.current = dirty;
+			},
+			createDraft: (...args) => createMutation.mutateAsync(...args),
+			updateDraft: (...args) => updateMutation.mutateAsync(...args),
+			sendDraft: (id) => sendMutation.mutateAsync(id),
+			forwardToMessage: (body) => forwardMutation.mutateAsync(body),
+			persistDraft,
+			withPendingSend: (threadId, draftId, preview, sendFn) =>
+				withPendingSend(
+					queryClient,
+					mailboxId,
+					threadId,
+					draftId,
+					preview,
+					sendFn,
+				),
+		});
+	}
 
 	const send = useCallback(async (): Promise<SendResult> => {
-		if (isSubmittingRef.current) {
-			throw new Error("Send already in progress");
-		}
-
-		isSubmittingRef.current = true;
 		setIsSubmitting(true);
-		// Seal immediately so no autosave races the send or fires after the draft
-		// has been promoted to a sent message. Unseal only if the send fails, so
-		// the user can keep editing and retry.
 		sealedRef.current = true;
 		try {
-			return await runSend();
+			return await controllerRef.current!.send();
 		} catch (error) {
 			sealedRef.current = false;
 			throw error;
 		} finally {
-			isSubmittingRef.current = false;
 			setIsSubmitting(false);
 		}
-	}, [runSend, sealedRef]);
+	}, [sealedRef]);
 
 	return {
 		send,
