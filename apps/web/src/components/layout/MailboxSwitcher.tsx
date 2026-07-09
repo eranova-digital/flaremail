@@ -26,7 +26,10 @@ import {
 import { groupMailboxesByDomain } from "@/lib/sort-mailboxes";
 
 function isSystemMailbox(mailbox: Mailbox): boolean {
-	return mailbox.isSystemManaged ?? mailbox.type === "system";
+	return (
+		mailbox.isSystemManaged ??
+		(mailbox.type === "system" || mailbox.type === "blackhole")
+	);
 }
 
 function MailboxOptionLabel({ mailbox }: { mailbox: Mailbox }) {

@@ -6,6 +6,7 @@ export const MAILBOX_TYPE_DISPLAY_ORDER = [
 	"shared",
 	"alias",
 	"system",
+	"blackhole",
 ] as const satisfies readonly NonNullable<Mailbox["type"]>[];
 
 const MAILBOX_TYPE_ORDER: Record<NonNullable<Mailbox["type"]>, number> = {
@@ -14,6 +15,7 @@ const MAILBOX_TYPE_ORDER: Record<NonNullable<Mailbox["type"]>, number> = {
 	shared: 2,
 	alias: 3,
 	system: 4,
+	blackhole: 5,
 };
 
 export type MailboxTypeGroup = {

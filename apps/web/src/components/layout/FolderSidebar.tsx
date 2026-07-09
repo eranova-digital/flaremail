@@ -18,8 +18,14 @@ import { LabelsSection } from '@/components/layout/LabelsSection';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMailboxes } from '@/hooks/use-mailboxes';
 import type { ThreadFolder } from '@/lib/api/client';
-import { FOLDER_LABELS, FOLDERS, isThreadFolder } from '@/lib/folders';
+import {
+	getFoldersForMailbox,
+	resolveFolderForMailbox,
+	FOLDER_LABELS,
+	isThreadFolder,
+} from '@/lib/mailbox-folders';
 import { cn } from '@/lib/utils';
 
 const FOLDER_ICONS: Record<ThreadFolder, typeof Inbox> = {
@@ -64,15 +70,19 @@ export function FolderSidebar() {
 	const navigate = useNavigate();
 	const { mailboxId, folder: folderParam, labelId } = useParams();
 	const [searchParams] = useSearchParams();
+	const mailboxesQuery = useMailboxes();
+	const mailbox = mailboxesQuery.data?.find((item) => item.id === mailboxId);
+	const visibleFolders = getFoldersForMailbox(mailbox ?? {});
 	const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 	const activeFolder =
 		labelId
 			? null
-			: folderParam && isThreadFolder(folderParam)
-				? folderParam
-				: isThreadFolder(searchParams.get('folder') ?? '')
-					? (searchParams.get('folder') as ThreadFolder)
-					: 'inbox';
+			: resolveFolderForMailbox(
+					mailbox ?? {},
+					folderParam && isThreadFolder(folderParam)
+						? folderParam
+						: searchParams.get('folder'),
+				);
 
 	if (!mailboxId) {
 		return null;
@@ -119,7 +129,7 @@ export function FolderSidebar() {
 				</div>
 				<Separator />
 				<nav className={cn('min-h-0 flex-1 space-y-1 overflow-y-auto p-2', collapsed && 'px-2')}>
-					{FOLDERS.map((item) => {
+					{visibleFolders.map((item) => {
 						const Icon = FOLDER_ICONS[item];
 						const link = (
 							<NavLink

@@ -102,7 +102,10 @@ function DomainRow({ domain }: { domain: Domain }) {
 	}
 
 	const domainMailboxes = (mailboxesQuery.data ?? []).filter(
-		(mailbox) => mailbox.domainId === domain.id && mailbox.type !== "alias",
+		(mailbox) =>
+			mailbox.domainId === domain.id &&
+			mailbox.type !== "alias" &&
+			mailbox.type !== "blackhole",
 	);
 
 	const handleToggleActive = () => {

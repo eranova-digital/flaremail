@@ -3,10 +3,12 @@ import { mailboxes } from "../db/schema";
 import { buildEmailAddress } from "./normalize-email-address";
 
 export const SYSTEM_POSTMASTER_LOCAL_PART = "postmaster";
-export const SYSTEM_ALIAS_LOCAL_PARTS = ["abuse", "noreply"] as const;
+export const SYSTEM_BLACKHOLE_LOCAL_PART = "noreply";
+export const SYSTEM_ALIAS_LOCAL_PARTS = ["abuse"] as const;
 
 const SYSTEM_MANAGED_LOCAL_PARTS = [
 	SYSTEM_POSTMASTER_LOCAL_PART,
+	SYSTEM_BLACKHOLE_LOCAL_PART,
 	...SYSTEM_ALIAS_LOCAL_PARTS,
 ] as const;
 
@@ -19,7 +21,11 @@ export function isSystemManagedMailbox(mailbox: {
 	type: string;
 	localPart: string;
 }): boolean {
-	return mailbox.type === "system" || isSystemManagedLocalPart(mailbox.localPart);
+	return (
+		mailbox.type === "system" ||
+		mailbox.type === "blackhole" ||
+		isSystemManagedLocalPart(mailbox.localPart)
+	);
 }
 
 export function assertMailboxMutable(mailbox: {
@@ -47,6 +53,19 @@ export async function provisionSystemMailboxes(
 		localPart: SYSTEM_POSTMASTER_LOCAL_PART,
 		address: buildEmailAddress(SYSTEM_POSTMASTER_LOCAL_PART, domainName),
 		type: "system",
+		aliasTargetId: null,
+		aliasTargetAddress: null,
+		isActive: true,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	await db.insert(mailboxes).values({
+		id: crypto.randomUUID(),
+		domainId,
+		localPart: SYSTEM_BLACKHOLE_LOCAL_PART,
+		address: buildEmailAddress(SYSTEM_BLACKHOLE_LOCAL_PART, domainName),
+		type: "blackhole",
 		aliasTargetId: null,
 		aliasTargetAddress: null,
 		isActive: true,

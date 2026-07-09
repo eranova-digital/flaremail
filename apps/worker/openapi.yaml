@@ -942,7 +942,7 @@ components:
           type: string
         type:
           type: string
-          enum: [primary, secondary, shared, alias, system]
+          enum: [primary, secondary, shared, alias, system, blackhole]
         aliasTargetId:
           type: ["string", "null"]
           format: uuid
