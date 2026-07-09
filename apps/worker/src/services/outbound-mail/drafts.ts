@@ -1,29 +1,29 @@
 import { eq } from "drizzle-orm";
 
 import { attachments, messages } from "../../db/schema";
-import { assertCanSendFrom } from "../authorize-mailbox";
-import { isBlackholeMailboxType } from "../mailbox-types";
-import { loadMailboxForSend } from "../mailbox-queries";
-import { deleteR2Objects } from "../r2-cleanup";
-import { onDraftDeleted, onDraftUpdated } from "../thread-mailbox";
-import { buildOutboundMimeContent } from "./build-outbound-mime";
-import { findDraftById, findMessageById } from "./message-queries";
-import { buildPreview } from "./message-utils";
-import type { OutboundContext } from "./outbound-context";
+import { assertCanSendFrom } from "../../lib/authorize-mailbox";
+import { loadMailboxForSend } from "../../lib/mailbox-queries";
+import { isBlackholeMailboxType } from "../../lib/mailbox-types";
+import { buildOutboundMimeContent } from "../../lib/messages/build-outbound-mime";
+import { findDraftById, findMessageById } from "../../lib/messages/message-queries";
+import { buildPreview } from "../../lib/messages/message-utils";
 import {
 	loadStoredAttachmentInputs,
 	outboundAttachmentsToStoredInputs,
-} from "./outbound-attachments";
+} from "../../lib/messages/outbound-attachments";
+import type { OutboundContext } from "../../lib/messages/outbound-context";
 import {
 	formatRecipients,
 	replySubject,
 	type CreateDraftBody,
 	type OutboundMessageBody,
-} from "./outbound-payload";
-import { persistDraftMessage } from "./outbound-persist";
-import { resolveThreadingForCompose } from "./outbound-threading";
-import { resolveReplyRecipients } from "./resolve-reply-recipients";
-import { replaceStoredMessageContent } from "./update-stored-message";
+} from "../../lib/messages/outbound-payload";
+import { persistDraftMessage } from "../../lib/messages/outbound-persist";
+import { resolveThreadingForCompose } from "../../lib/messages/outbound-threading";
+import { resolveReplyRecipients } from "../../lib/messages/resolve-reply-recipients";
+import { replaceStoredMessageContent } from "../../lib/messages/update-stored-message";
+import { deleteR2Objects } from "../../lib/r2-cleanup";
+import { onDraftDeleted, onDraftUpdated } from "../../lib/thread-mailbox";
 
 export async function createDraft(
 	ctx: OutboundContext,
@@ -57,9 +57,7 @@ export async function createDraft(
 		to: to ?? [],
 		cc,
 		bcc,
-		subject:
-			body.subject ||
-			(parent ? replySubject(parent.subject) : ""),
+		subject: body.subject || (parent ? replySubject(parent.subject) : ""),
 		text: body.text,
 		html: body.html,
 		attachments: body.attachments,

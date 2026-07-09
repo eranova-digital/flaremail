@@ -1,4 +1,4 @@
-import { withDb } from "../db/client";
+import { withDb, type Database } from "../db/client";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -11,8 +11,12 @@ import {
 	parseReplyBody,
 	parseSendMessageBody,
 } from "../lib/messages/outbound-payload";
-import { OutboundMail } from "../services/outbound-mail";
+import { createOutboundMail } from "../services/outbound-mail";
 import { toSendResponse } from "../services/dto";
+
+function outboundMail(env: Env, db: Database) {
+	return createOutboundMail({ ...outboundContext(env), db });
+}
 
 export async function handleSendMessage({
 	request,
@@ -26,7 +30,7 @@ export async function handleSendMessage({
 	try {
 		const payload = parseSendMessageBody(body);
 		const message = await withDb(env, async (db) =>
-			OutboundMail.send({ ...outboundContext(env), db }, payload.mailboxId, payload),
+			outboundMail(env, db).send(payload.mailboxId, payload),
 		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
@@ -46,7 +50,7 @@ export async function handleCreateDraft({
 	try {
 		const payload = parseCreateDraftBody(body);
 		const message = await withDb(env, async (db) =>
-			OutboundMail.createDraft({ ...outboundContext(env), db }, payload),
+			outboundMail(env, db).createDraft(payload),
 		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
@@ -67,7 +71,7 @@ export async function handleUpdateDraft({
 	try {
 		const payload = parseOutboundMessageBody(body);
 		const message = await withDb(env, async (db) =>
-			OutboundMail.updateDraft({ ...outboundContext(env), db }, params.id, payload),
+			outboundMail(env, db).updateDraft(params.id, payload),
 		);
 		return jsonResponse(toSendResponse({ ...message, sendStatus: message.sendStatus ?? "draft" }));
 	} catch (error) {
@@ -82,7 +86,7 @@ export async function handleDeleteDraft({
 }: RouteContext): Promise<Response> {
 	try {
 		await withDb(env, async (db) =>
-			OutboundMail.deleteDraft({ ...outboundContext(env), db }, params.id),
+			outboundMail(env, db).deleteDraft(params.id),
 		);
 		return new Response(null, { status: 204 });
 	} catch (error) {
@@ -97,7 +101,7 @@ export async function handleSendDraft({
 }: RouteContext): Promise<Response> {
 	try {
 		const message = await withDb(env, async (db) =>
-			OutboundMail.sendDraft({ ...outboundContext(env), db }, params.id),
+			outboundMail(env, db).sendDraft(params.id),
 		);
 		return jsonResponse(toSendResponse(message));
 	} catch (error) {
@@ -118,7 +122,7 @@ export async function handleReplyToMessage({
 	try {
 		const payload = parseReplyBody(body);
 		const message = await withDb(env, async (db) =>
-			OutboundMail.reply({ ...outboundContext(env), db }, params.id, payload),
+			outboundMail(env, db).reply(params.id, payload),
 		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
@@ -139,7 +143,7 @@ export async function handleForwardToMessage({
 	try {
 		const payload = parseForwardBody(body);
 		const message = await withDb(env, async (db) =>
-			OutboundMail.forward({ ...outboundContext(env), db }, params.id, payload),
+			outboundMail(env, db).forward(params.id, payload),
 		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
