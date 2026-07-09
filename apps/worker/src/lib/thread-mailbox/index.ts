@@ -1,4 +1,10 @@
-export type { ThreadTouchData } from "./types";
+export type {
+	DraftDeletedEvent,
+	DraftUpdatedEvent,
+	MessagePersistedEvent,
+	OutboundSentEvent,
+	ThreadTouchData,
+} from "./types";
 
 export {
 	assertMessageVisibleInMailbox,
@@ -20,11 +26,9 @@ export {
 
 export {
 	deleteThreadIfEmpty,
-	finalizeThreadOnOutboundSend,
 	onDraftDeleted,
 	onDraftUpdated,
 	onMessagePersisted,
 	onOutboundSent,
 	prepareThreadForMessage,
-	refreshThreadAfterDraftDelete,
 } from "./lifecycle";

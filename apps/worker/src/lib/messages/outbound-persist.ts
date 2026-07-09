@@ -1,7 +1,7 @@
 import { assertCanSendFrom } from "../authorize-mailbox";
 import { findMessageRowByRfcMessageId } from "../find-message";
 import {
-	finalizeThreadOnOutboundSend,
+	onOutboundSent,
 	findThreadMailbox,
 	linkMessageMailboxes,
 	prepareThreadForMessage,
@@ -141,10 +141,9 @@ export async function sendAndPersistNewMessage(
 				throw new Error("Stored message not found");
 			}
 
-			await finalizeThreadOnOutboundSend(
-				ctx.db,
-				stored.threadId,
-				{
+			await onOutboundSent(ctx.db, {
+				threadId: stored.threadId,
+				touch: {
 					subject: preparedPayload.subject,
 					preview,
 					lastMessageAt: now,
@@ -152,8 +151,8 @@ export async function sendAndPersistNewMessage(
 					folder: "sent",
 					markUnread: false,
 				},
-				stored,
-			);
+				message: stored,
+			});
 
 			return stored;
 		}

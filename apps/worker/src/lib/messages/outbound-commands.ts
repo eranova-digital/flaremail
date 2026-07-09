@@ -5,7 +5,7 @@ import { messages, threadMailboxes } from "../../db/schema";
 import { assertCanSendFrom } from "../authorize-mailbox";
 import {
 	assertMessageVisibleInMailbox,
-	finalizeThreadOnOutboundSend,
+	onOutboundSent,
 	findThreadMailbox,
 } from "../thread-mailbox";
 import { isBlackholeMailboxType } from "../mailbox-types";
@@ -110,10 +110,9 @@ export async function sendDraftMessage(
 		sentAt: now,
 	});
 
-	await finalizeThreadOnOutboundSend(
-		ctx.db,
-		sent.threadId,
-		{
+	await onOutboundSent(ctx.db, {
+		threadId: sent.threadId,
+		touch: {
 			subject: draft.subject,
 			preview: draft.preview,
 			lastMessageAt: now,
@@ -122,8 +121,8 @@ export async function sendDraftMessage(
 			promoteFromDrafts: draftSendPromoteFromDrafts(draft, sent),
 			markUnread: false,
 		},
-		sent,
-	);
+		message: sent,
+	});
 
 	return sent;
 }

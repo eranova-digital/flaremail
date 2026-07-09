@@ -129,10 +129,14 @@ export async function updateDraft(
 		},
 	);
 
-	await onDraftUpdated(ctx.db, draft.threadId, mailboxId, {
-		subject: body.subject,
-		preview,
-		lastMessageAt: now,
+	await onDraftUpdated(ctx.db, {
+		threadId: draft.threadId,
+		mailboxId,
+		touch: {
+			subject: body.subject,
+			preview,
+			lastMessageAt: now,
+		},
 	});
 
 	const updated = await findMessageById(ctx.db, messageId);
@@ -160,7 +164,7 @@ export async function deleteDraft(
 	const threadId = draft.threadId;
 	await ctx.db.delete(attachments).where(eq(attachments.messageId, messageId));
 	await ctx.db.delete(messages).where(eq(messages.id, messageId));
-	await onDraftDeleted(ctx.db, threadId);
+	await onDraftDeleted(ctx.db, { threadId });
 	await deleteR2Objects(ctx.bucket, [
 		draft.rawEmlKey,
 		...storedAttachments.map((attachment) => attachment.storageKey),

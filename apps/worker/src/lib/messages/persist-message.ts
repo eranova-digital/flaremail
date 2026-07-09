@@ -75,12 +75,11 @@ export async function persistMessage(
 
 			const mailboxIds = await resolveMessageMailboxIds(input.db, input.row);
 			await linkMessageMailboxes(input.db, inserted.id, mailboxIds);
-			await onMessagePersisted(
-				input.db,
-				input.threadId,
-				inserted.id,
-				input.threadTouch,
-			);
+			await onMessagePersisted(input.db, {
+				threadId: input.threadId,
+				messageId: inserted.id,
+				touch: input.threadTouch,
+			});
 		} catch (error) {
 			await input.db.delete(messages).where(eq(messages.id, inserted.id));
 			throw error;
