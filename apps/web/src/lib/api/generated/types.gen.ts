@@ -68,7 +68,7 @@ export type Mailbox = {
     id?: string;
     domainId?: string;
     address?: string;
-    type?: 'primary' | 'secondary' | 'shared' | 'alias' | 'system';
+    type?: 'primary' | 'secondary' | 'shared' | 'alias' | 'system' | 'blackhole';
     aliasTargetId?: string | null;
     aliasTargetAddress?: string | null;
     isActive?: boolean;

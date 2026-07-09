@@ -18,6 +18,7 @@ export const mailboxTypeEnum = pgEnum("mailbox_type", [
 	"shared",
 	"alias",
 	"system",
+	"blackhole",
 ]);
 export const matchedViaEnum = pgEnum("matched_via", [
 	"exact",

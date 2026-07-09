@@ -68,7 +68,7 @@ export async function createMailbox(
 		throw new Error("Address domain does not match domainId");
 	}
 
-	if (input.type === "system") {
+	if (input.type === "system" || input.type === "blackhole") {
 		throw new Error("System mailboxes are provisioned automatically");
 	}
 

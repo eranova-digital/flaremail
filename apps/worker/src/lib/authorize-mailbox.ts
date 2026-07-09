@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import { mailboxes } from "../db/schema";
-import { isReceivingMailboxType } from "./mailbox-types";
+import { isSendingMailboxType } from "./mailbox-types";
 
 export async function assertCanSendFrom(
 	db: Database,
@@ -22,7 +22,7 @@ export async function assertCanSendFrom(
 		throw new Error("Mailbox is not active");
 	}
 
-	if (!isReceivingMailboxType(mailbox.type)) {
+	if (!isSendingMailboxType(mailbox.type)) {
 		throw new Error("Alias mailboxes cannot send mail");
 	}
 }

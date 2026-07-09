@@ -4,6 +4,7 @@ export const MAILBOX_TYPES = [
 	"shared",
 	"alias",
 	"system",
+	"blackhole",
 ] as const;
 
 export type MailboxType = (typeof MAILBOX_TYPES)[number];
@@ -31,6 +32,26 @@ export function isReceivingMailboxType(
 	type: MailboxType,
 ): type is ReceivingMailboxType {
 	return (RECEIVING_MAILBOX_TYPES as readonly string[]).includes(type);
+}
+
+export const SENDING_MAILBOX_TYPES = [
+	"primary",
+	"secondary",
+	"shared",
+	"system",
+	"blackhole",
+] as const;
+
+export type SendingMailboxType = (typeof SENDING_MAILBOX_TYPES)[number];
+
+export function isSendingMailboxType(
+	type: MailboxType,
+): type is SendingMailboxType {
+	return (SENDING_MAILBOX_TYPES as readonly string[]).includes(type);
+}
+
+export function isBlackholeMailboxType(type: MailboxType): boolean {
+	return type === "blackhole";
 }
 
 export const THREAD_FOLDERS = [

@@ -50,4 +50,20 @@ describe("assertCanSendFrom", () => {
 			assertCanSendFrom(db as never, "mailbox-id"),
 		).resolves.toBeUndefined();
 	});
+
+	it("allows blackhole mailboxes", async () => {
+		const db = {
+			select: () => ({
+				from: () => ({
+					where: () => ({
+						limit: async () => [{ type: "blackhole", isActive: true }],
+					}),
+				}),
+			}),
+		};
+
+		await expect(
+			assertCanSendFrom(db as never, "mailbox-id"),
+		).resolves.toBeUndefined();
+	});
 });

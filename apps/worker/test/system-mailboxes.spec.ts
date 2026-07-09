@@ -31,8 +31,11 @@ describe("isSystemManagedMailbox", () => {
 		expect(isSystemManagedMailbox({ type: "alias", localPart: "abuse" })).toBe(
 			true,
 		);
+	});
+
+	it("treats blackhole noreply mailboxes as managed", () => {
 		expect(
-			isSystemManagedMailbox({ type: "alias", localPart: "noreply" }),
+			isSystemManagedMailbox({ type: "blackhole", localPart: "noreply" }),
 		).toBe(true);
 	});
 

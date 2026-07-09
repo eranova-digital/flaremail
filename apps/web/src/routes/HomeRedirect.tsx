@@ -10,6 +10,7 @@ import {
 	getLastMailboxId,
 	setLastMailboxId,
 } from "@/lib/mailbox-preference";
+import { getDefaultFolderForMailbox } from "@/lib/mailbox-folders";
 import {
 	getSelectableMailboxes,
 	resolveSelectableMailbox,
@@ -48,13 +49,20 @@ export function HomeRedirect() {
 		return null;
 	}
 
-	return <HomeRedirectTarget mailboxId={mailbox.id} />;
+	return <HomeRedirectTarget mailbox={mailbox} />;
 }
 
-function HomeRedirectTarget({ mailboxId }: { mailboxId: string }) {
+function HomeRedirectTarget({ mailbox }: { mailbox: NonNullable<ReturnType<typeof resolveSelectableMailbox>> }) {
 	useEffect(() => {
-		setLastMailboxId(mailboxId);
-	}, [mailboxId]);
+		if (mailbox.id) {
+			setLastMailboxId(mailbox.id);
+		}
+	}, [mailbox.id]);
 
-	return <Navigate to={`/m/${mailboxId}/inbox`} replace />;
+	return (
+		<Navigate
+			to={`/m/${mailbox.id}/${getDefaultFolderForMailbox(mailbox)}`}
+			replace
+		/>
+	);
 }

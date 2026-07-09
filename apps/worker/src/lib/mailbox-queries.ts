@@ -2,13 +2,13 @@ import { and, eq } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import { domains, mailboxes } from "../db/schema";
-import { isReceivingMailboxType } from "./mailbox-types";
+import { isSendingMailboxType } from "./mailbox-types";
 
 export type SendMailbox = {
 	id: string;
 	address: string;
 	domain: string;
-	type: "primary" | "secondary" | "shared" | "system";
+	type: "primary" | "secondary" | "shared" | "system" | "blackhole";
 };
 
 export async function loadMailboxForSend(
@@ -33,7 +33,7 @@ export async function loadMailboxForSend(
 		)
 		.limit(1);
 
-	if (!row || !isReceivingMailboxType(row.type)) {
+	if (!row || !isSendingMailboxType(row.type)) {
 		return null;
 	}
 

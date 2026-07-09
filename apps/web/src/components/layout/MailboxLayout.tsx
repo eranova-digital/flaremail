@@ -7,6 +7,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMailboxes } from '@/hooks/use-mailboxes';
 import { getLastMailboxId } from '@/lib/mailbox-preference';
+import { getDefaultFolderForMailbox } from '@/lib/mailbox-folders';
 import { resolveSelectableMailbox } from '@/lib/selectable-mailbox';
 
 export function MailboxLayout() {
@@ -31,7 +32,7 @@ export function MailboxLayout() {
 			return <Navigate to="/" replace />;
 		}
 
-		return <Navigate to={`/m/${fallback.id}/inbox`} replace />;
+		return <Navigate to={`/m/${fallback.id}/${getDefaultFolderForMailbox(fallback)}`} replace />;
 	}
 
 	return (

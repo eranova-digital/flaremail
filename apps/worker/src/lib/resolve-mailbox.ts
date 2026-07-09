@@ -41,6 +41,10 @@ export function resolveConfiguredMailbox(
 	mailbox: MailboxLookupRow,
 	mailboxById: Map<string, MailboxLookupRow>,
 ): MailboxResolution | null {
+	if (mailbox.type === "blackhole") {
+		return null;
+	}
+
 	if (isReceivingMailboxType(mailbox.type)) {
 		return {
 			action: "store",
@@ -137,6 +141,10 @@ export async function resolveMailboxForEnvelope(
 		.limit(1);
 
 	if (configuredMailbox) {
+		if (configuredMailbox.type === "blackhole") {
+			return null;
+		}
+
 		if (isReceivingMailboxType(configuredMailbox.type)) {
 			return {
 				action: "store",

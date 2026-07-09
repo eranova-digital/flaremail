@@ -54,6 +54,10 @@ describe("isReceivingMailboxType", () => {
 	it("treats alias as non-receiving", () => {
 		expect(isReceivingMailboxType("alias")).toBe(false);
 	});
+
+	it("treats blackhole as non-receiving", () => {
+		expect(isReceivingMailboxType("blackhole")).toBe(false);
+	});
 });
 
 describe("resolveConfiguredMailbox", () => {
@@ -145,6 +149,20 @@ describe("resolveConfiguredMailbox", () => {
 			matchedMailboxId: "sales-alias-id",
 			matchedVia: "alias",
 		});
+	});
+
+	it("returns null for blackhole mailboxes", () => {
+		expect(
+			resolveConfiguredMailbox(
+				{
+					id: "noreply-id",
+					type: "blackhole",
+					aliasTargetId: null,
+					aliasTargetAddress: null,
+				},
+				mailboxById,
+			),
+		).toBeNull();
 	});
 
 	it("forwards alias mailboxes with external targets", () => {
