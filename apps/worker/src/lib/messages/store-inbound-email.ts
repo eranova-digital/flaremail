@@ -12,7 +12,7 @@ import {
 	type ThreadTouchData,
 } from "../thread-mailbox";
 import { buildPreview, parseSentAt } from "./message-utils";
-import { persistMessage, rollbackNewThread } from "./persist-message";
+import { storeMessage } from "./message-store";
 import { postalEmailToMimeContent } from "./postal-to-mime-content";
 import type { StoredAttachmentInput } from "./stored-attachment-input";
 
@@ -60,8 +60,8 @@ export async function storeInboundEmail(
 		.map((part, index) => postalAttachmentToStoredInput(part, index))
 		.filter((part): part is StoredAttachmentInput => part !== null);
 
-	try {
-		const result = await persistMessage({
+	return storeMessage(
+		{
 			db,
 			bucket,
 			id,
@@ -95,27 +95,18 @@ export async function storeInboundEmail(
 			attachmentInputs,
 			threadTouch,
 			isNewThread,
-		});
-
-		if (result.status === "duplicate") {
-			await rollbackNewThread(db, threadId, isNewThread);
-
+		},
+		async () => {
 			const duplicate = await findMessageRowByRfcMessageId(
 				db,
-				threading.messageId,
+				threading.messageId!,
 			);
 			if (!duplicate) {
 				throw new Error(
 					`Message-ID conflict without existing row: ${threading.messageId}`,
 				);
 			}
-
 			return duplicate.id;
-		}
-
-		return result.id;
-	} catch (error) {
-		await rollbackNewThread(db, threadId, isNewThread);
-		throw error;
-	}
+		},
+	);
 }

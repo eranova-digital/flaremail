@@ -20,9 +20,9 @@ import { buildPreview } from "./message-utils";
 import type { OutboundContext } from "./outbound-context";
 import { outboundAttachmentsToStoredInputs } from "./outbound-attachments";
 import { formatRecipients, type OutboundMessageBody } from "./outbound-payload";
+import { storeMessage, rollbackNewThread } from "./message-store";
 import { prepareOutboundMessageBody } from "./prepare-email-html";
 import type { ThreadingContext } from "./outbound-threading";
-import { persistMessage, rollbackNewThread } from "./persist-message";
 import { sendEmail } from "./send-email";
 
 export async function sendAndPersistNewMessage(
@@ -82,8 +82,8 @@ export async function sendAndPersistNewMessage(
 		throw error;
 	}
 
-	try {
-		const persistResult = await persistMessage({
+	const messageId = await storeMessage(
+		{
 			db: ctx.db,
 			bucket: ctx.bucket,
 			id,
@@ -124,11 +124,8 @@ export async function sendAndPersistNewMessage(
 			attachmentInputs,
 			threadTouch,
 			isNewThread,
-		});
-
-		if (persistResult.status === "duplicate") {
-			await rollbackNewThread(ctx.db, threading.threadId, isNewThread);
-
+		},
+		async () => {
 			const existing = await findMessageRowByRfcMessageId(ctx.db, rfcMessageId);
 			if (!existing) {
 				throw new Error("Message-ID conflict while storing outbound message");
@@ -154,19 +151,16 @@ export async function sendAndPersistNewMessage(
 				message: stored,
 			});
 
-			return stored;
-		}
+			return existing.id;
+		},
+	);
 
-		const stored = await findMessageById(ctx.db, persistResult.id);
-		if (!stored) {
-			throw new Error("Stored message not found");
-		}
-
-		return stored;
-	} catch (error) {
-		await rollbackNewThread(ctx.db, threading.threadId, isNewThread);
-		throw error;
+	const stored = await findMessageById(ctx.db, messageId);
+	if (!stored) {
+		throw new Error("Stored message not found");
 	}
+
+	return stored;
 }
 
 export async function persistDraftMessage(
@@ -211,8 +205,8 @@ export async function persistDraftMessage(
 		threadTouch,
 	);
 
-	try {
-		const persistResult = await persistMessage({
+	const messageId = await storeMessage(
+		{
 			db: ctx.db,
 			bucket: ctx.bucket,
 			id,
@@ -253,21 +247,16 @@ export async function persistDraftMessage(
 			attachmentInputs,
 			threadTouch,
 			isNewThread,
-		});
-
-		if (persistResult.status === "duplicate") {
-			await rollbackNewThread(ctx.db, threading.threadId, isNewThread);
+		},
+		async () => {
 			throw new Error("Message-ID conflict while storing draft");
-		}
+		},
+	);
 
-		const stored = await findMessageById(ctx.db, persistResult.id);
-		if (!stored) {
-			throw new Error("Stored draft not found");
-		}
-
-		return stored;
-	} catch (error) {
-		await rollbackNewThread(ctx.db, threading.threadId, isNewThread);
-		throw error;
+	const stored = await findMessageById(ctx.db, messageId);
+	if (!stored) {
+		throw new Error("Stored draft not found");
 	}
+
+	return stored;
 }
