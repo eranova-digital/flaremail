@@ -13,6 +13,7 @@ type AuthCodeInputProps = {
 	id?: string;
 	value: string;
 	onChange: (value: string) => void;
+	onComplete?: (value: string) => void;
 	disabled?: boolean;
 	autoFocus?: boolean;
 	invalid?: boolean;
@@ -23,10 +24,15 @@ function authCodeRaw(value: string): string {
 	return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
 }
 
+function authCodePasteTransformer(pasted: string): string {
+	return authCodeRaw(pasted);
+}
+
 export function AuthCodeInput({
 	id,
 	value,
 	onChange,
+	onComplete,
 	disabled = false,
 	autoFocus = false,
 	invalid = false,
@@ -42,6 +48,8 @@ export function AuthCodeInput({
 			autoComplete="one-time-code"
 			value={rawValue}
 			onChange={(nextValue) => onChange(formatAuthCode(nextValue))}
+			onComplete={(nextValue) => onComplete?.(formatAuthCode(nextValue))}
+			pasteTransformer={authCodePasteTransformer}
 			disabled={disabled}
 			autoFocus={autoFocus}
 			containerClassName={cn("font-mono uppercase tracking-wider", className)}
