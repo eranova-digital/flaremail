@@ -1,5 +1,6 @@
-import { Flame } from "lucide-react";
 import type { ReactNode } from "react";
+
+import { FlaremailLogo } from "@/components/FlaremailLogo";
 
 type AuthPageShellProps = {
 	title: string;
@@ -13,7 +14,7 @@ export function AuthPageShell({ title, description, children }: AuthPageShellPro
 			<div className="w-full max-w-sm space-y-6">
 				<div className="flex flex-col items-center gap-4 text-center">
 					<span className="bg-primary text-primary-foreground flex size-10 items-center justify-center rounded-xl shadow-sm">
-						<Flame className="size-5" aria-hidden />
+						<FlaremailLogo className="size-5" />
 					</span>
 					<div className="space-y-1.5">
 						<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>

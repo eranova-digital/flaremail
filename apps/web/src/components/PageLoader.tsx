@@ -1,5 +1,6 @@
-import { Flame, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
+import { FlaremailLogo } from "@/components/FlaremailLogo";
 import { cn } from "@/lib/utils";
 
 type PageLoaderProps = {
@@ -22,7 +23,7 @@ export function PageLoader({ label = "Loading…", className }: PageLoaderProps)
 		>
 			<div className="flex items-center gap-2.5">
 				<span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
-					<Flame className="size-4.5" aria-hidden />
+					<FlaremailLogo className="size-4.5" />
 				</span>
 				<span className="text-lg font-semibold tracking-tight">Flaremail</span>
 			</div>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Flaremail">
+  <!-- Logo at ~58% scale (slightly larger than the sign-in badge for favicon legibility) -->
+  <rect width="100" height="100" rx="45" ry="45" fill="#1447e6" />
+  <path
+    fill="#eff6ff"
+    transform="translate(21 21) scale(0.058)"
+    d="M665.63,14.32q-72.88,403.5,242.68,503.22-376.53,13.51-574.63,468.05,100.54-410.99-242.24-468.05Q455.14,440.47,665.63,14.32Z"
+  />
+</svg>

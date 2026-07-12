@@ -16,6 +16,7 @@ import { NavLink, useNavigate, useParams, useSearchParams } from 'react-router-d
 import { MailboxSwitcher } from '@/components/layout/MailboxSwitcher';
 import { LabelsSection } from '@/components/layout/LabelsSection';
 import { UserCard } from '@/components/layout/UserCard';
+import { FlaremailLogo } from '@/components/FlaremailLogo';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -103,7 +104,14 @@ export function FolderSidebar() {
 			>
 				<div className={cn('space-y-3 p-3', collapsed && 'px-2')}>
 					<div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between px-1')}>
-						{!collapsed ? <h1 className="text-lg font-semibold tracking-tight">Flaremail</h1> : null}
+						{!collapsed ? (
+							<div className="flex min-w-0 items-center gap-2">
+								<span className="bg-primary text-primary-foreground flex size-7 shrink-0 items-center justify-center rounded-[45%] shadow-sm">
+									<FlaremailLogo className="size-3.5" />
+								</span>
+								<h1 className="truncate text-lg font-semibold tracking-tight">Flaremail</h1>
+							</div>
+						) : null}
 						{withTooltip(
 							collapsed,
 							'Expand sidebar',
