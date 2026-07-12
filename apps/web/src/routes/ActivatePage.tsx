@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { AtSign, Loader2, Lock } from "lucide-react";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import { PageLoader } from "@/components/PageLoader";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PROFILE_FIELDS, fetchInvitePreview } from "@/lib/accounts/api";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
+import { formatAuthCode } from "@/lib/format-auth-code";
 
 type ProfileFormState = {
 	firstName: string;
@@ -74,12 +79,15 @@ export function ActivatePage() {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 
-	const [code, setCode] = useState(searchParams.get("code") ?? "");
+	const [code, setCode] = useState(() =>
+		formatAuthCode(searchParams.get("code") ?? ""),
+	);
 	const [password, setPassword] = useState("");
 	const [profile, setProfile] = useState<ProfileFormState>(emptyProfile);
 	const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
 	const [inviteAddress, setInviteAddress] = useState<string | null>(null);
 	const [previewLoading, setPreviewLoading] = useState(false);
+	const [previewError, setPreviewError] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
 
@@ -89,22 +97,24 @@ export function ActivatePage() {
 			setInviteAddress(null);
 			setLockedFields(new Set());
 			setProfile(emptyProfile());
+			setPreviewError(null);
 			return;
 		}
 
 		const timer = window.setTimeout(async () => {
 			setPreviewLoading(true);
+			setPreviewError(null);
 			setError(null);
 			try {
 				const preview = await fetchInvitePreview(trimmed);
 				setInviteAddress(preview.address);
 				setLockedFields(new Set(preview.lockedFields));
 				setProfile(profileFromPreview(preview));
-			} catch (previewError) {
+			} catch (fetchError) {
 				setInviteAddress(null);
 				setLockedFields(new Set());
 				setProfile(emptyProfile());
-				setError(getErrorMessage(previewError));
+				setPreviewError(getErrorMessage(fetchError));
 			} finally {
 				setPreviewLoading(false);
 			}
@@ -122,11 +132,7 @@ export function ActivatePage() {
 	);
 
 	if (isLoading) {
-		return (
-			<div className="flex min-h-svh items-center justify-center p-8">
-				<Skeleton className="h-8 w-48" />
-			</div>
-		);
+		return <PageLoader label="Checking your session…" />;
 	}
 
 	if (isAuthenticated && account) {
@@ -162,12 +168,14 @@ export function ActivatePage() {
 		}
 	};
 
+	const codeComplete = code.trim().length >= 9;
+
 	return (
 		<AuthPageShell
-			title="Activate account"
-			description="Enter your invite code and choose a password."
+			title="Activate your account"
+			description="Enter your invite code, confirm your details, and choose a password."
 		>
-			<Card className="rounded-md py-6">
+			<Card className="rounded-xl py-6 shadow-sm">
 				<CardContent>
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div className="space-y-2">
@@ -177,25 +185,53 @@ export function ActivatePage() {
 							<Input
 								id="code"
 								autoComplete="one-time-code"
+								autoFocus={!code}
+								placeholder="XXXX-XXXX"
+								className="font-mono tracking-wider uppercase"
 								value={code}
-								onChange={(event) => setCode(event.target.value)}
+								onChange={(event) => setCode(formatAuthCode(event.target.value))}
 								disabled={submitting}
 								required
 							/>
+							{!codeComplete && !previewError ? (
+								<p className="text-muted-foreground text-xs">
+									You'll find this in your invitation. Codes look like{" "}
+									<span className="font-mono">AB2C-D4EF</span>.
+								</p>
+							) : null}
 						</div>
 
 						{previewLoading ? (
-							<Skeleton className="h-10 w-full" />
-						) : inviteAddress ? (
-							<div className="bg-muted rounded-md px-4 py-3 text-sm">
-								<p className="text-muted-foreground">Your mailbox</p>
-								<p className="font-medium">{inviteAddress}</p>
+							<div className="bg-muted flex items-center gap-3 rounded-lg px-4 py-3">
+								<AtSign className="text-muted-foreground size-4 shrink-0" />
+								<div className="flex-1 space-y-1.5">
+									<Skeleton className="h-3 w-20" />
+									<Skeleton className="h-4 w-40" />
+								</div>
 							</div>
+						) : inviteAddress ? (
+							<div className="bg-muted flex items-center gap-3 rounded-lg px-4 py-3 text-sm">
+								<AtSign className="text-muted-foreground size-4 shrink-0" />
+								<div>
+									<p className="text-muted-foreground text-xs">
+										Your new mailbox
+									</p>
+									<p className="font-medium">{inviteAddress}</p>
+								</div>
+							</div>
+						) : previewError && codeComplete ? (
+							<Alert tone="destructive">{previewError}</Alert>
 						) : null}
 
 						{visibleFields.length > 0 ? (
 							<div className="space-y-3">
-								<p className="text-sm font-medium">Profile</p>
+								<div>
+									<p className="text-sm font-medium">Your details</p>
+									<p className="text-muted-foreground text-xs">
+										Pre-filled by your administrator. Locked fields can't be
+										changed here.
+									</p>
+								</div>
 								<div className="grid gap-4 sm:grid-cols-2">
 									{visibleFields.map((field) => {
 										const isLocked = lockedFields.has(field.key);
@@ -208,13 +244,14 @@ export function ActivatePage() {
 											>
 												<label
 													htmlFor={field.key}
-													className="mb-1 block text-sm font-medium"
+													className="mb-1 flex items-center gap-1.5 text-sm font-medium"
 												>
 													{field.label}
 													{isLocked ? (
-														<span className="text-muted-foreground ml-2 text-xs font-normal">
-															Locked
-														</span>
+														<Lock
+															className="text-muted-foreground size-3"
+															aria-label="Locked by your administrator"
+														/>
 													) : null}
 												</label>
 												<Input
@@ -238,34 +275,37 @@ export function ActivatePage() {
 
 						<div className="space-y-2">
 							<label htmlFor="password" className="text-sm font-medium">
-								Password
+								Choose a password
 							</label>
-							<Input
+							<PasswordInput
 								id="password"
-								type="password"
 								autoComplete="new-password"
 								value={password}
 								onChange={(event) => setPassword(event.target.value)}
 								disabled={submitting}
 								required
 							/>
+							<p className="text-muted-foreground text-xs">
+								Use a long, unique password you don't use anywhere else.
+							</p>
 						</div>
-						{error ? (
-							<p className="text-destructive text-sm">{error}</p>
-						) : null}
+						{error ? <Alert tone="destructive">{error}</Alert> : null}
 						<Button
 							type="submit"
 							className="w-full"
 							disabled={submitting || !code.trim() || !password}
 						>
-							Activate account
+							{submitting ? (
+								<Loader2 className="size-4 animate-spin" aria-hidden />
+							) : null}
+							{submitting ? "Activating…" : "Activate account"}
 						</Button>
 					</form>
 				</CardContent>
 			</Card>
 			<p className="text-muted-foreground text-center text-sm">
 				Already activated?{" "}
-				<Link to="/login" className="text-primary hover:underline">
+				<Link to="/login" className="text-primary font-medium hover:underline">
 					Sign in
 				</Link>
 			</p>

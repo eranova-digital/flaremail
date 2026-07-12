@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import { PageLoader } from "@/components/PageLoader";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
 
@@ -37,11 +40,7 @@ export function LoginPage() {
 	const [submitting, setSubmitting] = useState(false);
 
 	if (isLoading) {
-		return (
-			<div className="flex min-h-svh items-center justify-center p-8">
-				<Skeleton className="h-8 w-48" />
-			</div>
-		);
+		return <PageLoader label="Checking your session…" />;
 	}
 
 	if (isAuthenticated) {
@@ -65,10 +64,11 @@ export function LoginPage() {
 
 	return (
 		<AuthPageShell
-			title="Sign in"
+			title="Welcome back"
 			description="Sign in to your Flaremail account."
 		>
-			<Card className="rounded-md py-6">
+			{success ? <Alert tone="success">{success}</Alert> : null}
+			<Card className="rounded-xl py-6 shadow-sm">
 				<CardContent>
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div className="space-y-2">
@@ -79,6 +79,8 @@ export function LoginPage() {
 								id="email"
 								type={useTextEmailInput ? "text" : "email"}
 								autoComplete="email"
+								autoFocus
+								placeholder="you@example.com"
 								value={email}
 								onChange={(event) => setEmail(event.target.value)}
 								disabled={submitting}
@@ -86,12 +88,20 @@ export function LoginPage() {
 							/>
 						</div>
 						<div className="space-y-2">
-							<label htmlFor="password" className="text-sm font-medium">
-								Password
-							</label>
-							<Input
+							<div className="flex items-center justify-between">
+								<label htmlFor="password" className="text-sm font-medium">
+									Password
+								</label>
+								<Link
+									to="/reset-password"
+									className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+									tabIndex={-1}
+								>
+									Forgot password?
+								</Link>
+							</div>
+							<PasswordInput
 								id="password"
-								type="password"
 								autoComplete="current-password"
 								value={password}
 								onChange={(event) => setPassword(event.target.value)}
@@ -99,33 +109,27 @@ export function LoginPage() {
 								required
 							/>
 						</div>
-						{error ? (
-							<p className="text-destructive text-sm">{error}</p>
-						) : null}
+						{error ? <Alert tone="destructive">{error}</Alert> : null}
 						<Button
 							type="submit"
 							className="w-full"
 							disabled={submitting || !email.trim() || !password}
 						>
-							Sign in
+							{submitting ? (
+								<Loader2 className="size-4 animate-spin" aria-hidden />
+							) : null}
+							{submitting ? "Signing in…" : "Sign in"}
 						</Button>
-						{success ? (
-							<p className="text-muted-foreground text-sm" role="status">
-								{success}
-							</p>
-						) : null}
 					</form>
 				</CardContent>
 			</Card>
 			<p className="text-muted-foreground text-center text-sm">
-				<Link to="/reset-password" className="text-primary hover:underline">
-					Forgot password?
-				</Link>
-			</p>
-			<p className="text-muted-foreground text-center text-sm">
 				Have an invite code?{" "}
-				<Link to="/activate" className="text-primary hover:underline">
-					Activate account
+				<Link
+					to="/activate"
+					className="text-primary font-medium hover:underline"
+				>
+					Activate your account
 				</Link>
 			</p>
 		</AuthPageShell>
