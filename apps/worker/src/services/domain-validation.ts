@@ -7,12 +7,10 @@ import {
 	domainValidationRuns,
 } from "../db/schema";
 import {
-	createValidationRun,
-	executeValidationRun,
-	getActiveValidationRun,
+	DomainValidationRun,
 	getLatestValidationRunForDomain,
 	loadRunChecks,
-} from "../lib/domain-validation/run-engine";
+} from "../lib/domain-validation";
 import {
 	toDomainReadinessSummaryDto,
 	toValidationCheckDto,
@@ -79,12 +77,12 @@ export async function startDomainValidation(
 	domainId: string,
 	domainName: string,
 ) {
-	const created = await createValidationRun(db, domainId);
+	const created = await DomainValidationRun.createRun(db, domainId);
 	if (!created) {
 		throw new Error("Failed to start validation run");
 	}
 
-	const activeBeforeExecute = await getActiveValidationRun(db, domainId);
+	const activeBeforeExecute = await DomainValidationRun.getActiveRun(db, domainId);
 	const shouldExecute =
 		activeBeforeExecute?.id === created.id &&
 		(await loadRunChecks(db, created.id)).every(
@@ -92,7 +90,7 @@ export async function startDomainValidation(
 		);
 
 	if (shouldExecute) {
-		await executeValidationRun(
+		await DomainValidationRun.executeRun(
 			db,
 			email,
 			domainId,
@@ -111,7 +109,7 @@ export async function startOrReturnValidationRun(
 	domainId: string,
 	domainName: string,
 ) {
-	const active = await getActiveValidationRun(db, domainId);
+	const active = await DomainValidationRun.getActiveRun(db, domainId);
 	if (active) {
 		return getValidationRunDetail(db, domainId, active.id);
 	}
