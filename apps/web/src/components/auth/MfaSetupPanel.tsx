@@ -68,12 +68,6 @@ export function MfaSetupPanel({
 		}
 	};
 
-	const handleConfirmCodeChange = (value: string) => {
-		setConfirmCode(value);
-		if (isTotpCodeComplete(value)) {
-			void handleConfirm(value);
-		}
-	};
 
 	if (loadingSetup) {
 		return (
@@ -116,7 +110,8 @@ export function MfaSetupPanel({
 					<TotpCodeInput
 						id="compliance-mfa-code"
 						value={confirmCode}
-						onChange={handleConfirmCodeChange}
+						onChange={setConfirmCode}
+						onComplete={(value) => void handleConfirm(value)}
 						disabled={submitting}
 						autoFocus
 						invalid={Boolean(error)}
