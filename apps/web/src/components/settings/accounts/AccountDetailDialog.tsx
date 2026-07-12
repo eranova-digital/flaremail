@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ import {
 	canSuspendTarget,
 	inviteableRoles,
 } from "@/lib/accounts/permissions";
+import { ROLE_META, roleLabel, statusMeta } from "@/lib/accounts/roles";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
 
@@ -265,17 +267,32 @@ export function AccountDetailDialog({
 				{detailQuery.isLoading ? (
 					<p className="text-muted-foreground text-sm">Loading…</p>
 				) : detailQuery.isError ? (
-					<p className="text-destructive text-sm">
-						{getErrorMessage(detailQuery.error)}
-					</p>
+					<Alert tone="destructive">
+						<p>{getErrorMessage(detailQuery.error)}</p>
+					</Alert>
 				) : !target ? (
-					<p className="text-destructive text-sm">Account not found.</p>
+					<Alert tone="warning">
+						<p>Account not found.</p>
+					</Alert>
 				) : (
 					<div className="space-y-4">
 						<div className="flex flex-wrap items-center gap-2 text-sm">
-							<span>{target.loginIdentifier}</span>
-							<Badge variant="secondary">
-								{target.role ?? "intendant"} · {target.status}
+							<span className="text-muted-foreground">
+								{target.loginIdentifier}
+							</span>
+							<Badge variant="outline">
+								{roleLabel(target.role, target.isIntendant)}
+							</Badge>
+							<Badge
+								variant={
+									statusMeta(target.status).tone === "success"
+										? "success"
+										: statusMeta(target.status).tone === "warning"
+											? "warning"
+											: "secondary"
+								}
+							>
+								{statusMeta(target.status).label}
 							</Badge>
 						</div>
 
@@ -324,10 +341,13 @@ export function AccountDetailDialog({
 								>
 									{inviteableRoles(actor).map((item) => (
 										<option key={item} value={item}>
-											{item}
+											{ROLE_META[item].label}
 										</option>
 									))}
 								</select>
+								<p className="text-muted-foreground text-xs">
+									{ROLE_META[role].description}
+								</p>
 								<Button
 									variant="outline"
 									size="sm"
@@ -542,23 +562,36 @@ export function AccountDetailDialog({
 						</div>
 
 						{resetCode ? (
-							<p className="text-sm">
-								Password reset code: <strong>{resetCode}</strong>
-							</p>
-						) : null}
-						{inviteCode ? (
-							<div className="bg-muted rounded-md px-4 py-3 text-sm">
-								<p className="font-medium">Invite code</p>
+							<Alert tone="success" title="Password reset code issued">
 								<p>
-									Code: <strong className="font-mono">{inviteCode}</strong>
+									<code className="font-mono font-semibold tracking-wider">
+										{resetCode}
+									</code>
 								</p>
 								<p className="text-muted-foreground mt-1 text-xs">
-									Share this code with the user to complete activation. Previous
-									unused codes were invalidated.
+									Share this code with the person so they can set a new
+									password. It is shown only once.
 								</p>
-							</div>
+							</Alert>
 						) : null}
-						{error ? <p className="text-destructive text-sm">{error}</p> : null}
+						{inviteCode ? (
+							<Alert tone="success" title="New invite code">
+								<p>
+									<code className="font-mono font-semibold tracking-wider">
+										{inviteCode}
+									</code>
+								</p>
+								<p className="text-muted-foreground mt-1 text-xs">
+									Share this code with the person to complete activation.
+									Previous unused codes were invalidated.
+								</p>
+							</Alert>
+						) : null}
+						{error ? (
+							<Alert tone="destructive">
+								<p>{error}</p>
+							</Alert>
+						) : null}
 					</div>
 				)}
 			</DialogContent>
