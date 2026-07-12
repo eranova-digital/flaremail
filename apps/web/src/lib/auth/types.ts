@@ -12,6 +12,26 @@ export type AccountProfile = {
 	};
 };
 
+export type AccountCapabilities = {
+	accessManagementPage: boolean;
+	accessAccountsTab: boolean;
+	accessOrganizationTab: boolean;
+	accessDomainsTab: boolean;
+	accessMailboxesTab: boolean;
+	manageMailboxes: boolean;
+	registerDomains: boolean;
+	assignRoles: boolean;
+	editOwnProfile: boolean;
+	editLocalPartPolicy: boolean;
+	manageSharedMailboxUsers: boolean;
+	manageUserMailboxGrants: boolean;
+	lockProfileFields: boolean;
+	manageAssignments: boolean;
+	manageManagerMailboxAssignments: boolean;
+	showsManagerMailboxGrantsTab: boolean;
+	inviteableRoles: string[];
+};
+
 export type Account = {
 	id: string;
 	isIntendant: boolean;
@@ -33,6 +53,7 @@ export type Account = {
 		mfaRequired: boolean;
 		recoveryEmailRequired: boolean;
 	};
+	capabilities?: AccountCapabilities;
 };
 
 export type SignInResult =
