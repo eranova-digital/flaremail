@@ -9,7 +9,7 @@ import {
 import { buildEmailAddress } from "../normalize-email-address";
 import { sendEmail, EmailSendError } from "../messages/send-email";
 import {
-	SYSTEM_ALIAS_LOCAL_PARTS,
+	SYSTEM_BLACKHOLE_LOCAL_PART,
 	SYSTEM_POSTMASTER_LOCAL_PART,
 } from "../system-mailboxes";
 import { computeReadinessBadge } from "./compute-badge";
@@ -208,7 +208,7 @@ export class ValidationRunExecutor {
 			return;
 		}
 
-		const from = buildEmailAddress(SYSTEM_ALIAS_LOCAL_PARTS[1], domainName);
+		const from = buildEmailAddress(SYSTEM_BLACKHOLE_LOCAL_PART, domainName);
 		const to = buildEmailAddress(SYSTEM_POSTMASTER_LOCAL_PART, domainName);
 		const bodyText = buildValidationBodyText(token);
 		const sendStartedAt = new Date();
