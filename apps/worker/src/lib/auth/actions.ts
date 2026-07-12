@@ -26,6 +26,7 @@ export class AuthorizationDeniedError extends Error {
 	}
 }
 
+/** @deprecated Route actions are declared on RouteDefinition.action. */
 export function actionForPath(method: string, path: string): AuthAction {
 	if (path.startsWith("/api/v1/auth/")) {
 		if (path === "/api/v1/auth/me") {
