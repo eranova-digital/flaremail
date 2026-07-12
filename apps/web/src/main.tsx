@@ -7,7 +7,8 @@ import App from "./App";
 import { ConfigErrorScreen } from "./components/ConfigErrorScreen";
 import { TooltipProvider } from "./components/ui/tooltip";
 import "./lib/api/client";
-import { getApiBearerToken, getApiUrl } from "./lib/api";
+import { getApiUrl } from "./lib/api";
+import { AuthProvider } from "./lib/auth/AuthProvider";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -23,7 +24,6 @@ function Root() {
 	const configError = useMemo(() => {
 		try {
 			getApiUrl();
-			getApiBearerToken();
 			return null;
 		} catch (error) {
 			return error instanceof Error ? error.message : "Invalid configuration";
@@ -38,7 +38,9 @@ function Root() {
 		<QueryClientProvider client={queryClient}>
 			<TooltipProvider delayDuration={300}>
 				<BrowserRouter>
-					<App />
+					<AuthProvider>
+						<App />
+					</AuthProvider>
 				</BrowserRouter>
 			</TooltipProvider>
 		</QueryClientProvider>

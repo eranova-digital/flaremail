@@ -1,9 +1,9 @@
 import { client } from "./generated/client.gen";
-import { getApiBearerToken, getApiUrl } from "../api";
+import { getApiUrl } from "../api";
 
 client.setConfig({
 	baseUrl: getApiUrl(),
-	auth: getApiBearerToken,
+	credentials: "include",
 });
 
 export { client };

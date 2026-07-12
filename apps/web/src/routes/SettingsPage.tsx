@@ -3,10 +3,12 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { DomainSection } from "@/components/settings/DomainSection";
 import { MailboxSection } from "@/components/settings/MailboxSection";
+import { AccountsSection } from "@/components/settings/AccountsSection";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const TABS = ["domains", "mailboxes"] as const;
+const TABS = ["domains", "mailboxes", "accounts"] as const;
 type SettingsTab = (typeof TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -39,6 +41,9 @@ export function SettingsPage() {
 						</Link>
 					</Button>
 					<h1 className="text-xl font-semibold tracking-tight">Settings</h1>
+					<div className="ml-auto">
+						<LogoutButton variant="settings" />
+					</div>
 				</div>
 			</header>
 
@@ -47,12 +52,16 @@ export function SettingsPage() {
 					<TabsList>
 						<TabsTrigger value="domains">Domains</TabsTrigger>
 						<TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
+						<TabsTrigger value="accounts">Accounts</TabsTrigger>
 					</TabsList>
 					<TabsContent value="domains">
 						<DomainSection />
 					</TabsContent>
 					<TabsContent value="mailboxes">
 						<MailboxSection />
+					</TabsContent>
+					<TabsContent value="accounts">
+						<AccountsSection />
 					</TabsContent>
 				</Tabs>
 			</main>

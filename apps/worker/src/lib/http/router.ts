@@ -1,10 +1,13 @@
-import { requireAuth } from "./auth";
+import { authorizePrincipal, permissionForPath } from "../auth/authorize";
+import { resolvePrincipal } from "../auth/resolve-principal";
+import type { Principal } from "../auth/types";
 import { handleRouteError } from "./handle-route-error";
 
 export type RouteContext = {
 	request: Request;
 	env: Env;
 	params: Record<string, string>;
+	principal: Principal;
 };
 
 export type RouteHandler = (context: RouteContext) => Promise<Response>;
@@ -60,20 +63,43 @@ export function createRouter(routes: RouteDefinition[]) {
 				continue;
 			}
 
-			if (route.auth) {
-				const authError = requireAuth(request, env);
-				if (authError) {
-					return authError;
-				}
-			}
-
 			const params: Record<string, string> = {};
 			for (const [index, name] of route.paramNames.entries()) {
 				params[name] = match[index + 1];
 			}
 
+			let principal: Principal = {
+				kind: "legacy",
+				accountId: null,
+				isIntendant: false,
+				role: null,
+				status: null,
+				loginIdentifier: null,
+				primaryMailboxId: null,
+				domainIds: [],
+				grantMailboxIds: [],
+				sharedMailboxAssignment: [],
+			};
+
+			if (route.auth) {
+				const principalResult = await resolvePrincipal(request, env);
+				if (principalResult instanceof Response) {
+					return principalResult;
+				}
+				principal = principalResult;
+
+				const permission = permissionForPath(route.method, pathname);
+				const authzError = authorizePrincipal(request, principal, permission, {
+					mailboxId: params.mailboxId,
+					domainId: params.domainId ?? params.id,
+				});
+				if (authzError) {
+					return authzError;
+				}
+			}
+
 			try {
-				return await route.handler({ request, env, params });
+				return await route.handler({ request, env, params, principal });
 			} catch (error) {
 				console.error(`Route error ${request.method} ${pathname}:`, error);
 				return handleRouteError(error, request);
