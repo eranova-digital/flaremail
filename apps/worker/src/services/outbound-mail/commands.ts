@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import PostalMime from "postal-mime";
 
 import { messages, threadMailboxes } from "../../db/schema";
+import { assertOutboundMailboxAccess } from "../../lib/messages/outbound-auth";
 import { assertCanSendFrom } from "../../lib/authorize-mailbox";
 import { loadMailboxForSend } from "../../lib/mailbox-queries";
 import { isBlackholeMailboxType } from "../../lib/mailbox-types";
@@ -66,6 +67,8 @@ export async function sendDraftMessage(
 	if (!draft) {
 		throw new Error("Draft not found");
 	}
+
+	await assertOutboundMailboxAccess(ctx, draft.actualMailboxId);
 
 	const mailbox = await loadMailboxForSend(ctx.db, draft.actualMailboxId);
 	if (!mailbox) {
@@ -137,6 +140,7 @@ export async function directSend(
 	mailboxId: string,
 	body: OutboundMessageBody,
 ) {
+	await assertOutboundMailboxAccess(ctx, mailboxId);
 	return sendAndPersistNewMessage(
 		ctx,
 		mailboxId,
@@ -160,6 +164,8 @@ export async function replyToMessage(
 	if (!parent) {
 		throw new Error("Message not found");
 	}
+
+	await assertOutboundMailboxAccess(ctx, body.mailboxId);
 
 	const mailbox = await loadMailboxForSend(ctx.db, body.mailboxId);
 	if (!mailbox) {
@@ -256,6 +262,7 @@ export async function forwardMessage(
 	body: ForwardBody,
 ) {
 	await assertMessageVisibleInMailbox(ctx.db, messageId, body.mailboxId);
+	await assertOutboundMailboxAccess(ctx, body.mailboxId);
 
 	const parent = await findMessageById(ctx.db, messageId);
 	if (!parent) {
