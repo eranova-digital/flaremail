@@ -1,4 +1,4 @@
-import { authorizePrincipal, permissionForPath } from "../auth/authorize";
+import { actionForPath, authorizeRequest } from "../auth/authorize";
 import { resolvePrincipal } from "../auth/resolve-principal";
 import type { Principal } from "../auth/types";
 import { handleRouteError } from "./handle-route-error";
@@ -88,8 +88,8 @@ export function createRouter(routes: RouteDefinition[]) {
 				}
 				principal = principalResult;
 
-				const permission = permissionForPath(route.method, pathname);
-				const authzError = authorizePrincipal(request, principal, permission, {
+				const action = actionForPath(route.method, pathname);
+				const authzError = await authorizeRequest(request, principal, action, {
 					mailboxId: params.mailboxId,
 					domainId:
 						params.domainId ??
