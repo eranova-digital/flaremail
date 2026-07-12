@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, Trash2 } from "lucide-react";
+import { Activity, Globe, Trash2 } from "lucide-react";
 
 import { ReadinessBadge } from "@/components/settings/domain-validation/ReadinessBadge";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -71,23 +73,37 @@ export function DomainSection() {
 			) : null}
 
 			{canRegister && createDomain.isError ? (
-				<p className="text-destructive text-sm">{getErrorMessage(createDomain.error)}</p>
+				<Alert tone="destructive" title="Couldn't add domain">
+					<p>{getErrorMessage(createDomain.error)}</p>
+				</Alert>
 			) : null}
 
 			{domainsQuery.isLoading ? (
 				<div className="space-y-2">
 					{Array.from({ length: 2 }).map((_, index) => (
-						<Skeleton key={index} className="h-16 w-full" />
+						<Skeleton key={index} className="h-16 w-full rounded-lg" />
 					))}
 				</div>
 			) : domainsQuery.isError ? (
-				<p className="text-destructive text-sm">{getErrorMessage(domainsQuery.error)}</p>
+				<Alert tone="destructive" title="Couldn't load domains">
+					<p>{getErrorMessage(domainsQuery.error)}</p>
+				</Alert>
 			) : (domainsQuery.data ?? []).length === 0 ? (
-				<p className="text-muted-foreground text-sm">
-					{canRegister
-						? "No domains yet. Add one above."
-						: "No domains assigned to your account."}
-				</p>
+				<Card className="gap-0 rounded-lg py-0">
+					<CardContent className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+						<Globe className="text-muted-foreground/60 size-6" aria-hidden />
+						<p className="text-sm font-medium">
+							{canRegister
+								? "No domains yet"
+								: "No domains assigned to your account"}
+						</p>
+						<p className="text-muted-foreground max-w-sm text-sm">
+							{canRegister
+								? "Add the domain you want Flaremail to receive mail for. You can verify DNS afterwards."
+								: "Ask an owner to assign a domain to your account."}
+						</p>
+					</CardContent>
+				</Card>
 			) : (
 				<Card className="gap-0 rounded-md py-0">
 					<CardContent className="p-0">
@@ -109,6 +125,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 	const updateDomain = useUpdateDomain();
 	const deleteDomain = useDeleteDomain();
 	const mailboxesQuery = useMailboxes("manage");
+	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
 	if (!domain.id) {
 		return null;
@@ -145,13 +162,9 @@ function DomainRow({ domain }: { domain: Domain }) {
 	};
 
 	const handleDelete = () => {
-		const confirmed = window.confirm(
-			`Delete domain "${domain.domain}"? This permanently removes all mailboxes and messages on this domain.`,
-		);
-		if (!confirmed) {
-			return;
-		}
-		deleteDomain.mutate(domain.id!);
+		deleteDomain.mutate(domain.id!, {
+			onSettled: () => setConfirmingDelete(false),
+		});
 	};
 
 	const isPending = updateDomain.isPending || deleteDomain.isPending;
@@ -171,27 +184,46 @@ function DomainRow({ domain }: { domain: Domain }) {
 					</div>
 				</div>
 				<div className="flex items-center gap-1">
-					<Button variant="ghost" size="icon" asChild>
+					<Button variant="outline" size="sm" asChild>
 						<Link
 							to={`/settings/domains/${domain.id}/validation`}
-							aria-label={`View validation for ${domain.domain}`}
-							title="View domain validation"
+							aria-label={`View readiness for ${domain.domain}`}
 						>
-							<Activity className="size-4" />
+							<Activity className="size-3.5" />
+							Readiness
 						</Link>
 					</Button>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={handleDelete}
-						disabled={isPending}
-						aria-label={`Delete ${domain.domain}`}
-						className={canRegister ? undefined : "hidden"}
-					>
-						<Trash2 className="text-destructive size-4" />
-					</Button>
+					{canRegister ? (
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => setConfirmingDelete(true)}
+							disabled={isPending}
+							aria-label={`Delete ${domain.domain}`}
+						>
+							<Trash2 className="text-destructive size-4" />
+						</Button>
+					) : null}
 				</div>
 			</div>
+
+			<ConfirmDialog
+				open={confirmingDelete}
+				onOpenChange={setConfirmingDelete}
+				title={`Delete ${domain.domain}?`}
+				description={
+					<>
+						<p>
+							This permanently removes the domain along with{" "}
+							<strong>every mailbox and message</strong> on it.
+						</p>
+						<p>This cannot be undone.</p>
+					</>
+				}
+				confirmLabel="Delete domain"
+				onConfirm={handleDelete}
+				pending={deleteDomain.isPending}
+			/>
 
 			<div className="flex flex-wrap items-center gap-4 text-sm">
 				<label className="flex items-center gap-2">
@@ -236,7 +268,9 @@ function DomainRow({ domain }: { domain: Domain }) {
 			) : null}
 
 			{mutationError ? (
-				<p className="text-destructive text-sm">{getErrorMessage(mutationError)}</p>
+				<Alert tone="destructive">
+					<p>{getErrorMessage(mutationError)}</p>
+				</Alert>
 			) : null}
 
 			<DomainLocalPartPolicy domainId={domain.id} />
@@ -246,7 +280,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 
 function StatusBadge({ active }: { active: boolean }) {
 	return (
-		<Badge variant={active ? "default" : "secondary"}>
+		<Badge variant={active ? "success" : "secondary"}>
 			{active ? "Active" : "Inactive"}
 		</Badge>
 	);
