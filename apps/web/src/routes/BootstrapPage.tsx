@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { Check, Copy, Loader2, ShieldCheck } from "lucide-react";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { PageLoader } from "@/components/PageLoader";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { bootstrapInstance } from "@/lib/auth/api";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
@@ -25,11 +27,7 @@ export function BootstrapPage() {
 	const [copied, setCopied] = useState(false);
 
 	if (isLoading) {
-		return (
-			<div className="flex min-h-svh items-center justify-center p-8">
-				<Skeleton className="h-8 w-48" />
-			</div>
-		);
+		return <PageLoader label="Checking your session…" />;
 	}
 
 	if (isAuthenticated && account) {
@@ -66,47 +64,62 @@ export function BootstrapPage() {
 
 	return (
 		<AuthPageShell
-			title="Bootstrap Flaremail"
-			description="Create the intendant break-glass account for this instance."
+			title="Set up Flaremail"
+			description="Create the recovery account for this instance so you can sign in and configure everything else."
 		>
-			<Card className="rounded-md py-6">
+			<Card className="rounded-xl py-6 shadow-sm">
 				<CardContent className="space-y-4">
-					{state.kind === "idle" ? (
+					{state.kind === "idle" || state.kind === "loading" ? (
 						<>
-							<p className="text-muted-foreground text-sm">
-								Run this once after deploying a new instance. The intendant
-								password is shown only at creation time.
-							</p>
-							<Button className="w-full" onClick={handleBootstrap}>
-								Create intendant account
+							<div className="flex items-start gap-3">
+								<ShieldCheck className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+								<p className="text-muted-foreground text-sm">
+									This runs once after deploying a new instance. It creates a
+									break-glass account (login:{" "}
+									<span className="font-mono text-xs">intendant</span>) whose
+									password is shown only at creation time — store it somewhere
+									safe.
+								</p>
+							</div>
+							<Button
+								className="w-full"
+								onClick={handleBootstrap}
+								disabled={state.kind === "loading"}
+							>
+								{state.kind === "loading" ? (
+									<Loader2 className="size-4 animate-spin" aria-hidden />
+								) : null}
+								{state.kind === "loading"
+									? "Creating account…"
+									: "Create recovery account"}
 							</Button>
 						</>
 					) : null}
 
-					{state.kind === "loading" ? (
-						<div className="space-y-3">
-							<Skeleton className="h-10 w-full" />
-							<Skeleton className="h-10 w-full" />
-						</div>
-					) : null}
-
 					{state.kind === "created" ? (
 						<div className="space-y-4">
-							<div className="bg-muted rounded-md px-4 py-3 text-sm">
-								<p className="font-medium">Intendant account created</p>
-								<p className="text-muted-foreground mt-1">
-									Copy these credentials now. The password cannot be retrieved
+							<Alert tone="success" title="Recovery account created">
+								<p>
+									Copy these credentials now — the password cannot be shown
 									again.
 								</p>
+							</Alert>
+							<div className="space-y-2">
+								<label className="text-sm font-medium" htmlFor="bootstrap-login">
+									Login identifier
+								</label>
+								<Input id="bootstrap-login" value={INTENDANT_LOGIN} readOnly />
 							</div>
 							<div className="space-y-2">
-								<label className="text-sm font-medium">Login identifier</label>
-								<Input value={INTENDANT_LOGIN} readOnly />
-							</div>
-							<div className="space-y-2">
-								<label className="text-sm font-medium">Password</label>
+								<label
+									className="text-sm font-medium"
+									htmlFor="bootstrap-password"
+								>
+									Password
+								</label>
 								<div className="flex gap-2">
 									<Input
+										id="bootstrap-password"
 										value={state.password}
 										readOnly
 										className="font-mono text-sm"
@@ -115,7 +128,13 @@ export function BootstrapPage() {
 										type="button"
 										variant="outline"
 										onClick={handleCopyPassword}
+										className="shrink-0"
 									>
+										{copied ? (
+											<Check className="size-4" aria-hidden />
+										) : (
+											<Copy className="size-4" aria-hidden />
+										)}
 										{copied ? "Copied" : "Copy"}
 									</Button>
 								</div>
@@ -128,13 +147,12 @@ export function BootstrapPage() {
 
 					{state.kind === "exists" ? (
 						<div className="space-y-4">
-							<div className="bg-muted rounded-md px-4 py-3 text-sm">
-								<p className="font-medium">Already bootstrapped</p>
-								<p className="text-muted-foreground mt-1">
-									This instance already has an intendant account. Use sign in, or
-									regenerate the password from settings after signing in.
+							<Alert tone="info" title="Already set up">
+								<p>
+									This instance already has a recovery account. Sign in with it,
+									or regenerate its password from settings after signing in.
 								</p>
-							</div>
+							</Alert>
 							<Button asChild className="w-full" variant="outline">
 								<Link to="/login">Go to sign in</Link>
 							</Button>
@@ -143,7 +161,9 @@ export function BootstrapPage() {
 
 					{state.kind === "error" ? (
 						<div className="space-y-4">
-							<p className="text-destructive text-sm">{state.message}</p>
+							<Alert tone="destructive" title="Setup failed">
+								<p>{state.message}</p>
+							</Alert>
 							<Button className="w-full" onClick={handleBootstrap}>
 								Try again
 							</Button>
