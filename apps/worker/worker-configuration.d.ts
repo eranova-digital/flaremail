@@ -6,6 +6,7 @@ interface __BaseEnv_Env {
 	HYPERDRIVE: Hyperdrive;
 	EMAIL: SendEmail;
 	API_BEARER_TOKEN: string;
+	SESSION_SECRET: string;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {

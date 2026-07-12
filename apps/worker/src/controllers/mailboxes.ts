@@ -17,9 +17,14 @@ import {
 export async function handleListMailboxes({
 	request,
 	env,
+	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		const items = await withDb(env, (db) => listMailboxes(db));
+		const items = await withDb(env, async (db) => {
+			const all = await listMailboxes(db);
+			const { filterMailboxesForPrincipal } = await import("../services/accounts");
+			return filterMailboxesForPrincipal(db, principal, all);
+		});
 		return jsonResponse({ items });
 	} catch (error) {
 		return handleRouteError(error, request);

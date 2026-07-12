@@ -15,6 +15,7 @@ import { NavLink, useNavigate, useParams, useSearchParams } from 'react-router-d
 
 import { MailboxSwitcher } from '@/components/layout/MailboxSwitcher';
 import { LabelsSection } from '@/components/layout/LabelsSection';
+import { LogoutButton } from '@/components/auth/LogoutButton';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -155,7 +156,7 @@ export function FolderSidebar() {
 						withTooltip={(label, trigger) => withTooltip(collapsed, label, trigger)}
 					/>
 				</nav>
-				<div className={cn('p-2', collapsed && 'px-2')}>
+				<div className={cn('space-y-1 p-2', collapsed && 'px-2')}>
 					{withTooltip(
 						collapsed,
 						'Settings',
@@ -172,6 +173,11 @@ export function FolderSidebar() {
 							<Settings className="size-4 shrink-0" />
 							{!collapsed ? 'Settings' : null}
 						</NavLink>,
+					)}
+					{withTooltip(
+						collapsed,
+						'Sign out',
+						<LogoutButton showLabel={!collapsed} />,
 					)}
 				</div>
 			</aside>

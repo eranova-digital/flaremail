@@ -2,6 +2,7 @@ import { createRouter } from "../lib/http/router";
 import { problemResponse, requestInstance } from "../lib/http/problem";
 import { handleHealthRequest } from "./health";
 import { handleOpenApiJson } from "./openapi";
+import { authRoutes } from "./auth";
 import { v1Routes } from "./v1";
 
 export const apiRouter = createRouter([
@@ -11,6 +12,7 @@ export const apiRouter = createRouter([
 		auth: false,
 		handler: handleOpenApiJson,
 	},
+	...authRoutes,
 	...v1Routes,
 ]);
 

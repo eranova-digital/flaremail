@@ -395,3 +395,289 @@ export type NewDomainValidationRun = typeof domainValidationRuns.$inferInsert;
 export type DomainValidationCheck = typeof domainValidationChecks.$inferSelect;
 export type DomainValidationLogEvent =
 	typeof domainValidationLogEvents.$inferSelect;
+
+export const accountRoleEnum = pgEnum("account_role", [
+	"user",
+	"manager",
+	"admin",
+	"superadmin",
+]);
+export const accountStatusEnum = pgEnum("account_status", [
+	"pending",
+	"active",
+	"suspended",
+]);
+
+export const accounts = pgTable(
+	"accounts",
+	{
+		id: uuid("id").primaryKey(),
+		isIntendant: boolean("is_intendant").notNull().default(false),
+		role: accountRoleEnum("role"),
+		status: accountStatusEnum("status").notNull().default("pending"),
+		loginIdentifier: text("login_identifier").notNull().unique(),
+		passwordHash: text("password_hash"),
+		primaryMailboxId: uuid("primary_mailbox_id").references(
+			() => mailboxes.id,
+			{ onDelete: "set null" },
+		),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		activatedAt: timestamp("activated_at", { withTimezone: true }),
+		suspendedAt: timestamp("suspended_at", { withTimezone: true }),
+	},
+	(table) => [
+		index("accounts_primary_mailbox_id_idx").on(table.primaryMailboxId),
+		index("accounts_status_idx").on(table.status),
+	],
+);
+
+export const accountProfiles = pgTable("account_profiles", {
+	accountId: uuid("account_id")
+		.primaryKey()
+		.references(() => accounts.id, { onDelete: "cascade" }),
+	firstName: text("first_name").notNull().default(""),
+	lastName: text("last_name").notNull().default(""),
+	recoveryAddress: text("recovery_address"),
+	phone: text("phone"),
+	addressCountry: text("address_country"),
+	addressState: text("address_state"),
+	addressCity: text("address_city"),
+	addressLine1: text("address_line1"),
+	addressLine2: text("address_line2"),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});
+
+export const profileFieldLocks = pgTable(
+	"profile_field_locks",
+	{
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		fieldName: text("field_name").notNull(),
+	},
+	(table) => [
+		primaryKey({ columns: [table.accountId, table.fieldName] }),
+	],
+);
+
+export const accountDomainAssignments = pgTable(
+	"account_domain_assignments",
+	{
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		domainId: uuid("domain_id")
+			.notNull()
+			.references(() => domains.id, { onDelete: "cascade" }),
+	},
+	(table) => [
+		primaryKey({ columns: [table.accountId, table.domainId] }),
+		index("account_domain_assignments_domain_id_idx").on(table.domainId),
+	],
+);
+
+export const managerSharedMailboxAssignments = pgTable(
+	"manager_shared_mailbox_assignments",
+	{
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		domainId: uuid("domain_id")
+			.notNull()
+			.references(() => domains.id, { onDelete: "cascade" }),
+		mailboxId: uuid("mailbox_id").references(() => mailboxes.id, {
+			onDelete: "cascade",
+		}),
+		allSharedMailboxes: boolean("all_shared_mailboxes")
+			.notNull()
+			.default(false),
+	},
+	(table) => [
+		index("manager_shared_mailbox_assignments_account_id_idx").on(
+			table.accountId,
+		),
+	],
+);
+
+export const mailboxGrants = pgTable(
+	"mailbox_grants",
+	{
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		mailboxId: uuid("mailbox_id")
+			.notNull()
+			.references(() => mailboxes.id, { onDelete: "cascade" }),
+	},
+	(table) => [
+		primaryKey({ columns: [table.accountId, table.mailboxId] }),
+		index("mailbox_grants_mailbox_id_idx").on(table.mailboxId),
+	],
+);
+
+export const domainLocalPartPolicies = pgTable("domain_local_part_policies", {
+	domainId: uuid("domain_id")
+		.primaryKey()
+		.references(() => domains.id, { onDelete: "cascade" }),
+		enforced: boolean("enforced").notNull().default(false),
+		pattern: text("pattern"),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});
+
+export const invites = pgTable(
+	"invites",
+	{
+		id: uuid("id").primaryKey(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		codeHash: text("code_hash").notNull(),
+		createdByAccountId: uuid("created_by_account_id")
+			.notNull()
+			.references(() => accounts.id),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		usedAt: timestamp("used_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [index("invites_account_id_idx").on(table.accountId)],
+);
+
+export const passwordResetCodes = pgTable(
+	"password_reset_codes",
+	{
+		id: uuid("id").primaryKey(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		codeHash: text("code_hash").notNull(),
+		createdByAccountId: uuid("created_by_account_id")
+			.notNull()
+			.references(() => accounts.id),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		usedAt: timestamp("used_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [index("password_reset_codes_account_id_idx").on(table.accountId)],
+);
+
+export const sessions = pgTable(
+	"sessions",
+	{
+		id: uuid("id").primaryKey(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		tokenHash: text("token_hash").notNull().unique(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		absoluteExpiresAt: timestamp("absolute_expires_at", {
+			withTimezone: true,
+		}).notNull(),
+	},
+	(table) => [
+		index("sessions_account_id_idx").on(table.accountId),
+		index("sessions_expires_at_idx").on(table.expiresAt),
+	],
+);
+
+export const apiKeys = pgTable(
+	"api_keys",
+	{
+		id: uuid("id").primaryKey(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		name: text("name").notNull(),
+		prefix: text("prefix").notNull(),
+		keyHash: text("key_hash").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+		revokedAt: timestamp("revoked_at", { withTimezone: true }),
+	},
+	(table) => [index("api_keys_account_id_idx").on(table.accountId)],
+);
+
+export const oidcClients = pgTable("oidc_clients", {
+	id: uuid("id").primaryKey(),
+	clientId: text("client_id").notNull().unique(),
+	clientSecretHash: text("client_secret_hash"),
+	name: text("name").notNull(),
+	redirectUris: text("redirect_uris").array().notNull(),
+	allowedScopes: text("allowed_scopes").array().notNull(),
+	m2mPermissions: text("m2m_permissions").array().notNull().default([]),
+	isConfidential: boolean("is_confidential").notNull().default(true),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});
+
+export const oidcAuthorizationCodes = pgTable(
+	"oidc_authorization_codes",
+	{
+		id: uuid("id").primaryKey(),
+		codeHash: text("code_hash").notNull().unique(),
+		clientId: text("client_id").notNull(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		redirectUri: text("redirect_uri").notNull(),
+		scopes: text("scopes").array().notNull(),
+		codeChallenge: text("code_challenge"),
+		codeChallengeMethod: text("code_challenge_method"),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		usedAt: timestamp("used_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [index("oidc_authorization_codes_client_id_idx").on(table.clientId)],
+);
+
+export const oidcRefreshTokens = pgTable(
+	"oidc_refresh_tokens",
+	{
+		id: uuid("id").primaryKey(),
+		tokenHash: text("token_hash").notNull().unique(),
+		clientId: text("client_id").notNull(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		scopes: text("scopes").array().notNull(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		revokedAt: timestamp("revoked_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [index("oidc_refresh_tokens_account_id_idx").on(table.accountId)],
+);
+
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+export type AccountProfile = typeof accountProfiles.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type OidcClient = typeof oidcClients.$inferSelect;

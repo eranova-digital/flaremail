@@ -10,8 +10,7 @@ export function ConfigErrorScreen({ message }: ConfigErrorScreenProps) {
 			<p className="text-muted-foreground max-w-md text-xs">
 				Copy <code className="font-mono">apps/web/.env.example</code> to{" "}
 				<code className="font-mono">apps/web/.env</code> and set{" "}
-				<code className="font-mono">API_URL</code> and{" "}
-				<code className="font-mono">API_BEARER_TOKEN</code>.
+				<code className="font-mono">API_URL</code>.
 			</p>
 		</div>
 	);

@@ -12,6 +12,7 @@ export type ProblemDetails = {
 const STATUS_TITLES: Record<number, string> = {
 	400: "Bad Request",
 	401: "Unauthorized",
+	403: "Forbidden",
 	404: "Not Found",
 	413: "Content Too Large",
 	429: "Too Many Requests",
@@ -74,6 +75,8 @@ function defaultCodeForStatus(status: number): string {
 			return "bad-request";
 		case 401:
 			return "unauthorized";
+		case 403:
+			return "forbidden";
 		case 404:
 			return "not-found";
 		case 413:
