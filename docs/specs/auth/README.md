@@ -21,6 +21,7 @@ Specs for the auth & authorization feature on branch `feat/authentication`.
 - [ADR-0003](../adr/0003-oidc-subject-is-account-id.md) — OIDC `sub` is account ID
 - [ADR-0004](../adr/0004-first-party-session-vs-oidc-idp.md) — Session vs OIDC IdP
 - [ADR-0005](../adr/0005-intendant-break-glass-account.md) — Intendant bootstrap
+- [ADR-0006](../adr/0006-system-mailbox-access-by-role.md) — System mailbox access by role
 
 ## Testing seam
 

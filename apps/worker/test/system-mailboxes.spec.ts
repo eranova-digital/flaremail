@@ -18,6 +18,11 @@ describe("isSystemManagedLocalPart", () => {
 		expect(isSystemManagedLocalPart("patrick")).toBe(false);
 		expect(isSystemManagedLocalPart("support")).toBe(false);
 	});
+
+	it("rejects missing local parts", () => {
+		expect(isSystemManagedLocalPart(undefined)).toBe(false);
+		expect(isSystemManagedLocalPart(null)).toBe(false);
+	});
 });
 
 describe("isSystemManagedMailbox", () => {
@@ -43,6 +48,15 @@ describe("isSystemManagedMailbox", () => {
 		expect(
 			isSystemManagedMailbox({ type: "primary", localPart: "patrick" }),
 		).toBe(false);
+	});
+
+	it("honors isSystemManaged on API DTOs without localPart", () => {
+		expect(
+			isSystemManagedMailbox({
+				type: "alias",
+				isSystemManaged: true,
+			}),
+		).toBe(true);
 	});
 });
 

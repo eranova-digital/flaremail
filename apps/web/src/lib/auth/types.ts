@@ -15,9 +15,11 @@ export type AccountProfile = {
 export type Account = {
 	id: string;
 	isIntendant: boolean;
-	role: string;
+	role: string | null;
 	status: string;
 	loginIdentifier: string;
 	primaryMailboxId: string | null;
 	profile: AccountProfile | null;
+	lockedFields?: string[];
+	displayName?: string;
 };

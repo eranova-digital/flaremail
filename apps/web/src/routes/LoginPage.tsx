@@ -14,7 +14,7 @@ function getPostLoginPath(
 	from: string | undefined,
 ): string {
 	if (account?.isIntendant) {
-		return "/settings";
+		return "/";
 	}
 
 	return from && from !== "/login" ? from : "/";

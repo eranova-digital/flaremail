@@ -1,4 +1,5 @@
 import { withDb } from "../db/client";
+import { assertPrincipalCanAccessMailbox } from "../lib/auth/mailbox-access";
 import { parseLimit } from "../lib/http/cursor-pagination";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
@@ -22,6 +23,7 @@ import { runThreadAction } from "../services/thread-commands";
 export async function handleListThreads({
 	request,
 	env,
+	principal,
 }: RouteContext): Promise<Response> {
 	const mailboxId = requireQueryParam(request, "mailboxId");
 	if (mailboxId instanceof Response) {
@@ -40,14 +42,15 @@ export async function handleListThreads({
 	const labelId = url.searchParams.get("labelId");
 
 	try {
-		const result = await withDb(env, (db) =>
-			listThreads(db, mailboxId, {
+		const result = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return listThreads(db, mailboxId, {
 				folder,
 				labelId,
 				cursor: url.searchParams.get("cursor"),
 				limit: parseLimit(url.searchParams.get("limit")),
-			}),
-		);
+			});
+		});
 		return jsonResponse(result);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -58,6 +61,7 @@ export async function handleGetThread({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const mailboxId = requireQueryParam(request, "mailboxId");
 	if (mailboxId instanceof Response) {
@@ -65,9 +69,10 @@ export async function handleGetThread({
 	}
 
 	try {
-		const thread = await withDb(env, (db) =>
-			getThread(db, params.id, mailboxId),
-		);
+		const thread = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return getThread(db, params.id, mailboxId);
+		});
 		return jsonResponse(thread);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -78,6 +83,7 @@ export async function handleListThreadMessages({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const mailboxId = requireQueryParam(request, "mailboxId");
 	if (mailboxId instanceof Response) {
@@ -87,12 +93,13 @@ export async function handleListThreadMessages({
 	try {
 		const url = new URL(request.url);
 		const includeBody = url.searchParams.get("includeBody") === "true";
-		const result = await withDb(env, (db) =>
-			listThreadMessages(db, params.id, mailboxId, {
+		const result = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return listThreadMessages(db, params.id, mailboxId, {
 				bucket: includeBody ? env.BUCKET : undefined,
 				includeBody,
-			}),
-		);
+			});
+		});
 		return jsonResponse(result);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -103,6 +110,7 @@ export async function handleThreadAction({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const mailboxId = requireQueryParam(request, "mailboxId");
 	if (mailboxId instanceof Response) {
@@ -118,6 +126,7 @@ export async function handleThreadAction({
 
 	try {
 		const thread = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
 			await getThread(db, params.id, mailboxId);
 			await runThreadAction(
 				db,
@@ -137,6 +146,7 @@ export async function handlePatchThread({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const mailboxId = requireQueryParam(request, "mailboxId");
 	if (mailboxId instanceof Response) {
@@ -154,14 +164,15 @@ export async function handlePatchThread({
 	}
 
 	try {
-		const thread = await withDb(env, (db) =>
-			replaceThreadLabels(
+		const thread = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return replaceThreadLabels(
 				db,
 				params.id,
 				mailboxId,
 				value.labelIds as string[],
-			),
-		);
+			);
+		});
 		return jsonResponse(thread);
 	} catch (error) {
 		return handleRouteError(error, request);

@@ -24,3 +24,10 @@ Each Flaremail instance is single-tenant. Someone must bootstrap the platform: r
 - Sign-in endpoint must accept the reserved `intendant` identifier.
 - Bootstrap runbooks document deploy-time password capture and regeneration.
 - OIDC and mail APIs reject intendant tokens for user-scoped operations that require a **primary mailbox**.
+
+## Amendment (2026-07-12)
+
+Superseded in part by [ADR-0006](./0006-system-mailbox-access-by-role.md):
+
+- The **intendant** may read and send mail on **system mailboxes** only (`postmaster@`, `noreply@`, and system-managed aliases such as `abuse@`).
+- The **intendant** still cannot hold a **primary mailbox**, **mailbox grants**, or participate in SSO.

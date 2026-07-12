@@ -6,6 +6,7 @@ import {
 	accounts,
 	invites,
 	passwordResetCodes,
+	profileFieldLocks,
 	sessions,
 } from "../db/schema";
 import { formatCode, randomToken } from "../lib/auth/crypto";
@@ -195,6 +196,11 @@ export async function getMe(db: Database, accountId: string) {
 		throw new Error("Account not found");
 	}
 	const profile = await loadAccountProfile(db, accountId);
+	const lockedRows = await db
+		.select({ fieldName: profileFieldLocks.fieldName })
+		.from(profileFieldLocks)
+		.where(eq(profileFieldLocks.accountId, accountId));
+
 	return {
 		id: account.id,
 		isIntendant: account.isIntendant,
@@ -202,6 +208,7 @@ export async function getMe(db: Database, accountId: string) {
 		status: account.status,
 		loginIdentifier: account.loginIdentifier,
 		primaryMailboxId: account.primaryMailboxId,
+		lockedFields: lockedRows.map((row) => row.fieldName),
 		profile: profile
 			? {
 					firstName: profile.firstName,

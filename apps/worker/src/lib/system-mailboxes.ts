@@ -12,15 +12,22 @@ const SYSTEM_MANAGED_LOCAL_PARTS = [
 	...SYSTEM_ALIAS_LOCAL_PARTS,
 ] as const;
 
-export function isSystemManagedLocalPart(localPart: string): boolean {
+export function isSystemManagedLocalPart(localPart: string | null | undefined): boolean {
+	if (!localPart) {
+		return false;
+	}
 	const normalized = localPart.trim().toLowerCase();
 	return (SYSTEM_MANAGED_LOCAL_PARTS as readonly string[]).includes(normalized);
 }
 
 export function isSystemManagedMailbox(mailbox: {
 	type: string;
-	localPart: string;
+	localPart?: string | null;
+	isSystemManaged?: boolean;
 }): boolean {
+	if (mailbox.isSystemManaged) {
+		return true;
+	}
 	return (
 		mailbox.type === "system" ||
 		mailbox.type === "blackhole" ||
