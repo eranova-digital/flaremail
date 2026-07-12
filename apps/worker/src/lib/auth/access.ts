@@ -1,4 +1,5 @@
 import type { Database } from "../../db/client";
+import { findDraftById } from "../messages/message-queries";
 import { assertPrincipalCanAccessMailbox } from "./mailbox-access";
 import {
 	accessibleMailboxIds,
@@ -145,4 +146,17 @@ export async function authorizeMailboxAccess(
 	mailboxId: string,
 ): Promise<void> {
 	await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+}
+
+export async function authorizeDraftCommand(
+	db: Database,
+	principal: Principal,
+	draftId: string,
+): Promise<{ mailboxId: string }> {
+	const draft = await findDraftById(db, draftId);
+	if (!draft) {
+		throw new Error("Draft not found");
+	}
+	await assertPrincipalCanAccessMailbox(db, principal, draft.actualMailboxId);
+	return { mailboxId: draft.actualMailboxId };
 }

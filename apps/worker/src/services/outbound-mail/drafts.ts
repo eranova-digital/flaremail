@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import { attachments, messages } from "../../db/schema";
+import { assertOutboundMailboxAccess } from "../../lib/messages/outbound-auth";
 import { assertCanSendFrom } from "../../lib/authorize-mailbox";
 import { loadMailboxForSend } from "../../lib/mailbox-queries";
 import { isBlackholeMailboxType } from "../../lib/mailbox-types";
@@ -29,6 +30,9 @@ export async function createDraft(
 	ctx: OutboundContext,
 	body: CreateDraftBody,
 ) {
+	await assertOutboundMailboxAccess(ctx, body.mailboxId);
+	await assertCanSendFrom(ctx.db, body.mailboxId);
+
 	const { parent, threading } = await resolveThreadingForCompose(ctx.db, body);
 
 	let to = body.to;
@@ -72,6 +76,7 @@ export async function getDraft(ctx: OutboundContext, messageId: string) {
 		throw new Error("Draft not found");
 	}
 
+	await assertOutboundMailboxAccess(ctx, draft.actualMailboxId);
 	return draft;
 }
 
@@ -86,6 +91,7 @@ export async function updateDraft(
 	}
 
 	const mailboxId = draft.actualMailboxId;
+	await assertOutboundMailboxAccess(ctx, mailboxId);
 	const mailbox = await loadMailboxForSend(ctx.db, mailboxId);
 	if (!mailbox) {
 		throw new Error("Mailbox not found or cannot send");
@@ -153,6 +159,8 @@ export async function deleteDraft(
 	if (!draft) {
 		throw new Error("Draft not found");
 	}
+
+	await assertOutboundMailboxAccess(ctx, draft.actualMailboxId);
 
 	const storedAttachments = await ctx.db
 		.select({ storageKey: attachments.storageKey })
