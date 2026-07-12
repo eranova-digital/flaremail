@@ -14,6 +14,7 @@ import {
 	signIn,
 	signOut,
 } from "../services/auth";
+import { updateAccountProfile } from "../services/accounts";
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -120,6 +121,99 @@ export async function handleGetMe(context: RouteContext) {
 			getMe(db, context.principal.accountId!),
 		);
 		return jsonResponse(me);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleUpdateMe(context: RouteContext) {
+	if (!context.principal.accountId) {
+		return validationError(context.request, "Authentication required");
+	}
+	const body = await parseJsonBody(context.request);
+	if (body instanceof Response) {
+		return body;
+	}
+	const value = body as Record<string, unknown>;
+	const profile =
+		value.profile && typeof value.profile === "object"
+			? (value.profile as Record<string, unknown>)
+			: value;
+
+	try {
+		const account = await withDb(context.env, (db) =>
+			updateAccountProfile(db, context.principal, context.principal.accountId!, {
+				profile: {
+					firstName:
+						typeof profile.firstName === "string"
+							? profile.firstName
+							: undefined,
+					lastName:
+						typeof profile.lastName === "string"
+							? profile.lastName
+							: undefined,
+					recoveryAddress:
+						profile.recoveryAddress === null
+							? null
+							: typeof profile.recoveryAddress === "string"
+								? profile.recoveryAddress
+								: undefined,
+					phone:
+						profile.phone === null
+							? null
+							: typeof profile.phone === "string"
+								? profile.phone
+								: undefined,
+					addressCountry:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).country === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).country ===
+									  "string"
+									? ((profile.address as Record<string, unknown>)
+											.country as string)
+									: undefined)
+							: undefined,
+					addressState:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).state === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).state ===
+									  "string"
+									? ((profile.address as Record<string, unknown>).state as string)
+									: undefined)
+							: undefined,
+					addressCity:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).city === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).city ===
+									  "string"
+									? ((profile.address as Record<string, unknown>).city as string)
+									: undefined)
+							: undefined,
+					addressLine1:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).line1 === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).line1 ===
+									  "string"
+									? ((profile.address as Record<string, unknown>).line1 as string)
+									: undefined)
+							: undefined,
+					addressLine2:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).line2 === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).line2 ===
+									  "string"
+									? ((profile.address as Record<string, unknown>).line2 as string)
+									: undefined)
+							: undefined,
+				},
+			}),
+		);
+		return jsonResponse(account);
 	} catch (error) {
 		return handleRouteError(error, context.request);
 	}

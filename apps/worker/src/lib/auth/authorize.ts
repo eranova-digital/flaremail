@@ -41,9 +41,6 @@ export function authorizePrincipal(
 	}
 
 	if (principal.isIntendant) {
-		if (permission === "mail_read" || permission === "mail_write") {
-			return forbidden(request);
-		}
 		return null;
 	}
 
@@ -138,6 +135,9 @@ export function permissionForPath(
 		return "platform";
 	}
 	if (path.startsWith("/api/v1/domains/")) {
+		if (path.endsWith("/local-part-policy") && method === "GET") {
+			return "domain_manage_users";
+		}
 		return "domain_admin";
 	}
 	if (method === "GET" && path === "/api/v1/mailboxes") {

@@ -1,4 +1,5 @@
 import { withDb } from "../db/client";
+import { assertPrincipalCanAccessMailbox } from "../lib/auth/mailbox-access";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -16,9 +17,13 @@ export async function handleListLabels({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		const items = await withDb(env, (db) => listLabels(db, params.mailboxId));
+		const items = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			return listLabels(db, params.mailboxId);
+		});
 		return jsonResponse({ items });
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -29,6 +34,7 @@ export async function handleCreateLabel({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const body = await parseJsonBody(request);
 	if (body instanceof Response) {
@@ -41,12 +47,13 @@ export async function handleCreateLabel({
 	}
 
 	try {
-		const label = await withDb(env, (db) =>
-			createLabel(db, params.mailboxId, {
+		const label = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			return createLabel(db, params.mailboxId, {
 				name: value.name as string,
 				color: typeof value.color === "string" ? value.color : null,
-			}),
-		);
+			});
+		});
 		return jsonResponse(label, 201);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -57,11 +64,13 @@ export async function handleGetLabel({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		const label = await withDb(env, (db) =>
-			getLabel(db, params.mailboxId, params.id),
-		);
+		const label = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			return getLabel(db, params.mailboxId, params.id);
+		});
 		return jsonResponse(label);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -72,6 +81,7 @@ export async function handleUpdateLabel({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const body = await parseJsonBody(request);
 	if (body instanceof Response) {
@@ -81,8 +91,9 @@ export async function handleUpdateLabel({
 	const value = body as Record<string, unknown>;
 
 	try {
-		const label = await withDb(env, (db) =>
-			updateLabel(db, params.mailboxId, params.id, {
+		const label = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			return updateLabel(db, params.mailboxId, params.id, {
 				name: typeof value.name === "string" ? value.name : undefined,
 				color:
 					value.color === null
@@ -90,8 +101,8 @@ export async function handleUpdateLabel({
 						: typeof value.color === "string"
 							? value.color
 							: undefined,
-			}),
-		);
+			});
+		});
 		return jsonResponse(label);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -102,9 +113,13 @@ export async function handleDeleteLabel({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		await withDb(env, (db) => removeLabel(db, params.mailboxId, params.id));
+		await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			await removeLabel(db, params.mailboxId, params.id);
+		});
 		return new Response(null, { status: 204 });
 	} catch (error) {
 		return handleRouteError(error, request);

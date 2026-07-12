@@ -1,8 +1,24 @@
+import { MailboxAccessDeniedError } from "../auth/mailbox-access";
+import { AccountAccessDeniedError } from "../auth/account-access";
 import { EmailSendError, emailSendErrorStatus } from "../messages/send-email";
 import { problemResponse, problemTitle, requestInstance } from "./problem";
 
 export function handleRouteError(error: unknown, request?: Request): Response {
 	const instance = request ? requestInstance(request) : undefined;
+
+	if (error instanceof AccountAccessDeniedError) {
+		return problemResponse(403, error.message, {
+			code: "forbidden",
+			instance,
+		});
+	}
+
+	if (error instanceof MailboxAccessDeniedError) {
+		return problemResponse(403, error.message, {
+			code: "forbidden",
+			instance,
+		});
+	}
 
 	if (error instanceof EmailSendError) {
 		const status = emailSendErrorStatus(error.code);

@@ -7,13 +7,21 @@ import {
 	handleResetPassword,
 	handleSignIn,
 	handleSignOut,
+	handleUpdateMe,
 } from "../controllers/auth";
 import {
 	handleAssignRole,
 	handleCreatePasswordResetCode,
+	handleGetAccount,
+	handleGetDomainLocalPartPolicy,
 	handleInviteAccount,
 	handleListAccounts,
+	handleRemoveAccount,
+	handleSuggestInviteLocalPart,
 	handleSuspendAccount,
+	handleUnsuspendAccount,
+	handleUpdateAccount,
+	handleUpdateDomainLocalPartPolicy,
 } from "../controllers/accounts";
 import {
 	handleCreateApiKey,
@@ -38,6 +46,7 @@ export const authRoutes: RouteDefinition[] = [
 	{ method: "POST", path: `${prefix}/auth/activate`, auth: false, handler: handleActivateInvite },
 	{ method: "POST", path: `${prefix}/auth/reset-password`, auth: false, handler: handleResetPassword },
 	{ method: "GET", path: `${prefix}/auth/me`, handler: handleGetMe },
+	{ method: "PATCH", path: `${prefix}/auth/me`, handler: handleUpdateMe },
 	{
 		method: "POST",
 		path: `${prefix}/auth/intendant/regenerate-password`,
@@ -45,13 +54,32 @@ export const authRoutes: RouteDefinition[] = [
 	},
 
 	{ method: "GET", path: `${prefix}/accounts`, handler: handleListAccounts },
+	{ method: "GET", path: `${prefix}/accounts/:id`, handler: handleGetAccount },
+	{ method: "PATCH", path: `${prefix}/accounts/:id`, handler: handleUpdateAccount },
 	{ method: "POST", path: `${prefix}/accounts/invite`, handler: handleInviteAccount },
+	{
+		method: "POST",
+		path: `${prefix}/accounts/invite/suggest-local-part`,
+		handler: handleSuggestInviteLocalPart,
+	},
 	{ method: "POST", path: `${prefix}/accounts/assign-role`, handler: handleAssignRole },
 	{ method: "POST", path: `${prefix}/accounts/:id/suspend`, handler: handleSuspendAccount },
+	{ method: "POST", path: `${prefix}/accounts/:id/unsuspend`, handler: handleUnsuspendAccount },
+	{ method: "DELETE", path: `${prefix}/accounts/:id`, handler: handleRemoveAccount },
 	{
 		method: "POST",
 		path: `${prefix}/accounts/:id/password-reset-code`,
 		handler: handleCreatePasswordResetCode,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/domains/:domainId/local-part-policy`,
+		handler: handleGetDomainLocalPartPolicy,
+	},
+	{
+		method: "PATCH",
+		path: `${prefix}/domains/:domainId/local-part-policy`,
+		handler: handleUpdateDomainLocalPartPolicy,
 	},
 
 	{ method: "GET", path: `${prefix}/api-keys`, handler: handleListApiKeys },

@@ -121,7 +121,7 @@ export class ComposeSendController {
 				to: recipients,
 				cc: parseRecipients(current.cc),
 				bcc: parseRecipients(current.bcc),
-				subject: current.subject || undefined,
+				subject: current.subject ?? "",
 				text: current.body,
 				html: isEmptyEditorHtml(current.bodyHtml)
 					? undefined

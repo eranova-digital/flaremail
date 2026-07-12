@@ -12,7 +12,7 @@ Add authentication flows to the React web app: login page, logout, invite activa
 
 1. As a visitor, I want to see a login page when unauthenticated, so that I can access my mail.
 2. As a **user**, I want to sign in with **primary mailbox** and password, so that I reach my inbox.
-3. As an **intendant**, I want to sign in with `intendant` and password, so that I reach platform settings.
+3. As an **intendant**, I want to sign in with `intendant` and password, so that I can reach platform settings and **system mailboxes**.
 4. As a **user**, I want to stay logged in across visits (within session policy), so that UX is smooth.
 5. As a **user**, I want to sign out from the UI, so that I end my **session** on shared computers.
 6. As an invitee, I want an activation page for my **invite code**, so that I can set my password and profile.
@@ -35,7 +35,7 @@ Add authentication flows to the React web app: login page, logout, invite activa
 - Post-login redirect: return URL or default inbox (primary mailbox).
 - Role-aware navigation: hide platform admin links from `user`/`manager` (coarse; full admin UI separate spec).
 - TanStack Query: invalidate on login/logout; 401 interceptor → login.
-- Intendant post-login: redirect to platform admin area (domains), not mail inbox.
+- Intendant post-login: redirect to `/` (mailbox picker); **system mailboxes** appear in the switcher. Platform admin remains at `/settings`.
 - Activation form: invite code (from URL query `?code=` optional), password, confirm password, profile fields per locks.
 - Match existing web design system and component patterns.
 

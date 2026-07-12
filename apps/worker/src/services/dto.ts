@@ -174,6 +174,7 @@ export function toMailboxDto(mailbox: {
 		id: mailbox.id,
 		domainId: mailbox.domainId,
 		address: mailbox.address,
+		localPart: mailbox.localPart,
 		type: mailbox.type,
 		aliasTargetId: mailbox.aliasTargetId,
 		aliasTargetAddress: mailbox.aliasTargetAddress,

@@ -1,6 +1,7 @@
 import { randomToken, sha256Hex } from "./crypto";
 
-const ITERATIONS = 210_000;
+// Cloudflare Workers Web Crypto caps PBKDF2 at 100_000 iterations.
+const ITERATIONS = 100_000;
 
 function toBase64(bytes: Uint8Array): string {
 	let binary = "";

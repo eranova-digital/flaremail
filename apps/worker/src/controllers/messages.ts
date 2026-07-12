@@ -1,4 +1,5 @@
 import { withDb, type Database } from "../db/client";
+import { assertPrincipalCanAccessMailbox } from "../lib/auth/mailbox-access";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -21,6 +22,7 @@ function outboundMail(env: Env, db: Database) {
 export async function handleSendMessage({
 	request,
 	env,
+	principal,
 }: RouteContext): Promise<Response> {
 	const body = await parseJsonBody(request);
 	if (body instanceof Response) {
@@ -29,9 +31,10 @@ export async function handleSendMessage({
 
 	try {
 		const payload = parseSendMessageBody(body);
-		const message = await withDb(env, async (db) =>
-			outboundMail(env, db).send(payload.mailboxId, payload),
-		);
+		const message = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, payload.mailboxId);
+			return outboundMail(env, db).send(payload.mailboxId, payload);
+		});
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -41,6 +44,7 @@ export async function handleSendMessage({
 export async function handleCreateDraft({
 	request,
 	env,
+	principal,
 }: RouteContext): Promise<Response> {
 	const body = await parseJsonBody(request);
 	if (body instanceof Response) {
@@ -49,9 +53,10 @@ export async function handleCreateDraft({
 
 	try {
 		const payload = parseCreateDraftBody(body);
-		const message = await withDb(env, async (db) =>
-			outboundMail(env, db).createDraft(payload),
-		);
+		const message = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, payload.mailboxId);
+			return outboundMail(env, db).createDraft(payload);
+		});
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
 		return handleRouteError(error, request);

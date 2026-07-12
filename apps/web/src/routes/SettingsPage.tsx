@@ -4,11 +4,14 @@ import { Link, useSearchParams } from "react-router-dom";
 import { DomainSection } from "@/components/settings/DomainSection";
 import { MailboxSection } from "@/components/settings/MailboxSection";
 import { AccountsSection } from "@/components/settings/AccountsSection";
+import { ProfileSection } from "@/components/settings/ProfileSection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { canAccessAccountsTab } from "@/lib/accounts/permissions";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
-const TABS = ["domains", "mailboxes", "accounts"] as const;
+const TABS = ["profile", "domains", "mailboxes", "accounts"] as const;
 type SettingsTab = (typeof TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -16,9 +19,15 @@ function isSettingsTab(value: string | null): value is SettingsTab {
 }
 
 export function SettingsPage() {
+	const { account } = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tabParam = searchParams.get("tab");
-	const activeTab: SettingsTab = isSettingsTab(tabParam) ? tabParam : "domains";
+	const showAccounts = canAccessAccountsTab(account);
+	const activeTab: SettingsTab = isSettingsTab(tabParam)
+		? tabParam === "accounts" && !showAccounts
+			? "profile"
+			: tabParam
+		: "profile";
 
 	const handleTabChange = (value: string) => {
 		setSearchParams(
@@ -50,19 +59,27 @@ export function SettingsPage() {
 			<main className="mx-auto max-w-3xl px-6 py-8">
 				<Tabs value={activeTab} onValueChange={handleTabChange}>
 					<TabsList>
+						<TabsTrigger value="profile">Profile</TabsTrigger>
 						<TabsTrigger value="domains">Domains</TabsTrigger>
 						<TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
-						<TabsTrigger value="accounts">Accounts</TabsTrigger>
+						{showAccounts ? (
+							<TabsTrigger value="accounts">Accounts</TabsTrigger>
+						) : null}
 					</TabsList>
+					<TabsContent value="profile">
+						<ProfileSection />
+					</TabsContent>
 					<TabsContent value="domains">
 						<DomainSection />
 					</TabsContent>
 					<TabsContent value="mailboxes">
 						<MailboxSection />
 					</TabsContent>
-					<TabsContent value="accounts">
-						<AccountsSection />
-					</TabsContent>
+					{showAccounts ? (
+						<TabsContent value="accounts">
+							<AccountsSection />
+						</TabsContent>
+					) : null}
 				</Tabs>
 			</main>
 		</div>

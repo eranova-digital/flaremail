@@ -79,6 +79,7 @@ Common `code` values:
 | `missing-query-parameter` | 400 | Required query param missing |
 | `bad-request` | 400 | General client error |
 | `unauthorized` | 401 | Missing or invalid Bearer token |
+| `forbidden` | 403 | Authenticated but not permitted for this action or mailbox |
 | `not-found` | 404 | Resource not found |
 | `content-too-large` | 413 | Message, headers, or attachments too large |
 | `rate-limit-exceeded` | 429 | Cloudflare Email Sending rate/daily limit |
@@ -206,6 +207,22 @@ Loop validation emails carry a per-run token and are **consumed** by the inbound
 For `type: "alias"`, provide **either** `aliasTargetId` (UUID of a receiving mailbox) **or** `aliasTargetAddress` (email string) — not both. Aliases cannot send mail.
 
 **Response:** `{ id, domainId, address, type, aliasTargetId, aliasTargetAddress, isActive, isSystemManaged }`
+
+### Mailbox access
+
+Which mailboxes a principal sees in `GET /mailboxes` and may use on mail APIs (`threads`, `messages`, `labels`, `search`, send/draft) depends on **role** and assignments. See [ADR-0006](./adr/0006-system-mailbox-access-by-role.md).
+
+| Role | Visible mailboxes | Mail read/send |
+|------|-------------------|----------------|
+| `user` | **Primary mailbox** + **mailbox grants** | Same set |
+| `manager` | Same as `user` | Same set |
+| `admin` | All mailboxes on assigned **domains** | Same set (includes **system mailboxes** on those domains) |
+| `superadmin` | All mailboxes on the instance | Same set |
+| `intendant` | All **system mailboxes** (`isSystemManaged: true`) | **System mailboxes** only |
+
+Mail endpoints require `mailboxId` (query param or body). Requests for a mailbox outside the principal's scope return **403** (`code: forbidden`).
+
+**System mailboxes** are auto-provisioned per domain: `postmaster@` (`system`), `noreply@` (`blackhole`), `abuse@` (alias → postmaster). They cannot be edited or deleted.
 
 ---
 

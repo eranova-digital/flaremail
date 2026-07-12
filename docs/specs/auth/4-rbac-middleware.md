@@ -17,7 +17,7 @@ Replace `requireAuth` with **principal resolution** + **authorization**. Attach 
 5. As an **admin**, I want full CRUD on **mailboxes** and **accounts** within my **domains**, so that I can run the domain.
 6. As an **admin**, I want to be blocked from registering new **domains**, so that platform topology stays controlled.
 7. As a **superadmin**, I want platform-wide access except creating **superadmins**, so that delegation is safe.
-8. As an **intendant**, I want platform-wide management without mail APIs requiring a **mailbox**, so that break-glass works.
+8. As an **intendant**, I want read/send access to **system mailboxes** without a **primary mailbox**, so that I can monitor `postmaster@` and operate break-glass.
 9. As an API consumer, I want 401 when unauthenticated and 403 when authenticated but forbidden, so that errors are actionable.
 10. As a **suspended account**, I want all mutating and reading mail APIs blocked, so that suspension is enforced uniformly.
 11. As a platform, I want system **mailboxes** protected from destructive edits by non-platform roles, preserving existing `isSystemManaged` intent under RBAC.
@@ -32,7 +32,7 @@ Replace `requireAuth` with **principal resolution** + **authorization**. Attach 
 - Extend `RouteContext` with `principal: Principal` where `Principal` includes accountId, role, domainIds, sharedMailboxIds (or wildcard per domain), primaryMailboxId, grantMailboxIds.
 - Route definitions gain optional `permission` metadata or centralized permission map keyed by method+path.
 - Permission matrix derived from grilling decisions (document in code as enum/const).
-- Intendant: allow platform routes (domains, accounts, roles, oidc clients); deny mail read/send without mailbox.
+- Intendant: allow platform routes (domains, accounts, roles, oidc clients); allow mail read/send on **system mailboxes** only (enforced by list filter + per-request mailbox check).
 - Replace OpenAPI `bearerAuth` with documented multi-scheme security (session cookie, API key bearer, OIDC JWT).
 - Deprecate env `API_BEARER_TOKEN` check in favor of new resolution chain (with migration window if needed).
 
@@ -40,7 +40,8 @@ Replace `requireAuth` with **principal resolution** + **authorization**. Attach 
 
 | Action | user | manager | admin | superadmin | intendant |
 |--------|------|---------|-------|------------|-----------|
-| Read own mail | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Read own mail | ✓ | ✓ | ✓ | ✓ | system only |
+| Read system mail | ✗ | ✗ | ✓* | ✓ | ✓ |
 | Register domain | ✗ | ✗ | ✗ | ✓ | ✓ |
 | Invite user | ✗ | ✓* | ✓* | ✓ | ✓ |
 | Suspend account | ✗ | ✓* | ✓* | ✓ | ✓ |

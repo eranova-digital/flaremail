@@ -1,4 +1,5 @@
 import { withDb } from "../db/client";
+import { assertPrincipalCanAccessMailbox } from "../lib/auth/mailbox-access";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -80,9 +81,13 @@ export async function handleGetMailbox({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		const mailbox = await withDb(env, (db) => getMailbox(db, params.id));
+		const mailbox = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, params.id);
+			return getMailbox(db, params.id);
+		});
 		return jsonResponse(mailbox);
 	} catch (error) {
 		return handleRouteError(error, request);

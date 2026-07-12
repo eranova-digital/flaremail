@@ -1,4 +1,5 @@
 import { withDb } from "../db/client";
+import { assertPrincipalCanAccessMailbox } from "../lib/auth/mailbox-access";
 import { parseLimit } from "../lib/http/cursor-pagination";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
@@ -18,6 +19,7 @@ export async function handleGetMessage({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const mailboxId = requireQueryParam(request, "mailboxId");
 	if (mailboxId instanceof Response) {
@@ -25,9 +27,10 @@ export async function handleGetMessage({
 	}
 
 	try {
-		const message = await withDb(env, async (db) =>
-			readMessageFull(db, env.BUCKET, params.id, mailboxId),
-		);
+		const message = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return readMessageFull(db, env.BUCKET, params.id, mailboxId);
+		});
 		return jsonResponse(message);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -38,6 +41,7 @@ export async function handleGetMessagePreview({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const mailboxId = requireQueryParam(request, "mailboxId");
 	if (mailboxId instanceof Response) {
@@ -45,9 +49,10 @@ export async function handleGetMessagePreview({
 	}
 
 	try {
-		const message = await withDb(env, (db) =>
-			readMessagePreview(db, params.id, mailboxId),
-		);
+		const message = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return readMessagePreview(db, params.id, mailboxId);
+		});
 		return jsonResponse(message);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -57,6 +62,7 @@ export async function handleGetMessagePreview({
 export async function handleSearch({
 	request,
 	env,
+	principal,
 }: RouteContext): Promise<Response> {
 	const body = await parseJsonBody(request);
 	if (body instanceof Response) {
@@ -72,15 +78,17 @@ export async function handleSearch({
 	}
 
 	try {
-		const result = await withDb(env, (db) =>
-			searchMessages(db, value.mailboxId as string, value.query as string, {
+		const mailboxId = value.mailboxId as string;
+		const result = await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return searchMessages(db, mailboxId, value.query as string, {
 				cursor: typeof value.cursor === "string" ? value.cursor : null,
 				limit:
 					typeof value.limit === "number"
 						? value.limit
 						: parseLimit(null),
-			}),
-		);
+			});
+		});
 		return jsonResponse(result);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -91,6 +99,7 @@ export async function handleDownloadRawMessage({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	const mailboxId = requireQueryParam(request, "mailboxId");
 	if (mailboxId instanceof Response) {
@@ -98,9 +107,10 @@ export async function handleDownloadRawMessage({
 	}
 
 	try {
-		return await withDb(env, (db) =>
-			downloadRawMessage(db, env.BUCKET, params.id, mailboxId),
-		);
+		return await withDb(env, async (db) => {
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return downloadRawMessage(db, env.BUCKET, params.id, mailboxId);
+		});
 	} catch (error) {
 		return handleRouteError(error, request);
 	}
