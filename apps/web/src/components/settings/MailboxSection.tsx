@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Trash2, Users } from "lucide-react";
+import { ChevronDown, Inbox, Trash2, Users } from "lucide-react";
 
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { LegacyCombobox } from "@/components/ui/legacy-combobox";
 import {
 	InputGroup,
@@ -346,19 +348,32 @@ export function MailboxSection() {
 			</Card>
 
 			{createMailbox.isError ? (
-				<p className="text-destructive text-sm">{getErrorMessage(createMailbox.error)}</p>
+				<Alert tone="destructive" title="Couldn't create mailbox">
+					<p>{getErrorMessage(createMailbox.error)}</p>
+				</Alert>
 			) : null}
 
 			{mailboxesQuery.isLoading ? (
 				<div className="space-y-2">
 					{Array.from({ length: 3 }).map((_, index) => (
-						<Skeleton key={index} className="h-14 w-full" />
+						<Skeleton key={index} className="h-14 w-full rounded-lg" />
 					))}
 				</div>
 			) : mailboxesQuery.isError ? (
-				<p className="text-destructive text-sm">{getErrorMessage(mailboxesQuery.error)}</p>
+				<Alert tone="destructive" title="Couldn't load mailboxes">
+					<p>{getErrorMessage(mailboxesQuery.error)}</p>
+				</Alert>
 			) : mailboxes.length === 0 ? (
-				<p className="text-muted-foreground text-sm">No mailboxes yet. Add one above.</p>
+				<Card className="gap-0 rounded-lg py-0">
+					<CardContent className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+						<Inbox className="text-muted-foreground/60 size-6" aria-hidden />
+						<p className="text-sm font-medium">No mailboxes yet</p>
+						<p className="text-muted-foreground max-w-sm text-sm">
+							Create a shared mailbox or alias above to start routing mail on
+							your domains.
+						</p>
+					</CardContent>
+				</Card>
 			) : (
 				<div className="space-y-4">
 					{mailboxGroups.map((group) => (
@@ -479,6 +494,7 @@ function MailboxRow({
 }) {
 	const updateMailbox = useUpdateMailbox();
 	const deleteMailbox = useDeleteMailbox();
+	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
 	if (!mailbox.id) {
 		return null;
@@ -492,13 +508,9 @@ function MailboxRow({
 	};
 
 	const handleDelete = () => {
-		const confirmed = window.confirm(
-			`Delete mailbox "${mailbox.address}"? This permanently removes all messages in this mailbox.`,
-		);
-		if (!confirmed) {
-			return;
-		}
-		deleteMailbox.mutate(mailbox.id!);
+		deleteMailbox.mutate(mailbox.id!, {
+			onSettled: () => setConfirmingDelete(false),
+		});
 	};
 
 	const isPending = updateMailbox.isPending || deleteMailbox.isPending;
@@ -527,7 +539,7 @@ function MailboxRow({
 						{mailbox.type === "alias" && aliasTargetLabel ? (
 							<span>→ {aliasTargetLabel}</span>
 						) : null}
-						<Badge variant={mailbox.isActive ? "default" : "secondary"}>
+						<Badge variant={mailbox.isActive ? "success" : "secondary"}>
 							{mailbox.isActive ? "Active" : "Inactive"}
 						</Badge>
 					</div>
@@ -557,7 +569,7 @@ function MailboxRow({
 							<Button
 								variant="ghost"
 								size="icon"
-								onClick={handleDelete}
+								onClick={() => setConfirmingDelete(true)}
 								disabled={isPending}
 								aria-label={`Delete ${mailbox.address}`}
 							>
@@ -569,8 +581,28 @@ function MailboxRow({
 			</div>
 
 			{mutationError ? (
-				<p className="text-destructive text-sm">{getErrorMessage(mutationError)}</p>
+				<Alert tone="destructive">
+					<p>{getErrorMessage(mutationError)}</p>
+				</Alert>
 			) : null}
+
+			<ConfirmDialog
+				open={confirmingDelete}
+				onOpenChange={setConfirmingDelete}
+				title={`Delete ${mailbox.address}?`}
+				description={
+					<>
+						<p>
+							This permanently removes the mailbox and{" "}
+							<strong>every message stored in it</strong>.
+						</p>
+						<p>This cannot be undone.</p>
+					</>
+				}
+				confirmLabel="Delete mailbox"
+				onConfirm={handleDelete}
+				pending={deleteMailbox.isPending}
+			/>
 		</li>
 	);
 }

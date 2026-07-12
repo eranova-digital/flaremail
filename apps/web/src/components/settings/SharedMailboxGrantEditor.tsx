@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
+import { Users } from "lucide-react";
 
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAccounts } from "@/hooks/use-accounts";
 import {
 	useGrantSharedMailboxAccess,
@@ -56,43 +60,64 @@ export function SharedMailboxGrantEditor({
 	return (
 		<div className="space-y-4">
 			{grantsQuery.isLoading ? (
-				<p className="text-muted-foreground text-sm">Loading users…</p>
-			) : (grantsQuery.data ?? []).length === 0 ? (
-				<p className="text-muted-foreground text-sm">
-					No users have access to this mailbox yet.
-				</p>
-			) : (
-				<ul className="space-y-2">
-					{grantsQuery.data?.map((holder) => (
-						<li
-							key={holder.accountId}
-							className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
-						>
-							<div className="min-w-0">
-								<p className="truncate font-medium">{holder.displayName}</p>
-								<p className="text-muted-foreground truncate text-xs">
-									{holder.loginIdentifier}
-								</p>
-							</div>
-							<div className="flex shrink-0 items-center gap-2">
-								<Badge variant="secondary">{holder.status}</Badge>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={revokeMutation.isPending}
-									onClick={() =>
-										revokeMutation.mutate({
-											accountId: holder.accountId,
-											mailboxId,
-										})
-									}
-								>
-									Revoke
-								</Button>
-							</div>
-						</li>
+				<div className="space-y-2">
+					{Array.from({ length: 2 }).map((_, index) => (
+						<Skeleton key={index} className="h-14 w-full rounded-lg" />
 					))}
-				</ul>
+				</div>
+			) : (grantsQuery.data ?? []).length === 0 ? (
+				<Card className="gap-0 rounded-lg py-0">
+					<CardContent className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+						<Users className="text-muted-foreground/60 size-6" aria-hidden />
+						<p className="text-sm font-medium">No one has access yet</p>
+						<p className="text-muted-foreground max-w-sm text-sm">
+							Grant a user access below so they can read and send from this
+							mailbox.
+						</p>
+					</CardContent>
+				</Card>
+			) : (
+				<Card className="gap-0 rounded-lg py-0">
+					<CardContent className="p-0">
+						<ul className="divide-border divide-y">
+							{grantsQuery.data?.map((holder) => (
+								<li
+									key={holder.accountId}
+									className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+								>
+									<div className="min-w-0">
+										<p className="truncate font-medium">{holder.displayName}</p>
+										<p className="text-muted-foreground truncate text-xs">
+											{holder.loginIdentifier}
+										</p>
+									</div>
+									<div className="flex shrink-0 items-center gap-2">
+										<Badge
+											variant={
+												holder.status === "active" ? "success" : "secondary"
+											}
+										>
+											{holder.status}
+										</Badge>
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={revokeMutation.isPending}
+											onClick={() =>
+												revokeMutation.mutate({
+													accountId: holder.accountId,
+													mailboxId,
+												})
+											}
+										>
+											Revoke
+										</Button>
+									</div>
+								</li>
+							))}
+						</ul>
+					</CardContent>
+				</Card>
 			)}
 
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -118,7 +143,11 @@ export function SharedMailboxGrantEditor({
 					Grant access
 				</Button>
 			</div>
-			{error ? <p className="text-destructive text-sm">{error}</p> : null}
+			{error ? (
+				<Alert tone="destructive" title="Couldn't grant access">
+					<p>{error}</p>
+				</Alert>
+			) : null}
 		</div>
 	);
 }

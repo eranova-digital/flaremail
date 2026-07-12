@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Dialog,
 	DialogContent,
@@ -72,6 +73,7 @@ export function AccountDetailDialog({
 	const [allSharedMailboxes, setAllSharedMailboxes] = useState(false);
 	const [resetCode, setResetCode] = useState<string | null>(null);
 	const [inviteCode, setInviteCode] = useState<string | null>(null);
+	const [confirmingRemove, setConfirmingRemove] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const target = detailQuery.data;
@@ -542,24 +544,42 @@ export function AccountDetailDialog({
 							{canRemoveTarget(actor, target) ? (
 								<Button
 									variant="destructive"
-									onClick={() => {
-										if (
-											!window.confirm(
-												`Permanently remove ${target.displayName}? This cannot be undone.`,
-											)
-										) {
-											return;
-										}
-										removeMutation.mutate(target.id, {
-											onSuccess: onClose,
-											onError: (err) => setError(getErrorMessage(err)),
-										});
-									}}
+									onClick={() => setConfirmingRemove(true)}
+									disabled={removeMutation.isPending}
 								>
 									Remove
 								</Button>
 							) : null}
 						</div>
+
+						<ConfirmDialog
+							open={confirmingRemove}
+							onOpenChange={setConfirmingRemove}
+							title={`Remove ${target.displayName}?`}
+							description={
+								<>
+									<p>
+										This permanently removes the account and its mailbox
+										access.
+									</p>
+									<p>This cannot be undone.</p>
+								</>
+							}
+							confirmLabel="Remove account"
+							onConfirm={() =>
+								removeMutation.mutate(target.id, {
+									onSuccess: () => {
+										setConfirmingRemove(false);
+										onClose();
+									},
+									onError: (err) => {
+										setConfirmingRemove(false);
+										setError(getErrorMessage(err));
+									},
+								})
+							}
+							pending={removeMutation.isPending}
+						/>
 
 						{resetCode ? (
 							<Alert tone="success" title="Password reset code issued">
