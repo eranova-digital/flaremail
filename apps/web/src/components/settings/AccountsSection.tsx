@@ -1,6 +1,5 @@
 import { InviteAccountForm } from "@/components/settings/accounts/InviteAccountForm";
 import { AccountList } from "@/components/settings/accounts/AccountList";
-import { LocalPartPolicyCard } from "@/components/settings/accounts/LocalPartPolicyCard";
 import { canAccessAccountsTab } from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
@@ -18,7 +17,6 @@ export function AccountsSection() {
 	return (
 		<div className="space-y-6">
 			<InviteAccountForm />
-			<LocalPartPolicyCard />
 			<AccountList />
 		</div>
 	);

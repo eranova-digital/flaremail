@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import { domains } from "../db/schema";
+import { isSchemaMismatchError, isUniqueViolation, schemaMismatchMessage } from "../lib/db/postgres-error";
 import { normalizeEmailAddress } from "../lib/normalize-email-address";
 import { provisionSystemMailboxes } from "../lib/system-mailboxes";
 import { deleteDomainCascade } from "./cascade-delete";
@@ -51,19 +52,25 @@ export async function createDomain(
 
 	try {
 		const row = await db.transaction(async (tx) => {
-			const [created] = await tx
-				.insert(domains)
-				.values({
-					id,
-					name: normalized,
-					isActive: true,
-					catchAllEnabled: false,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
+			await tx.insert(domains).values({
+				id,
+				name: normalized,
+				isActive: true,
+				catchAllEnabled: false,
+				createdAt: now,
+				updatedAt: now,
+			});
 
-			await provisionSystemMailboxes(tx, created.id, created.name);
+			await provisionSystemMailboxes(tx, id, normalized);
+
+			const [created] = await tx
+				.select()
+				.from(domains)
+				.where(eq(domains.id, id))
+				.limit(1);
+			if (!created) {
+				throw new Error("Failed to create domain");
+			}
 			return created;
 		});
 
@@ -77,8 +84,15 @@ export async function createDomain(
 		}
 
 		return getDomain(db, row.id);
-	} catch {
-		throw new Error("Domain already exists");
+	} catch (error) {
+		if (isUniqueViolation(error)) {
+			throw new Error("Domain already exists");
+		}
+		if (isSchemaMismatchError(error)) {
+			throw new Error(schemaMismatchMessage());
+		}
+		console.error("Domain creation failed:", error);
+		throw error instanceof Error ? error : new Error("Failed to create domain");
 	}
 }
 

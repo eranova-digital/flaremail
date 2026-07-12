@@ -36,6 +36,10 @@ export function ProfileSection() {
 		return null;
 	}
 
+	if (account.isIntendant) {
+		return null;
+	}
+
 	const locked = new Set(account.lockedFields ?? []);
 
 	const handleSave = async () => {

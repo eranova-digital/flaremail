@@ -9,12 +9,7 @@ export const MAILBOX_TYPES = [
 
 export type MailboxType = (typeof MAILBOX_TYPES)[number];
 
-export const USER_CREATABLE_MAILBOX_TYPES = [
-	"primary",
-	"secondary",
-	"shared",
-	"alias",
-] as const;
+export const USER_CREATABLE_MAILBOX_TYPES = ["shared", "alias"] as const;
 
 export type UserCreatableMailboxType =
 	(typeof USER_CREATABLE_MAILBOX_TYPES)[number];

@@ -54,6 +54,27 @@ export type InviteAccountInput = {
 	addressLine2?: string;
 	lockedFields?: string[];
 	sendInviteEmail?: boolean;
+	assignedDomainIds?: string[];
+	sharedMailboxIds?: string[];
+	allSharedMailboxes?: boolean;
+};
+
+export type InvitePreview = {
+	address: string;
+	lockedFields: string[];
+	profile: {
+		firstName: string;
+		lastName: string;
+		recoveryAddress: string | null;
+		phone: string | null;
+		address: {
+			country: string | null;
+			state: string | null;
+			city: string | null;
+			line1: string | null;
+			line2: string | null;
+		};
+	} | null;
 };
 
 async function parseJson<T>(response: Response): Promise<T> {
@@ -75,6 +96,14 @@ export async function fetchAccount(id: string): Promise<AccountDetail> {
 		credentials: "include",
 	});
 	return parseJson<AccountDetail>(response);
+}
+
+export async function fetchInvitePreview(code: string): Promise<InvitePreview> {
+	const response = await fetch(
+		apiUrl(`/auth/invite-preview?code=${encodeURIComponent(code.trim())}`),
+		{ credentials: "include" },
+	);
+	return parseJson<InvitePreview>(response);
 }
 
 export async function inviteAccount(
@@ -177,6 +206,66 @@ export async function createPasswordResetCode(id: string): Promise<string> {
 	});
 	const data = await parseJson<{ code: string }>(response);
 	return data.code;
+}
+
+export async function regenerateInviteCode(id: string): Promise<string> {
+	const response = await fetch(apiUrl(`/accounts/${id}/regenerate-invite`), {
+		method: "POST",
+		credentials: "include",
+	});
+	const data = await parseJson<{ inviteCode: string }>(response);
+	return data.inviteCode;
+}
+
+export type MailboxGrantHolder = {
+	accountId: string;
+	loginIdentifier: string;
+	displayName: string;
+	role: AccountRole | null;
+	status: string;
+};
+
+export async function fetchMailboxGrantHolders(
+	mailboxId: string,
+): Promise<MailboxGrantHolder[]> {
+	const response = await fetch(apiUrl(`/mailboxes/${mailboxId}/grants`), {
+		credentials: "include",
+	});
+	const data = await parseJson<{ items: MailboxGrantHolder[] }>(response);
+	return data.items;
+}
+
+export async function grantSharedMailboxAccess(input: {
+	accountId: string;
+	mailboxId: string;
+}): Promise<void> {
+	const response = await fetch(
+		apiUrl(`/accounts/${input.accountId}/mailbox-grants`),
+		{
+			method: "POST",
+			credentials: "include",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ mailboxId: input.mailboxId }),
+		},
+	);
+	await parseJson(response);
+}
+
+export async function revokeSharedMailboxAccess(input: {
+	accountId: string;
+	mailboxId: string;
+}): Promise<void> {
+	const response = await fetch(
+		apiUrl(`/accounts/${input.accountId}/mailbox-grants/${input.mailboxId}`),
+		{
+			method: "DELETE",
+			credentials: "include",
+		},
+	);
+	if (!response.ok) {
+		const body = await response.json().catch(() => null);
+		throw new Error(getErrorMessage(body) ?? "Revoke failed");
+	}
 }
 
 export async function fetchLocalPartPolicy(

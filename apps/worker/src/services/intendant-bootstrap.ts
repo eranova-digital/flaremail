@@ -7,6 +7,7 @@ import { hashPassword } from "../lib/auth/password";
 
 const INTENDANT_LOGIN = "intendant";
 
+/** Called only from POST /api/v1/bootstrap. */
 export async function ensureIntendantBootstrapped(
 	db: Database,
 ): Promise<{ created: boolean; password?: string }> {
@@ -43,10 +44,6 @@ export async function ensureIntendantBootstrapped(
 		lastName: "Account",
 		updatedAt: now,
 	});
-
-	console.warn(
-		`[flaremail] Intendant account created. Sign in with loginIdentifier="${INTENDANT_LOGIN}" and password="${password}"`,
-	);
 
 	return { created: true, password };
 }

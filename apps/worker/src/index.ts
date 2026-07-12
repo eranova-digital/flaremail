@@ -86,11 +86,6 @@ export default {
 	},
 
 	async fetch(request, env, _ctx): Promise<Response> {
-		try {
-			await withDb(env, (db) => import("./services/auth").then((m) => m.bootstrapAuth(db)));
-		} catch (error) {
-			console.error("Auth bootstrap error:", error);
-		}
 		return handleFetchRequest(request, env);
 	},
 

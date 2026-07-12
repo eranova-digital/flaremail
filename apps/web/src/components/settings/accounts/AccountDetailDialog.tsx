@@ -13,6 +13,7 @@ import {
 	useAccount,
 	useAssignAccountRole,
 	useCreatePasswordResetCode,
+	useRegenerateInviteCode,
 	useRemoveAccount,
 	useSuspendAccount,
 	useUnsuspendAccount,
@@ -49,11 +50,13 @@ export function AccountDetailDialog({
 	const unsuspendMutation = useUnsuspendAccount();
 	const removeMutation = useRemoveAccount();
 	const resetCodeMutation = useCreatePasswordResetCode();
+	const regenerateInviteMutation = useRegenerateInviteCode();
 
 	const [role, setRole] = useState<AccountRole>("user");
 	const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
 	const [profileValues, setProfileValues] = useState<Record<string, string>>({});
 	const [resetCode, setResetCode] = useState<string | null>(null);
+	const [inviteCode, setInviteCode] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
 	const target = detailQuery.data;
@@ -227,6 +230,20 @@ export function AccountDetailDialog({
 							<Button onClick={handleSave} disabled={updateMutation.isPending}>
 								Save profile
 							</Button>
+							{target.status === "pending" ? (
+								<Button
+									variant="outline"
+									onClick={() =>
+										regenerateInviteMutation.mutate(target.id, {
+											onSuccess: (code) => setInviteCode(code),
+											onError: (err) => setError(getErrorMessage(err)),
+										})
+									}
+									disabled={regenerateInviteMutation.isPending}
+								>
+									Show invite code
+								</Button>
+							) : null}
 							{canSuspendTarget(actor, target) && target.status !== "suspended" ? (
 								<Button
 									variant="outline"
@@ -290,6 +307,18 @@ export function AccountDetailDialog({
 							<p className="text-sm">
 								Password reset code: <strong>{resetCode}</strong>
 							</p>
+						) : null}
+						{inviteCode ? (
+							<div className="bg-muted rounded-md px-4 py-3 text-sm">
+								<p className="font-medium">Invite code</p>
+								<p>
+									Code: <strong className="font-mono">{inviteCode}</strong>
+								</p>
+								<p className="text-muted-foreground mt-1 text-xs">
+									Share this code with the user to complete activation. Previous
+									unused codes were invalidated.
+								</p>
+							</div>
 						) : null}
 						{error ? <p className="text-destructive text-sm">{error}</p> : null}
 					</div>

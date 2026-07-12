@@ -5,6 +5,7 @@ import { MailboxLayout } from "@/components/layout/MailboxLayout";
 import { ThreadView } from "@/components/layout/ThreadView";
 import { RequireAuth } from "@/lib/auth/RequireAuth";
 import { ActivatePage } from "@/routes/ActivatePage";
+import { BootstrapPage } from "@/routes/BootstrapPage";
 import { DefaultFolderRedirect } from "@/routes/DefaultFolderRedirect";
 import { DomainValidationPage } from "@/routes/DomainValidationPage";
 import { EmptyReadingPane } from "@/routes/EmptyReadingPane";
@@ -37,6 +38,7 @@ export default function App() {
 	return (
 		<Routes>
 			<Route path="/login" element={<LoginPage />} />
+			<Route path="/bootstrap" element={<BootstrapPage />} />
 			<Route path="/activate" element={<ActivatePage />} />
 			<Route path="/reset-password" element={<ResetPasswordPage />} />
 			<Route element={<RequireAuth />}>

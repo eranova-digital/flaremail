@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import {
@@ -7,8 +7,10 @@ import {
 	accounts,
 	domainLocalPartPolicies,
 	domains,
+	invites,
 	mailboxGrants,
 	mailboxes,
+	managerSharedMailboxAssignments,
 	profileFieldLocks,
 } from "../db/schema";
 import type { AccountRole } from "../lib/auth/types";
@@ -19,20 +21,21 @@ import {
 	assertCanRemoveAccount,
 	assertCanViewAccount,
 } from "../lib/auth/account-access";
+import { hasDomainAccess, isPlatformPrincipal } from "../lib/auth/principal";
 import {
-	accessibleMailboxIds,
-	hasDomainAccess,
-	isPlatformPrincipal,
-} from "../lib/auth/principal";
+	collectManageableMailboxIds,
+	MailboxAccessDeniedError,
+} from "../lib/auth/mailbox-access";
 import {
 	applyLocalPartPattern,
-	assertLocalPartMatchesPolicy,
+	generatePatternRandomValues,
+	getProfileFieldsUsedByPattern,
 	isValidMailboxLocalPart,
+	resolveLocalPartForInvite,
 } from "../lib/local-part-policy";
 import { createInviteRecord } from "./auth";
 import { deleteMailboxCascade } from "./cascade-delete";
 import { normalizeEmailAddress, parseEmailAddress } from "../lib/normalize-email-address";
-import { isSystemManagedMailbox } from "../lib/system-mailboxes";
 
 export const PROFILE_LOCKABLE_FIELDS = [
 	"firstName",
@@ -79,7 +82,7 @@ function toAccountListItem(
 	};
 }
 
-async function loadProfileLocks(db: Database, accountId: string) {
+export async function loadProfileLocks(db: Database, accountId: string) {
 	const rows = await db
 		.select({ fieldName: profileFieldLocks.fieldName })
 		.from(profileFieldLocks)
@@ -145,6 +148,9 @@ export async function inviteAccount(
 		addressLine2?: string | null;
 		lockedFields?: string[];
 		sendInviteEmail?: boolean;
+		assignedDomainIds?: string[];
+		sharedMailboxIds?: string[];
+		allSharedMailboxes?: boolean;
 	},
 ) {
 	if (!isPlatformPrincipal(principal) && !hasDomainAccess(principal, input.domainId)) {
@@ -172,28 +178,18 @@ export async function inviteAccount(
 		.where(eq(domainLocalPartPolicies.domainId, domain.id))
 		.limit(1);
 
-	let localPart = input.localPart.trim().toLowerCase();
 	const profileInput = {
 		firstName: input.firstName,
 		lastName: input.lastName,
 	};
 
-	if (policy?.enforced && policy.pattern) {
-		if (principal.role === "manager") {
-			assertLocalPartMatchesPolicy(
-				localPart,
-				policy.pattern,
-				profileInput,
-				true,
-			);
-		} else if (!localPart) {
-			localPart = applyLocalPartPattern(policy.pattern, profileInput);
-		}
-	}
-
-	if (!localPart || !isValidMailboxLocalPart(localPart)) {
-		throw new Error("Invalid mailbox local part");
-	}
+	const { localPart } = resolveLocalPartForInvite({
+		pattern: policy?.pattern ?? null,
+		enforced: policy?.enforced ?? false,
+		inviterIsManager: principal.role === "manager",
+		profile: profileInput,
+		requestedLocalPart: input.localPart,
+	});
 
 	const address = `${localPart}@${normalizeEmailAddress(domain.name)}`;
 	const parsed = parseEmailAddress(address);
@@ -209,6 +205,25 @@ export async function inviteAccount(
 			(PROFILE_LOCKABLE_FIELDS as readonly string[]).includes(field),
 		),
 	);
+
+	if (principal.role === "manager" && policy?.enforced && policy.pattern) {
+		for (const field of getProfileFieldsUsedByPattern(policy.pattern)) {
+			lockedFields.add(field);
+		}
+	}
+
+	const assignmentDomainIds =
+		input.assignedDomainIds?.length && (role === "admin" || role === "manager")
+			? input.assignedDomainIds
+			: role === "admin" || role === "manager"
+				? [domain.id]
+				: [];
+
+	for (const assignmentDomainId of assignmentDomainIds) {
+		if (!isPlatformPrincipal(principal) && !hasDomainAccess(principal, assignmentDomainId)) {
+			throw new Error("Forbidden domain assignment");
+		}
+	}
 
 	await db.transaction(async (tx) => {
 		await tx.insert(mailboxes).values({
@@ -256,11 +271,47 @@ export async function inviteAccount(
 			);
 		}
 
-		if (role === "admin" || role === "manager") {
+		for (const assignmentDomainId of assignmentDomainIds) {
 			await tx.insert(accountDomainAssignments).values({
 				accountId,
-				domainId: domain.id,
+				domainId: assignmentDomainId,
 			});
+		}
+
+		if (role === "manager") {
+			if (input.allSharedMailboxes) {
+				for (const assignmentDomainId of assignmentDomainIds) {
+					await tx.insert(managerSharedMailboxAssignments).values({
+						accountId,
+						domainId: assignmentDomainId,
+						mailboxId: null,
+						allSharedMailboxes: true,
+					});
+				}
+			} else if (input.sharedMailboxIds?.length) {
+				for (const sharedMailboxId of input.sharedMailboxIds) {
+					const [sharedMailbox] = await tx
+						.select({ domainId: mailboxes.domainId, type: mailboxes.type })
+						.from(mailboxes)
+						.where(eq(mailboxes.id, sharedMailboxId))
+						.limit(1);
+					if (!sharedMailbox || sharedMailbox.type !== "shared") {
+						throw new Error("Invalid shared mailbox assignment");
+					}
+					if (
+						!isPlatformPrincipal(principal) &&
+						!hasDomainAccess(principal, sharedMailbox.domainId)
+					) {
+						throw new Error("Forbidden shared mailbox assignment");
+					}
+					await tx.insert(managerSharedMailboxAssignments).values({
+						accountId,
+						domainId: sharedMailbox.domainId,
+						mailboxId: sharedMailboxId,
+						allSharedMailboxes: false,
+					});
+				}
+			}
 		}
 	});
 
@@ -347,34 +398,6 @@ export async function suspendAccount(
 		.where(eq(accounts.id, accountId));
 }
 
-export async function filterMailboxesForPrincipal<
-	T extends {
-		id: string;
-		type: string;
-		localPart?: string | null;
-		isSystemManaged?: boolean;
-	},
->(db: Database, principal: Principal, rows: T[]): Promise<T[]> {
-	if (principal.isIntendant) {
-		return rows.filter((row) => isSystemManagedMailbox(row));
-	}
-
-	if (principal.role === "superadmin") {
-		return rows;
-	}
-	const allowed = accessibleMailboxIds(principal);
-	if (principal.role === "admin") {
-		const adminMailboxes = await db
-			.select({ id: mailboxes.id })
-			.from(mailboxes)
-			.where(inArray(mailboxes.domainId, principal.domainIds));
-		for (const row of adminMailboxes) {
-			allowed.add(row.id);
-		}
-	}
-	return rows.filter((row) => allowed.has(row.id));
-}
-
 export async function getAccountDetail(
 	db: Database,
 	principal: Principal,
@@ -458,6 +481,10 @@ export async function updateAccountProfile(
 		.limit(1);
 	if (!account) {
 		throw new Error("Account not found");
+	}
+
+	if (account.isIntendant && input.profile) {
+		throw new Error("Intendant profile cannot be edited");
 	}
 
 	const existingLocks = new Set(await loadProfileLocks(db, accountId));
@@ -607,6 +634,7 @@ export async function suggestInviteLocalPart(
 	db: Database,
 	domainId: string,
 	profile: { firstName?: string; lastName?: string },
+	inviterIsManager: boolean,
 ): Promise<string | null> {
 	const [policy] = await db
 		.select()
@@ -616,7 +644,14 @@ export async function suggestInviteLocalPart(
 	if (!policy?.pattern) {
 		return null;
 	}
-	const suggested = applyLocalPartPattern(policy.pattern, profile);
+	if (inviterIsManager && !policy.enforced) {
+		return null;
+	}
+	const suggested = applyLocalPartPattern(
+		policy.pattern,
+		profile,
+		generatePatternRandomValues(),
+	);
 	return suggested && isValidMailboxLocalPart(suggested) ? suggested : null;
 }
 
@@ -626,4 +661,152 @@ export async function grantMailboxAccess(
 	mailboxId: string,
 ) {
 	await db.insert(mailboxGrants).values({ accountId, mailboxId });
+}
+
+async function assertCanGrantOnSharedMailbox(
+	db: Database,
+	principal: Principal,
+	mailboxId: string,
+): Promise<void> {
+	if (isPlatformPrincipal(principal)) {
+		const [mailbox] = await db
+			.select({ type: mailboxes.type })
+			.from(mailboxes)
+			.where(eq(mailboxes.id, mailboxId))
+			.limit(1);
+		if (!mailbox || mailbox.type !== "shared") {
+			throw new Error("Only shared mailboxes support grants");
+		}
+		return;
+	}
+
+	const manageable = await collectManageableMailboxIds(db, principal);
+	if (!manageable.has(mailboxId)) {
+		throw new MailboxAccessDeniedError(
+			"You do not have permission to manage grants for this mailbox",
+		);
+	}
+
+	const [mailbox] = await db
+		.select({ type: mailboxes.type })
+		.from(mailboxes)
+		.where(eq(mailboxes.id, mailboxId))
+		.limit(1);
+	if (!mailbox || mailbox.type !== "shared") {
+		throw new Error("Only shared mailboxes support grants");
+	}
+}
+
+export async function listMailboxGrantHolders(
+	db: Database,
+	principal: Principal,
+	mailboxId: string,
+) {
+	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
+
+	const rows = await db
+		.select({
+			accountId: mailboxGrants.accountId,
+			loginIdentifier: accounts.loginIdentifier,
+			firstName: accountProfiles.firstName,
+			lastName: accountProfiles.lastName,
+			role: accounts.role,
+			status: accounts.status,
+		})
+		.from(mailboxGrants)
+		.innerJoin(accounts, eq(accounts.id, mailboxGrants.accountId))
+		.leftJoin(accountProfiles, eq(accountProfiles.accountId, accounts.id))
+		.where(eq(mailboxGrants.mailboxId, mailboxId));
+
+	return rows.map((row) => ({
+		accountId: row.accountId,
+		loginIdentifier: row.loginIdentifier,
+		displayName:
+			[row.firstName, row.lastName].filter(Boolean).join(" ").trim() ||
+			row.loginIdentifier,
+		role: row.role,
+		status: row.status,
+	}));
+}
+
+export async function grantSharedMailboxAccess(
+	db: Database,
+	principal: Principal,
+	accountId: string,
+	mailboxId: string,
+) {
+	if (principal.role !== "manager" && !isPlatformPrincipal(principal)) {
+		throw new MailboxAccessDeniedError();
+	}
+
+	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
+	await assertCanManageAccount(db, principal, accountId);
+
+	const [target] = await db
+		.select({ role: accounts.role })
+		.from(accounts)
+		.where(eq(accounts.id, accountId))
+		.limit(1);
+	if (!target || target.role !== "user") {
+		throw new Error("Shared mailbox access can only be granted to users");
+	}
+
+	await grantMailboxAccess(db, accountId, mailboxId);
+}
+
+export async function revokeSharedMailboxAccess(
+	db: Database,
+	principal: Principal,
+	accountId: string,
+	mailboxId: string,
+) {
+	if (principal.role !== "manager" && !isPlatformPrincipal(principal)) {
+		throw new MailboxAccessDeniedError();
+	}
+
+	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
+	await assertCanManageAccount(db, principal, accountId);
+
+	await db
+		.delete(mailboxGrants)
+		.where(
+			and(
+				eq(mailboxGrants.accountId, accountId),
+				eq(mailboxGrants.mailboxId, mailboxId),
+			),
+		);
+}
+
+export async function regenerateInviteCode(
+	db: Database,
+	principal: Principal,
+	accountId: string,
+) {
+	await assertCanManageAccount(db, principal, accountId);
+
+	const [target] = await db
+		.select({ status: accounts.status })
+		.from(accounts)
+		.where(eq(accounts.id, accountId))
+		.limit(1);
+	if (!target) {
+		throw new Error("Account not found");
+	}
+	if (target.status !== "pending") {
+		throw new Error("Invite codes can only be regenerated for pending accounts");
+	}
+	if (!principal.accountId) {
+		throw new Error("Authentication required");
+	}
+
+	await db
+		.delete(invites)
+		.where(and(eq(invites.accountId, accountId), isNull(invites.usedAt)));
+
+	const inviteCode = await createInviteRecord(db, {
+		accountId,
+		createdByAccountId: principal.accountId,
+	});
+
+	return { inviteCode };
 }

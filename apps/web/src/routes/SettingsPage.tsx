@@ -3,31 +3,97 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { DomainSection } from "@/components/settings/DomainSection";
 import { MailboxSection } from "@/components/settings/MailboxSection";
+import { ManagerMailboxGrantsSection } from "@/components/settings/ManagerMailboxGrantsSection";
 import { AccountsSection } from "@/components/settings/AccountsSection";
 import { ProfileSection } from "@/components/settings/ProfileSection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { canAccessAccountsTab } from "@/lib/accounts/permissions";
+import {
+	canAccessAccountsTab,
+	canAccessDomainsTab,
+	canAccessMailboxesTab,
+	canEditOwnProfile,
+	canManageMailboxGrants,
+	canManageMailboxes,
+} from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
-const TABS = ["profile", "domains", "mailboxes", "accounts"] as const;
-type SettingsTab = (typeof TABS)[number];
+const ALL_TABS = ["profile", "domains", "mailboxes", "accounts"] as const;
+type SettingsTab = (typeof ALL_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
-	return value !== null && (TABS as readonly string[]).includes(value);
+	return value !== null && (ALL_TABS as readonly string[]).includes(value);
+}
+
+function defaultTab(
+	showProfile: boolean,
+	showDomains: boolean,
+	showMailboxes: boolean,
+	showAccounts: boolean,
+): SettingsTab {
+	if (showProfile) {
+		return "profile";
+	}
+	if (showDomains) {
+		return "domains";
+	}
+	if (showMailboxes) {
+		return "mailboxes";
+	}
+	if (showAccounts) {
+		return "accounts";
+	}
+	return "profile";
+}
+
+function resolveActiveTab(
+	tabParam: string | null,
+	showProfile: boolean,
+	showDomains: boolean,
+	showMailboxes: boolean,
+	showAccounts: boolean,
+): SettingsTab {
+	const fallback = defaultTab(
+		showProfile,
+		showDomains,
+		showMailboxes,
+		showAccounts,
+	);
+
+	if (!isSettingsTab(tabParam)) {
+		return fallback;
+	}
+	if (tabParam === "profile" && !showProfile) {
+		return fallback;
+	}
+	if (tabParam === "domains" && !showDomains) {
+		return fallback;
+	}
+	if (tabParam === "mailboxes" && !showMailboxes) {
+		return fallback;
+	}
+	if (tabParam === "accounts" && !showAccounts) {
+		return fallback;
+	}
+	return tabParam;
 }
 
 export function SettingsPage() {
 	const { account } = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tabParam = searchParams.get("tab");
+	const showProfile = canEditOwnProfile(account);
+	const showDomains = canAccessDomainsTab(account);
+	const showMailboxes = canAccessMailboxesTab(account);
 	const showAccounts = canAccessAccountsTab(account);
-	const activeTab: SettingsTab = isSettingsTab(tabParam)
-		? tabParam === "accounts" && !showAccounts
-			? "profile"
-			: tabParam
-		: "profile";
+	const activeTab = resolveActiveTab(
+		tabParam,
+		showProfile,
+		showDomains,
+		showMailboxes,
+		showAccounts,
+	);
 
 	const handleTabChange = (value: string) => {
 		setSearchParams(
@@ -59,22 +125,38 @@ export function SettingsPage() {
 			<main className="mx-auto max-w-3xl px-6 py-8">
 				<Tabs value={activeTab} onValueChange={handleTabChange}>
 					<TabsList>
-						<TabsTrigger value="profile">Profile</TabsTrigger>
-						<TabsTrigger value="domains">Domains</TabsTrigger>
-						<TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
+						{showProfile ? (
+							<TabsTrigger value="profile">Profile</TabsTrigger>
+						) : null}
+						{showDomains ? (
+							<TabsTrigger value="domains">Domains</TabsTrigger>
+						) : null}
+						{showMailboxes ? (
+							<TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
+						) : null}
 						{showAccounts ? (
 							<TabsTrigger value="accounts">Accounts</TabsTrigger>
 						) : null}
 					</TabsList>
-					<TabsContent value="profile">
-						<ProfileSection />
-					</TabsContent>
-					<TabsContent value="domains">
-						<DomainSection />
-					</TabsContent>
-					<TabsContent value="mailboxes">
-						<MailboxSection />
-					</TabsContent>
+					{showProfile ? (
+						<TabsContent value="profile">
+							<ProfileSection />
+						</TabsContent>
+					) : null}
+					{showDomains ? (
+						<TabsContent value="domains">
+							<DomainSection />
+						</TabsContent>
+					) : null}
+					{showMailboxes ? (
+						<TabsContent value="mailboxes">
+							{canManageMailboxGrants(account) ? (
+								<ManagerMailboxGrantsSection />
+							) : canManageMailboxes(account) ? (
+								<MailboxSection />
+							) : null}
+						</TabsContent>
+					) : null}
 					{showAccounts ? (
 						<TabsContent value="accounts">
 							<AccountsSection />
