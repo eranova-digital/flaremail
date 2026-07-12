@@ -27,6 +27,7 @@ import {
 } from "@/lib/selectable-mailbox";
 import {
 	groupMailboxesByDomain,
+	buildDomainNamesById,
 	type MailboxDomainGroup,
 } from "@/lib/sort-mailboxes";
 
@@ -161,10 +162,9 @@ export function MailboxSwitcher() {
 				: "inbox";
 
 	const mailboxes = getSelectableMailboxes(mailboxesQuery.data ?? []);
-	const domainNamesById = new Map(
-		(domainsQuery.data ?? []).flatMap((domain) =>
-			domain.id && domain.domain ? [[domain.id, domain.domain] as const] : [],
-		),
+	const domainNamesById = buildDomainNamesById(
+		domainsQuery.data ?? [],
+		mailboxes,
 	);
 	const active = resolveSelectableMailbox(mailboxes, mailboxId ?? null);
 	const normalMailboxes = mailboxes.filter((mailbox) => !isSystemMailbox(mailbox));

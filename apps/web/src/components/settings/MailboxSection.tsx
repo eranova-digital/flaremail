@@ -18,6 +18,7 @@ import { filterDomainsForAccount } from "@/lib/accounts/domains";
 import { canManageMailboxes } from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import {
+	buildDomainNamesById,
 	groupMailboxesByDomain,
 	type MailboxDomainGroup,
 	type MailboxTypeGroup,
@@ -41,15 +42,8 @@ export function MailboxSection() {
 	);
 	const mailboxes = mailboxesQuery.data ?? [];
 	const domainNamesById = useMemo(
-		() =>
-			new Map(
-				domains.flatMap((domain) =>
-					domain.id && domain.domain
-						? [[domain.id, domain.domain] as const]
-						: [],
-				),
-			),
-		[domains],
+		() => buildDomainNamesById(domains, mailboxes),
+		[domains, mailboxes],
 	);
 
 	const searchQuery = search.trim().toLowerCase();

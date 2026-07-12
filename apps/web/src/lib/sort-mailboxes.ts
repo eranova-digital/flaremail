@@ -62,6 +62,57 @@ export type MailboxDomainGroup = {
 	mailboxes: Mailbox[];
 };
 
+function domainPartFromAddress(address?: string): string | undefined {
+	if (!address) {
+		return undefined;
+	}
+	const at = address.lastIndexOf("@");
+	if (at === -1) {
+		return undefined;
+	}
+	const domain = address.slice(at + 1).trim();
+	return domain || undefined;
+}
+
+export function buildDomainNamesById(
+	domains: Array<{ id?: string | null; domain?: string | null }>,
+	mailboxes: Array<{ domainId?: string; address?: string }> = [],
+): Map<string, string> {
+	const map = new Map<string, string>();
+
+	for (const domain of domains) {
+		if (domain.id && domain.domain) {
+			map.set(domain.id, domain.domain);
+		}
+	}
+
+	for (const mailbox of mailboxes) {
+		if (!mailbox.domainId || map.has(mailbox.domainId)) {
+			continue;
+		}
+		const fromAddress = domainPartFromAddress(mailbox.address);
+		if (fromAddress) {
+			map.set(mailbox.domainId, fromAddress);
+		}
+	}
+
+	return map;
+}
+
+function resolveDomainName(
+	mailbox: Mailbox,
+	domainNamesById: Map<string, string>,
+): string {
+	if (mailbox.domainId) {
+		const known = domainNamesById.get(mailbox.domainId);
+		if (known) {
+			return known;
+		}
+	}
+
+	return domainPartFromAddress(mailbox.address) ?? "Unknown domain";
+}
+
 function compareMailboxesByAddress(left: Mailbox, right: Mailbox): number {
 	return (left.address ?? "").localeCompare(right.address ?? "");
 }
@@ -102,9 +153,7 @@ export function groupMailboxesByDomain(
 	const groups = new Map<string, Omit<MailboxDomainGroup, "typeGroups">>();
 
 	for (const mailbox of mailboxes) {
-		const domainName =
-			(mailbox.domainId && domainNamesById.get(mailbox.domainId)) ||
-			"Unknown domain";
+		const domainName = resolveDomainName(mailbox, domainNamesById);
 		const key = mailbox.domainId ?? domainName;
 		const group = groups.get(key);
 

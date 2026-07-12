@@ -33,7 +33,7 @@ import {
 	soleAccessibleDomainId,
 } from "@/lib/accounts/domains";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { sortMailboxes } from "@/lib/sort-mailboxes";
+import { buildDomainNamesById, sortMailboxes } from "@/lib/sort-mailboxes";
 
 const MAILBOX_TYPES: {
 	value: CreateMailboxRequest["type"];
@@ -133,15 +133,8 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 
 	const mailboxes = mailboxesQuery.data ?? [];
 	const domainNamesById = useMemo(
-		() =>
-			new Map(
-				domains.flatMap((domain) =>
-					domain.id && domain.domain
-						? [[domain.id, domain.domain] as const]
-						: [],
-				),
-			),
-		[domains],
+		() => buildDomainNamesById(domains, mailboxes),
+		[domains, mailboxes],
 	);
 	const receivingMailboxes = useMemo(
 		() =>
