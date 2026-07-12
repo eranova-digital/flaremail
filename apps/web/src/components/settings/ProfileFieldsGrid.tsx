@@ -1,0 +1,100 @@
+import type { ReactNode } from "react";
+
+import { Input } from "@/components/ui/input";
+import { PROFILE_FIELDS } from "@/lib/accounts/api";
+
+export type ProfileFieldKey = (typeof PROFILE_FIELDS)[number]["key"];
+
+const FIELD_LABELS = Object.fromEntries(
+	PROFILE_FIELDS.map((field) => [field.key, field.label]),
+) as Record<ProfileFieldKey, string>;
+
+const AUTOCOMPLETE: Partial<Record<ProfileFieldKey, string>> = {
+	firstName: "given-name",
+	lastName: "family-name",
+	recoveryAddress: "email",
+	phone: "tel",
+	addressCountry: "country-name",
+	addressState: "address-level1",
+	addressCity: "address-level2",
+	addressLine1: "address-line1",
+	addressLine2: "address-line2",
+};
+
+type ProfileFieldsGridProps = {
+	values: Record<string, string>;
+	onChange: (key: ProfileFieldKey, value: string) => void;
+	/** Prefix for input ids so multiple grids can coexist on a page. */
+	idPrefix: string;
+	/** Disables every field (e.g. while submitting). */
+	disabled?: boolean;
+	/** Per-field disabling (e.g. locked fields). */
+	isFieldDisabled?: (key: ProfileFieldKey) => boolean;
+	/** Extra content rendered at the right end of a field's label row. */
+	labelExtra?: (key: ProfileFieldKey) => ReactNode;
+	requiredFields?: ReadonlySet<string>;
+};
+
+/**
+ * Shared layout for the account profile form: name and contact fields in a
+ * two-column grid, address fields grouped under their own heading.
+ */
+export function ProfileFieldsGrid({
+	values,
+	onChange,
+	idPrefix,
+	disabled = false,
+	isFieldDisabled,
+	labelExtra,
+	requiredFields,
+}: ProfileFieldsGridProps) {
+	const field = (key: ProfileFieldKey) => {
+		const inputId = `${idPrefix}-${key}`;
+		const isRequired = requiredFields?.has(key) ?? false;
+		const extra = labelExtra?.(key);
+		return (
+			<div className="space-y-1">
+				<div className="flex min-h-5 items-center justify-between gap-2">
+					<label htmlFor={inputId} className="text-sm font-medium">
+						{FIELD_LABELS[key]}
+						{isRequired ? <span className="text-destructive ml-1">*</span> : null}
+					</label>
+					{extra}
+				</div>
+				<Input
+					id={inputId}
+					value={values[key] ?? ""}
+					autoComplete={AUTOCOMPLETE[key]}
+					onChange={(event) => onChange(key, event.target.value)}
+					disabled={disabled || (isFieldDisabled?.(key) ?? false)}
+					required={isRequired}
+				/>
+			</div>
+		);
+	};
+
+	return (
+		<div className="space-y-5">
+			<div className="grid gap-3 sm:grid-cols-2">
+				{field("firstName")}
+				{field("lastName")}
+				{field("recoveryAddress")}
+				{field("phone")}
+			</div>
+			<div className="space-y-3">
+				<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+					Address
+				</p>
+				<div className="grid gap-3">
+					{field("addressLine1")}
+					{field("addressLine2")}
+				</div>
+				<div className="grid gap-3 sm:grid-cols-3">
+					{field("addressCity")}
+					{field("addressState")}
+					{field("addressCountry")}
+				</div>
+			</div>
+		</div>
+	);
+}
