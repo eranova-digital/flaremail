@@ -33,3 +33,12 @@ export {
 	grantManagerMailboxAssignment,
 	revokeManagerMailboxAssignment,
 } from "./manager-assignments";
+export { parseProfileInput } from "./parse-profile-input";
+export {
+	adminCreatePasswordResetCode,
+	adminDisableAccountMfa,
+	adminGetAccountMfaStatus,
+	adminListAccountSessions,
+	adminRevokeAccountSession,
+	adminRevokeAllAccountSessions,
+} from "./admin";
