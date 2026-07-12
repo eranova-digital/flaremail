@@ -352,3 +352,15 @@
 		scrollbar-color: var(--border) var(--background);
 	}
 }
+
+@keyframes logo-outline {
+	to {
+		stroke-dashoffset: -1;
+	}
+}
+
+.animate-logo-outline {
+	stroke-dasharray: 0.12 0.88;
+	stroke-dashoffset: 0;
+	animation: logo-outline 2s linear infinite;
+}

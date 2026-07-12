@@ -11,6 +11,7 @@ import { DefaultFolderRedirect } from "@/routes/DefaultFolderRedirect";
 import { DomainValidationPage } from "@/routes/DomainValidationPage";
 import { EmptyReadingPane } from "@/routes/EmptyReadingPane";
 import { HomeRedirect } from "@/routes/HomeRedirect";
+import { LoadingPage } from "@/routes/LoadingPage";
 import { LoginPage } from "@/routes/LoginPage";
 import { ResetPasswordPage } from "@/routes/ResetPasswordPage";
 import { ManagementPage } from "@/routes/ManagementPage";
@@ -41,6 +42,7 @@ function LabelReadingPane() {
 export default function App() {
 	return (
 		<Routes>
+			<Route path="/loading" element={<LoadingPage />} />
 			<Route path="/login" element={<LoginPage />} />
 			<Route path="/bootstrap" element={<BootstrapPage />} />
 			<Route path="/activate" element={<ActivatePage />} />
