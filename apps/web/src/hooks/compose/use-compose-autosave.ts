@@ -13,6 +13,7 @@ import {
 	createStoredAttachment,
 } from "@/lib/compose-attachments";
 import { persistDraft } from "@/lib/compose/persist-draft";
+import type { ComposeSession } from "@/lib/compose/compose-session";
 import {
 	AUTOSAVE_MS,
 	canAutosaveCompose,
@@ -32,7 +33,7 @@ export function useComposeAutosave({
 	setAttachments,
 	reply,
 	isForwardMode,
-	sealedRef,
+	session,
 }: {
 	mailboxId: string;
 	draftId: string | null;
@@ -44,7 +45,7 @@ export function useComposeAutosave({
 	setAttachments: (attachments: ComposeAttachment[]) => void;
 	reply?: ComposeReplyContext;
 	isForwardMode: boolean;
-	sealedRef: React.MutableRefObject<boolean>;
+	session: ComposeSession;
 }) {
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +102,7 @@ export function useComposeAutosave({
 	);
 
 	const runPersistDraft = useCallback(async (): Promise<boolean> => {
-		if (isForwardMode || sealedRef.current) {
+		if (isForwardMode || !session.canAutosave()) {
 			return false;
 		}
 
@@ -158,7 +159,7 @@ export function useComposeAutosave({
 		attachmentsDirtyRef,
 		draftIdRef,
 		setDraftId,
-		sealedRef,
+		session,
 	]);
 
 	const runPersist = useCallback(() => {
@@ -172,7 +173,7 @@ export function useComposeAutosave({
 	}, [runPersistDraft]);
 
 	const scheduleSave = useCallback(() => {
-		if (isForwardMode || sealedRef.current) {
+		if (isForwardMode || !session.canAutosave()) {
 			return;
 		}
 
@@ -190,7 +191,7 @@ export function useComposeAutosave({
 			timerRef.current = null;
 			void runPersist();
 		}, AUTOSAVE_MS);
-	}, [runPersist, isForwardMode, reply, fieldsRef, attachmentsRef, sealedRef]);
+	}, [runPersist, isForwardMode, reply, fieldsRef, attachmentsRef, session]);
 
 	const clearScheduledSave = useCallback(() => {
 		if (timerRef.current) {
