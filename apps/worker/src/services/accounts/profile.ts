@@ -10,10 +10,7 @@ import {
 	managerSharedMailboxAssignments,
 	profileFieldLocks,
 } from "../../db/schema";
-import {
-	assertCanManageAccount,
-	assertCanViewAccount,
-} from "../../lib/auth/account-access";
+import { authorizeAccount } from "../../lib/auth/access";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
 import { getInstanceSettings } from "../instance-settings";
 import { assertRecoveryEmailCanBeRemoved } from "../security-compliance";
@@ -42,7 +39,7 @@ export async function getAccountDetail(
 	principal: Principal,
 	accountId: string,
 ) {
-	await assertCanViewAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "view");
 
 	const [row] = await db
 		.select({
@@ -103,7 +100,7 @@ export async function updateAccountProfile(
 ) {
 	const isSelf = principal.accountId === accountId;
 	if (!isSelf) {
-		await assertCanManageAccount(db, principal, accountId);
+		await authorizeAccount(db, principal, accountId, "manage");
 	}
 
 	const [account] = await db

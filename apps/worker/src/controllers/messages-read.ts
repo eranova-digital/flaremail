@@ -1,5 +1,5 @@
 import { withDb } from "../db/client";
-import { assertPrincipalCanAccessMailbox } from "../lib/auth/mailbox-access";
+import { authorizeMailbox } from "../lib/auth/access";
 import { parseLimit } from "../lib/http/cursor-pagination";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
@@ -28,7 +28,7 @@ export async function handleGetMessage({
 
 	try {
 		const message = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			return readMessageFull(db, env.BUCKET, params.id, mailboxId);
 		});
 		return jsonResponse(message);
@@ -50,7 +50,7 @@ export async function handleGetMessagePreview({
 
 	try {
 		const message = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			return readMessagePreview(db, params.id, mailboxId);
 		});
 		return jsonResponse(message);
@@ -80,7 +80,7 @@ export async function handleSearch({
 	try {
 		const mailboxId = value.mailboxId as string;
 		const result = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			return searchMessages(db, mailboxId, value.query as string, {
 				cursor: typeof value.cursor === "string" ? value.cursor : null,
 				limit:
@@ -108,7 +108,7 @@ export async function handleDownloadRawMessage({
 
 	try {
 		return await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			return downloadRawMessage(db, env.BUCKET, params.id, mailboxId);
 		});
 	} catch (error) {

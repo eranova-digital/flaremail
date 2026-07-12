@@ -2,6 +2,15 @@ import type { RoutePermission } from "./types";
 
 export type AuthAction = RoutePermission;
 
+export type AccountOperation =
+	| "view"
+	| "manage"
+	| "manage_security"
+	| "remove"
+	| "assign_invite_role";
+
+export type MailboxOperation = "read" | "manage" | "send";
+
 export type AuthResource = {
 	domainId?: string;
 	mailboxId?: string;

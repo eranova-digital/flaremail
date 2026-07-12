@@ -6,7 +6,8 @@ import type { RoutePermission } from "./types";
 import type { Principal } from "./types";
 
 export { actionForPath, AuthorizationDeniedError } from "./actions";
-export { authorize, authorizeMailboxAccess, authorizeDraftCommand } from "./access";
+export { authorize, authorizeAccount, authorizeMailbox, authorizeMailboxAccess, authorizeDraftCommand } from "./access";
+export type { AccountOperation, MailboxOperation } from "./actions";
 export type { AuthAction, AuthResource } from "./actions";
 
 /** @deprecated Use actionForPath — kept for incremental migration. */
