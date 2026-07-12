@@ -12,6 +12,7 @@ import { EmptyReadingPane } from "@/routes/EmptyReadingPane";
 import { HomeRedirect } from "@/routes/HomeRedirect";
 import { LoginPage } from "@/routes/LoginPage";
 import { ResetPasswordPage } from "@/routes/ResetPasswordPage";
+import { ManagementPage } from "@/routes/ManagementPage";
 import { SettingsPage } from "@/routes/SettingsPage";
 import { SharedMailboxUsersPage } from "@/routes/SharedMailboxUsersPage";
 import { useMailboxes } from "@/hooks/use-mailboxes";
@@ -45,12 +46,13 @@ export default function App() {
 			<Route element={<RequireAuth />}>
 				<Route path="/" element={<HomeRedirect />} />
 				<Route path="/settings" element={<SettingsPage />} />
+				<Route path="/management" element={<ManagementPage />} />
 				<Route
-					path="/settings/mailboxes/:mailboxId/users"
+					path="/management/mailboxes/:mailboxId/users"
 					element={<SharedMailboxUsersPage />}
 				/>
 				<Route
-					path="/settings/domains/:domainId/validation"
+					path="/management/domains/:domainId/validation"
 					element={<DomainValidationPage />}
 				/>
 				<Route path="/m/:mailboxId" element={<MailboxLayout />}>

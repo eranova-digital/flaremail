@@ -1,6 +1,10 @@
 import type { Account } from "@/lib/auth/types";
 import type { AccountRole, AccountSummary } from "@/lib/accounts/api";
 
+export function canAccessManagementPage(account: Account | null): boolean {
+	return canAccessAccountsTab(account);
+}
+
 export function canAccessAccountsTab(account: Account | null): boolean {
 	if (!account) {
 		return false;
@@ -145,6 +149,12 @@ export function canLockProfileFields(actor: Account | null): boolean {
 
 export function canManageAssignments(actor: Account | null): boolean {
 	return canAssignRoles(actor);
+}
+
+export function canManageManagerMailboxAssignments(
+	account: Account | null,
+): boolean {
+	return canManageAssignments(account);
 }
 
 const ROLE_RANK: Record<AccountRole, number> = {

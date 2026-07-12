@@ -10,8 +10,12 @@ type Crumb = {
 };
 
 type SettingsShellProps = {
+	/** Root breadcrumb label. Defaults to "Settings". */
+	rootLabel?: string;
+	/** Root breadcrumb link. Defaults to "/settings". */
+	rootTo?: string;
 	/**
-	 * Breadcrumb trail rendered after the implicit "Settings" root.
+	 * Breadcrumb trail rendered after the implicit root.
 	 * The last crumb is the current page and renders as plain text.
 	 */
 	crumbs?: Crumb[];
@@ -28,6 +32,8 @@ type SettingsShellProps = {
 };
 
 export function SettingsShell({
+	rootLabel = "Settings",
+	rootTo = "/settings",
 	crumbs = [],
 	backTo = "/",
 	backLabel = "Back",
@@ -36,7 +42,7 @@ export function SettingsShell({
 	widthClassName = "max-w-4xl",
 	children,
 }: SettingsShellProps) {
-	const title = crumbs.length > 0 ? crumbs[crumbs.length - 1].label : "Settings";
+	const title = crumbs.length > 0 ? crumbs[crumbs.length - 1].label : rootLabel;
 	const trail = crumbs.slice(0, -1);
 
 	return (
@@ -56,15 +62,15 @@ export function SettingsShell({
 					>
 						{crumbs.length === 0 ? (
 							<h1 className="truncate text-base font-semibold tracking-tight">
-								Settings
+								{rootLabel}
 							</h1>
 						) : (
 							<>
 								<Link
-									to="/settings"
+									to={rootTo}
 									className="text-muted-foreground hover:text-foreground shrink-0 text-sm font-medium transition-colors"
 								>
-									Settings
+									{rootLabel}
 								</Link>
 								{trail.map((crumb) => (
 									<span

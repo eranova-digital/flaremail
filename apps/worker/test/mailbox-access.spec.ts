@@ -42,13 +42,22 @@ function mockDb(
 		localPart: string;
 		domainId: string;
 	}>,
+	whereDomainIds?: string[],
 ) {
 	return {
 		select: () => ({
 			from: () => {
 				const result = Promise.resolve(rows);
 				return Object.assign(result, {
-					where: () => Promise.resolve(rows.map((row) => ({ id: row.id }))),
+					where: () => {
+						const matched =
+							whereDomainIds && whereDomainIds.length > 0
+								? rows.filter((row) =>
+										whereDomainIds.includes(row.domainId),
+									)
+								: rows;
+						return Promise.resolve(matched.map((row) => ({ id: row.id })));
+					},
 				});
 			},
 		}),
@@ -112,7 +121,7 @@ describe("filterMailboxesForPrincipal", () => {
 		]);
 	});
 
-	it("returns system mailboxes and own mailboxes for superadmin", async () => {
+	it("returns all instance mailboxes for superadmin", async () => {
 		const rows = [systemPostmaster, systemPostmasterB, userMailbox, otherUserMailbox];
 		const result = await filterMailboxesForPrincipal(
 			mockDb([
@@ -147,11 +156,16 @@ describe("filterMailboxesForPrincipal", () => {
 		);
 
 		expect(result.map((row) => row.id).sort()).toEqual(
-			[systemPostmaster.id, systemPostmasterB.id, userMailbox.id].sort(),
+			[
+				systemPostmaster.id,
+				systemPostmasterB.id,
+				userMailbox.id,
+				otherUserMailbox.id,
+			].sort(),
 		);
 	});
 
-	it("returns assigned-domain system mailboxes and own mailboxes for admin", async () => {
+	it("returns all assigned-domain mailboxes for admin", async () => {
 		const rows = [systemPostmaster, systemPostmasterB, userMailbox, otherUserMailbox];
 		const result = await filterMailboxesForPrincipal(
 			mockDb([
@@ -179,7 +193,7 @@ describe("filterMailboxesForPrincipal", () => {
 					localPart: otherUserMailbox.localPart!,
 					domainId: domainA,
 				},
-			]),
+			], [domainA]),
 			principal({
 				role: "admin",
 				domainIds: [domainA],
@@ -190,7 +204,7 @@ describe("filterMailboxesForPrincipal", () => {
 		);
 
 		expect(result.map((row) => row.id).sort()).toEqual(
-			[systemPostmaster.id, userMailbox.id].sort(),
+			[systemPostmaster.id, userMailbox.id, otherUserMailbox.id].sort(),
 		);
 	});
 
@@ -216,7 +230,7 @@ describe("filterMailboxesForPrincipal", () => {
 					localPart: otherUserMailbox.localPart!,
 					domainId: domainA,
 				},
-			]),
+			], [domainA]),
 			principal({ role: "admin", domainIds: [domainA] }),
 			rows,
 			"manage",

@@ -7,11 +7,14 @@ import {
 	fetchAccounts,
 	fetchLocalPartPolicy,
 	fetchMailboxGrantHolders,
+	fetchMailboxManagerAssignments,
 	grantSharedMailboxAccess,
+	grantManagerMailboxAssignment,
 	inviteAccount,
 	regenerateInviteCode,
 	removeAccount,
 	revokeSharedMailboxAccess,
+	revokeManagerMailboxAssignment,
 	suggestInviteLocalPart,
 	suspendAccount,
 	unsuspendAccount,
@@ -28,6 +31,8 @@ export const accountQueryKeys = {
 		["domains", domainId, "local-part-policy"] as const,
 	mailboxGrants: (mailboxId: string) =>
 		["mailboxes", mailboxId, "grants"] as const,
+	mailboxManagers: (mailboxId: string) =>
+		["mailboxes", mailboxId, "manager-assignments"] as const,
 };
 
 export function useAccounts() {
@@ -191,6 +196,42 @@ export function useRevokeSharedMailboxAccess() {
 			void queryClient.invalidateQueries({
 				queryKey: accountQueryKeys.mailboxGrants(variables.mailboxId),
 			});
+		},
+	});
+}
+
+export function useMailboxManagerAssignments(mailboxId: string | null) {
+	return useQuery({
+		queryKey: mailboxId
+			? accountQueryKeys.mailboxManagers(mailboxId)
+			: ["mailbox-managers", "none"],
+		queryFn: () => fetchMailboxManagerAssignments(mailboxId!),
+		enabled: !!mailboxId,
+	});
+}
+
+export function useGrantManagerMailboxAssignment() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: grantManagerMailboxAssignment,
+		onSuccess: (_data, variables) => {
+			void queryClient.invalidateQueries({
+				queryKey: accountQueryKeys.mailboxManagers(variables.mailboxId),
+			});
+			void queryClient.invalidateQueries({ queryKey: accountQueryKeys.all });
+		},
+	});
+}
+
+export function useRevokeManagerMailboxAssignment() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: revokeManagerMailboxAssignment,
+		onSuccess: (_data, variables) => {
+			void queryClient.invalidateQueries({
+				queryKey: accountQueryKeys.mailboxManagers(variables.mailboxId),
+			});
+			void queryClient.invalidateQueries({ queryKey: accountQueryKeys.all });
 		},
 	});
 }

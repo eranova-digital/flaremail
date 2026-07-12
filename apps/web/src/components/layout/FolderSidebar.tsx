@@ -1,12 +1,12 @@
 import {
 	Archive,
+	Building2,
 	FileText,
 	Inbox,
 	PanelLeftClose,
 	PanelLeftOpen,
 	Pencil,
 	Send,
-	Settings,
 	ShieldAlert,
 	Trash2,
 } from 'lucide-react';
@@ -15,7 +15,7 @@ import { NavLink, useNavigate, useParams, useSearchParams } from 'react-router-d
 
 import { MailboxSwitcher } from '@/components/layout/MailboxSwitcher';
 import { LabelsSection } from '@/components/layout/LabelsSection';
-import { LogoutButton } from '@/components/auth/LogoutButton';
+import { UserCard } from '@/components/layout/UserCard';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -28,6 +28,8 @@ import {
 	isThreadFolder,
 } from '@/lib/mailbox-folders';
 import { cn } from '@/lib/utils';
+import { canAccessManagementPage } from '@/lib/accounts/permissions';
+import { useAuth } from '@/lib/auth/AuthProvider';
 
 const FOLDER_ICONS: Record<ThreadFolder, typeof Inbox> = {
 	inbox: Inbox,
@@ -69,6 +71,8 @@ function withTooltip(collapsed: boolean, label: string, trigger: ReactElement): 
 
 export function FolderSidebar() {
 	const navigate = useNavigate();
+	const { account } = useAuth();
+	const showManagement = canAccessManagementPage(account);
 	const { mailboxId, folder: folderParam, labelId } = useParams();
 	const [searchParams] = useSearchParams();
 	const mailboxesQuery = useMailboxes();
@@ -157,28 +161,26 @@ export function FolderSidebar() {
 					/>
 				</nav>
 				<div className={cn('space-y-1 p-2', collapsed && 'px-2')}>
-					{withTooltip(
-						collapsed,
-						'Settings',
-						<NavLink
-							to="/settings"
-							className={({ isActive }) =>
-								cn(
-									'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-									collapsed && 'justify-center px-0',
-									isActive && 'bg-accent text-accent-foreground font-medium',
-								)
-							}
-						>
-							<Settings className="size-4 shrink-0" />
-							{!collapsed ? 'Settings' : null}
-						</NavLink>,
-					)}
-					{withTooltip(
-						collapsed,
-						'Sign out',
-						<LogoutButton showLabel={!collapsed} />,
-					)}
+					{showManagement
+						? withTooltip(
+								collapsed,
+								'Management',
+								<NavLink
+									to="/management"
+									className={({ isActive }) =>
+										cn(
+											'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+											collapsed && 'justify-center px-0',
+											isActive && 'bg-accent text-accent-foreground font-medium',
+										)
+									}
+								>
+									<Building2 className="size-4 shrink-0" />
+									{!collapsed ? 'Management' : null}
+								</NavLink>,
+							)
+						: null}
+					<UserCard collapsed={collapsed} />
 				</div>
 			</aside>
 		</TooltipProvider>

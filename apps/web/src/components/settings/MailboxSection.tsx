@@ -11,11 +11,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDomains } from "@/hooks/use-domains";
-import {
-	useDeleteMailbox,
-	useMailboxes,
-	useUpdateMailbox,
-} from "@/hooks/use-mailboxes";
+import { useDeleteMailbox, useMailboxes } from "@/hooks/use-mailboxes";
 import type { Mailbox } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
 import { filterDomainsForAccount } from "@/lib/accounts/domains";
@@ -280,7 +276,6 @@ function MailboxRow({
 	showDomain?: boolean;
 	showType?: boolean;
 }) {
-	const updateMailbox = useUpdateMailbox();
 	const deleteMailbox = useDeleteMailbox();
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -288,21 +283,14 @@ function MailboxRow({
 		return null;
 	}
 
-	const handleToggleActive = () => {
-		updateMailbox.mutate({
-			id: mailbox.id!,
-			body: { isActive: !mailbox.isActive },
-		});
-	};
-
 	const handleDelete = () => {
 		deleteMailbox.mutate(mailbox.id!, {
 			onSettled: () => setConfirmingDelete(false),
 		});
 	};
 
-	const isPending = updateMailbox.isPending || deleteMailbox.isPending;
-	const mutationError = updateMailbox.error ?? deleteMailbox.error;
+	const isPending = deleteMailbox.isPending;
+	const mutationError = deleteMailbox.error;
 	const isSystemManaged = mailbox.isSystemManaged ?? false;
 	const isPrimaryMailbox = mailbox.type === "primary";
 	const canDelete = !isSystemManaged && !isPrimaryMailbox;
@@ -327,9 +315,11 @@ function MailboxRow({
 						{mailbox.type === "alias" && aliasTargetLabel ? (
 							<span>→ {aliasTargetLabel}</span>
 						) : null}
-						<Badge variant={mailbox.isActive ? "success" : "secondary"}>
-							{mailbox.isActive ? "Active" : "Inactive"}
-						</Badge>
+						{mailbox.isActive === false ? (
+							<Badge variant="secondary" className="text-xs">
+								Disabled
+							</Badge>
+						) : null}
 					</div>
 				</div>
 
@@ -337,22 +327,12 @@ function MailboxRow({
 					<div className="flex shrink-0 items-center gap-2">
 						{mailbox.type === "shared" && mailbox.id ? (
 							<Button variant="outline" size="sm" asChild>
-								<Link to={`/settings/mailboxes/${mailbox.id}/users`}>
+								<Link to={`/management/mailboxes/${mailbox.id}/users`}>
 									<Users className="mr-1.5 size-3.5" />
 									Users
 								</Link>
 							</Button>
 						) : null}
-						<label className="flex items-center gap-1.5 text-sm">
-							<input
-								type="checkbox"
-								checked={mailbox.isActive ?? false}
-								onChange={handleToggleActive}
-								disabled={isPending}
-								className="size-4 rounded border"
-							/>
-							<span className="sr-only sm:not-sr-only">Active</span>
-						</label>
 						{canDelete ? (
 							<Button
 								variant="ghost"

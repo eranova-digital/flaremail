@@ -4,6 +4,7 @@ import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMailboxes } from "@/hooks/use-mailboxes";
+import { canAccessManagementPage } from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import {
 	getLastMailboxId,
@@ -43,6 +44,11 @@ export function HomeRedirect() {
 
 	const selectableMailboxes = getSelectableMailboxes(mailboxesQuery.data ?? []);
 	if (selectableMailboxes.length === 0) {
+		const setupPath = canAccessManagementPage(account) ? "/management" : "/settings";
+		const setupLabel = canAccessManagementPage(account)
+			? "Open management"
+			: "Open settings";
+
 		return (
 			<div className="flex min-h-svh flex-col items-center justify-center gap-4 p-8 text-center">
 				<h1 className="text-xl font-semibold">No mailboxes yet</h1>
@@ -52,7 +58,7 @@ export function HomeRedirect() {
 						: "Add a domain and mailbox to start receiving mail in Flaremail."}
 				</p>
 				<Button asChild>
-					<Link to="/settings">Open settings</Link>
+					<Link to={setupPath}>{setupLabel}</Link>
 				</Button>
 			</div>
 		);

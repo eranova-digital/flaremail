@@ -45,6 +45,20 @@ async function loadSystemMailboxIds(
 	return ids;
 }
 
+async function loadDomainMailboxIds(
+	db: Database,
+	domainIds: string[] | null,
+): Promise<Set<string>> {
+	const query = db.select({ id: mailboxes.id }).from(mailboxes);
+	const rows =
+		domainIds === null
+			? await query
+			: domainIds.length === 0
+				? []
+				: await query.where(inArray(mailboxes.domainId, domainIds));
+	return new Set(rows.map((row) => row.id));
+}
+
 export async function collectReadableMailboxIds(
 	db: Database,
 	principal: Principal,
@@ -61,17 +75,17 @@ export async function collectReadableMailboxIds(
 	const ids = new Set(accessibleMailboxIds(principal));
 
 	if (principal.role === "superadmin") {
-		const systemIds = await loadSystemMailboxIds(db, null);
-		for (const systemId of systemIds) {
-			ids.add(systemId);
+		const instanceIds = await loadDomainMailboxIds(db, null);
+		for (const mailboxId of instanceIds) {
+			ids.add(mailboxId);
 		}
 		return ids;
 	}
 
 	if (principal.role === "admin") {
-		const systemIds = await loadSystemMailboxIds(db, principal.domainIds);
-		for (const systemId of systemIds) {
-			ids.add(systemId);
+		const domainIds = await loadDomainMailboxIds(db, principal.domainIds);
+		for (const mailboxId of domainIds) {
+			ids.add(mailboxId);
 		}
 		return ids;
 	}

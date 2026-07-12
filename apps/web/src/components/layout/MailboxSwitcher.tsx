@@ -1,4 +1,5 @@
 import { ChevronDown, Mail, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { useDomains } from "@/hooks/use-domains";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { setLastMailboxId } from "@/lib/mailbox-preference";
@@ -23,12 +25,100 @@ import {
 	getSelectableMailboxes,
 	resolveSelectableMailbox,
 } from "@/lib/selectable-mailbox";
-import { groupMailboxesByDomain } from "@/lib/sort-mailboxes";
+import {
+	groupMailboxesByDomain,
+	type MailboxDomainGroup,
+} from "@/lib/sort-mailboxes";
 
 function isSystemMailbox(mailbox: Mailbox): boolean {
 	return (
 		mailbox.isSystemManaged ??
 		(mailbox.type === "system" || mailbox.type === "blackhole")
+	);
+}
+
+function shouldGroupMailboxesByDomain(mailboxes: Mailbox[]): boolean {
+	return (
+		new Set(mailboxes.map((mailbox) => mailbox.domainId).filter(Boolean)).size > 1
+	);
+}
+
+function getMailboxGroups(
+	mailboxes: Mailbox[],
+	domainNamesById: Map<string, string>,
+): MailboxDomainGroup[] | null {
+	if (!shouldGroupMailboxesByDomain(mailboxes)) {
+		return null;
+	}
+
+	return groupMailboxesByDomain(mailboxes, domainNamesById);
+}
+
+function MailboxGroupList({
+	mailboxes,
+	domainNamesById,
+	onSelect,
+}: {
+	mailboxes: Mailbox[];
+	domainNamesById: Map<string, string>;
+	onSelect: (mailboxId: string) => void;
+}) {
+	const mailboxGroups = getMailboxGroups(mailboxes, domainNamesById);
+
+	if (mailboxGroups) {
+		return mailboxGroups.map((group, groupIndex) => (
+			<DropdownMenuGroup key={group.domainName}>
+				{groupIndex > 0 ? <DropdownMenuSeparator /> : null}
+				<DropdownMenuLabel className="text-muted-foreground text-xs font-medium">
+					{group.domainName}
+				</DropdownMenuLabel>
+				{group.mailboxes.map((mailbox) => (
+					<DropdownMenuItem
+						key={mailbox.id}
+						onClick={() => mailbox.id && onSelect(mailbox.id)}
+					>
+						<MailboxOptionLabel mailbox={mailbox} />
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuGroup>
+		));
+	}
+
+	return mailboxes.map((mailbox) => (
+		<DropdownMenuItem
+			key={mailbox.id}
+			onClick={() => mailbox.id && onSelect(mailbox.id)}
+		>
+			<MailboxOptionLabel mailbox={mailbox} />
+		</DropdownMenuItem>
+	));
+}
+
+function SystemMailboxesFooter({
+	checked,
+	onCheckedChange,
+	hasMailboxesAbove,
+}: {
+	checked: boolean;
+	onCheckedChange: (checked: boolean) => void;
+	hasMailboxesAbove: boolean;
+}) {
+	return (
+		<div
+			className={cn(
+				"bg-muted/60 -mx-1 flex items-center justify-between gap-2 border-y px-2 py-1.5",
+				hasMailboxesAbove && "mt-1",
+			)}
+			onPointerDown={(event) => event.preventDefault()}
+			onClick={(event) => event.stopPropagation()}
+		>
+			<span className="text-muted-foreground text-xs">Show system mailboxes</span>
+			<Switch
+				checked={checked}
+				onCheckedChange={onCheckedChange}
+				aria-label="Show system mailboxes"
+			/>
+		</div>
 	);
 }
 
@@ -61,6 +151,7 @@ export function MailboxSwitcher() {
 	const [searchParams] = useSearchParams();
 	const mailboxesQuery = useMailboxes();
 	const domainsQuery = useDomains();
+	const [showSystemMailboxes, setShowSystemMailboxes] = useState(false);
 
 	const currentFolder: ThreadFolder =
 		folderParam && isThreadFolder(folderParam)
@@ -69,22 +160,37 @@ export function MailboxSwitcher() {
 				? (searchParams.get("folder") as ThreadFolder)
 				: "inbox";
 
-	if (mailboxesQuery.isLoading || domainsQuery.isLoading) {
-		return <Skeleton className="h-9 w-full" />;
-	}
-
 	const mailboxes = getSelectableMailboxes(mailboxesQuery.data ?? []);
 	const domainNamesById = new Map(
 		(domainsQuery.data ?? []).flatMap((domain) =>
 			domain.id && domain.domain ? [[domain.id, domain.domain] as const] : [],
 		),
 	);
-	const shouldGroupByDomain =
-		new Set(mailboxes.map((mailbox) => mailbox.domainId).filter(Boolean)).size > 1;
-	const mailboxGroups = shouldGroupByDomain
-		? groupMailboxesByDomain(mailboxes, domainNamesById)
-		: null;
 	const active = resolveSelectableMailbox(mailboxes, mailboxId ?? null);
+	const normalMailboxes = mailboxes.filter((mailbox) => !isSystemMailbox(mailbox));
+	const systemMailboxes = mailboxes.filter((mailbox) => isSystemMailbox(mailbox));
+	const hasSystemMailboxes = systemMailboxes.length > 0;
+	const activeIsSystem = active ? isSystemMailbox(active) : false;
+
+	useEffect(() => {
+		if (mailboxesQuery.isLoading || domainsQuery.isLoading) {
+			return;
+		}
+
+		if (activeIsSystem || (normalMailboxes.length === 0 && hasSystemMailboxes)) {
+			setShowSystemMailboxes(true);
+		}
+	}, [
+		activeIsSystem,
+		domainsQuery.isLoading,
+		hasSystemMailboxes,
+		mailboxesQuery.isLoading,
+		normalMailboxes.length,
+	]);
+
+	if (mailboxesQuery.isLoading || domainsQuery.isLoading) {
+		return <Skeleton className="h-9 w-full" />;
+	}
 
 	if (!active?.id) {
 		return (
@@ -105,8 +211,6 @@ export function MailboxSwitcher() {
 		navigate(`/m/${nextMailboxId}/${currentFolder}`);
 	};
 
-	const activeIsSystem = isSystemMailbox(active);
-
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -126,33 +230,27 @@ export function MailboxSwitcher() {
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-				{mailboxGroups ? (
-					mailboxGroups.map((group, groupIndex) => (
-						<DropdownMenuGroup key={group.domainName}>
-							{groupIndex > 0 ? <DropdownMenuSeparator /> : null}
-							<DropdownMenuLabel className="text-muted-foreground text-xs font-medium">
-								{group.domainName}
-							</DropdownMenuLabel>
-							{group.mailboxes.map((mailbox) => (
-								<DropdownMenuItem
-									key={mailbox.id}
-									onClick={() => mailbox.id && switchMailbox(mailbox.id)}
-								>
-									<MailboxOptionLabel mailbox={mailbox} />
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuGroup>
-					))
-				) : (
-					mailboxes.map((mailbox) => (
-						<DropdownMenuItem
-							key={mailbox.id}
-							onClick={() => mailbox.id && switchMailbox(mailbox.id)}
-						>
-							<MailboxOptionLabel mailbox={mailbox} />
-						</DropdownMenuItem>
-					))
-				)}
+				<MailboxGroupList
+					mailboxes={normalMailboxes}
+					domainNamesById={domainNamesById}
+					onSelect={switchMailbox}
+				/>
+				{hasSystemMailboxes ? (
+					<>
+						<SystemMailboxesFooter
+							checked={showSystemMailboxes}
+							onCheckedChange={setShowSystemMailboxes}
+							hasMailboxesAbove={normalMailboxes.length > 0}
+						/>
+						{showSystemMailboxes ? (
+							<MailboxGroupList
+								mailboxes={systemMailboxes}
+								domainNamesById={domainNamesById}
+								onSelect={switchMailbox}
+							/>
+						) : null}
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
