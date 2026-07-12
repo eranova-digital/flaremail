@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAccounts } from "@/hooks/use-accounts";
 import type { AccountSummary } from "@/lib/accounts/api";
 import { canManageTarget } from "@/lib/accounts/permissions";
+import { roleDescription, roleLabel, statusMeta } from "@/lib/accounts/roles";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { AccountDetailDialog } from "@/components/settings/accounts/AccountDetailDialog";
 
@@ -31,22 +34,35 @@ export function AccountList() {
 
 	return (
 		<>
-			<Card>
-				<CardHeader>
-					<CardTitle>Accounts</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-3">
-					<Input
-						placeholder="Search accounts"
-						value={search}
-						onChange={(event) => setSearch(event.target.value)}
-					/>
-					{accountsQuery.isLoading ? (
-						<p className="text-muted-foreground text-sm">Loading accounts…</p>
-					) : filtered.length === 0 ? (
-						<p className="text-muted-foreground text-sm">No accounts found.</p>
-					) : (
-						<div className="space-y-2">
+			<div className="relative">
+				<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+				<Input
+					placeholder="Search people by name or address…"
+					className="pl-9"
+					value={search}
+					onChange={(event) => setSearch(event.target.value)}
+					aria-label="Search accounts"
+				/>
+			</div>
+
+			{accountsQuery.isLoading ? (
+				<div className="space-y-2">
+					{Array.from({ length: 4 }).map((_, index) => (
+						<Skeleton key={index} className="h-14 w-full rounded-lg" />
+					))}
+				</div>
+			) : filtered.length === 0 ? (
+				<Card className="gap-0 rounded-lg py-0">
+					<CardContent className="text-muted-foreground px-4 py-8 text-center text-sm">
+						{search.trim()
+							? `No people match "${search.trim()}".`
+							: "No accounts yet. Invite someone to get started."}
+					</CardContent>
+				</Card>
+			) : (
+				<Card className="gap-0 rounded-lg py-0">
+					<CardContent className="p-0">
+						<ul className="divide-border divide-y">
 							{filtered.map((item) => (
 								<AccountRow
 									key={item.id}
@@ -55,10 +71,10 @@ export function AccountList() {
 									onManage={() => setSelectedId(item.id)}
 								/>
 							))}
-						</div>
-					)}
-				</CardContent>
-			</Card>
+						</ul>
+					</CardContent>
+				</Card>
+			)}
 			<AccountDetailDialog
 				accountId={selectedId}
 				onClose={() => setSelectedId(null)}
@@ -76,8 +92,12 @@ function AccountRow({
 	canManage: boolean;
 	onManage: () => void;
 }) {
+	const status = statusMeta(item.status);
+	const role = roleLabel(item.role, item.isIntendant);
+	const description = roleDescription(item.role, item.isIntendant);
+
 	return (
-		<div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+		<li className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
 			<div className="min-w-0">
 				<p className="truncate font-medium">{item.displayName}</p>
 				<p className="text-muted-foreground truncate text-xs">
@@ -85,8 +105,19 @@ function AccountRow({
 				</p>
 			</div>
 			<div className="flex shrink-0 items-center gap-2">
-				<Badge variant="secondary">
-					{item.role ?? "intendant"} · {item.status}
+				<Badge variant="outline" title={description ?? undefined}>
+					{role}
+				</Badge>
+				<Badge
+					variant={
+						status.tone === "success"
+							? "success"
+							: status.tone === "warning"
+								? "warning"
+								: "secondary"
+					}
+				>
+					{status.label}
 				</Badge>
 				{canManage ? (
 					<Button variant="outline" size="sm" onClick={onManage}>
@@ -94,6 +125,6 @@ function AccountRow({
 					</Button>
 				) : null}
 			</div>
-		</div>
+		</li>
 	);
 }

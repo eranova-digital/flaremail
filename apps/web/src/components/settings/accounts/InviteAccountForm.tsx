@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Copy } from "lucide-react";
 
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
 	canLockProfileFields,
 	inviteableRoles,
 } from "@/lib/accounts/permissions";
+import { ROLE_META } from "@/lib/accounts/roles";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
@@ -109,6 +111,7 @@ export function InviteAccountForm() {
 	const [allSharedMailboxes, setAllSharedMailboxes] = useState(false);
 	const [sendInviteEmail, setSendInviteEmail] = useState(false);
 	const [inviteCode, setInviteCode] = useState<string | null>(null);
+	const [codeCopied, setCodeCopied] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const policyQuery = useLocalPartPolicy(domainId || null);
@@ -269,16 +272,35 @@ export function InviteAccountForm() {
 		return typeof value === "string" && value.trim().length > 0;
 	});
 
-	const canSubmit =
-		!!domainId &&
-		!!localPart.trim() &&
-		(!policyEnforced || requiredProfileComplete) &&
-		(role !== "admin" || assignedDomainIds.length > 0) &&
-		(role !== "manager" || assignedDomainIds.length > 0);
+	const missingRequirement = !domainId
+		? "Select a domain to continue."
+		: !localPart.trim()
+			? "Enter a mailbox address."
+			: policyEnforced && !requiredProfileComplete
+				? "Fill in the profile fields required by the domain policy."
+				: (role === "admin" || role === "manager") &&
+					  assignedDomainIds.length === 0
+					? "Assign at least one domain for this role."
+					: null;
+
+	const canSubmit = !missingRequirement;
+
+	const handleCopyCode = async () => {
+		if (!inviteCode) {
+			return;
+		}
+		try {
+			await navigator.clipboard.writeText(inviteCode);
+			setCodeCopied(true);
+		} catch {
+			setCodeCopied(false);
+		}
+	};
 
 	const handleInvite = () => {
 		setError(null);
 		setInviteCode(null);
+		setCodeCopied(false);
 		inviteMutation.mutate(
 			{
 				domainId,
@@ -323,7 +345,7 @@ export function InviteAccountForm() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Invite account</CardTitle>
+				<CardTitle>Invite person</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="grid gap-3 sm:grid-cols-2">
@@ -344,21 +366,30 @@ export function InviteAccountForm() {
 					</div>
 					{roles.length > 1 ? (
 						<div className="space-y-1">
-							<label className="text-sm font-medium">Role</label>
+							<label className="text-sm font-medium" htmlFor="invite-role">
+								Role
+							</label>
 							<select
+								id="invite-role"
 								className={selectClassName}
 								value={role}
 								onChange={(event) => setRole(event.target.value as AccountRole)}
 							>
 								{roles.map((item) => (
 									<option key={item} value={item}>
-										{item}
+										{ROLE_META[item].label}
 									</option>
 								))}
 							</select>
 						</div>
 					) : null}
 				</div>
+
+				{roles.length > 1 ? (
+					<p className="text-muted-foreground -mt-2 text-xs">
+						{ROLE_META[role].description}
+					</p>
+				) : null}
 
 				{availableDomains.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
@@ -570,22 +601,49 @@ export function InviteAccountForm() {
 					</label>
 				</CollapsibleSection>
 
-				{error ? <p className="text-destructive text-sm">{error}</p> : null}
+				{error ? (
+					<Alert tone="destructive" title="Couldn't create invite">
+						<p>{error}</p>
+					</Alert>
+				) : null}
 				{inviteCode ? (
-					<div className="bg-muted rounded-md px-4 py-3 text-sm">
-						<p className="font-medium">Invite created</p>
-						<p>
-							Code: <strong className="font-mono">{inviteCode}</strong>
+					<Alert tone="success" title="Invite created">
+						<div className="mt-1 flex items-center gap-2">
+							<code className="bg-background/60 rounded px-2 py-1 font-mono text-sm font-semibold tracking-wider">
+								{inviteCode}
+							</code>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={handleCopyCode}
+							>
+								{codeCopied ? (
+									<Check className="size-3.5" aria-hidden />
+								) : (
+									<Copy className="size-3.5" aria-hidden />
+								)}
+								{codeCopied ? "Copied" : "Copy code"}
+							</Button>
+						</div>
+						<p className="text-muted-foreground mt-1.5 text-xs">
+							Share this code with the person so they can activate their
+							account. It is shown only once.
 						</p>
-					</div>
+					</Alert>
 				) : null}
 
-				<Button
-					onClick={handleInvite}
-					disabled={!canSubmit || inviteMutation.isPending}
-				>
-					Create invite
-				</Button>
+				<div className="flex flex-wrap items-center gap-3">
+					<Button
+						onClick={handleInvite}
+						disabled={!canSubmit || inviteMutation.isPending}
+					>
+						{inviteMutation.isPending ? "Creating…" : "Create invite"}
+					</Button>
+					{missingRequirement && !inviteMutation.isPending ? (
+						<p className="text-muted-foreground text-xs">{missingRequirement}</p>
+					) : null}
+				</div>
 			</CardContent>
 		</Card>
 	);
