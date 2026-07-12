@@ -1,5 +1,4 @@
-import { ArrowLeft } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import { DomainSection } from "@/components/settings/DomainSection";
 import { MailboxSection } from "@/components/settings/MailboxSection";
@@ -7,7 +6,7 @@ import { ManagerMailboxGrantsSection } from "@/components/settings/ManagerMailbo
 import { AccountsSection } from "@/components/settings/AccountsSection";
 import { ProfileSection } from "@/components/settings/ProfileSection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { Button } from "@/components/ui/button";
+import { SettingsShell } from "@/components/layout/SettingsShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	canAccessAccountsTab,
@@ -107,63 +106,51 @@ export function SettingsPage() {
 	};
 
 	return (
-		<div className="bg-background min-h-svh">
-			<header className="border-b">
-				<div className="mx-auto flex max-w-3xl items-center gap-3 px-6 py-4">
-					<Button variant="ghost" size="icon" asChild>
-						<Link to="/" aria-label="Back to mail">
-							<ArrowLeft className="size-4" />
-						</Link>
-					</Button>
-					<h1 className="text-xl font-semibold tracking-tight">Settings</h1>
-					<div className="ml-auto">
-						<LogoutButton variant="settings" />
-					</div>
-				</div>
-			</header>
-
-			<main className="mx-auto max-w-3xl px-6 py-8">
-				<Tabs value={activeTab} onValueChange={handleTabChange}>
-					<TabsList>
-						{showProfile ? (
-							<TabsTrigger value="profile">Profile</TabsTrigger>
-						) : null}
-						{showDomains ? (
-							<TabsTrigger value="domains">Domains</TabsTrigger>
-						) : null}
-						{showMailboxes ? (
-							<TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
-						) : null}
-						{showAccounts ? (
-							<TabsTrigger value="accounts">Accounts</TabsTrigger>
-						) : null}
-					</TabsList>
+		<SettingsShell
+			backTo="/"
+			backLabel="Back to mail"
+			actions={<LogoutButton variant="settings" />}
+		>
+			<Tabs value={activeTab} onValueChange={handleTabChange}>
+				<TabsList>
 					{showProfile ? (
-						<TabsContent value="profile">
-							<ProfileSection />
-						</TabsContent>
+						<TabsTrigger value="profile">Profile</TabsTrigger>
 					) : null}
 					{showDomains ? (
-						<TabsContent value="domains">
-							<DomainSection />
-						</TabsContent>
+						<TabsTrigger value="domains">Domains</TabsTrigger>
 					) : null}
 					{showMailboxes ? (
-						<TabsContent value="mailboxes">
-							{showsManagerMailboxGrantsTab(account) ? (
-								<ManagerMailboxGrantsSection />
-							) : canManageMailboxes(account) ? (
-								<MailboxSection />
-							) : null}
-						</TabsContent>
+						<TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
 					) : null}
 					{showAccounts ? (
-						<TabsContent value="accounts">
-							<AccountsSection />
-						</TabsContent>
+						<TabsTrigger value="accounts">People & access</TabsTrigger>
 					) : null}
-				</Tabs>
-			</main>
-		</div>
+				</TabsList>
+				{showProfile ? (
+					<TabsContent value="profile">
+						<ProfileSection />
+					</TabsContent>
+				) : null}
+				{showDomains ? (
+					<TabsContent value="domains">
+						<DomainSection />
+					</TabsContent>
+				) : null}
+				{showMailboxes ? (
+					<TabsContent value="mailboxes">
+						{showsManagerMailboxGrantsTab(account) ? (
+							<ManagerMailboxGrantsSection />
+						) : canManageMailboxes(account) ? (
+							<MailboxSection />
+						) : null}
+					</TabsContent>
+				) : null}
+				{showAccounts ? (
+					<TabsContent value="accounts">
+						<AccountsSection />
+					</TabsContent>
+				) : null}
+			</Tabs>
+		</SettingsShell>
 	);
 }

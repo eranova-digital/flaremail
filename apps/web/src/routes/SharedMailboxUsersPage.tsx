@@ -1,8 +1,8 @@
-import { ArrowLeft } from "lucide-react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 
 import { SharedMailboxGrantEditor } from "@/components/settings/SharedMailboxGrantEditor";
-import { Button } from "@/components/ui/button";
+import { SettingsShell } from "@/components/layout/SettingsShell";
+import { Alert } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { canManageSharedMailboxUsers } from "@/lib/accounts/permissions";
@@ -25,40 +25,39 @@ export function SharedMailboxUsersPage() {
 	const mailbox = (mailboxesQuery.data ?? []).find((item) => item.id === mailboxId);
 
 	return (
-		<div className="bg-background min-h-svh">
-			<header className="border-b">
-				<div className="mx-auto flex max-w-3xl items-center gap-3 px-6 py-4">
-					<Button variant="ghost" size="icon" asChild>
-						<Link to="/settings?tab=mailboxes" aria-label="Back to mailboxes">
-							<ArrowLeft className="size-4" />
-						</Link>
-					</Button>
-					<div className="min-w-0">
-						<h1 className="truncate text-xl font-semibold tracking-tight">
-							{mailbox?.address ?? "Shared mailbox"}
-						</h1>
-						<p className="text-muted-foreground text-sm">Manage user access</p>
-					</div>
+		<SettingsShell
+			crumbs={[
+				{ label: "Mailboxes", to: "/settings?tab=mailboxes" },
+				{ label: mailbox?.address ?? "Shared mailbox" },
+			]}
+			backTo="/settings?tab=mailboxes"
+			backLabel="Back to mailboxes"
+			description="Control which users can read and send from this shared mailbox."
+		>
+			{mailboxesQuery.isLoading ? (
+				<div className="space-y-3">
+					<Skeleton className="h-14 w-full rounded-lg" />
+					<Skeleton className="h-14 w-full rounded-lg" />
+					<Skeleton className="h-10 w-64 rounded-lg" />
 				</div>
-			</header>
-
-			<main className="mx-auto max-w-3xl px-6 py-8">
-				{mailboxesQuery.isLoading ? (
-					<Skeleton className="h-24 w-full" />
-				) : mailboxesQuery.isError ? (
-					<p className="text-destructive text-sm">
-						{getErrorMessage(mailboxesQuery.error)}
+			) : mailboxesQuery.isError ? (
+				<Alert tone="destructive" title="Couldn't load mailboxes">
+					<p>{getErrorMessage(mailboxesQuery.error)}</p>
+				</Alert>
+			) : !mailbox ? (
+				<Alert tone="warning" title="Mailbox not found">
+					<p>
+						This mailbox may have been deleted, or you may not have access to
+						it.
 					</p>
-				) : !mailbox ? (
-					<p className="text-destructive text-sm">Mailbox not found.</p>
-				) : mailbox.type !== "shared" ? (
-					<p className="text-destructive text-sm">
-						Only shared mailboxes support user access management.
-					</p>
-				) : (
-					<SharedMailboxGrantEditor mailboxId={mailboxId} />
-				)}
-			</main>
-		</div>
+				</Alert>
+			) : mailbox.type !== "shared" ? (
+				<Alert tone="warning" title="Not a shared mailbox">
+					<p>Only shared mailboxes support user access management.</p>
+				</Alert>
+			) : (
+				<SharedMailboxGrantEditor mailboxId={mailboxId} />
+			)}
+		</SettingsShell>
 	);
 }
