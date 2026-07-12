@@ -12,7 +12,7 @@ import {
 	profileFieldLocks,
 } from "../../db/schema";
 import type { AccountRole, Principal } from "../../lib/auth/types";
-import { assertCanAssignInviteRole } from "../../lib/auth/account-access";
+import { authorizeAccount } from "../../lib/auth/access";
 import { hasDomainAccess, isPlatformPrincipal } from "../../lib/auth/principal";
 import {
 	getProfileFieldsUsedByPattern,
@@ -61,7 +61,7 @@ export async function inviteAccount(
 	}
 
 	const role = input.role ?? "user";
-	assertCanAssignInviteRole(principal, role);
+	await authorizeAccount(db, principal, "", "assign_invite_role", { inviteRole: role });
 
 	const [domain] = await db
 		.select()
@@ -237,7 +237,7 @@ export async function regenerateInviteCode(
 	principal: Principal,
 	accountId: string,
 ) {
-	await assertCanManageAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "manage");
 
 	const [target] = await db
 		.select({ status: accounts.status })

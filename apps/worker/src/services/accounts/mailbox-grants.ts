@@ -8,7 +8,7 @@ import {
 	mailboxes,
 } from "../../db/schema";
 import type { Principal } from "../../lib/auth/types";
-import { assertCanManageAccount } from "../../lib/auth/account-access";
+import { authorizeAccount } from "../../lib/auth/access";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
 import { MailboxAccessDeniedError } from "../../lib/auth/mailbox-access";
 import { assertCanGrantOnSharedMailbox } from "./shared";
@@ -64,7 +64,7 @@ export async function grantSharedMailboxAccess(
 	}
 
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
-	await assertCanManageAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "manage");
 
 	const [target] = await db
 		.select({ role: accounts.role })
@@ -89,7 +89,7 @@ export async function revokeSharedMailboxAccess(
 	}
 
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
-	await assertCanManageAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "manage");
 
 	await db
 		.delete(mailboxGrants)
@@ -99,13 +99,4 @@ export async function revokeSharedMailboxAccess(
 				eq(mailboxGrants.mailboxId, mailboxId),
 			),
 		);
-}
-
-function assertCanManageManagerAssignments(principal: Principal): void {
-	if (isPlatformPrincipal(principal) || principal.role === "admin") {
-		return;
-	}
-	throw new MailboxAccessDeniedError(
-		"You do not have permission to manage manager assignments",
-	);
 }

@@ -26,10 +26,7 @@ import {
 	updateAccountAssignments,
 	updateDomainLocalPartPolicy,
 } from "../services/accounts";
-import {
-	assertCanManageAccount,
-	assertCanManageTargetSecurity,
-} from "../lib/auth/account-access";
+import { authorizeAccount } from "../lib/auth/access";
 import { createPasswordResetCode } from "../services/auth";
 import {
 	listActiveSessions,
@@ -294,10 +291,11 @@ export async function handleCreatePasswordResetCode(context: RouteContext) {
 	}
 	try {
 		const code = await withDb(context.env, async (db) => {
-			await assertCanManageAccount(
+			await authorizeAccount(
 				db,
 				context.principal,
 				context.params.id,
+				"manage",
 			);
 			return createPasswordResetCode(db, {
 				accountId: context.params.id,
@@ -513,10 +511,11 @@ export async function handleRevokeManagerMailboxAssignment(context: RouteContext
 export async function handleListAccountSessions(context: RouteContext) {
 	try {
 		const items = await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
+			await authorizeAccount(
 				db,
 				context.principal,
 				context.params.id,
+				"manage_security",
 			);
 			return listActiveSessions(db, context.params.id);
 		});
@@ -529,10 +528,11 @@ export async function handleListAccountSessions(context: RouteContext) {
 export async function handleRevokeAccountSession(context: RouteContext) {
 	try {
 		await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
+			await authorizeAccount(
 				db,
 				context.principal,
 				context.params.id,
+				"manage_security",
 			);
 			await revokeSession(db, context.params.id, context.params.sessionId);
 		});
@@ -545,10 +545,11 @@ export async function handleRevokeAccountSession(context: RouteContext) {
 export async function handleRevokeAllAccountSessions(context: RouteContext) {
 	try {
 		await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
+			await authorizeAccount(
 				db,
 				context.principal,
 				context.params.id,
+				"manage_security",
 			);
 			await revokeAllSessions(db, context.params.id, { includeCurrent: true });
 		});
@@ -561,10 +562,11 @@ export async function handleRevokeAllAccountSessions(context: RouteContext) {
 export async function handleGetAccountMfaStatus(context: RouteContext) {
 	try {
 		const status = await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
+			await authorizeAccount(
 				db,
 				context.principal,
 				context.params.id,
+				"manage_security",
 			);
 			return getMfaStatus(db, context.params.id);
 		});
@@ -577,10 +579,11 @@ export async function handleGetAccountMfaStatus(context: RouteContext) {
 export async function handleDisableAccountMfa(context: RouteContext) {
 	try {
 		const status = await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
+			await authorizeAccount(
 				db,
 				context.principal,
 				context.params.id,
+				"manage_security",
 			);
 			return adminDisableMfa(db, context.params.id);
 		});

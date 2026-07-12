@@ -1,13 +1,30 @@
 import type { Database } from "../../db/client";
 import { findDraftById } from "../messages/message-queries";
-import { assertPrincipalCanAccessMailbox } from "./mailbox-access";
+import {
+	assertCanAssignInviteRole,
+	assertCanManageAccount,
+	assertCanManageTargetSecurity,
+	assertCanRemoveAccount,
+	assertCanViewAccount,
+} from "./account-access";
+import {
+	assertPrincipalCanAccessMailbox,
+	assertPrincipalCanManageMailbox,
+} from "./mailbox-access";
+import { assertCanSendFrom } from "../authorize-mailbox";
 import {
 	accessibleMailboxIds,
 	hasDomainAccess,
 	isPlatformPrincipal,
 } from "./principal";
-import type { AuthAction, AuthResource } from "./actions";
+import type {
+	AccountOperation,
+	AuthAction,
+	AuthResource,
+	MailboxOperation,
+} from "./actions";
 import { AuthorizationDeniedError } from "./actions";
+import type { AccountRole } from "./types";
 import type { Principal } from "./types";
 
 function deny(message?: string): never {
@@ -137,15 +154,68 @@ export function authorize(
 }
 
 /**
- * Resource-level mailbox check after route authorization passes.
- * Uses DB-backed scope (ADR-0006) instead of in-memory grant sets alone.
+ * Resource-level account authorization — single seam for account policy.
  */
+export async function authorizeAccount(
+	db: Database,
+	principal: Principal,
+	accountId: string,
+	operation: AccountOperation,
+	options?: {
+		inviteRole?: AccountRole;
+		removeTarget?: { isIntendant: boolean; role: AccountRole | null };
+	},
+): Promise<void> {
+	switch (operation) {
+		case "view":
+			return assertCanViewAccount(db, principal, accountId);
+		case "manage":
+			return assertCanManageAccount(db, principal, accountId);
+		case "manage_security":
+			return assertCanManageTargetSecurity(db, principal, accountId);
+		case "remove":
+			if (!options?.removeTarget) {
+				throw new Error("removeTarget is required for remove operation");
+			}
+			if (principal.accountId !== accountId) {
+				await assertCanManageAccount(db, principal, accountId);
+			}
+			return assertCanRemoveAccount(principal, options.removeTarget);
+		case "assign_invite_role":
+			if (!options?.inviteRole) {
+				throw new Error("inviteRole is required for assign_invite_role operation");
+			}
+			return assertCanAssignInviteRole(principal, options.inviteRole);
+	}
+}
+
+/**
+ * Resource-level mailbox authorization — single seam for mailbox policy.
+ */
+export async function authorizeMailbox(
+	db: Database,
+	principal: Principal,
+	mailboxId: string,
+	operation: MailboxOperation,
+): Promise<void> {
+	switch (operation) {
+		case "read":
+			return assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+		case "manage":
+			return assertPrincipalCanManageMailbox(db, principal, mailboxId);
+		case "send":
+			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			return assertCanSendFrom(db, mailboxId);
+	}
+}
+
+/** @deprecated Use authorizeMailbox(..., 'read') */
 export async function authorizeMailboxAccess(
 	db: Database,
 	principal: Principal,
 	mailboxId: string,
 ): Promise<void> {
-	await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+	return authorizeMailbox(db, principal, mailboxId, "read");
 }
 
 export async function authorizeDraftCommand(
@@ -157,6 +227,6 @@ export async function authorizeDraftCommand(
 	if (!draft) {
 		throw new Error("Draft not found");
 	}
-	await assertPrincipalCanAccessMailbox(db, principal, draft.actualMailboxId);
+	await authorizeMailbox(db, principal, draft.actualMailboxId, "read");
 	return { mailboxId: draft.actualMailboxId };
 }

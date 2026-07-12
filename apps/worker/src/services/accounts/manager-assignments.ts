@@ -8,7 +8,7 @@ import {
 	managerSharedMailboxAssignments,
 } from "../../db/schema";
 import type { AccountRole, Principal } from "../../lib/auth/types";
-import { assertCanManageAccount } from "../../lib/auth/account-access";
+import { authorizeAccount } from "../../lib/auth/access";
 import {
 	assertCanGrantOnSharedMailbox,
 	assertCanManageManagerAssignments,
@@ -112,7 +112,7 @@ export async function grantManagerMailboxAssignment(
 ) {
 	assertCanManageManagerAssignments(principal);
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
-	await assertCanManageAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "manage");
 
 	const [target] = await db
 		.select({ role: accounts.role })
@@ -162,7 +162,7 @@ export async function revokeManagerMailboxAssignment(
 ) {
 	assertCanManageManagerAssignments(principal);
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
-	await assertCanManageAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "manage");
 
 	const [target] = await db
 		.select({ role: accounts.role })

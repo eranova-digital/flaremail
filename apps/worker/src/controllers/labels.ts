@@ -1,5 +1,5 @@
 import { withDb } from "../db/client";
-import { assertPrincipalCanAccessMailbox } from "../lib/auth/mailbox-access";
+import { authorizeMailbox } from "../lib/auth/access";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -21,7 +21,7 @@ export async function handleListLabels({
 }: RouteContext): Promise<Response> {
 	try {
 		const items = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			await authorizeMailbox(db, principal, params.mailboxId, "read");
 			return listLabels(db, params.mailboxId);
 		});
 		return jsonResponse({ items });
@@ -48,7 +48,7 @@ export async function handleCreateLabel({
 
 	try {
 		const label = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			await authorizeMailbox(db, principal, params.mailboxId, "read");
 			return createLabel(db, params.mailboxId, {
 				name: value.name as string,
 				color: typeof value.color === "string" ? value.color : null,
@@ -68,7 +68,7 @@ export async function handleGetLabel({
 }: RouteContext): Promise<Response> {
 	try {
 		const label = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			await authorizeMailbox(db, principal, params.mailboxId, "read");
 			return getLabel(db, params.mailboxId, params.id);
 		});
 		return jsonResponse(label);
@@ -92,7 +92,7 @@ export async function handleUpdateLabel({
 
 	try {
 		const label = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			await authorizeMailbox(db, principal, params.mailboxId, "read");
 			return updateLabel(db, params.mailboxId, params.id, {
 				name: typeof value.name === "string" ? value.name : undefined,
 				color:
@@ -117,7 +117,7 @@ export async function handleDeleteLabel({
 }: RouteContext): Promise<Response> {
 	try {
 		await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, params.mailboxId);
+			await authorizeMailbox(db, principal, params.mailboxId, "read");
 			await removeLabel(db, params.mailboxId, params.id);
 		});
 		return new Response(null, { status: 204 });

@@ -1,5 +1,5 @@
 import { withDb } from "../db/client";
-import { assertPrincipalCanAccessMailbox } from "../lib/auth/mailbox-access";
+import { authorizeMailbox } from "../lib/auth/access";
 import { parseLimit } from "../lib/http/cursor-pagination";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
@@ -43,7 +43,7 @@ export async function handleListThreads({
 
 	try {
 		const result = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			return listThreads(db, mailboxId, {
 				folder,
 				labelId,
@@ -70,7 +70,7 @@ export async function handleGetThread({
 
 	try {
 		const thread = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			return getThread(db, params.id, mailboxId);
 		});
 		return jsonResponse(thread);
@@ -94,7 +94,7 @@ export async function handleListThreadMessages({
 		const url = new URL(request.url);
 		const includeBody = url.searchParams.get("includeBody") === "true";
 		const result = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			return listThreadMessages(db, params.id, mailboxId, {
 				bucket: includeBody ? env.BUCKET : undefined,
 				includeBody,
@@ -126,7 +126,7 @@ export async function handleThreadAction({
 
 	try {
 		const thread = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			await getThread(db, params.id, mailboxId);
 			await runThreadAction(
 				db,
@@ -165,7 +165,7 @@ export async function handlePatchThread({
 
 	try {
 		const thread = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+			await authorizeMailbox(db, principal, mailboxId, "read");
 			return replaceThreadLabels(
 				db,
 				params.id,

@@ -6,11 +6,7 @@ import {
 	accounts,
 } from "../../db/schema";
 import type { AccountRole, Principal } from "../../lib/auth/types";
-import {
-	assertCanAssignInviteRole,
-	assertCanManageAccount,
-	assertCanRemoveAccount,
-} from "../../lib/auth/account-access";
+import { authorizeAccount } from "../../lib/auth/access";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
 import { deleteMailboxCascade } from "../cascade-delete";
 
@@ -23,8 +19,10 @@ export async function assignRole(
 		domainIds?: string[];
 	},
 ) {
-	await assertCanManageAccount(db, principal, input.accountId);
-	assertCanAssignInviteRole(principal, input.role);
+	await authorizeAccount(db, principal, input.accountId, "manage");
+	await authorizeAccount(db, principal, input.accountId, "assign_invite_role", {
+		inviteRole: input.role,
+	});
 
 	if (principal.role === "admin" && input.domainIds?.length) {
 		for (const domainId of input.domainIds) {
@@ -57,7 +55,7 @@ export async function suspendAccount(
 	principal: Principal,
 	accountId: string,
 ) {
-	await assertCanManageAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "manage");
 
 	const [target] = await db
 		.select()
@@ -88,7 +86,7 @@ export async function unsuspendAccount(
 	principal: Principal,
 	accountId: string,
 ) {
-	await assertCanManageAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "manage");
 	const now = new Date();
 	await db
 		.update(accounts)
@@ -111,10 +109,9 @@ export async function removeAccount(
 		throw new Error("Account not found");
 	}
 
-	if (principal.accountId !== accountId) {
-		await assertCanManageAccount(db, principal, accountId);
-	}
-	assertCanRemoveAccount(principal, target);
+	await authorizeAccount(db, principal, accountId, "remove", {
+		removeTarget: target,
+	});
 
 	if (target.primaryMailboxId) {
 		await deleteMailboxCascade(db, bucket, target.primaryMailboxId);

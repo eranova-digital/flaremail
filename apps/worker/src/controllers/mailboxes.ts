@@ -1,8 +1,7 @@
 import { withDb } from "../db/client";
+import { authorizeMailbox } from "../lib/auth/access";
 import {
-	assertPrincipalCanAccessMailbox,
 	assertPrincipalCanManageDomain,
-	assertPrincipalCanManageMailbox,
 	filterMailboxesForPrincipal,
 	type MailboxListScope,
 } from "../lib/auth/mailbox-access";
@@ -98,7 +97,7 @@ export async function handleGetMailbox({
 }: RouteContext): Promise<Response> {
 	try {
 		const mailbox = await withDb(env, async (db) => {
-			await assertPrincipalCanAccessMailbox(db, principal, params.id);
+			await authorizeMailbox(db, principal, params.id, "read");
 			return getMailbox(db, params.id);
 		});
 		return jsonResponse(mailbox);
@@ -122,7 +121,7 @@ export async function handleUpdateMailbox({
 
 	try {
 		const mailbox = await withDb(env, async (db) => {
-			await assertPrincipalCanManageMailbox(db, principal, params.id);
+			await authorizeMailbox(db, principal, params.id, "manage");
 			return updateMailbox(db, params.id, {
 				isActive:
 					typeof value.isActive === "boolean" ? value.isActive : undefined,
@@ -142,7 +141,7 @@ export async function handleDeleteMailbox({
 }: RouteContext): Promise<Response> {
 	try {
 		await withDb(env, async (db) => {
-			await assertPrincipalCanManageMailbox(db, principal, params.id);
+			await authorizeMailbox(db, principal, params.id, "manage");
 			await removeMailbox(db, env.BUCKET, params.id);
 		});
 		return new Response(null, { status: 204 });

@@ -9,7 +9,7 @@ import {
 	managerSharedMailboxAssignments,
 } from "../../db/schema";
 import type { Principal } from "../../lib/auth/types";
-import { assertCanManageAccount } from "../../lib/auth/account-access";
+import { authorizeAccount } from "../../lib/auth/access";
 import { hasDomainAccess, isPlatformPrincipal } from "../../lib/auth/principal";
 import { getAccountDetail } from "./profile";
 import { grantMailboxAccess } from "./mailbox-grants";
@@ -30,7 +30,7 @@ export async function updateAccountAssignments(
 		grantedMailboxIds?: string[];
 	},
 ) {
-	await assertCanManageAccount(db, principal, accountId);
+	await authorizeAccount(db, principal, accountId, "manage");
 
 	const [target] = await db
 		.select()
