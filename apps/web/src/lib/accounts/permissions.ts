@@ -88,6 +88,33 @@ export function canEditAccountDetails(
 	return actor.id === targetId || canAssignRoles(actor);
 }
 
+export function canEditOwnProfile(account: Account | null): boolean {
+	return !!account && !account.isIntendant;
+}
+
+export function canRegisterDomains(account: Account | null): boolean {
+	return !!account && (account.isIntendant || account.role === "superadmin");
+}
+
+export function canAccessDomainsTab(account: Account | null): boolean {
+	return (
+		!!account &&
+		(account.isIntendant || account.role === "superadmin" || account.role === "admin")
+	);
+}
+
+export function canManageMailboxes(account: Account | null): boolean {
+	return canAccessDomainsTab(account);
+}
+
+export function canAccessMailboxesTab(account: Account | null): boolean {
+	return canManageMailboxes(account) || account?.role === "manager";
+}
+
+export function canManageMailboxGrants(account: Account | null): boolean {
+	return account?.role === "manager";
+}
+
 export function canLockProfileFields(actor: Account | null): boolean {
 	return (
 		!!actor &&

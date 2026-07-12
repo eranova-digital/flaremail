@@ -28,6 +28,7 @@ export function LoginPage() {
 
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const useTextEmailInput = email.trim().toLowerCase() === "intendant";
 	const [error, setError] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
 
@@ -72,7 +73,7 @@ export function LoginPage() {
 							</label>
 							<Input
 								id="email"
-								type="email"
+								type={useTextEmailInput ? "text" : "email"}
 								autoComplete="email"
 								value={email}
 								onChange={(event) => setEmail(event.target.value)}
@@ -107,6 +108,11 @@ export function LoginPage() {
 					</form>
 				</CardContent>
 			</Card>
+			<p className="text-muted-foreground text-center text-sm">
+				<Link to="/reset-password" className="text-primary hover:underline">
+					Forgot password?
+				</Link>
+			</p>
 			<p className="text-muted-foreground text-center text-sm">
 				Have an invite code?{" "}
 				<Link to="/activate" className="text-primary hover:underline">

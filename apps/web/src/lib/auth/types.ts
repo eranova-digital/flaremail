@@ -19,6 +19,7 @@ export type Account = {
 	status: string;
 	loginIdentifier: string;
 	primaryMailboxId: string | null;
+	domainIds?: string[];
 	profile: AccountProfile | null;
 	lockedFields?: string[];
 	displayName?: string;

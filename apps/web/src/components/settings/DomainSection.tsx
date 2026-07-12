@@ -17,12 +17,17 @@ import {
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import type { Domain } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
+import { canRegisterDomains } from "@/lib/accounts/permissions";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { DomainLocalPartPolicy } from "@/components/settings/accounts/DomainLocalPartPolicy";
 import { cn } from "@/lib/utils";
 
 const selectClassName =
 	"border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 export function DomainSection() {
+	const { account } = useAuth();
+	const canRegister = canRegisterDomains(account);
 	const domainsQuery = useDomains();
 	const createDomain = useCreateDomain();
 	const [newDomain, setNewDomain] = useState("");
@@ -51,19 +56,21 @@ export function DomainSection() {
 				</p>
 			</div>
 
-			<form onSubmit={handleCreate} className="flex gap-2">
-				<Input
-					placeholder="example.com"
-					value={newDomain}
-					onChange={(event) => setNewDomain(event.target.value)}
-					disabled={createDomain.isPending}
-				/>
-				<Button type="submit" disabled={createDomain.isPending || !newDomain.trim()}>
-					Add domain
-				</Button>
-			</form>
+			{canRegister ? (
+				<form onSubmit={handleCreate} className="flex gap-2">
+					<Input
+						placeholder="example.com"
+						value={newDomain}
+						onChange={(event) => setNewDomain(event.target.value)}
+						disabled={createDomain.isPending}
+					/>
+					<Button type="submit" disabled={createDomain.isPending || !newDomain.trim()}>
+						Add domain
+					</Button>
+				</form>
+			) : null}
 
-			{createDomain.isError ? (
+			{canRegister && createDomain.isError ? (
 				<p className="text-destructive text-sm">{getErrorMessage(createDomain.error)}</p>
 			) : null}
 
@@ -76,7 +83,11 @@ export function DomainSection() {
 			) : domainsQuery.isError ? (
 				<p className="text-destructive text-sm">{getErrorMessage(domainsQuery.error)}</p>
 			) : (domainsQuery.data ?? []).length === 0 ? (
-				<p className="text-muted-foreground text-sm">No domains yet. Add one above.</p>
+				<p className="text-muted-foreground text-sm">
+					{canRegister
+						? "No domains yet. Add one above."
+						: "No domains assigned to your account."}
+				</p>
 			) : (
 				<Card className="gap-0 rounded-md py-0">
 					<CardContent className="p-0">
@@ -93,9 +104,11 @@ export function DomainSection() {
 }
 
 function DomainRow({ domain }: { domain: Domain }) {
+	const { account } = useAuth();
+	const canRegister = canRegisterDomains(account);
 	const updateDomain = useUpdateDomain();
 	const deleteDomain = useDeleteDomain();
-	const mailboxesQuery = useMailboxes();
+	const mailboxesQuery = useMailboxes("manage");
 
 	if (!domain.id) {
 		return null;
@@ -173,6 +186,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 						onClick={handleDelete}
 						disabled={isPending}
 						aria-label={`Delete ${domain.domain}`}
+						className={canRegister ? undefined : "hidden"}
 					>
 						<Trash2 className="text-destructive size-4" />
 					</Button>
@@ -224,6 +238,8 @@ function DomainRow({ domain }: { domain: Domain }) {
 			{mutationError ? (
 				<p className="text-destructive text-sm">{getErrorMessage(mutationError)}</p>
 			) : null}
+
+			<DomainLocalPartPolicy domainId={domain.id} />
 		</li>
 	);
 }

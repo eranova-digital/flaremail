@@ -28,6 +28,9 @@ import {
 } from "@/hooks/use-mailboxes";
 import type { CreateMailboxRequest, Mailbox } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
+import { filterDomainsForAccount } from "@/lib/accounts/domains";
+import { canManageMailboxes } from "@/lib/accounts/permissions";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import {
 	groupMailboxesByDomain,
 	sortMailboxes,
@@ -36,17 +39,12 @@ import {
 } from "@/lib/sort-mailboxes";
 import { cn } from "@/lib/utils";
 
-const MAILBOX_TYPES: CreateMailboxRequest["type"][] = [
-	"primary",
-	"secondary",
-	"shared",
-	"alias",
-];
+const MAILBOX_TYPES: CreateMailboxRequest["type"][] = ["shared", "alias"];
 
 const emptyForm = {
 	localPart: "",
 	domainId: "",
-	type: "primary" as CreateMailboxRequest["type"],
+	type: "shared" as CreateMailboxRequest["type"],
 	aliasTarget: "",
 };
 
@@ -93,7 +91,9 @@ function resolveAliasTarget(
 }
 
 export function MailboxSection() {
-	const mailboxesQuery = useMailboxes();
+	const { account } = useAuth();
+	const canManage = canManageMailboxes(account);
+	const mailboxesQuery = useMailboxes("manage");
 	const domainsQuery = useDomains();
 	const createMailbox = useCreateMailbox();
 	const [form, setForm] = useState(emptyForm);
@@ -101,7 +101,10 @@ export function MailboxSection() {
 		Record<string, boolean>
 	>({});
 
-	const domains = domainsQuery.data ?? [];
+	const domains = useMemo(
+		() => filterDomainsForAccount(account, domainsQuery.data ?? []),
+		[account, domainsQuery.data],
+	);
 	const mailboxes = mailboxesQuery.data ?? [];
 	const domainNamesById = useMemo(
 		() =>
@@ -212,6 +215,7 @@ export function MailboxSection() {
 			</div>
 
 			<Card className="gap-0 rounded-md py-0">
+				{canManage ? (
 				<CardContent className="p-0">
 					<form onSubmit={handleCreate} className="space-y-3 p-4">
 				<div className="grid gap-3 sm:grid-cols-2">
@@ -331,6 +335,13 @@ export function MailboxSection() {
 				) : null}
 					</form>
 				</CardContent>
+				) : (
+					<CardContent className="p-4">
+						<p className="text-muted-foreground text-sm">
+							You do not have permission to create or manage mailboxes.
+						</p>
+					</CardContent>
+				)}
 			</Card>
 
 			{createMailbox.isError ? (

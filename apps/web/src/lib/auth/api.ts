@@ -43,6 +43,13 @@ async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
 	return (await response.json()) as T;
 }
 
+export function bootstrapInstance(): Promise<{
+	created: boolean;
+	password?: string;
+}> {
+	return authRequest("/bootstrap", { method: "POST" });
+}
+
 export function fetchMe(): Promise<Account> {
 	return authRequest<Account>("/auth/me");
 }
@@ -61,8 +68,24 @@ export function signOut(): Promise<{ ok: true }> {
 export function activateAccount(input: {
 	code: string;
 	password: string;
-	firstName?: string;
-	lastName?: string;
+	profile?: {
+		firstName?: string;
+		lastName?: string;
+		recoveryAddress?: string | null;
+		phone?: string | null;
+		addressCountry?: string | null;
+		addressState?: string | null;
+		addressCity?: string | null;
+		addressLine1?: string | null;
+		addressLine2?: string | null;
+		address?: {
+			country?: string | null;
+			state?: string | null;
+			city?: string | null;
+			line1?: string | null;
+			line2?: string | null;
+		};
+	};
 }): Promise<{ ok: true }> {
 	return authRequest("/auth/activate", {
 		method: "POST",

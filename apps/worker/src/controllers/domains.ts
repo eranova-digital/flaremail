@@ -1,4 +1,5 @@
 import { withDb } from "../db/client";
+import { hasDomainAccess, isPlatformPrincipal } from "../lib/auth/principal";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -15,9 +16,21 @@ import {
 export async function handleListDomains({
 	request,
 	env,
+	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		const domains = await withDb(env, (db) => listDomains(db));
+		const domains = await withDb(env, async (db) => {
+			const all = await listDomains(db);
+			if (principal.kind === "legacy" || isPlatformPrincipal(principal)) {
+				return all;
+			}
+			if (principal.domainIds.length === 0) {
+				return [];
+			}
+			return all.filter((domain) =>
+				domain.id ? hasDomainAccess(principal, domain.id) : false,
+			);
+		});
 		return jsonResponse({ items: domains });
 	} catch (error) {
 		return handleRouteError(error, request);

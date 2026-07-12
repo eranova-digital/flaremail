@@ -1,23 +1,35 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { apiUrl } from "@/lib/api";
 import {
 	createMailbox,
 	deleteMailbox,
-	listMailboxes,
 	updateMailbox,
 	type CreateMailboxData,
+	type Mailbox,
 	type UpdateMailboxData,
 } from "@/lib/api/client";
-import { assertData } from "@/lib/api/errors";
+import { assertData, getErrorMessage } from "@/lib/api/errors";
 import { queryKeys } from "@/lib/query-keys";
 
-export function useMailboxes() {
+export type MailboxListScope = "mail" | "manage";
+
+async function fetchMailboxes(scope: MailboxListScope): Promise<Mailbox[]> {
+	const response = await fetch(apiUrl(`/mailboxes?scope=${scope}`), {
+		credentials: "include",
+	});
+	if (!response.ok) {
+		const body = await response.json().catch(() => null);
+		throw new Error(getErrorMessage(body) ?? "Failed to load mailboxes");
+	}
+	const data = (await response.json()) as { items?: Mailbox[] };
+	return data.items ?? [];
+}
+
+export function useMailboxes(scope: MailboxListScope = "mail") {
 	return useQuery({
-		queryKey: queryKeys.mailboxes,
-		queryFn: async () => {
-			const { data } = await listMailboxes({ throwOnError: true });
-			return assertData(data, "listMailboxes").items ?? [];
-		},
+		queryKey: [...queryKeys.mailboxes, scope],
+		queryFn: () => fetchMailboxes(scope),
 	});
 }
 

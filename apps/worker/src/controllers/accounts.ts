@@ -9,9 +9,13 @@ import {
 	assignRole,
 	getAccountDetail,
 	getDomainLocalPartPolicy,
+	grantSharedMailboxAccess,
 	inviteAccount,
 	listAccountsForPrincipal,
+	listMailboxGrantHolders,
+	regenerateInviteCode,
 	removeAccount,
+	revokeSharedMailboxAccess,
 	suggestInviteLocalPart,
 	suspendAccount,
 	unsuspendAccount,
@@ -154,6 +158,17 @@ export async function handleInviteAccount(context: RouteContext) {
 						)
 					: undefined,
 				sendInviteEmail: value.sendInviteEmail === true,
+				assignedDomainIds: Array.isArray(value.assignedDomainIds)
+					? value.assignedDomainIds.filter(
+							(id): id is string => typeof id === "string",
+						)
+					: undefined,
+				sharedMailboxIds: Array.isArray(value.sharedMailboxIds)
+					? value.sharedMailboxIds.filter(
+							(id): id is string => typeof id === "string",
+						)
+					: undefined,
+				allSharedMailboxes: value.allSharedMailboxes === true,
 			}),
 		);
 		return jsonResponse(result);
@@ -174,12 +189,17 @@ export async function handleSuggestInviteLocalPart(context: RouteContext) {
 
 	try {
 		const localPart = await withDb(context.env, (db) =>
-			suggestInviteLocalPart(db, value.domainId as string, {
-				firstName:
-					typeof value.firstName === "string" ? value.firstName : undefined,
-				lastName:
-					typeof value.lastName === "string" ? value.lastName : undefined,
-			}),
+			suggestInviteLocalPart(
+				db,
+				value.domainId as string,
+				{
+					firstName:
+						typeof value.firstName === "string" ? value.firstName : undefined,
+					lastName:
+						typeof value.lastName === "string" ? value.lastName : undefined,
+				},
+				context.principal.role === "manager",
+			),
 		);
 		return jsonResponse({ localPart });
 	} catch (error) {
@@ -309,6 +329,73 @@ export async function handleUpdateDomainLocalPartPolicy(context: RouteContext) {
 			),
 		);
 		return jsonResponse(policy);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleRegenerateInviteCode(context: RouteContext) {
+	try {
+		const result = await withDb(context.env, (db) =>
+			regenerateInviteCode(db, context.principal, context.params.id),
+		);
+		return jsonResponse(result);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleListMailboxGrantHolders(context: RouteContext) {
+	try {
+		const items = await withDb(context.env, (db) =>
+			listMailboxGrantHolders(
+				db,
+				context.principal,
+				context.params.mailboxId,
+			),
+		);
+		return jsonResponse({ items });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleGrantSharedMailboxAccess(context: RouteContext) {
+	const body = await parseJsonBody(context.request);
+	if (body instanceof Response) {
+		return body;
+	}
+	const value = body as Record<string, unknown>;
+	if (typeof value.mailboxId !== "string") {
+		return validationError(context.request, "mailboxId is required");
+	}
+
+	try {
+		await withDb(context.env, (db) =>
+			grantSharedMailboxAccess(
+				db,
+				context.principal,
+				context.params.id,
+				value.mailboxId as string,
+			),
+		);
+		return jsonResponse({ ok: true });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleRevokeSharedMailboxAccess(context: RouteContext) {
+	try {
+		await withDb(context.env, (db) =>
+			revokeSharedMailboxAccess(
+				db,
+				context.principal,
+				context.params.id,
+				context.params.mailboxId,
+			),
+		);
+		return new Response(null, { status: 204 });
 	} catch (error) {
 		return handleRouteError(error, context.request);
 	}

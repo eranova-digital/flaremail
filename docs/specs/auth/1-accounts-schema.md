@@ -54,7 +54,7 @@ Introduce an **accounts** domain in Postgres: **accounts**, profile fields, **ro
 - **Local part policy** templates: `{first_name}`, `{last_name}`, `{last_name_initial}` at minimum.
 - Profile V1 fields: first name, last name, recovery address (optional), address (country, state/county, city, line1, line2) optional, phone optional.
 - Services layer: `AccountService`, `InviteService`, `RoleAssignmentService` following ADR-0001 layering.
-- Intendant bootstrap runs on first request or deploy migration hook; password logged once to deploy output.
+- Intendant bootstrap runs only via `POST /api/v1/bootstrap` when no intendant account exists; password returned once in the response.
 - **Account removal** cascades: revoke grants, hard-delete primary mailbox per existing **hard delete** rules, delete account row but retain ID in tombstone or use non-reused UUID generation.
 
 ## Testing Decisions

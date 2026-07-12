@@ -28,8 +28,17 @@ type AuthContextValue = {
 	activate: (input: {
 		code: string;
 		password: string;
-		firstName?: string;
-		lastName?: string;
+		profile?: {
+			firstName?: string;
+			lastName?: string;
+			recoveryAddress?: string | null;
+			phone?: string | null;
+			addressCountry?: string | null;
+			addressState?: string | null;
+			addressCity?: string | null;
+			addressLine1?: string | null;
+			addressLine2?: string | null;
+		};
 	}) => Promise<Account>;
 	resetPassword: (input: { code: string; password: string }) => Promise<void>;
 };
@@ -94,8 +103,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		async (input: {
 			code: string;
 			password: string;
-			firstName?: string;
-			lastName?: string;
+			profile?: {
+				firstName?: string;
+				lastName?: string;
+				recoveryAddress?: string | null;
+				phone?: string | null;
+				addressCountry?: string | null;
+				addressState?: string | null;
+				addressCity?: string | null;
+				addressLine1?: string | null;
+				addressLine2?: string | null;
+			};
 		}) => {
 			await activateAccount(input);
 			const me = await fetchMe();

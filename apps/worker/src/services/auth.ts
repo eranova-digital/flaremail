@@ -2,9 +2,11 @@ import { and, eq, gt } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import {
+	accountDomainAssignments,
 	accountProfiles,
 	accounts,
 	invites,
+	mailboxes,
 	passwordResetCodes,
 	profileFieldLocks,
 	sessions,
@@ -17,16 +19,16 @@ import {
 import { hashPassword, hashSecret, verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { requireSessionSecret } from "../lib/auth/resolve-principal";
-import { ensureIntendantBootstrapped } from "./intendant-bootstrap";
+import {
+	loadProfileLocks,
+	type AccountProfileInput,
+	type ProfileLockableField,
+} from "./accounts";
 
 const SESSION_IDLE_MS = 7 * 24 * 60 * 60 * 1000;
 const SESSION_ABSOLUTE_MS = 30 * 24 * 60 * 60 * 1000;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 24 * 60 * 60 * 1000;
-
-export async function bootstrapAuth(db: Database) {
-	return ensureIntendantBootstrapped(db);
-}
 
 export async function signIn(
 	db: Database,
@@ -57,9 +59,71 @@ export async function signIn(
 	return createSession(db, account.id);
 }
 
+export async function previewInvite(db: Database, code: string) {
+	const codeHash = await hashSecret(normalizeCode(code));
+	const now = new Date();
+	const [invite] = await db
+		.select()
+		.from(invites)
+		.where(and(eq(invites.codeHash, codeHash), gt(invites.expiresAt, now)))
+		.limit(1);
+
+	if (!invite || invite.usedAt) {
+		throw new Error("Invalid or expired invite code");
+	}
+
+	const [account] = await db
+		.select()
+		.from(accounts)
+		.where(eq(accounts.id, invite.accountId))
+		.limit(1);
+	if (!account || account.status !== "pending") {
+		throw new Error("Invite is no longer valid");
+	}
+
+	const profile = await loadAccountProfile(db, account.id);
+	const lockedFields = await loadProfileLocks(db, account.id);
+
+	let address = account.loginIdentifier;
+	if (account.primaryMailboxId) {
+		const [mailbox] = await db
+			.select({ address: mailboxes.address })
+			.from(mailboxes)
+			.where(eq(mailboxes.id, account.primaryMailboxId))
+			.limit(1);
+		if (mailbox?.address) {
+			address = mailbox.address;
+		}
+	}
+
+	return {
+		address,
+		lockedFields,
+		profile: profile
+			? {
+					firstName: profile.firstName,
+					lastName: profile.lastName,
+					recoveryAddress: profile.recoveryAddress,
+					phone: profile.phone,
+					address: {
+						country: profile.addressCountry,
+						state: profile.addressState,
+						city: profile.addressCity,
+						line1: profile.addressLine1,
+						line2: profile.addressLine2,
+					},
+				}
+			: null,
+	};
+}
+
 export async function activateInvite(
 	db: Database,
-	input: { code: string; password: string; firstName?: string; lastName?: string },
+	input: {
+		code: string;
+		password: string;
+		profile?: AccountProfileInput;
+	},
 ) {
 	const codeHash = await hashSecret(normalizeCode(input.code));
 	const now = new Date();
@@ -82,6 +146,23 @@ export async function activateInvite(
 		throw new Error("Invite is no longer valid");
 	}
 
+	const existingProfile = await loadAccountProfile(db, account.id);
+	const lockedFields = new Set(await loadProfileLocks(db, account.id));
+
+	if (input.profile && existingProfile) {
+		const patch = buildActivationProfilePatch(
+			input.profile,
+			existingProfile,
+			lockedFields,
+		);
+		if (Object.keys(patch).length > 0) {
+			await db
+				.update(accountProfiles)
+				.set({ ...patch, updatedAt: now })
+				.where(eq(accountProfiles.accountId, account.id));
+		}
+	}
+
 	await db
 		.update(accounts)
 		.set({
@@ -91,17 +172,6 @@ export async function activateInvite(
 			updatedAt: now,
 		})
 		.where(eq(accounts.id, account.id));
-
-	if (input.firstName || input.lastName) {
-		await db
-			.update(accountProfiles)
-			.set({
-				firstName: input.firstName ?? undefined,
-				lastName: input.lastName ?? undefined,
-				updatedAt: now,
-			})
-			.where(eq(accountProfiles.accountId, account.id));
-	}
 
 	await db
 		.update(invites)
@@ -200,6 +270,10 @@ export async function getMe(db: Database, accountId: string) {
 		.select({ fieldName: profileFieldLocks.fieldName })
 		.from(profileFieldLocks)
 		.where(eq(profileFieldLocks.accountId, accountId));
+	const domainRows = await db
+		.select({ domainId: accountDomainAssignments.domainId })
+		.from(accountDomainAssignments)
+		.where(eq(accountDomainAssignments.accountId, accountId));
 
 	return {
 		id: account.id,
@@ -208,6 +282,7 @@ export async function getMe(db: Database, accountId: string) {
 		status: account.status,
 		loginIdentifier: account.loginIdentifier,
 		primaryMailboxId: account.primaryMailboxId,
+		domainIds: domainRows.map((row) => row.domainId),
 		lockedFields: lockedRows.map((row) => row.fieldName),
 		profile: profile
 			? {
@@ -252,6 +327,41 @@ async function createSession(db: Database, accountId: string) {
 
 function normalizeCode(code: string): string {
 	return code.trim().toUpperCase();
+}
+
+function buildActivationProfilePatch(
+	input: AccountProfileInput,
+	existing: NonNullable<Awaited<ReturnType<typeof loadAccountProfile>>>,
+	lockedFields: Set<string>,
+): Record<string, string | null> {
+	const patch: Record<string, string | null> = {};
+	const entries: [ProfileLockableField, string | null | undefined][] = [
+		["firstName", input.firstName],
+		["lastName", input.lastName],
+		["recoveryAddress", input.recoveryAddress],
+		["phone", input.phone],
+		["addressCountry", input.addressCountry],
+		["addressState", input.addressState],
+		["addressCity", input.addressCity],
+		["addressLine1", input.addressLine1],
+		["addressLine2", input.addressLine2],
+	];
+
+	for (const [field, value] of entries) {
+		if (value === undefined) {
+			continue;
+		}
+		const existingValue = existing[field] ?? null;
+		if (lockedFields.has(field)) {
+			if (value !== existingValue) {
+				throw new Error(`Field '${field}' is locked and cannot be changed`);
+			}
+			continue;
+		}
+		patch[field] = value;
+	}
+
+	return patch;
 }
 
 export function inviteExpiresAt(from = new Date()): Date {

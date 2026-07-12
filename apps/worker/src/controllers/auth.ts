@@ -7,8 +7,8 @@ import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
 import {
 	activateInvite,
-	bootstrapAuth,
 	getMe,
+	previewInvite,
 	regenerateIntendantPassword,
 	resetPasswordWithCode,
 	signIn,
@@ -23,13 +23,6 @@ function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 			"Cache-Control": "no-store",
 			"Set-Cookie": cookieHeader,
 		},
-	});
-}
-
-export async function handleBootstrapAuth(context: RouteContext) {
-	return withDb(context.env, async (db) => {
-		const result = await bootstrapAuth(db);
-		return jsonResponse(result);
 	});
 }
 
@@ -65,6 +58,19 @@ export async function handleSignOut(context: RouteContext) {
 	return jsonResponse({ ok: true });
 }
 
+export async function handlePreviewInvite(context: RouteContext) {
+	const code = new URL(context.request.url).searchParams.get("code");
+	if (!code?.trim()) {
+		return validationError(context.request, "code query parameter is required");
+	}
+	try {
+		const preview = await withDb(context.env, (db) => previewInvite(db, code));
+		return jsonResponse(preview);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
 export async function handleActivateInvite(context: RouteContext) {
 	const body = await parseJsonBody(context.request);
 	if (body instanceof Response) {
@@ -74,14 +80,95 @@ export async function handleActivateInvite(context: RouteContext) {
 	if (typeof value.code !== "string" || typeof value.password !== "string") {
 		return validationError(context.request, "code and password are required");
 	}
+
+	const profile =
+		value.profile && typeof value.profile === "object"
+			? (value.profile as Record<string, unknown>)
+			: value;
+
 	try {
 		const result = await withDb(context.env, (db) =>
 			activateInvite(db, {
 				code: value.code as string,
 				password: value.password as string,
-				firstName:
-					typeof value.firstName === "string" ? value.firstName : undefined,
-				lastName: typeof value.lastName === "string" ? value.lastName : undefined,
+				profile: {
+					firstName:
+						typeof profile.firstName === "string"
+							? profile.firstName
+							: undefined,
+					lastName:
+						typeof profile.lastName === "string"
+							? profile.lastName
+							: undefined,
+					recoveryAddress:
+						profile.recoveryAddress === null
+							? null
+							: typeof profile.recoveryAddress === "string"
+								? profile.recoveryAddress
+								: undefined,
+					phone:
+						profile.phone === null
+							? null
+							: typeof profile.phone === "string"
+								? profile.phone
+								: undefined,
+					addressCountry:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).country === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).country ===
+									  "string"
+									? ((profile.address as Record<string, unknown>)
+											.country as string)
+									: undefined)
+							: typeof profile.addressCountry === "string"
+								? profile.addressCountry
+								: undefined,
+					addressState:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).state === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).state ===
+									  "string"
+									? ((profile.address as Record<string, unknown>).state as string)
+									: undefined)
+							: typeof profile.addressState === "string"
+								? profile.addressState
+								: undefined,
+					addressCity:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).city === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).city ===
+									  "string"
+									? ((profile.address as Record<string, unknown>).city as string)
+									: undefined)
+							: typeof profile.addressCity === "string"
+								? profile.addressCity
+								: undefined,
+					addressLine1:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).line1 === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).line1 ===
+									  "string"
+									? ((profile.address as Record<string, unknown>).line1 as string)
+									: undefined)
+							: typeof profile.addressLine1 === "string"
+								? profile.addressLine1
+								: undefined,
+					addressLine2:
+						profile.address && typeof profile.address === "object"
+							? ((profile.address as Record<string, unknown>).line2 === null
+								? null
+								: typeof (profile.address as Record<string, unknown>).line2 ===
+									  "string"
+									? ((profile.address as Record<string, unknown>).line2 as string)
+									: undefined)
+							: typeof profile.addressLine2 === "string"
+								? profile.addressLine2
+								: undefined,
+				},
 			}),
 		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);

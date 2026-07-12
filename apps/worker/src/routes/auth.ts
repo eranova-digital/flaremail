@@ -1,8 +1,8 @@
 import type { RouteDefinition } from "../lib/http/router";
 import {
 	handleActivateInvite,
-	handleBootstrapAuth,
 	handleGetMe,
+	handlePreviewInvite,
 	handleRegenerateIntendantPassword,
 	handleResetPassword,
 	handleSignIn,
@@ -14,9 +14,13 @@ import {
 	handleCreatePasswordResetCode,
 	handleGetAccount,
 	handleGetDomainLocalPartPolicy,
+	handleGrantSharedMailboxAccess,
 	handleInviteAccount,
 	handleListAccounts,
+	handleListMailboxGrantHolders,
+	handleRegenerateInviteCode,
 	handleRemoveAccount,
+	handleRevokeSharedMailboxAccess,
 	handleSuggestInviteLocalPart,
 	handleSuspendAccount,
 	handleUnsuspendAccount,
@@ -40,10 +44,15 @@ import {
 const prefix = "/api/v1";
 
 export const authRoutes: RouteDefinition[] = [
-	{ method: "POST", path: `${prefix}/auth/bootstrap`, auth: false, handler: handleBootstrapAuth },
 	{ method: "POST", path: `${prefix}/auth/sign-in`, auth: false, handler: handleSignIn },
 	{ method: "POST", path: `${prefix}/auth/sign-out`, auth: false, handler: handleSignOut },
 	{ method: "POST", path: `${prefix}/auth/activate`, auth: false, handler: handleActivateInvite },
+	{
+		method: "GET",
+		path: `${prefix}/auth/invite-preview`,
+		auth: false,
+		handler: handlePreviewInvite,
+	},
 	{ method: "POST", path: `${prefix}/auth/reset-password`, auth: false, handler: handleResetPassword },
 	{ method: "GET", path: `${prefix}/auth/me`, handler: handleGetMe },
 	{ method: "PATCH", path: `${prefix}/auth/me`, handler: handleUpdateMe },
@@ -70,6 +79,26 @@ export const authRoutes: RouteDefinition[] = [
 		method: "POST",
 		path: `${prefix}/accounts/:id/password-reset-code`,
 		handler: handleCreatePasswordResetCode,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/accounts/:id/regenerate-invite`,
+		handler: handleRegenerateInviteCode,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/accounts/:id/mailbox-grants`,
+		handler: handleGrantSharedMailboxAccess,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/accounts/:id/mailbox-grants/:mailboxId`,
+		handler: handleRevokeSharedMailboxAccess,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/mailboxes/:mailboxId/grants`,
+		handler: handleListMailboxGrantHolders,
 	},
 	{
 		method: "GET",
