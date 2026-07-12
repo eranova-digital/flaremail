@@ -127,6 +127,34 @@
       "when": 1782781800000,
       "tag": "0017_ensure_blackhole_mailbox_type",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1782782400000,
+      "tag": "0018_account_totp",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1782783000000,
+      "tag": "0019_session_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1782783600000,
+      "tag": "0020_email_verification_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1782784200000,
+      "tag": "0021_instance_settings",
+      "breakpoints": true
     }
   ]
 }

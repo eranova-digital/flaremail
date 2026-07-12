@@ -26,6 +26,8 @@ import {
 	collectManageableMailboxIds,
 	MailboxAccessDeniedError,
 } from "../lib/auth/mailbox-access";
+import { getInstanceSettings } from "./instance-settings";
+import { assertRecoveryEmailCanBeRemoved } from "./security-compliance";
 import {
 	applyLocalPartPattern,
 	generatePatternRandomValues,
@@ -36,6 +38,10 @@ import {
 import { createInviteRecord } from "./auth";
 import { deleteMailboxCascade } from "./cascade-delete";
 import { normalizeEmailAddress, parseEmailAddress } from "../lib/normalize-email-address";
+import {
+	inviteCodeEmailText,
+	sendTransactionalEmail,
+} from "../lib/auth/transactional-email";
 
 export const PROFILE_LOCKABLE_FIELDS = [
 	"firstName",
@@ -138,6 +144,7 @@ export async function listAccountsForPrincipal(db: Database, principal: Principa
 		.from(accounts)
 		.leftJoin(accountProfiles, eq(accountProfiles.accountId, accounts.id))
 		.leftJoin(mailboxes, eq(mailboxes.id, accounts.primaryMailboxId))
+		.where(eq(accounts.isIntendant, false))
 		.orderBy(accounts.loginIdentifier);
 
 	if (!isPlatformPrincipal(principal)) {
@@ -182,6 +189,7 @@ export async function inviteAccount(
 		sharedMailboxIds?: string[];
 		allSharedMailboxes?: boolean;
 	},
+	email?: SendEmail,
 ) {
 	if (!isPlatformPrincipal(principal) && !hasDomainAccess(principal, input.domainId)) {
 		throw new Error("Forbidden");
@@ -350,10 +358,13 @@ export async function inviteAccount(
 		createdByAccountId: principal.accountId!,
 	});
 
-	if (input.sendInviteEmail && input.recoveryAddress) {
-		console.info(
-			`[flaremail] Invite code for ${address}: ${inviteCode} (email to ${input.recoveryAddress} — external delivery not yet wired)`,
-		);
+	if (input.sendInviteEmail && input.recoveryAddress && email) {
+		await sendTransactionalEmail(email, {
+			domainName: domain.name,
+			to: input.recoveryAddress.trim(),
+			subject: "Your Flaremail invite code",
+			text: inviteCodeEmailText(inviteCode),
+		});
 	}
 
 	return { accountId, mailboxId, address, inviteCode };
@@ -542,8 +553,15 @@ export async function updateAccountProfile(
 			if (value === undefined) {
 				continue;
 			}
+			if (isSelf && field === "recoveryAddress") {
+				continue;
+			}
 			if (isSelf && existingLocks.has(field)) {
 				continue;
+			}
+			if (field === "recoveryAddress" && (value === null || value === "")) {
+				const settings = await getInstanceSettings(db);
+				assertRecoveryEmailCanBeRemoved(account, settings);
 			}
 			patch[field] = value;
 		}

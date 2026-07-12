@@ -1,5 +1,6 @@
 import { withDb } from "../db/client";
 import { parseCookies, SESSION_COOKIE_NAME } from "../lib/auth/cookies";
+import { extractSessionMetadata } from "../lib/auth/session-metadata";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -10,7 +11,9 @@ import {
 	getMe,
 	previewInvite,
 	regenerateIntendantPassword,
+	requestPasswordReset,
 	resetPasswordWithCode,
+	sessionSecretForEnv,
 	signIn,
 	signOut,
 } from "../services/auth";
@@ -36,12 +39,24 @@ export async function handleSignIn(context: RouteContext) {
 		return validationError(context.request, "email and password are required");
 	}
 	try {
+		const sessionMetadata = extractSessionMetadata(context.request);
 		const result = await withDb(context.env, (db) =>
-			signIn(db, {
-				loginIdentifier: value.email as string,
-				password: value.password as string,
-			}),
+			signIn(
+				db,
+				{
+					loginIdentifier: value.email as string,
+					password: value.password as string,
+				},
+				sessionSecretForEnv(context.env),
+				sessionMetadata,
+			),
 		);
+		if (result.requiresMfa) {
+			return jsonResponse({
+				requiresMfa: true,
+				mfaToken: result.mfaToken,
+			});
+		}
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -87,6 +102,7 @@ export async function handleActivateInvite(context: RouteContext) {
 			: value;
 
 	try {
+		const sessionMetadata = extractSessionMetadata(context.request);
 		const result = await withDb(context.env, (db) =>
 			activateInvite(db, {
 				code: value.code as string,
@@ -169,9 +185,28 @@ export async function handleActivateInvite(context: RouteContext) {
 								? profile.addressLine2
 								: undefined,
 				},
-			}),
+			}, sessionMetadata),
 		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleForgotPassword(context: RouteContext) {
+	const body = await parseJsonBody(context.request);
+	if (body instanceof Response) {
+		return body;
+	}
+	const value = body as Record<string, unknown>;
+	if (typeof value.address !== "string") {
+		return validationError(context.request, "address is required");
+	}
+	try {
+		const result = await withDb(context.env, (db) =>
+			requestPasswordReset(db, context.env.EMAIL, { address: value.address as string }),
+		);
+		return jsonResponse(result);
 	} catch (error) {
 		return handleRouteError(error, context.request);
 	}

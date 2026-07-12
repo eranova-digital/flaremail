@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Loader2, MoreHorizontal } from "lucide-react";
 
+import { AccountSecurityTab } from "@/components/settings/accounts/AccountSecurityTab";
 import { ProfileFieldsGrid } from "@/components/settings/ProfileFieldsGrid";
 import { ProfileFieldLockToggle } from "@/components/settings/accounts/ProfileFieldLockToggle";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
@@ -53,6 +54,7 @@ import {
 	canLockProfileFields,
 	canManageAssignments,
 	canManageUserMailboxGrants,
+	canManageTargetSecurity,
 	canRemoveTarget,
 	canSuspendTarget,
 	inviteableRoles,
@@ -154,6 +156,9 @@ export function AccountDetailDialog({
 		(canManageAssignments(actor) &&
 			(target?.role === "admin" || target?.role === "manager")) ||
 		(canManageUserMailboxGrants(actor) && target?.role === "user");
+
+	const showSecurityTab = !!target && canManageTargetSecurity(actor, target);
+	const showTabs = showAccessTab || showSecurityTab;
 
 	useEffect(() => {
 		if (!accountId) {
@@ -379,15 +384,22 @@ export function AccountDetailDialog({
 							onValueChange={setActiveTab}
 							className="flex min-h-0 flex-1 flex-col"
 						>
-							{showAccessTab ? (
+							{showTabs ? (
 								<div className="border-b px-6 py-3">
 									<TabsList className="h-10 w-fit gap-1 p-1.5">
 										<TabsTrigger className="h-7 px-4" value="profile">
 											Profile
 										</TabsTrigger>
-										<TabsTrigger className="h-7 px-4" value="access">
-											Access
-										</TabsTrigger>
+										{showAccessTab ? (
+											<TabsTrigger className="h-7 px-4" value="access">
+												Access
+											</TabsTrigger>
+										) : null}
+										{showSecurityTab ? (
+											<TabsTrigger className="h-7 px-4" value="security">
+												Security
+											</TabsTrigger>
+										) : null}
 									</TabsList>
 								</div>
 							) : null}
@@ -620,6 +632,15 @@ export function AccountDetailDialog({
 												</div>
 											</AccessSection>
 										) : null}
+									</TabsContent>
+								) : null}
+
+								{showSecurityTab && accountId ? (
+									<TabsContent value="security" className="mt-0 space-y-4">
+										<AccountSecurityTab
+											accountId={accountId}
+											displayName={target.displayName}
+										/>
 									</TabsContent>
 								) : null}
 

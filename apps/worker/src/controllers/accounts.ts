@@ -26,8 +26,17 @@ import {
 	updateAccountAssignments,
 	updateDomainLocalPartPolicy,
 } from "../services/accounts";
-import { assertCanManageAccount } from "../lib/auth/account-access";
+import {
+	assertCanManageAccount,
+	assertCanManageTargetSecurity,
+} from "../lib/auth/account-access";
 import { createPasswordResetCode } from "../services/auth";
+import {
+	listActiveSessions,
+	revokeAllSessions,
+	revokeSession,
+} from "../services/auth-session";
+import { adminDisableMfa, getMfaStatus } from "../services/mfa";
 
 function parseProfileInput(value: Record<string, unknown>) {
 	const address =
@@ -151,29 +160,34 @@ export async function handleInviteAccount(context: RouteContext) {
 
 	try {
 		const result = await withDb(context.env, (db) =>
-			inviteAccount(db, context.principal, {
-				domainId: value.domainId as string,
-				localPart: value.localPart as string,
-				role,
-				...parseProfileInput(value),
-				lockedFields: Array.isArray(value.lockedFields)
-					? value.lockedFields.filter(
-							(field): field is string => typeof field === "string",
-						)
-					: undefined,
-				sendInviteEmail: value.sendInviteEmail === true,
-				assignedDomainIds: Array.isArray(value.assignedDomainIds)
-					? value.assignedDomainIds.filter(
-							(id): id is string => typeof id === "string",
-						)
-					: undefined,
-				sharedMailboxIds: Array.isArray(value.sharedMailboxIds)
-					? value.sharedMailboxIds.filter(
-							(id): id is string => typeof id === "string",
-						)
-					: undefined,
-				allSharedMailboxes: value.allSharedMailboxes === true,
-			}),
+			inviteAccount(
+				db,
+				context.principal,
+				{
+					domainId: value.domainId as string,
+					localPart: value.localPart as string,
+					role,
+					...parseProfileInput(value),
+					lockedFields: Array.isArray(value.lockedFields)
+						? value.lockedFields.filter(
+								(field): field is string => typeof field === "string",
+							)
+						: undefined,
+					sendInviteEmail: value.sendInviteEmail === true,
+					assignedDomainIds: Array.isArray(value.assignedDomainIds)
+						? value.assignedDomainIds.filter(
+								(id): id is string => typeof id === "string",
+							)
+						: undefined,
+					sharedMailboxIds: Array.isArray(value.sharedMailboxIds)
+						? value.sharedMailboxIds.filter(
+								(id): id is string => typeof id === "string",
+							)
+						: undefined,
+					allSharedMailboxes: value.allSharedMailboxes === true,
+				},
+				context.env.EMAIL,
+			),
 		);
 		return jsonResponse(result);
 	} catch (error) {
@@ -491,6 +505,86 @@ export async function handleRevokeManagerMailboxAssignment(context: RouteContext
 			),
 		);
 		return new Response(null, { status: 204 });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleListAccountSessions(context: RouteContext) {
+	try {
+		const items = await withDb(context.env, async (db) => {
+			await assertCanManageTargetSecurity(
+				db,
+				context.principal,
+				context.params.id,
+			);
+			return listActiveSessions(db, context.params.id);
+		});
+		return jsonResponse({ items });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleRevokeAccountSession(context: RouteContext) {
+	try {
+		await withDb(context.env, async (db) => {
+			await assertCanManageTargetSecurity(
+				db,
+				context.principal,
+				context.params.id,
+			);
+			await revokeSession(db, context.params.id, context.params.sessionId);
+		});
+		return jsonResponse({ ok: true });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleRevokeAllAccountSessions(context: RouteContext) {
+	try {
+		await withDb(context.env, async (db) => {
+			await assertCanManageTargetSecurity(
+				db,
+				context.principal,
+				context.params.id,
+			);
+			await revokeAllSessions(db, context.params.id, { includeCurrent: true });
+		});
+		return jsonResponse({ ok: true });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleGetAccountMfaStatus(context: RouteContext) {
+	try {
+		const status = await withDb(context.env, async (db) => {
+			await assertCanManageTargetSecurity(
+				db,
+				context.principal,
+				context.params.id,
+			);
+			return getMfaStatus(db, context.params.id);
+		});
+		return jsonResponse(status);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleDisableAccountMfa(context: RouteContext) {
+	try {
+		const status = await withDb(context.env, async (db) => {
+			await assertCanManageTargetSecurity(
+				db,
+				context.principal,
+				context.params.id,
+			);
+			return adminDisableMfa(db, context.params.id);
+		});
+		return jsonResponse(status);
 	} catch (error) {
 		return handleRouteError(error, context.request);
 	}

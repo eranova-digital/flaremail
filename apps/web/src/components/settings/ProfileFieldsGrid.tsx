@@ -40,6 +40,7 @@ type ProfileFieldsGridProps = {
 	/** Extra content rendered inside the input at the trailing edge. */
 	inputExtra?: (key: ProfileFieldKey) => ReactNode;
 	requiredFields?: ReadonlySet<string>;
+	hiddenFields?: ReadonlySet<string>;
 };
 
 /**
@@ -55,8 +56,12 @@ export function ProfileFieldsGrid({
 	labelExtra,
 	inputExtra,
 	requiredFields,
+	hiddenFields,
 }: ProfileFieldsGridProps) {
 	const field = (key: ProfileFieldKey) => {
+		if (hiddenFields?.has(key)) {
+			return null;
+		}
 		const inputId = `${idPrefix}-${key}`;
 		const isRequired = requiredFields?.has(key) ?? false;
 		const extra = labelExtra?.(key);

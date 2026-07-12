@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 
 import { ProfileSection } from "@/components/settings/ProfileSection";
+import { SecuritySection } from "@/components/settings/SecuritySection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsShell } from "@/components/layout/SettingsShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -99,10 +100,7 @@ export function SettingsPage() {
 					/>
 				</TabsContent>
 				<TabsContent value="security">
-					<SettingsStubSection
-						title="Security"
-						description="Review sign-in methods, active sessions, and account recovery options."
-					/>
+					<SecuritySection />
 				</TabsContent>
 			</Tabs>
 		</SettingsShell>

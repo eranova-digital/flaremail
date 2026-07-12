@@ -573,6 +573,32 @@ export const passwordResetCodes = pgTable(
 	(table) => [index("password_reset_codes_account_id_idx").on(table.accountId)],
 );
 
+export const emailVerificationPurposeEnum = pgEnum("email_verification_purpose", [
+	"recovery_setup",
+	"mfa_disable",
+]);
+
+export const emailVerificationCodes = pgTable(
+	"email_verification_codes",
+	{
+		id: uuid("id").primaryKey(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		targetEmail: text("target_email").notNull(),
+		purpose: emailVerificationPurposeEnum("purpose").notNull(),
+		codeHash: text("code_hash").notNull(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		usedAt: timestamp("used_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("email_verification_codes_account_id_idx").on(table.accountId),
+	],
+);
+
 export const sessions = pgTable(
 	"sessions",
 	{
@@ -591,6 +617,9 @@ export const sessions = pgTable(
 		absoluteExpiresAt: timestamp("absolute_expires_at", {
 			withTimezone: true,
 		}).notNull(),
+		userAgent: text("user_agent"),
+		ipAddress: text("ip_address"),
+		countryCode: text("country_code"),
 	},
 	(table) => [
 		index("sessions_account_id_idx").on(table.accountId),
@@ -675,9 +704,58 @@ export const oidcRefreshTokens = pgTable(
 	(table) => [index("oidc_refresh_tokens_account_id_idx").on(table.accountId)],
 );
 
+export const organizationTabAccessEnum = pgEnum("organization_tab_access", [
+	"intendant_only",
+	"intendant_and_superadmins",
+]);
+
+export const requireMfaScopeEnum = pgEnum("require_mfa_scope", [
+	"none",
+	"all",
+	"manager_and_above",
+	"admin_and_above",
+	"superadmin_and_above",
+]);
+
+export const instanceSettings = pgTable("instance_settings", {
+	id: text("id").primaryKey().default("default"),
+	organizationTabAccess: organizationTabAccessEnum("organization_tab_access")
+		.notNull()
+		.default("intendant_only"),
+	requireMfaScope: requireMfaScopeEnum("require_mfa_scope")
+		.notNull()
+		.default("none"),
+	requireRecoveryEmail: boolean("require_recovery_email")
+		.notNull()
+		.default(false),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	updatedByAccountId: uuid("updated_by_account_id").references(
+		() => accounts.id,
+		{ onDelete: "set null" },
+	),
+});
+
+export const accountTotp = pgTable("account_totp", {
+	accountId: uuid("account_id")
+		.primaryKey()
+		.references(() => accounts.id, { onDelete: "cascade" }),
+	secretEncrypted: text("secret_encrypted").notNull(),
+	enabledAt: timestamp("enabled_at", { withTimezone: true }),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});
+
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type AccountProfile = typeof accountProfiles.$inferSelect;
+export type InstanceSettings = typeof instanceSettings.$inferSelect;
+export type AccountTotp = typeof accountTotp.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type OidcClient = typeof oidcClients.$inferSelect;

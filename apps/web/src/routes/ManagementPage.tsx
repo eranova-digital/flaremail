@@ -4,6 +4,7 @@ import { DomainSection } from "@/components/settings/DomainSection";
 import { MailboxSection } from "@/components/settings/MailboxSection";
 import { ManagerMailboxGrantsSection } from "@/components/settings/ManagerMailboxGrantsSection";
 import { AccountsSection } from "@/components/settings/AccountsSection";
+import { OrganizationSection } from "@/components/settings/OrganizationSection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsShell } from "@/components/layout/SettingsShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,9 +16,10 @@ import {
 	canManageMailboxes,
 	showsManagerMailboxGrantsTab,
 } from "@/lib/accounts/permissions";
+import { useCanAccessOrganizationTab } from "@/hooks/use-instance-settings";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
-const ALL_TABS = ["domains", "mailboxes", "accounts"] as const;
+const ALL_TABS = ["domains", "mailboxes", "accounts", "organization"] as const;
 type ManagementTab = (typeof ALL_TABS)[number];
 
 function isManagementTab(value: string | null): value is ManagementTab {
@@ -28,6 +30,7 @@ function defaultTab(
 	showDomains: boolean,
 	showMailboxes: boolean,
 	showAccounts: boolean,
+	showOrganization: boolean,
 ): ManagementTab {
 	if (showDomains) {
 		return "domains";
@@ -38,6 +41,9 @@ function defaultTab(
 	if (showAccounts) {
 		return "accounts";
 	}
+	if (showOrganization) {
+		return "organization";
+	}
 	return "domains";
 }
 
@@ -46,8 +52,14 @@ function resolveActiveTab(
 	showDomains: boolean,
 	showMailboxes: boolean,
 	showAccounts: boolean,
+	showOrganization: boolean,
 ): ManagementTab {
-	const fallback = defaultTab(showDomains, showMailboxes, showAccounts);
+	const fallback = defaultTab(
+		showDomains,
+		showMailboxes,
+		showAccounts,
+		showOrganization,
+	);
 
 	if (!isManagementTab(tabParam)) {
 		return fallback;
@@ -61,6 +73,9 @@ function resolveActiveTab(
 	if (tabParam === "accounts" && !showAccounts) {
 		return fallback;
 	}
+	if (tabParam === "organization" && !showOrganization) {
+		return fallback;
+	}
 	return tabParam;
 }
 
@@ -68,14 +83,17 @@ export function ManagementPage() {
 	const { account } = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tabParam = searchParams.get("tab");
+	const organizationAccess = useCanAccessOrganizationTab(account);
 	const showDomains = canAccessDomainsTab(account);
 	const showMailboxes = canAccessMailboxesTab(account);
 	const showAccounts = canAccessAccountsTab(account);
+	const showOrganization = organizationAccess.canAccess;
 	const activeTab = resolveActiveTab(
 		tabParam,
 		showDomains,
 		showMailboxes,
 		showAccounts,
+		showOrganization,
 	);
 
 	if (!canAccessManagementPage(account)) {
@@ -112,6 +130,9 @@ export function ManagementPage() {
 					{showAccounts ? (
 						<TabsTrigger value="accounts">People & access</TabsTrigger>
 					) : null}
+					{showOrganization ? (
+						<TabsTrigger value="organization">Organization</TabsTrigger>
+					) : null}
 				</TabsList>
 				{showDomains ? (
 					<TabsContent value="domains">
@@ -130,6 +151,11 @@ export function ManagementPage() {
 				{showAccounts ? (
 					<TabsContent value="accounts">
 						<AccountsSection />
+					</TabsContent>
+				) : null}
+				{showOrganization ? (
+					<TabsContent value="organization">
+						<OrganizationSection />
 					</TabsContent>
 				) : null}
 			</Tabs>

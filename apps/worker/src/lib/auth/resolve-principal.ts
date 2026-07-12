@@ -6,6 +6,7 @@ import { apiKeys, oidcClients, sessions } from "../../db/schema";
 import { parseCookies, SESSION_COOKIE_NAME } from "./cookies";
 import { hashSecret } from "./password";
 import { loadPrincipalForAccount } from "./principal";
+import { touchSession } from "../../services/auth-session";
 import type { Principal } from "./types";
 import { problemResponse, requestInstance } from "../http/problem";
 
@@ -220,7 +221,10 @@ async function trySession(
 				instance: requestInstance(request),
 			});
 		}
-		const principal = await loadPrincipalForAccount(db, row.accountId, "session");
+		await touchSession(db, row.id, row.lastSeenAt);
+		const principal = await loadPrincipalForAccount(db, row.accountId, "session", {
+			sessionId: row.id,
+		});
 		if (!principal || principal.status === "suspended") {
 			return problemResponse(401, "Session invalid", {
 				code: "unauthorized",

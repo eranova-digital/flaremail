@@ -12,7 +12,6 @@
 		"api:generate": "openapi-ts"
 	},
 	"dependencies": {
-		"@test-worker/mail-quoting": "*",
 		"@base-ui/react": "^1.6.0",
 		"@floating-ui/dom": "^1.7.6",
 		"@hey-api/client-fetch": "^0.13.1",
@@ -25,6 +24,7 @@
 		"@radix-ui/react-tabs": "^1.1.16",
 		"@radix-ui/react-tooltip": "^1.2.7",
 		"@tanstack/react-query": "^5.83.0",
+		"@test-worker/mail-quoting": "*",
 		"@tiptap/extension-emoji": "^3.27.1",
 		"@tiptap/extension-highlight": "^3.27.1",
 		"@tiptap/extension-image": "^3.27.1",
@@ -46,7 +46,9 @@
 		"clsx": "^2.1.1",
 		"cmdk": "^1.1.1",
 		"email-reply-parser": "^2.3.5",
+		"input-otp": "^1.4.2",
 		"lucide-react": "^0.525.0",
+		"qrcode.react": "^4.2.0",
 		"radix-ui": "^1.6.1",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",

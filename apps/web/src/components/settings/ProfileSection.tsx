@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HelpCircle, Loader2 } from "lucide-react";
 
 import {
 	getAccountDisplayName,
 	ProfileAvatar,
 } from "@/components/ProfileAvatar";
+import { RecoveryEmailSetup } from "@/components/auth/RecoveryEmailSetup";
 import { ProfileFieldsGrid } from "@/components/settings/ProfileFieldsGrid";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
 	Tooltip,
 	TooltipContent,
@@ -46,6 +48,10 @@ export function ProfileSection() {
 	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [saved, setSaved] = useState(false);
+	const hiddenFields = useMemo(
+		() => new Set(["recoveryAddress" as const]),
+		[],
+	);
 
 	useEffect(() => {
 		if (!account?.profile) {
@@ -73,6 +79,7 @@ export function ProfileSection() {
 	}
 
 	const locked = new Set(account.lockedFields ?? []);
+	const recoveryLocked = locked.has("recoveryAddress");
 
 	const handleSave = async () => {
 		setSaving(true);
@@ -87,7 +94,6 @@ export function ProfileSection() {
 					profile: {
 						firstName: values.firstName,
 						lastName: values.lastName,
-						recoveryAddress: values.recoveryAddress || null,
 						phone: values.phone || null,
 						address: {
 							country: values.addressCountry || null,
@@ -145,6 +151,7 @@ export function ProfileSection() {
 						}}
 						isFieldDisabled={(key) => locked.has(key)}
 						labelExtra={(key) => (locked.has(key) ? <LockedFieldHelp /> : null)}
+						hiddenFields={hiddenFields}
 					/>
 					{error ? (
 						<Alert tone="destructive" title="Couldn't save profile">
@@ -160,6 +167,51 @@ export function ProfileSection() {
 						) : null}
 						{saving ? "Saving…" : "Save profile"}
 					</Button>
+				</CardContent>
+			</Card>
+			<Card>
+				<CardHeader>
+					<CardTitle>Recovery email</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-3">
+					{recoveryLocked ? (
+						<>
+							<p className="text-muted-foreground text-sm">
+								Your organization has set a recovery email for this account.
+							</p>
+							<Input
+								value={account.profile?.recoveryAddress ?? ""}
+								disabled
+								readOnly
+							/>
+						</>
+					) : account.profile?.recoveryAddress ? (
+						<>
+							<p className="text-muted-foreground text-sm">
+								Current recovery email:{" "}
+								<span className="text-foreground font-medium">
+									{account.profile.recoveryAddress}
+								</span>
+							</p>
+							<RecoveryEmailSetup
+								showSkip={false}
+								submitLabel="Update recovery email"
+								onComplete={async () => {
+									await refresh();
+									setSaved(true);
+								}}
+							/>
+						</>
+					) : (
+						<RecoveryEmailSetup
+							showSkip={false}
+							submitLabel="Add recovery email"
+							onComplete={async () => {
+								await refresh();
+								setSaved(true);
+							}}
+						/>
+					)}
 				</CardContent>
 			</Card>
 		</section>

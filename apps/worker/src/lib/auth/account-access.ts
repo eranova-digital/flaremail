@@ -141,6 +141,98 @@ export function assertCanAssignInviteRole(
 	throw new AccountAccessDeniedError();
 }
 
+const ROLE_RANK: Record<AccountRole, number> = {
+	user: 0,
+	manager: 1,
+	admin: 2,
+	superadmin: 3,
+};
+
+function principalRank(principal: Principal): number {
+	if (principal.isIntendant) {
+		return 4;
+	}
+	if (
+		principal.role === "user" ||
+		principal.role === "manager" ||
+		principal.role === "admin" ||
+		principal.role === "superadmin"
+	) {
+		return ROLE_RANK[principal.role];
+	}
+	return -1;
+}
+
+function targetSecurityRank(target: {
+	isIntendant: boolean;
+	role: AccountRole | null;
+}): number {
+	if (target.isIntendant) {
+		return 5;
+	}
+	if (!target.role) {
+		return -1;
+	}
+	return ROLE_RANK[target.role];
+}
+
+export async function assertCanManageTargetSecurity(
+	db: Database,
+	principal: Principal,
+	targetAccountId: string,
+): Promise<void> {
+	if (principal.kind === "legacy") {
+		return;
+	}
+	if (!principal.accountId) {
+		throw new AccountAccessDeniedError();
+	}
+	if (principal.accountId === targetAccountId) {
+		throw new AccountAccessDeniedError();
+	}
+
+	const [target] = await db
+		.select()
+		.from(accounts)
+		.where(eq(accounts.id, targetAccountId))
+		.limit(1);
+	if (!target) {
+		throw new Error("Account not found");
+	}
+	if (target.isIntendant) {
+		throw new AccountAccessDeniedError("The intendant account cannot be managed");
+	}
+
+	if (principalRank(principal) <= targetSecurityRank(target)) {
+		throw new AccountAccessDeniedError();
+	}
+
+	if (isPlatformPrincipal(principal)) {
+		return;
+	}
+
+	const domainId = await getAccountPrimaryDomainId(db, targetAccountId);
+	if (!domainId || !hasDomainAccess(principal, domainId)) {
+		throw new AccountAccessDeniedError();
+	}
+
+	if (principal.role === "admin") {
+		if (target.role === "admin" || target.role === "superadmin") {
+			throw new AccountAccessDeniedError();
+		}
+		return;
+	}
+
+	if (principal.role === "manager") {
+		if (target.role !== "user") {
+			throw new AccountAccessDeniedError();
+		}
+		return;
+	}
+
+	throw new AccountAccessDeniedError();
+}
+
 export function assertCanRemoveAccount(
 	principal: Principal,
 	target: { isIntendant: boolean; role: AccountRole | null },
