@@ -25,7 +25,10 @@ export function ResetPasswordPage() {
 
 		try {
 			await resetPassword({ code: code.trim(), password });
-			navigate("/login", { replace: true });
+			navigate("/login", {
+				replace: true,
+				state: { success: "Password reset. Sign in with your new password." },
+			});
 		} catch (submitError) {
 			setError(getErrorMessage(submitError));
 		} finally {

@@ -231,7 +231,10 @@ export function InviteAccountForm() {
 	]);
 
 	const toggleLock = (field: string) => {
-		if (policyRequiredFields.includes(field as "firstName" | "lastName")) {
+		if (
+			policyEnforced &&
+			policyRequiredFields.includes(field as "firstName" | "lastName")
+		) {
 			return;
 		}
 		setLockedFields((current) => {
@@ -412,20 +415,22 @@ export function InviteAccountForm() {
 				<CollapsibleSection
 					title="Profile"
 					description="Pre-fill onboarding details. Locked fields cannot be changed during activation."
-					defaultOpen
 				>
 					<div className="space-y-3">
 						{PROFILE_FIELDS.map((field) => {
-							const policyLocked = policyRequiredFields.includes(
-								field.key as "firstName" | "lastName",
-							);
+							const policyLocked =
+								policyEnforced &&
+								policyRequiredFields.includes(
+									field.key as "firstName" | "lastName",
+								);
 							const isLocked = lockedFields.has(field.key);
 							const isRequired = policyLocked;
+							const inputId = `invite-profile-${field.key}`;
 
 							return (
 								<div key={field.key} className="space-y-1">
 									<div className="flex items-center justify-between gap-2">
-										<label className="text-sm font-medium">
+										<label htmlFor={inputId} className="text-sm font-medium">
 											{field.label}
 											{isRequired ? (
 												<span className="text-destructive ml-1">*</span>
@@ -446,16 +451,17 @@ export function InviteAccountForm() {
 											</span>
 										) : null}
 									</div>
-										<Input
-											value={profile[field.key as keyof ProfileFormState]}
-											onChange={(event) =>
-												setProfile((current) => ({
-													...current,
-													[field.key]: event.target.value,
-												}))
-											}
-											required={isRequired}
-										/>
+									<Input
+										id={inputId}
+										value={profile[field.key as keyof ProfileFormState]}
+										onChange={(event) =>
+											setProfile((current) => ({
+												...current,
+												[field.key]: event.target.value,
+											}))
+										}
+										required={isRequired}
+									/>
 								</div>
 							);
 						})}

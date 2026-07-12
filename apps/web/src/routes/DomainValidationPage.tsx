@@ -21,12 +21,16 @@ import {
 	formatValidationTimestamp,
 	sortChecks,
 } from "@/lib/domain-validation";
+import { canAccessDomainsTab } from "@/lib/accounts/permissions";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/utils";
 
 export function DomainValidationPage() {
 	const { domainId } = useParams();
-	const domainQuery = useDomain(domainId);
-	const runsQuery = useDomainValidationRuns(domainId);
+	const { account } = useAuth();
+	const canAccess = canAccessDomainsTab(account);
+	const domainQuery = useDomain(domainId, canAccess);
+	const runsQuery = useDomainValidationRuns(domainId, canAccess && domainQuery.isSuccess);
 	const recheckDomain = useRecheckDomain();
 	const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
@@ -53,8 +57,35 @@ export function DomainValidationPage() {
 	const isChecking = badge === "checking" || selectedRun?.status === "checking";
 	const isPending = recheckDomain.isPending;
 
-	if (!domainId) {
+	if (!domainId || !canAccess) {
 		return <Navigate to="/settings?tab=domains" replace />;
+	}
+
+	if (domainQuery.isError) {
+		return (
+			<div className="bg-background min-h-svh">
+				<header className="border-b">
+					<div className="mx-auto flex max-w-3xl items-center gap-3 px-6 py-4">
+						<Button variant="ghost" size="icon" asChild>
+							<Link to="/settings?tab=domains" aria-label="Back to domains">
+								<ArrowLeft className="size-4" />
+							</Link>
+						</Button>
+						<h1 className="text-xl font-semibold tracking-tight">Domain unavailable</h1>
+					</div>
+				</header>
+				<main className="mx-auto max-w-3xl px-6 py-8">
+					<Card>
+						<CardContent className="space-y-2">
+							<p className="font-medium">This domain is unavailable to your account.</p>
+							<p className="text-muted-foreground text-sm">
+								{getErrorMessage(domainQuery.error)}
+							</p>
+						</CardContent>
+					</Card>
+				</main>
+			</div>
+		);
 	}
 
 	return (
@@ -87,10 +118,6 @@ export function DomainValidationPage() {
 				<div className="space-y-6">
 					{domainQuery.isLoading ? (
 						<Skeleton className="h-32 w-full" />
-					) : domainQuery.isError ? (
-						<p className="text-destructive text-sm">
-							{getErrorMessage(domainQuery.error)}
-						</p>
 					) : (
 						<Card className="gap-0 rounded-lg py-0">
 							<CardContent className="space-y-3 p-5">

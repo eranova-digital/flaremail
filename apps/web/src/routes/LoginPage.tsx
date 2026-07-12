@@ -24,7 +24,11 @@ export function LoginPage() {
 	const { account, isAuthenticated, isLoading, signIn } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const from = (location.state as { from?: string } | null)?.from;
+	const locationState = location.state as
+		| { from?: string; success?: string }
+		| null;
+	const from = locationState?.from;
+	const success = locationState?.success;
 
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -105,6 +109,11 @@ export function LoginPage() {
 						>
 							Sign in
 						</Button>
+						{success ? (
+							<p className="text-muted-foreground text-sm" role="status">
+								{success}
+							</p>
+						) : null}
 					</form>
 				</CardContent>
 			</Card>

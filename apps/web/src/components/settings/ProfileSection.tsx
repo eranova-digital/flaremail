@@ -96,9 +96,10 @@ export function ProfileSection() {
 				<CardContent className="space-y-3">
 					{PROFILE_FIELDS.map((field) => {
 						const isLocked = locked.has(field.key);
+						const inputId = `profile-${field.key}`;
 						return (
 							<div key={field.key} className="space-y-1">
-								<label className="text-sm font-medium">
+								<label htmlFor={inputId} className="text-sm font-medium">
 									{field.label}
 									{isLocked ? (
 										<span className="text-muted-foreground ml-2 text-xs">
@@ -107,6 +108,7 @@ export function ProfileSection() {
 									) : null}
 								</label>
 								<Input
+									id={inputId}
 									value={values[field.key] ?? ""}
 									disabled={isLocked}
 									onChange={(event) =>
