@@ -25,6 +25,12 @@ export function isNotFoundError(error: unknown): boolean {
 	return false;
 }
 
+export function isNoRecoveryEmailError(error: unknown): boolean {
+	return (
+		error instanceof ApiError && error.problem?.code === "no-recovery-email"
+	);
+}
+
 export function getErrorMessage(error: unknown): string {
 	if (error instanceof ApiError) {
 		return error.problem?.detail ?? error.message;

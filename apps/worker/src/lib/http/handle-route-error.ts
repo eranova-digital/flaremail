@@ -1,6 +1,7 @@
 import { MailboxAccessDeniedError } from "../auth/mailbox-access";
 import { AccountAccessDeniedError } from "../auth/account-access";
 import { EmailSendError, emailSendErrorStatus } from "../messages/send-email";
+import { NoRecoveryEmailError } from "../../services/auth";
 import { problemResponse, problemTitle, requestInstance } from "./problem";
 
 export function handleRouteError(error: unknown, request?: Request): Response {
@@ -16,6 +17,13 @@ export function handleRouteError(error: unknown, request?: Request): Response {
 	if (error instanceof MailboxAccessDeniedError) {
 		return problemResponse(403, error.message, {
 			code: "forbidden",
+			instance,
+		});
+	}
+
+	if (error instanceof NoRecoveryEmailError) {
+		return problemResponse(422, error.message, {
+			code: "no-recovery-email",
 			instance,
 		});
 	}

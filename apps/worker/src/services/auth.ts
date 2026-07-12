@@ -9,30 +9,47 @@ import {
 	mailboxes,
 	passwordResetCodes,
 	profileFieldLocks,
-	sessions,
 } from "../db/schema";
 import { formatCode, randomToken } from "../lib/auth/crypto";
-import {
-	clearSessionCookieHeader,
-	sessionCookieHeader,
-} from "../lib/auth/cookies";
 import { hashPassword, hashSecret, verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { requireSessionSecret } from "../lib/auth/resolve-principal";
+import {
+	passwordResetCodeEmailText,
+	resolveAccountSenderDomain,
+	sendTransactionalEmail,
+} from "../lib/auth/transactional-email";
 import {
 	loadProfileLocks,
 	type AccountProfileInput,
 	type ProfileLockableField,
 } from "./accounts";
+import { createSession, signOutSession, type SessionMetadata } from "./auth-session";
+import {
+	createMfaChallengeToken,
+	getMfaStatus,
+	isMfaEnabled,
+} from "./mfa";
+import { getInstanceSettings } from "./instance-settings";
+import { getSecurityRequirements, getOrganizationPolicies } from "./security-compliance";
 
-const SESSION_IDLE_MS = 7 * 24 * 60 * 60 * 1000;
-const SESSION_ABSOLUTE_MS = 30 * 24 * 60 * 60 * 1000;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 24 * 60 * 60 * 1000;
+
+export class NoRecoveryEmailError extends Error {
+	constructor() {
+		super(
+			"You haven't configured a recovery email. Please ask a supervisor for a recovery code.",
+		);
+		this.name = "NoRecoveryEmailError";
+	}
+}
 
 export async function signIn(
 	db: Database,
 	input: { loginIdentifier: string; password: string },
+	encryptionKey: string,
+	sessionMetadata?: SessionMetadata,
 ) {
 	const identifier = input.loginIdentifier.trim().toLowerCase();
 	const [account] = await db
@@ -56,7 +73,17 @@ export async function signIn(
 		throw new Error("Invalid credentials");
 	}
 
-	return createSession(db, account.id);
+	if (await isMfaEnabled(db, account.id)) {
+		return {
+			requiresMfa: true as const,
+			mfaToken: await createMfaChallengeToken(account.id, encryptionKey),
+		};
+	}
+
+	return {
+		requiresMfa: false as const,
+		...(await createSession(db, account.id, sessionMetadata)),
+	};
 }
 
 export async function previewInvite(db: Database, code: string) {
@@ -83,6 +110,7 @@ export async function previewInvite(db: Database, code: string) {
 
 	const profile = await loadAccountProfile(db, account.id);
 	const lockedFields = await loadProfileLocks(db, account.id);
+	const settings = await getInstanceSettings(db);
 
 	let address = account.loginIdentifier;
 	if (account.primaryMailboxId) {
@@ -99,6 +127,7 @@ export async function previewInvite(db: Database, code: string) {
 	return {
 		address,
 		lockedFields,
+		requireRecoveryEmail: settings.requireRecoveryEmail,
 		profile: profile
 			? {
 					firstName: profile.firstName,
@@ -124,6 +153,7 @@ export async function activateInvite(
 		password: string;
 		profile?: AccountProfileInput;
 	},
+	sessionMetadata?: SessionMetadata,
 ) {
 	const codeHash = await hashSecret(normalizeCode(input.code));
 	const now = new Date();
@@ -178,13 +208,11 @@ export async function activateInvite(
 		.set({ usedAt: now })
 		.where(eq(invites.id, invite.id));
 
-	return createSession(db, account.id);
+	return createSession(db, account.id, sessionMetadata);
 }
 
 export async function signOut(db: Database, sessionToken: string) {
-	const tokenHash = await hashSecret(sessionToken);
-	await db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
-	return clearSessionCookieHeader();
+	return signOutSession(db, sessionToken);
 }
 
 export async function regenerateIntendantPassword(db: Database, accountId: string) {
@@ -222,6 +250,73 @@ export async function createPasswordResetCode(
 		createdAt: now,
 	});
 	return code;
+}
+
+export async function requestPasswordReset(
+	db: Database,
+	email: SendEmail,
+	input: { address: string },
+) {
+	const address = input.address.trim().toLowerCase();
+	if (!address) {
+		throw new Error("Mailbox address is required");
+	}
+
+	let [account] = await db
+		.select()
+		.from(accounts)
+		.where(eq(accounts.loginIdentifier, address))
+		.limit(1);
+
+	if (!account) {
+		const [mailbox] = await db
+			.select({ id: mailboxes.id })
+			.from(mailboxes)
+			.where(eq(mailboxes.address, address))
+			.limit(1);
+		if (mailbox) {
+			[account] = await db
+				.select()
+				.from(accounts)
+				.where(eq(accounts.primaryMailboxId, mailbox.id))
+				.limit(1);
+		}
+	}
+
+	if (!account) {
+		throw new Error("No account found with that address");
+	}
+	if (account.status === "pending") {
+		throw new Error("This account has not been activated yet");
+	}
+	if (account.status === "suspended") {
+		throw new Error("Account is suspended");
+	}
+
+	const profile = await loadAccountProfile(db, account.id);
+	const recoveryAddress = profile?.recoveryAddress?.trim();
+	if (!recoveryAddress) {
+		throw new NoRecoveryEmailError();
+	}
+
+	const code = await createPasswordResetCode(db, {
+		accountId: account.id,
+		createdByAccountId: account.id,
+	});
+
+	const domainName = await resolveAccountSenderDomain(db, account.id);
+	if (!domainName) {
+		throw new Error("Could not determine sender domain for this account");
+	}
+
+	await sendTransactionalEmail(email, {
+		domainName,
+		to: recoveryAddress,
+		subject: "Reset your Flaremail password",
+		text: passwordResetCodeEmailText(code),
+	});
+
+	return { ok: true as const };
 }
 
 export async function resetPasswordWithCode(
@@ -274,6 +369,39 @@ export async function getMe(db: Database, accountId: string) {
 		.select({ domainId: accountDomainAssignments.domainId })
 		.from(accountDomainAssignments)
 		.where(eq(accountDomainAssignments.accountId, accountId));
+	const mfa = await getMfaStatus(db, accountId);
+	const settings = await getInstanceSettings(db);
+	const profilePayload = profile
+		? {
+				firstName: profile.firstName,
+				lastName: profile.lastName,
+				recoveryAddress: profile.recoveryAddress,
+				phone: profile.phone,
+				address: {
+					country: profile.addressCountry,
+					state: profile.addressState,
+					city: profile.addressCity,
+					line1: profile.addressLine1,
+					line2: profile.addressLine2,
+				},
+			}
+		: null;
+	const securityRequirements = getSecurityRequirements(
+		{
+			isIntendant: account.isIntendant,
+			role: account.role,
+			profile: profilePayload,
+			mfaEnabled: mfa.enabled,
+		},
+		settings,
+	);
+	const organizationPolicies = getOrganizationPolicies(
+		{
+			isIntendant: account.isIntendant,
+			role: account.role,
+		},
+		settings,
+	);
 
 	return {
 		id: account.id,
@@ -284,46 +412,18 @@ export async function getMe(db: Database, accountId: string) {
 		primaryMailboxId: account.primaryMailboxId,
 		domainIds: domainRows.map((row) => row.domainId),
 		lockedFields: lockedRows.map((row) => row.fieldName),
-		profile: profile
-			? {
-					firstName: profile.firstName,
-					lastName: profile.lastName,
-					recoveryAddress: profile.recoveryAddress,
-					phone: profile.phone,
-					address: {
-						country: profile.addressCountry,
-						state: profile.addressState,
-						city: profile.addressCity,
-						line1: profile.addressLine1,
-						line2: profile.addressLine2,
-					},
-				}
-			: null,
+		mfaEnabled: mfa.enabled,
+		mfaEnabledAt: mfa.enabledAt,
+		securityRequirements,
+		organizationPolicies,
+		profile: profilePayload,
 		displayName: profile
 			? `${profile.firstName} ${profile.lastName}`.trim()
 			: account.loginIdentifier,
 	};
 }
 
-async function createSession(db: Database, accountId: string) {
-	const token = randomToken(32);
-	const now = new Date();
-	const expiresAt = new Date(now.getTime() + SESSION_IDLE_MS);
-	const absoluteExpiresAt = new Date(now.getTime() + SESSION_ABSOLUTE_MS);
-	await db.insert(sessions).values({
-		id: crypto.randomUUID(),
-		accountId,
-		tokenHash: await hashSecret(token),
-		createdAt: now,
-		expiresAt,
-		lastSeenAt: now,
-		absoluteExpiresAt,
-	});
-	return {
-		token,
-		cookieHeader: sessionCookieHeader(token, Math.floor(SESSION_IDLE_MS / 1000)),
-	};
-}
+export { createSession } from "./auth-session";
 
 function normalizeCode(code: string): string {
 	return code.trim().toUpperCase();

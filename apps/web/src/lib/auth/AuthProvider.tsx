@@ -15,15 +15,20 @@ import {
 	resetPassword,
 	signIn as signInRequest,
 	signOut as signOutRequest,
+	verifyMfaSignIn,
 } from "@/lib/auth/api";
-import type { Account } from "@/lib/auth/types";
+import type { Account, SignInResult } from "@/lib/auth/types";
 
 type AuthContextValue = {
 	account: Account | null;
 	isLoading: boolean;
 	isAuthenticated: boolean;
 	refresh: () => Promise<void>;
-	signIn: (email: string, password: string) => Promise<Account>;
+	signIn: (
+		email: string,
+		password: string,
+	) => Promise<Account | { requiresMfa: true; mfaToken: string }>;
+	verifyMfa: (mfaToken: string, code: string) => Promise<Account>;
 	signOut: () => Promise<void>;
 	activate: (input: {
 		code: string;
@@ -85,7 +90,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, [refresh]);
 
 	const signIn = useCallback(async (email: string, password: string) => {
-		await signInRequest(email, password);
+		const result: SignInResult = await signInRequest(email, password);
+		if ("requiresMfa" in result && result.requiresMfa) {
+			return { requiresMfa: true as const, mfaToken: result.mfaToken };
+		}
+		const me = await fetchMe();
+		setAccount(me);
+		return me;
+	}, []);
+
+	const verifyMfa = useCallback(async (mfaToken: string, code: string) => {
+		await verifyMfaSignIn(mfaToken, code);
 		const me = await fetchMe();
 		setAccount(me);
 		return me;
@@ -137,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			isAuthenticated: account !== null,
 			refresh,
 			signIn,
+			verifyMfa,
 			signOut,
 			activate,
 			resetPassword: resetPasswordAction,
@@ -146,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			isLoading,
 			refresh,
 			signIn,
+			verifyMfa,
 			signOut,
 			activate,
 			resetPasswordAction,

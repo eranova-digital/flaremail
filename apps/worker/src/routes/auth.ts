@@ -1,6 +1,7 @@
 import type { RouteDefinition } from "../lib/http/router";
 import {
 	handleActivateInvite,
+	handleForgotPassword,
 	handleGetMe,
 	handlePreviewInvite,
 	handleRegenerateIntendantPassword,
@@ -10,18 +11,40 @@ import {
 	handleUpdateMe,
 } from "../controllers/auth";
 import {
+	handleConfirmMfa,
+	handleDisableMfa,
+	handleGetMfaStatus,
+	handleSendMfaDisableRecoveryCode,
+	handleSetupMfa,
+	handleVerifyMfaSignIn,
+} from "../controllers/mfa";
+import {
+	handleSendRecoveryEmailCode,
+	handleVerifyRecoveryEmail,
+} from "../controllers/recovery-email";
+import {
+	handleListSessions,
+	handleRevokeAllSessions,
+	handleRevokeSession,
+} from "../controllers/sessions";
+import {
 	handleAssignRole,
 	handleCreatePasswordResetCode,
+	handleDisableAccountMfa,
 	handleGetAccount,
+	handleGetAccountMfaStatus,
 	handleGetDomainLocalPartPolicy,
 	handleGrantSharedMailboxAccess,
 	handleGrantManagerMailboxAssignment,
 	handleInviteAccount,
 	handleListAccounts,
+	handleListAccountSessions,
 	handleListMailboxGrantHolders,
 	handleListMailboxManagerAssignments,
 	handleRegenerateInviteCode,
 	handleRemoveAccount,
+	handleRevokeAccountSession,
+	handleRevokeAllAccountSessions,
 	handleRevokeSharedMailboxAccess,
 	handleRevokeManagerMailboxAssignment,
 	handleSuggestInviteLocalPart,
@@ -44,12 +67,31 @@ import {
 	handleOpenIdDiscovery,
 	handleOidcJwks,
 } from "../controllers/oidc";
+import {
+	handleGetInstanceSettings,
+	handleUpdateInstanceSettings,
+} from "../controllers/instance-settings";
 
 const prefix = "/api/v1";
 
 export const authRoutes: RouteDefinition[] = [
 	{ method: "POST", path: `${prefix}/auth/sign-in`, auth: false, handler: handleSignIn },
 	{ method: "POST", path: `${prefix}/auth/sign-out`, auth: false, handler: handleSignOut },
+	{
+		method: "POST",
+		path: `${prefix}/auth/mfa/verify`,
+		auth: false,
+		handler: handleVerifyMfaSignIn,
+	},
+	{ method: "GET", path: `${prefix}/auth/mfa`, handler: handleGetMfaStatus },
+	{ method: "POST", path: `${prefix}/auth/mfa/setup`, handler: handleSetupMfa },
+	{ method: "POST", path: `${prefix}/auth/mfa/confirm`, handler: handleConfirmMfa },
+	{
+		method: "POST",
+		path: `${prefix}/auth/mfa/disable/send-recovery-code`,
+		handler: handleSendMfaDisableRecoveryCode,
+	},
+	{ method: "DELETE", path: `${prefix}/auth/mfa`, handler: handleDisableMfa },
 	{ method: "POST", path: `${prefix}/auth/activate`, auth: false, handler: handleActivateInvite },
 	{
 		method: "GET",
@@ -57,9 +99,36 @@ export const authRoutes: RouteDefinition[] = [
 		auth: false,
 		handler: handlePreviewInvite,
 	},
+	{
+		method: "POST",
+		path: `${prefix}/auth/forgot-password`,
+		auth: false,
+		handler: handleForgotPassword,
+	},
 	{ method: "POST", path: `${prefix}/auth/reset-password`, auth: false, handler: handleResetPassword },
 	{ method: "GET", path: `${prefix}/auth/me`, handler: handleGetMe },
 	{ method: "PATCH", path: `${prefix}/auth/me`, handler: handleUpdateMe },
+	{
+		method: "POST",
+		path: `${prefix}/auth/recovery-email/send`,
+		handler: handleSendRecoveryEmailCode,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/auth/recovery-email/verify`,
+		handler: handleVerifyRecoveryEmail,
+	},
+	{ method: "GET", path: `${prefix}/auth/sessions`, handler: handleListSessions },
+	{
+		method: "DELETE",
+		path: `${prefix}/auth/sessions/:id`,
+		handler: handleRevokeSession,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/auth/sessions`,
+		handler: handleRevokeAllSessions,
+	},
 	{
 		method: "POST",
 		path: `${prefix}/auth/intendant/regenerate-password`,
@@ -93,6 +162,31 @@ export const authRoutes: RouteDefinition[] = [
 		method: "POST",
 		path: `${prefix}/accounts/:id/regenerate-invite`,
 		handler: handleRegenerateInviteCode,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/accounts/:id/sessions`,
+		handler: handleListAccountSessions,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/accounts/:id/sessions/:sessionId`,
+		handler: handleRevokeAccountSession,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/accounts/:id/sessions`,
+		handler: handleRevokeAllAccountSessions,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/accounts/:id/mfa`,
+		handler: handleGetAccountMfaStatus,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/accounts/:id/mfa`,
+		handler: handleDisableAccountMfa,
 	},
 	{
 		method: "POST",
@@ -140,6 +234,17 @@ export const authRoutes: RouteDefinition[] = [
 	{ method: "DELETE", path: `${prefix}/api-keys/:id`, handler: handleRevokeApiKey },
 
 	{ method: "POST", path: `${prefix}/oidc-clients`, handler: handleCreateOidcClient },
+
+	{
+		method: "GET",
+		path: `${prefix}/instance/settings`,
+		handler: handleGetInstanceSettings,
+	},
+	{
+		method: "PATCH",
+		path: `${prefix}/instance/settings`,
+		handler: handleUpdateInstanceSettings,
+	},
 
 	{
 		method: "GET",

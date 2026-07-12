@@ -1,5 +1,6 @@
 import { apiUrl } from "@/lib/api";
 import { getErrorMessage } from "@/lib/api/errors";
+import type { AuthSession, MfaStatus } from "@/lib/auth/types";
 
 export type AccountRole = "user" | "manager" | "admin" | "superadmin";
 
@@ -65,6 +66,7 @@ export type InviteAccountInput = {
 export type InvitePreview = {
 	address: string;
 	lockedFields: string[];
+	requireRecoveryEmail: boolean;
 	profile: {
 		firstName: string;
 		lastName: string;
@@ -369,6 +371,53 @@ export async function updateLocalPartPolicy(
 		body: JSON.stringify(body),
 	});
 	return parseJson<LocalPartPolicy>(response);
+}
+
+export async function fetchAccountSessions(
+	accountId: string,
+): Promise<AuthSession[]> {
+	const response = await fetch(apiUrl(`/accounts/${accountId}/sessions`), {
+		credentials: "include",
+	});
+	const data = await parseJson<{ items: AuthSession[] }>(response);
+	return data.items;
+}
+
+export async function revokeAccountSession(
+	accountId: string,
+	sessionId: string,
+): Promise<void> {
+	const response = await fetch(
+		apiUrl(`/accounts/${accountId}/sessions/${sessionId}`),
+		{
+			method: "DELETE",
+			credentials: "include",
+		},
+	);
+	await parseJson(response);
+}
+
+export async function revokeAllAccountSessions(accountId: string): Promise<void> {
+	const response = await fetch(apiUrl(`/accounts/${accountId}/sessions`), {
+		method: "DELETE",
+		credentials: "include",
+	});
+	await parseJson(response);
+}
+
+export async function fetchAccountMfaStatus(accountId: string): Promise<MfaStatus> {
+	const response = await fetch(apiUrl(`/accounts/${accountId}/mfa`), {
+		credentials: "include",
+	});
+	return parseJson(response);
+}
+
+export async function disableAccountMfa(accountId: string): Promise<MfaStatus> {
+	const response = await fetch(apiUrl(`/accounts/${accountId}/mfa`), {
+		method: "DELETE",
+		credentials: "include",
+	});
+	return parseJson(response);
 }
 
 export const PROFILE_FIELDS = [

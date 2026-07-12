@@ -4,6 +4,7 @@ import { ComposePage } from "@/components/compose/ComposePage";
 import { MailboxLayout } from "@/components/layout/MailboxLayout";
 import { ThreadView } from "@/components/layout/ThreadView";
 import { RequireAuth } from "@/lib/auth/RequireAuth";
+import { RequireSecurityCompliance } from "@/lib/auth/RequireSecurityCompliance";
 import { ActivatePage } from "@/routes/ActivatePage";
 import { BootstrapPage } from "@/routes/BootstrapPage";
 import { DefaultFolderRedirect } from "@/routes/DefaultFolderRedirect";
@@ -15,6 +16,7 @@ import { ResetPasswordPage } from "@/routes/ResetPasswordPage";
 import { ManagementPage } from "@/routes/ManagementPage";
 import { SettingsPage } from "@/routes/SettingsPage";
 import { SharedMailboxUsersPage } from "@/routes/SharedMailboxUsersPage";
+import { SecurityCompliancePage } from "@/routes/SecurityCompliancePage";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { resolveFolderForMailbox } from "@/lib/mailbox-folders";
 import { isThreadFolder } from "@/lib/folders";
@@ -44,26 +46,29 @@ export default function App() {
 			<Route path="/activate" element={<ActivatePage />} />
 			<Route path="/reset-password" element={<ResetPasswordPage />} />
 			<Route element={<RequireAuth />}>
-				<Route path="/" element={<HomeRedirect />} />
-				<Route path="/settings" element={<SettingsPage />} />
-				<Route path="/management" element={<ManagementPage />} />
-				<Route
-					path="/management/mailboxes/:mailboxId/users"
-					element={<SharedMailboxUsersPage />}
-				/>
-				<Route
-					path="/management/domains/:domainId/validation"
-					element={<DomainValidationPage />}
-				/>
-				<Route path="/m/:mailboxId" element={<MailboxLayout />}>
-					<Route index element={<DefaultFolderRedirect />} />
-					<Route path="compose" element={<ComposePage />} />
-					<Route path="threads/:threadId" element={<ThreadView />} />
-					<Route path="labels/:labelId">
-						<Route index element={<LabelReadingPane />} />
+				<Route path="/security-compliance" element={<SecurityCompliancePage />} />
+				<Route element={<RequireSecurityCompliance />}>
+					<Route path="/" element={<HomeRedirect />} />
+					<Route path="/settings" element={<SettingsPage />} />
+					<Route path="/management" element={<ManagementPage />} />
+					<Route
+						path="/management/mailboxes/:mailboxId/users"
+						element={<SharedMailboxUsersPage />}
+					/>
+					<Route
+						path="/management/domains/:domainId/validation"
+						element={<DomainValidationPage />}
+					/>
+					<Route path="/m/:mailboxId" element={<MailboxLayout />}>
+						<Route index element={<DefaultFolderRedirect />} />
+						<Route path="compose" element={<ComposePage />} />
 						<Route path="threads/:threadId" element={<ThreadView />} />
+						<Route path="labels/:labelId">
+							<Route index element={<LabelReadingPane />} />
+							<Route path="threads/:threadId" element={<ThreadView />} />
+						</Route>
+						<Route path=":folder" element={<ValidatedFolderRoute />} />
 					</Route>
-					<Route path=":folder" element={<ValidatedFolderRoute />} />
 				</Route>
 			</Route>
 		</Routes>

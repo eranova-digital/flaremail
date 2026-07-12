@@ -1,0 +1,150 @@
+import { eq } from "drizzle-orm";
+
+import type { Database } from "../db/client";
+import { instanceSettings } from "../db/schema";
+import type { Principal } from "../lib/auth/types";
+import {
+	canAccessOrganizationSettings,
+	DEFAULT_INSTANCE_SETTINGS,
+	type InstanceSettings,
+	type OrganizationTabAccess,
+	type RequireMfaScope,
+} from "./security-compliance";
+
+export type InstanceSettingsRecord = InstanceSettings & {
+	updatedAt: string;
+	updatedByAccountId: string | null;
+};
+
+export class InstanceSettingsAccessDeniedError extends Error {
+	constructor() {
+		super("You do not have permission to manage organization settings");
+		this.name = "InstanceSettingsAccessDeniedError";
+	}
+}
+
+export class OrganizationTabAccessDeniedError extends Error {
+	constructor() {
+		super("Only the intendant can change organization tab access");
+		this.name = "OrganizationTabAccessDeniedError";
+	}
+}
+
+const INSTANCE_SETTINGS_ID = "default";
+
+export async function getInstanceSettings(
+	db: Database,
+): Promise<InstanceSettingsRecord> {
+	await ensureInstanceSettingsRow(db);
+
+	const [row] = await db
+		.select()
+		.from(instanceSettings)
+		.where(eq(instanceSettings.id, INSTANCE_SETTINGS_ID))
+		.limit(1);
+
+	if (!row) {
+		return {
+			...DEFAULT_INSTANCE_SETTINGS,
+			updatedAt: new Date().toISOString(),
+			updatedByAccountId: null,
+		};
+	}
+
+	return rowToRecord(row);
+}
+
+export async function updateInstanceSettings(
+	db: Database,
+	principal: Principal,
+	input: Partial<InstanceSettings>,
+): Promise<InstanceSettingsRecord> {
+	if (!principal.accountId) {
+		throw new InstanceSettingsAccessDeniedError();
+	}
+
+	const current = await getInstanceSettings(db);
+	if (!canAccessOrganizationSettings(principal, current)) {
+		throw new InstanceSettingsAccessDeniedError();
+	}
+
+	if (
+		input.organizationTabAccess !== undefined &&
+		!principal.isIntendant
+	) {
+		throw new OrganizationTabAccessDeniedError();
+	}
+
+	const patch: Partial<typeof instanceSettings.$inferInsert> = {
+		updatedAt: new Date(),
+		updatedByAccountId: principal.accountId,
+	};
+
+	if (input.organizationTabAccess !== undefined) {
+		patch.organizationTabAccess = input.organizationTabAccess;
+	}
+	if (input.requireMfaScope !== undefined) {
+		patch.requireMfaScope = input.requireMfaScope;
+	}
+	if (input.requireRecoveryEmail !== undefined) {
+		patch.requireRecoveryEmail = input.requireRecoveryEmail;
+	}
+
+	await db
+		.update(instanceSettings)
+		.set(patch)
+		.where(eq(instanceSettings.id, INSTANCE_SETTINGS_ID));
+
+	return getInstanceSettings(db);
+}
+
+function rowToRecord(
+	row: typeof instanceSettings.$inferSelect,
+): InstanceSettingsRecord {
+	return {
+		organizationTabAccess: row.organizationTabAccess,
+		requireMfaScope: row.requireMfaScope,
+		requireRecoveryEmail: row.requireRecoveryEmail,
+		updatedAt: row.updatedAt.toISOString(),
+		updatedByAccountId: row.updatedByAccountId,
+	};
+}
+
+async function ensureInstanceSettingsRow(db: Database): Promise<void> {
+	const [existing] = await db
+		.select({ id: instanceSettings.id })
+		.from(instanceSettings)
+		.where(eq(instanceSettings.id, INSTANCE_SETTINGS_ID))
+		.limit(1);
+
+	if (existing) {
+		return;
+	}
+
+	await db.insert(instanceSettings).values({ id: INSTANCE_SETTINGS_ID });
+}
+
+export function parseOrganizationTabAccess(
+	value: unknown,
+): OrganizationTabAccess | undefined {
+	if (
+		value === "intendant_only" ||
+		value === "intendant_and_superadmins"
+	) {
+		return value;
+	}
+	return undefined;
+}
+
+export function parseRequireMfaScope(value: unknown): RequireMfaScope | undefined {
+	if (
+		value === "none" ||
+		value === "all" ||
+		value === "manager_and_above" ||
+		value === "admin_and_above" ||
+		value === "superadmin_and_above"
+	) {
+		return value;
+	}
+	return undefined;
+}

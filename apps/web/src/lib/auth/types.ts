@@ -23,4 +23,40 @@ export type Account = {
 	profile: AccountProfile | null;
 	lockedFields?: string[];
 	displayName?: string;
+	mfaEnabled?: boolean;
+	mfaEnabledAt?: string | null;
+	securityRequirements?: {
+		recoveryEmail: boolean;
+		mfa: boolean;
+	};
+	organizationPolicies?: {
+		mfaRequired: boolean;
+		recoveryEmailRequired: boolean;
+	};
+};
+
+export type SignInResult =
+	| { ok: true }
+	| { requiresMfa: true; mfaToken: string };
+
+export type MfaSetup = {
+	secret: string;
+	otpauthUrl: string;
+};
+
+export type MfaStatus = {
+	enabled: boolean;
+	enabledAt: string | null;
+};
+
+export type AuthSession = {
+	id: string;
+	current: boolean;
+	createdAt: string;
+	lastSeenAt: string;
+	expiresAt: string;
+	ipAddress: string | null;
+	countryCode: string | null;
+	browser: string | null;
+	os: string | null;
 };

@@ -21,6 +21,7 @@ export type Principal = {
 	oidcClientId?: string;
 	oidcScopes?: string[];
 	m2mPermissions?: string[];
+	sessionId?: string;
 };
 
 export type RoutePermission =

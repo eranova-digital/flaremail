@@ -3,7 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	assignAccountRole,
 	createPasswordResetCode,
+	disableAccountMfa,
 	fetchAccount,
+	fetchAccountMfaStatus,
+	fetchAccountSessions,
 	fetchAccounts,
 	fetchLocalPartPolicy,
 	fetchMailboxGrantHolders,
@@ -13,6 +16,8 @@ import {
 	inviteAccount,
 	regenerateInviteCode,
 	removeAccount,
+	revokeAccountSession,
+	revokeAllAccountSessions,
 	revokeSharedMailboxAccess,
 	revokeManagerMailboxAssignment,
 	suggestInviteLocalPart,
@@ -27,6 +32,8 @@ import {
 export const accountQueryKeys = {
 	all: ["accounts"] as const,
 	detail: (id: string) => ["accounts", id] as const,
+	sessions: (id: string) => ["accounts", id, "sessions"] as const,
+	mfa: (id: string) => ["accounts", id, "mfa"] as const,
 	localPartPolicy: (domainId: string) =>
 		["domains", domainId, "local-part-policy"] as const,
 	mailboxGrants: (mailboxId: string) =>
@@ -249,6 +256,66 @@ export function useUpdateLocalPartPolicy() {
 		onSuccess: (data) => {
 			void queryClient.invalidateQueries({
 				queryKey: accountQueryKeys.localPartPolicy(data.domainId),
+			});
+		},
+	});
+}
+
+export function useAccountSessions(accountId: string | null) {
+	return useQuery({
+		queryKey: accountId
+			? accountQueryKeys.sessions(accountId)
+			: ["accounts", "none", "sessions"],
+		queryFn: () => fetchAccountSessions(accountId!),
+		enabled: !!accountId,
+	});
+}
+
+export function useAccountMfaStatus(accountId: string | null) {
+	return useQuery({
+		queryKey: accountId ? accountQueryKeys.mfa(accountId) : ["accounts", "none", "mfa"],
+		queryFn: () => fetchAccountMfaStatus(accountId!),
+		enabled: !!accountId,
+	});
+}
+
+export function useRevokeAccountSession() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			accountId,
+			sessionId,
+		}: {
+			accountId: string;
+			sessionId: string;
+		}) => revokeAccountSession(accountId, sessionId),
+		onSuccess: (_data, variables) => {
+			void queryClient.invalidateQueries({
+				queryKey: accountQueryKeys.sessions(variables.accountId),
+			});
+		},
+	});
+}
+
+export function useRevokeAllAccountSessions() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: revokeAllAccountSessions,
+		onSuccess: (_data, accountId) => {
+			void queryClient.invalidateQueries({
+				queryKey: accountQueryKeys.sessions(accountId),
+			});
+		},
+	});
+}
+
+export function useDisableAccountMfa() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: disableAccountMfa,
+		onSuccess: (_data, accountId) => {
+			void queryClient.invalidateQueries({
+				queryKey: accountQueryKeys.mfa(accountId),
 			});
 		},
 	});

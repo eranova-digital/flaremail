@@ -1,8 +1,25 @@
 import type { Account } from "@/lib/auth/types";
 import type { AccountRole, AccountSummary } from "@/lib/accounts/api";
+import type { InstanceSettings } from "@/lib/accounts/instance-settings";
 
 export function canAccessManagementPage(account: Account | null): boolean {
 	return canAccessAccountsTab(account);
+}
+
+export function canAccessOrganizationTab(
+	account: Account | null,
+	settings?: Pick<InstanceSettings, "organizationTabAccess">,
+): boolean {
+	if (!account) {
+		return false;
+	}
+	if (account.isIntendant) {
+		return true;
+	}
+	return (
+		settings?.organizationTabAccess === "intendant_and_superadmins" &&
+		account.role === "superadmin"
+	);
 }
 
 export function canAccessAccountsTab(account: Account | null): boolean {
@@ -213,4 +230,11 @@ export function canManageTarget(
 		return target.role === "user";
 	}
 	return false;
+}
+
+export function canManageTargetSecurity(
+	actor: Account | null,
+	target: AccountSummary,
+): boolean {
+	return canManageTarget(actor, target);
 }

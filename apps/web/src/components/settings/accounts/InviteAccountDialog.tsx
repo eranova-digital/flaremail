@@ -736,7 +736,7 @@ export function InviteAccountDialog({
 									}
 								/>
 								<label htmlFor="invite-send-email" className="cursor-pointer">
-									Send invite code to recovery address (logs only for now)
+									Send invite code to recovery address
 								</label>
 							</div>
 						</CollapsibleSection>

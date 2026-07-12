@@ -1,0 +1,104 @@
+import { apiUrl } from "@/lib/api";
+import { getErrorMessage } from "@/lib/api/errors";
+
+export type OrganizationTabAccess =
+	| "intendant_only"
+	| "intendant_and_superadmins";
+
+export type RequireMfaScope =
+	| "none"
+	| "all"
+	| "manager_and_above"
+	| "admin_and_above"
+	| "superadmin_and_above";
+
+export type InstanceSettings = {
+	organizationTabAccess: OrganizationTabAccess;
+	requireMfaScope: RequireMfaScope;
+	requireRecoveryEmail: boolean;
+	updatedAt: string;
+	updatedByAccountId: string | null;
+};
+
+export type UpdateInstanceSettingsInput = Partial<{
+	organizationTabAccess: OrganizationTabAccess;
+	requireMfaScope: RequireMfaScope;
+	requireRecoveryEmail: boolean;
+}>;
+
+async function parseJson<T>(response: Response): Promise<T> {
+	if (!response.ok) {
+		const body = await response.json().catch(() => null);
+		throw new Error(getErrorMessage(body) ?? "Request failed");
+	}
+	return response.json() as Promise<T>;
+}
+
+export async function fetchInstanceSettings(): Promise<InstanceSettings> {
+	const response = await fetch(apiUrl("/instance/settings"), {
+		credentials: "include",
+	});
+	return parseJson<InstanceSettings>(response);
+}
+
+export async function updateInstanceSettings(
+	input: UpdateInstanceSettingsInput,
+): Promise<InstanceSettings> {
+	const response = await fetch(apiUrl("/instance/settings"), {
+		method: "PATCH",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	return parseJson<InstanceSettings>(response);
+}
+
+export const ORGANIZATION_TAB_ACCESS_OPTIONS: {
+	value: OrganizationTabAccess;
+	label: string;
+	description: string;
+}[] = [
+	{
+		value: "intendant_only",
+		label: "Only me",
+		description: "Only the recovery account can view and manage organization settings.",
+	},
+	{
+		value: "intendant_and_superadmins",
+		label: "Me & owners",
+		description:
+			"Owners (superadmins) can also view and manage organization security policies.",
+	},
+];
+
+export const REQUIRE_MFA_SCOPE_OPTIONS: {
+	value: RequireMfaScope;
+	label: string;
+	description: string;
+}[] = [
+	{
+		value: "none",
+		label: "Not required",
+		description: "Two-factor authentication remains optional for everyone.",
+	},
+	{
+		value: "all",
+		label: "All accounts",
+		description: "Every account must enable 2FA on activation or next sign-in.",
+	},
+	{
+		value: "manager_and_above",
+		label: "Managers and above",
+		description: "Managers, admins, and owners must enable 2FA.",
+	},
+	{
+		value: "admin_and_above",
+		label: "Admins and above",
+		description: "Admins and owners must enable 2FA.",
+	},
+	{
+		value: "superadmin_and_above",
+		label: "Owners and above",
+		description: "Only owner accounts must enable 2FA.",
+	},
+];
