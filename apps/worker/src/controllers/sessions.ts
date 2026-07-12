@@ -3,11 +3,11 @@ import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
-import {
-	listActiveSessions,
-	revokeAllSessions,
-	revokeSession,
-} from "../services/auth-session";
+import { createIdentity } from "../lib/auth/identity";
+
+function identity(env: Env) {
+	return createIdentity(env);
+}
 
 function jsonWithOptionalCookie(
 	data: unknown,
@@ -31,7 +31,7 @@ export async function handleListSessions(context: RouteContext) {
 	}
 	try {
 		const items = await withDb(context.env, (db) =>
-			listActiveSessions(
+			identity(context.env).listSessions(
 				db,
 				context.principal.accountId!,
 				context.principal.sessionId,
@@ -49,7 +49,7 @@ export async function handleRevokeSession(context: RouteContext) {
 	}
 	try {
 		const result = await withDb(context.env, (db) =>
-			revokeSession(
+			identity(context.env).revokeSession(
 				db,
 				context.principal.accountId!,
 				context.params.id,
@@ -73,7 +73,7 @@ export async function handleRevokeAllSessions(context: RouteContext) {
 		new URL(context.request.url).searchParams.get("includeCurrent") === "true";
 	try {
 		const result = await withDb(context.env, (db) =>
-			revokeAllSessions(db, context.principal.accountId!, {
+			identity(context.env).revokeAllSessions(db, context.principal.accountId!, {
 				includeCurrent,
 				currentSessionId: context.principal.sessionId,
 			}),
