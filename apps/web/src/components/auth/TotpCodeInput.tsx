@@ -11,6 +11,7 @@ type TotpCodeInputProps = {
 	id?: string;
 	value: string;
 	onChange: (value: string) => void;
+	onComplete?: (value: string) => void;
 	disabled?: boolean;
 	autoFocus?: boolean;
 	invalid?: boolean;
@@ -21,6 +22,7 @@ export function TotpCodeInput({
 	id,
 	value,
 	onChange,
+	onComplete,
 	disabled = false,
 	autoFocus = false,
 	invalid = false,
@@ -35,6 +37,7 @@ export function TotpCodeInput({
 			autoComplete="one-time-code"
 			value={value}
 			onChange={onChange}
+			onComplete={onComplete}
 			disabled={disabled}
 			autoFocus={autoFocus}
 			containerClassName={className}

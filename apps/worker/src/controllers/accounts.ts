@@ -7,6 +7,12 @@ import type { RouteContext } from "../lib/http/router";
 import type { AccountRole } from "../lib/auth/types";
 import {
 	assignRole,
+	adminCreatePasswordResetCode,
+	adminDisableAccountMfa,
+	adminGetAccountMfaStatus,
+	adminListAccountSessions,
+	adminRevokeAccountSession,
+	adminRevokeAllAccountSessions,
 	getAccountDetail,
 	getDomainLocalPartPolicy,
 	grantSharedMailboxAccess,
@@ -15,6 +21,7 @@ import {
 	listAccountsForPrincipal,
 	listMailboxGrantHolders,
 	listMailboxManagerAssignments,
+	parseProfileInput,
 	regenerateInviteCode,
 	removeAccount,
 	revokeSharedMailboxAccess,
@@ -26,72 +33,6 @@ import {
 	updateAccountAssignments,
 	updateDomainLocalPartPolicy,
 } from "../services/accounts";
-import {
-	assertCanManageAccount,
-	assertCanManageTargetSecurity,
-} from "../lib/auth/account-access";
-import { createPasswordResetCode } from "../services/auth";
-import {
-	listActiveSessions,
-	revokeAllSessions,
-	revokeSession,
-} from "../services/auth-session";
-import { adminDisableMfa, getMfaStatus } from "../services/mfa";
-
-function parseProfileInput(value: Record<string, unknown>) {
-	const address =
-		value.address && typeof value.address === "object"
-			? (value.address as Record<string, unknown>)
-			: null;
-
-	return {
-		firstName:
-			typeof value.firstName === "string" ? value.firstName : undefined,
-		lastName: typeof value.lastName === "string" ? value.lastName : undefined,
-		recoveryAddress:
-			value.recoveryAddress === null
-				? null
-				: typeof value.recoveryAddress === "string"
-					? value.recoveryAddress
-					: undefined,
-		phone:
-			value.phone === null
-				? null
-				: typeof value.phone === "string"
-					? value.phone
-					: undefined,
-		addressCountry:
-			address?.country === null
-				? null
-				: typeof address?.country === "string"
-					? address.country
-					: undefined,
-		addressState:
-			address?.state === null
-				? null
-				: typeof address?.state === "string"
-					? address.state
-					: undefined,
-		addressCity:
-			address?.city === null
-				? null
-				: typeof address?.city === "string"
-					? address.city
-					: undefined,
-		addressLine1:
-			address?.line1 === null
-				? null
-				: typeof address?.line1 === "string"
-					? address.line1
-					: undefined,
-		addressLine2:
-			address?.line2 === null
-				? null
-				: typeof address?.line2 === "string"
-					? address.line2
-					: undefined,
-	};
-}
 
 export async function handleListAccounts(context: RouteContext) {
 	try {
@@ -289,21 +230,14 @@ export async function handleRemoveAccount(context: RouteContext) {
 }
 
 export async function handleCreatePasswordResetCode(context: RouteContext) {
-	if (!context.principal.accountId) {
-		return validationError(context.request, "Authentication required");
-	}
 	try {
-		const code = await withDb(context.env, async (db) => {
-			await assertCanManageAccount(
+		const code = await withDb(context.env, (db) =>
+			adminCreatePasswordResetCode(
 				db,
 				context.principal,
 				context.params.id,
-			);
-			return createPasswordResetCode(db, {
-				accountId: context.params.id,
-				createdByAccountId: context.principal.accountId!,
-			});
-		});
+			),
+		);
 		return jsonResponse({ code });
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -512,14 +446,9 @@ export async function handleRevokeManagerMailboxAssignment(context: RouteContext
 
 export async function handleListAccountSessions(context: RouteContext) {
 	try {
-		const items = await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
-				db,
-				context.principal,
-				context.params.id,
-			);
-			return listActiveSessions(db, context.params.id);
-		});
+		const items = await withDb(context.env, (db) =>
+			adminListAccountSessions(db, context.principal, context.params.id),
+		);
 		return jsonResponse({ items });
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -528,14 +457,14 @@ export async function handleListAccountSessions(context: RouteContext) {
 
 export async function handleRevokeAccountSession(context: RouteContext) {
 	try {
-		await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
+		await withDb(context.env, (db) =>
+			adminRevokeAccountSession(
 				db,
 				context.principal,
 				context.params.id,
-			);
-			await revokeSession(db, context.params.id, context.params.sessionId);
-		});
+				context.params.sessionId,
+			),
+		);
 		return jsonResponse({ ok: true });
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -544,14 +473,13 @@ export async function handleRevokeAccountSession(context: RouteContext) {
 
 export async function handleRevokeAllAccountSessions(context: RouteContext) {
 	try {
-		await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
+		await withDb(context.env, (db) =>
+			adminRevokeAllAccountSessions(
 				db,
 				context.principal,
 				context.params.id,
-			);
-			await revokeAllSessions(db, context.params.id, { includeCurrent: true });
-		});
+			),
+		);
 		return jsonResponse({ ok: true });
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -560,14 +488,9 @@ export async function handleRevokeAllAccountSessions(context: RouteContext) {
 
 export async function handleGetAccountMfaStatus(context: RouteContext) {
 	try {
-		const status = await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
-				db,
-				context.principal,
-				context.params.id,
-			);
-			return getMfaStatus(db, context.params.id);
-		});
+		const status = await withDb(context.env, (db) =>
+			adminGetAccountMfaStatus(db, context.principal, context.params.id),
+		);
 		return jsonResponse(status);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -576,14 +499,9 @@ export async function handleGetAccountMfaStatus(context: RouteContext) {
 
 export async function handleDisableAccountMfa(context: RouteContext) {
 	try {
-		const status = await withDb(context.env, async (db) => {
-			await assertCanManageTargetSecurity(
-				db,
-				context.principal,
-				context.params.id,
-			);
-			return adminDisableMfa(db, context.params.id);
-		});
+		const status = await withDb(context.env, (db) =>
+			adminDisableAccountMfa(db, context.principal, context.params.id),
+		);
 		return jsonResponse(status);
 	} catch (error) {
 		return handleRouteError(error, context.request);

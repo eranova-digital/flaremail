@@ -1,5 +1,4 @@
-import { apiUrl } from "@/lib/api";
-import { getErrorMessage } from "@/lib/api/errors";
+import { apiRequest } from "@/lib/api/request";
 import type { AuthSession, MfaStatus } from "@/lib/auth/types";
 
 export type AccountRole = "user" | "manager" | "admin" | "superadmin";
@@ -82,45 +81,28 @@ export type InvitePreview = {
 	} | null;
 };
 
-async function parseJson<T>(response: Response): Promise<T> {
-	if (!response.ok) {
-		const body = await response.json().catch(() => null);
-		throw new Error(getErrorMessage(body) ?? "Request failed");
-	}
-	return response.json() as Promise<T>;
-}
-
 export async function fetchAccounts(): Promise<AccountSummary[]> {
-	const response = await fetch(apiUrl("/accounts"), { credentials: "include" });
-	const data = await parseJson<{ items: AccountSummary[] }>(response);
+	const data = await apiRequest<{ items: AccountSummary[] }>("/accounts");
 	return data.items;
 }
 
 export async function fetchAccount(id: string): Promise<AccountDetail> {
-	const response = await fetch(apiUrl(`/accounts/${id}`), {
-		credentials: "include",
-	});
-	return parseJson<AccountDetail>(response);
+	return apiRequest<AccountDetail>(`/accounts/${id}`);
 }
 
 export async function fetchInvitePreview(code: string): Promise<InvitePreview> {
-	const response = await fetch(
-		apiUrl(`/auth/invite-preview?code=${encodeURIComponent(code.trim())}`),
-		{ credentials: "include" },
+	return apiRequest<InvitePreview>(
+		`/auth/invite-preview?code=${encodeURIComponent(code.trim())}`,
 	);
-	return parseJson<InvitePreview>(response);
 }
 
 export async function inviteAccount(
 	input: InviteAccountInput,
 ): Promise<{ inviteCode: string; address: string; accountId: string }> {
-	const response = await fetch(apiUrl("/accounts/invite"), {
+	return apiRequest("/accounts/invite", {
 		method: "POST",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(input),
 	});
-	return parseJson(response);
 }
 
 export async function suggestInviteLocalPart(input: {
@@ -128,13 +110,13 @@ export async function suggestInviteLocalPart(input: {
 	firstName?: string;
 	lastName?: string;
 }): Promise<string | null> {
-	const response = await fetch(apiUrl("/accounts/invite/suggest-local-part"), {
-		method: "POST",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(input),
-	});
-	const data = await parseJson<{ localPart: string | null }>(response);
+	const data = await apiRequest<{ localPart: string | null }>(
+		"/accounts/invite/suggest-local-part",
+		{
+			method: "POST",
+			body: JSON.stringify(input),
+		},
+	);
 	return data.localPart;
 }
 
@@ -145,13 +127,10 @@ export async function updateAccount(
 		lockedFields?: string[];
 	},
 ): Promise<AccountDetail> {
-	const response = await fetch(apiUrl(`/accounts/${id}`), {
+	return apiRequest<AccountDetail>(`/accounts/${id}`, {
 		method: "PATCH",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(body),
 	});
-	return parseJson<AccountDetail>(response);
 }
 
 export async function updateAccountAssignments(
@@ -163,25 +142,19 @@ export async function updateAccountAssignments(
 		grantedMailboxIds?: string[];
 	},
 ): Promise<AccountDetail> {
-	const response = await fetch(apiUrl(`/accounts/${id}/assignments`), {
+	return apiRequest<AccountDetail>(`/accounts/${id}/assignments`, {
 		method: "PATCH",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(body),
 	});
-	return parseJson<AccountDetail>(response);
 }
 
 export async function updateMyProfile(
 	profile: Partial<AccountProfile>,
 ): Promise<AccountDetail> {
-	const response = await fetch(apiUrl("/auth/me"), {
+	return apiRequest<AccountDetail>("/auth/me", {
 		method: "PATCH",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ profile }),
 	});
-	return parseJson<AccountDetail>(response);
 }
 
 export async function assignAccountRole(input: {
@@ -189,57 +162,37 @@ export async function assignAccountRole(input: {
 	role: AccountRole;
 	domainIds?: string[];
 }): Promise<void> {
-	const response = await fetch(apiUrl("/accounts/assign-role"), {
+	await apiRequest("/accounts/assign-role", {
 		method: "POST",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(input),
 	});
-	await parseJson(response);
 }
 
 export async function suspendAccount(id: string): Promise<void> {
-	const response = await fetch(apiUrl(`/accounts/${id}/suspend`), {
-		method: "POST",
-		credentials: "include",
-	});
-	await parseJson(response);
+	await apiRequest(`/accounts/${id}/suspend`, { method: "POST" });
 }
 
 export async function unsuspendAccount(id: string): Promise<void> {
-	const response = await fetch(apiUrl(`/accounts/${id}/unsuspend`), {
-		method: "POST",
-		credentials: "include",
-	});
-	await parseJson(response);
+	await apiRequest(`/accounts/${id}/unsuspend`, { method: "POST" });
 }
 
 export async function removeAccount(id: string): Promise<void> {
-	const response = await fetch(apiUrl(`/accounts/${id}`), {
-		method: "DELETE",
-		credentials: "include",
-	});
-	if (!response.ok) {
-		const body = await response.json().catch(() => null);
-		throw new Error(getErrorMessage(body) ?? "Remove failed");
-	}
+	await apiRequest(`/accounts/${id}`, { method: "DELETE" });
 }
 
 export async function createPasswordResetCode(id: string): Promise<string> {
-	const response = await fetch(apiUrl(`/accounts/${id}/password-reset-code`), {
-		method: "POST",
-		credentials: "include",
-	});
-	const data = await parseJson<{ code: string }>(response);
+	const data = await apiRequest<{ code: string }>(
+		`/accounts/${id}/password-reset-code`,
+		{ method: "POST" },
+	);
 	return data.code;
 }
 
 export async function regenerateInviteCode(id: string): Promise<string> {
-	const response = await fetch(apiUrl(`/accounts/${id}/regenerate-invite`), {
-		method: "POST",
-		credentials: "include",
-	});
-	const data = await parseJson<{ inviteCode: string }>(response);
+	const data = await apiRequest<{ inviteCode: string }>(
+		`/accounts/${id}/regenerate-invite`,
+		{ method: "POST" },
+	);
 	return data.inviteCode;
 }
 
@@ -254,10 +207,9 @@ export type MailboxGrantHolder = {
 export async function fetchMailboxGrantHolders(
 	mailboxId: string,
 ): Promise<MailboxGrantHolder[]> {
-	const response = await fetch(apiUrl(`/mailboxes/${mailboxId}/grants`), {
-		credentials: "include",
-	});
-	const data = await parseJson<{ items: MailboxGrantHolder[] }>(response);
+	const data = await apiRequest<{ items: MailboxGrantHolder[] }>(
+		`/mailboxes/${mailboxId}/grants`,
+	);
 	return data.items;
 }
 
@@ -265,33 +217,20 @@ export async function grantSharedMailboxAccess(input: {
 	accountId: string;
 	mailboxId: string;
 }): Promise<void> {
-	const response = await fetch(
-		apiUrl(`/accounts/${input.accountId}/mailbox-grants`),
-		{
-			method: "POST",
-			credentials: "include",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ mailboxId: input.mailboxId }),
-		},
-	);
-	await parseJson(response);
+	await apiRequest(`/accounts/${input.accountId}/mailbox-grants`, {
+		method: "POST",
+		body: JSON.stringify({ mailboxId: input.mailboxId }),
+	});
 }
 
 export async function revokeSharedMailboxAccess(input: {
 	accountId: string;
 	mailboxId: string;
 }): Promise<void> {
-	const response = await fetch(
-		apiUrl(`/accounts/${input.accountId}/mailbox-grants/${input.mailboxId}`),
-		{
-			method: "DELETE",
-			credentials: "include",
-		},
+	await apiRequest(
+		`/accounts/${input.accountId}/mailbox-grants/${input.mailboxId}`,
+		{ method: "DELETE" },
 	);
-	if (!response.ok) {
-		const body = await response.json().catch(() => null);
-		throw new Error(getErrorMessage(body) ?? "Revoke failed");
-	}
 }
 
 export type MailboxManagerAssignment = {
@@ -306,13 +245,9 @@ export type MailboxManagerAssignment = {
 export async function fetchMailboxManagerAssignments(
 	mailboxId: string,
 ): Promise<MailboxManagerAssignment[]> {
-	const response = await fetch(
-		apiUrl(`/mailboxes/${mailboxId}/manager-assignments`),
-		{
-			credentials: "include",
-		},
+	const data = await apiRequest<{ items: MailboxManagerAssignment[] }>(
+		`/mailboxes/${mailboxId}/manager-assignments`,
 	);
-	const data = await parseJson<{ items: MailboxManagerAssignment[] }>(response);
 	return data.items;
 }
 
@@ -320,66 +255,44 @@ export async function grantManagerMailboxAssignment(input: {
 	accountId: string;
 	mailboxId: string;
 }): Promise<void> {
-	const response = await fetch(
-		apiUrl(`/accounts/${input.accountId}/manager-assignments`),
-		{
-			method: "POST",
-			credentials: "include",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ mailboxId: input.mailboxId }),
-		},
-	);
-	await parseJson(response);
+	await apiRequest(`/accounts/${input.accountId}/manager-assignments`, {
+		method: "POST",
+		body: JSON.stringify({ mailboxId: input.mailboxId }),
+	});
 }
 
 export async function revokeManagerMailboxAssignment(input: {
 	accountId: string;
 	mailboxId: string;
 }): Promise<void> {
-	const response = await fetch(
-		apiUrl(
-			`/accounts/${input.accountId}/manager-assignments/${input.mailboxId}`,
-		),
-		{
-			method: "DELETE",
-			credentials: "include",
-		},
+	await apiRequest(
+		`/accounts/${input.accountId}/manager-assignments/${input.mailboxId}`,
+		{ method: "DELETE" },
 	);
-	if (!response.ok) {
-		const body = await response.json().catch(() => null);
-		throw new Error(getErrorMessage(body) ?? "Revoke failed");
-	}
 }
 
 export async function fetchLocalPartPolicy(
 	domainId: string,
 ): Promise<LocalPartPolicy> {
-	const response = await fetch(apiUrl(`/domains/${domainId}/local-part-policy`), {
-		credentials: "include",
-	});
-	return parseJson<LocalPartPolicy>(response);
+	return apiRequest<LocalPartPolicy>(`/domains/${domainId}/local-part-policy`);
 }
 
 export async function updateLocalPartPolicy(
 	domainId: string,
 	body: { enforced?: boolean; pattern?: string | null },
 ): Promise<LocalPartPolicy> {
-	const response = await fetch(apiUrl(`/domains/${domainId}/local-part-policy`), {
+	return apiRequest<LocalPartPolicy>(`/domains/${domainId}/local-part-policy`, {
 		method: "PATCH",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(body),
 	});
-	return parseJson<LocalPartPolicy>(response);
 }
 
 export async function fetchAccountSessions(
 	accountId: string,
 ): Promise<AuthSession[]> {
-	const response = await fetch(apiUrl(`/accounts/${accountId}/sessions`), {
-		credentials: "include",
-	});
-	const data = await parseJson<{ items: AuthSession[] }>(response);
+	const data = await apiRequest<{ items: AuthSession[] }>(
+		`/accounts/${accountId}/sessions`,
+	);
 	return data.items;
 }
 
@@ -387,37 +300,23 @@ export async function revokeAccountSession(
 	accountId: string,
 	sessionId: string,
 ): Promise<void> {
-	const response = await fetch(
-		apiUrl(`/accounts/${accountId}/sessions/${sessionId}`),
-		{
-			method: "DELETE",
-			credentials: "include",
-		},
-	);
-	await parseJson(response);
+	await apiRequest(`/accounts/${accountId}/sessions/${sessionId}`, {
+		method: "DELETE",
+	});
 }
 
 export async function revokeAllAccountSessions(accountId: string): Promise<void> {
-	const response = await fetch(apiUrl(`/accounts/${accountId}/sessions`), {
-		method: "DELETE",
-		credentials: "include",
-	});
-	await parseJson(response);
+	await apiRequest(`/accounts/${accountId}/sessions`, { method: "DELETE" });
 }
 
 export async function fetchAccountMfaStatus(accountId: string): Promise<MfaStatus> {
-	const response = await fetch(apiUrl(`/accounts/${accountId}/mfa`), {
-		credentials: "include",
-	});
-	return parseJson(response);
+	return apiRequest<MfaStatus>(`/accounts/${accountId}/mfa`);
 }
 
 export async function disableAccountMfa(accountId: string): Promise<MfaStatus> {
-	const response = await fetch(apiUrl(`/accounts/${accountId}/mfa`), {
+	return apiRequest<MfaStatus>(`/accounts/${accountId}/mfa`, {
 		method: "DELETE",
-		credentials: "include",
 	});
-	return parseJson(response);
 }
 
 export const PROFILE_FIELDS = [

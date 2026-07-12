@@ -1,5 +1,6 @@
-import { authorizePrincipal, permissionForPath } from "../auth/authorize";
-import { resolvePrincipal } from "../auth/resolve-principal";
+import { authorizeRequest } from "../auth/authorize";
+import type { AuthAction } from "../auth/actions";
+import { createIdentity } from "../auth/identity";
 import type { Principal } from "../auth/types";
 import { handleRouteError } from "./handle-route-error";
 
@@ -16,6 +17,7 @@ export type RouteDefinition = {
 	method: string;
 	path: string;
 	auth?: boolean;
+	action?: AuthAction;
 	handler: RouteHandler;
 };
 
@@ -82,14 +84,14 @@ export function createRouter(routes: RouteDefinition[]) {
 			};
 
 			if (route.auth) {
-				const principalResult = await resolvePrincipal(request, env);
+				const principalResult = await createIdentity(env).resolvePrincipal(request);
 				if (principalResult instanceof Response) {
 					return principalResult;
 				}
 				principal = principalResult;
 
-				const permission = permissionForPath(route.method, pathname);
-				const authzError = authorizePrincipal(request, principal, permission, {
+				const action = route.action ?? "authenticated";
+				const authzError = await authorizeRequest(request, principal, action, {
 					mailboxId: params.mailboxId,
 					domainId:
 						params.domainId ??

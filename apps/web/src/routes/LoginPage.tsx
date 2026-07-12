@@ -127,12 +127,6 @@ export function LoginPage() {
 		await submitMfa(mfaCode);
 	};
 
-	const handleMfaCodeChange = (value: string) => {
-		setMfaCode(value);
-		if (isTotpCodeComplete(value)) {
-			void submitMfa(value);
-		}
-	};
 
 	const handleBackToPassword = () => {
 		loginAttemptRef.current += 1;
@@ -168,7 +162,8 @@ export function LoginPage() {
 								<TotpCodeInput
 									id="mfa-code"
 									value={mfaCode}
-									onChange={handleMfaCodeChange}
+									onChange={setMfaCode}
+									onComplete={(value) => void submitMfa(value)}
 									disabled={submitting}
 									autoFocus
 									invalid={Boolean(error)}

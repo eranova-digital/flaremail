@@ -6,18 +6,12 @@ import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
-import {
-	activateInvite,
-	getMe,
-	previewInvite,
-	regenerateIntendantPassword,
-	requestPasswordReset,
-	resetPasswordWithCode,
-	sessionSecretForEnv,
-	signIn,
-	signOut,
-} from "../services/auth";
+import { createIdentity } from "../lib/auth/identity";
 import { updateAccountProfile } from "../services/accounts";
+
+function identity(env: Env) {
+	return createIdentity(env);
+}
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -41,13 +35,12 @@ export async function handleSignIn(context: RouteContext) {
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
 		const result = await withDb(context.env, (db) =>
-			signIn(
+			identity(context.env).signIn(
 				db,
 				{
 					loginIdentifier: value.email as string,
 					password: value.password as string,
 				},
-				sessionSecretForEnv(context.env),
 				sessionMetadata,
 			),
 		);
@@ -67,7 +60,9 @@ export async function handleSignOut(context: RouteContext) {
 	const cookies = parseCookies(context.request.headers.get("Cookie"));
 	const token = cookies[SESSION_COOKIE_NAME];
 	if (token) {
-		const cookieHeader = await withDb(context.env, (db) => signOut(db, token));
+		const cookieHeader = await withDb(context.env, (db) =>
+			identity(context.env).signOut(db, token),
+		);
 		return jsonWithCookie({ ok: true }, cookieHeader);
 	}
 	return jsonResponse({ ok: true });
@@ -79,7 +74,9 @@ export async function handlePreviewInvite(context: RouteContext) {
 		return validationError(context.request, "code query parameter is required");
 	}
 	try {
-		const preview = await withDb(context.env, (db) => previewInvite(db, code));
+		const preview = await withDb(context.env, (db) =>
+			identity(context.env).previewInvite(db, code),
+		);
 		return jsonResponse(preview);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -104,10 +101,12 @@ export async function handleActivateInvite(context: RouteContext) {
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
 		const result = await withDb(context.env, (db) =>
-			activateInvite(db, {
-				code: value.code as string,
-				password: value.password as string,
-				profile: {
+			identity(context.env).activateInvite(
+				db,
+				{
+					code: value.code as string,
+					password: value.password as string,
+					profile: {
 					firstName:
 						typeof profile.firstName === "string"
 							? profile.firstName
@@ -204,7 +203,9 @@ export async function handleForgotPassword(context: RouteContext) {
 	}
 	try {
 		const result = await withDb(context.env, (db) =>
-			requestPasswordReset(db, context.env.EMAIL, { address: value.address as string }),
+			identity(context.env).requestPasswordReset(db, {
+				address: value.address as string,
+			}),
 		);
 		return jsonResponse(result);
 	} catch (error) {
@@ -223,7 +224,7 @@ export async function handleResetPassword(context: RouteContext) {
 	}
 	try {
 		await withDb(context.env, (db) =>
-			resetPasswordWithCode(db, {
+			identity(context.env).resetPasswordWithCode(db, {
 				code: value.code as string,
 				password: value.password as string,
 			}),
@@ -240,7 +241,7 @@ export async function handleGetMe(context: RouteContext) {
 	}
 	try {
 		const me = await withDb(context.env, (db) =>
-			getMe(db, context.principal.accountId!),
+			identity(context.env).getMe(db, context.principal.accountId!),
 		);
 		return jsonResponse(me);
 	} catch (error) {
@@ -347,7 +348,10 @@ export async function handleRegenerateIntendantPassword(context: RouteContext) {
 	}
 	try {
 		const password = await withDb(context.env, (db) =>
-			regenerateIntendantPassword(db, context.principal.accountId!),
+			identity(context.env).regenerateIntendantPassword(
+				db,
+				context.principal.accountId!,
+			),
 		);
 		return jsonResponse({ password });
 	} catch (error) {

@@ -127,12 +127,6 @@ export function SecuritySection() {
 		}
 	};
 
-	const handleConfirmCodeChange = (value: string) => {
-		setConfirmCode(value);
-		if (isTotpCodeComplete(value)) {
-			void handleConfirmSetup(value);
-		}
-	};
 
 	const handleDisable = async () => {
 		resetMessages();
@@ -373,7 +367,8 @@ export function SecuritySection() {
 									<TotpCodeInput
 										id="confirm-code"
 										value={confirmCode}
-										onChange={handleConfirmCodeChange}
+										onChange={setConfirmCode}
+										onComplete={(value) => void handleConfirmSetup(value)}
 										disabled={submitting}
 										autoFocus
 										invalid={Boolean(error)}

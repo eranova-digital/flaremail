@@ -1,6 +1,7 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 import type { ComposeAttachment } from "@/lib/compose-attachments";
+import { ComposeSession } from "@/lib/compose/compose-session";
 import { useDeleteDraft } from "@/hooks/use-thread";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { useComposeAutosave } from "./compose/use-compose-autosave";
@@ -49,18 +50,20 @@ export function useComposeDraft(
 		isForwardMode,
 	} = useComposeInit(mailboxId, options);
 
+	const session = useMemo(
+		() => new ComposeSession(options?.existingDraftId ?? null),
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- one session per compose mount
+		[mailboxId, options?.existingDraftId, options?.reply?.messageId, options?.forward?.messageId],
+	);
+
 	const fieldsRef = useRef(fields);
 	const attachmentsRef = useRef(attachments);
 	const attachmentsDirtyRef = useRef(false);
 	const draftIdRef = useRef(draftId);
-	// Once a send starts succeeding the draft is promoted to a sent message.
-	// Any autosave that fires afterwards would target a message that is no longer
-	// a draft (the server rejects it) and its state churn can starve the router
-	// navigation. Sealing stops autosaves for the rest of this composer's life.
-	const sealedRef = useRef(false);
 	fieldsRef.current = fields;
 	attachmentsRef.current = attachments;
 	draftIdRef.current = draftId;
+	session.setDraftId(draftId);
 
 	const {
 		isSaving,
@@ -82,7 +85,7 @@ export function useComposeDraft(
 		setAttachments,
 		reply,
 		isForwardMode,
-		sealedRef,
+		session,
 	});
 
 	const { send, isSending, sendError } = useComposeSend({
@@ -100,7 +103,7 @@ export function useComposeDraft(
 		createMutation,
 		updateMutation,
 		flushPendingSave,
-		sealedRef,
+		session,
 	});
 
 	const deleteDraftMutation = useDeleteDraft(mailboxId, invalidationThreadId);

@@ -31,6 +31,7 @@ import {
 	isMfaEnabled,
 } from "./mfa";
 import { getInstanceSettings } from "./instance-settings";
+import { computeAccountCapabilities } from "./account-capabilities";
 import { getSecurityRequirements, getOrganizationPolicies } from "./security-compliance";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -402,6 +403,13 @@ export async function getMe(db: Database, accountId: string) {
 		},
 		settings,
 	);
+	const capabilities = computeAccountCapabilities(
+		{
+			isIntendant: account.isIntendant,
+			role: account.role,
+		},
+		settings,
+	);
 
 	return {
 		id: account.id,
@@ -416,6 +424,7 @@ export async function getMe(db: Database, accountId: string) {
 		mfaEnabledAt: mfa.enabledAt,
 		securityRequirements,
 		organizationPolicies,
+		capabilities,
 		profile: profilePayload,
 		displayName: profile
 			? `${profile.firstName} ${profile.lastName}`.trim()

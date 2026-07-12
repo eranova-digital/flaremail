@@ -8,16 +8,13 @@ import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
-import { sessionSecretForEnv } from "../services/auth";
-import {
-	completeMfaSignIn,
-	confirmMfa,
-	disableMfa,
-	getMfaStatus,
-	setupMfa,
-} from "../services/mfa";
+import { createIdentity } from "../lib/auth/identity";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { sendMfaDisableRecoveryCode } from "../services/recovery-email";
+
+function identity(env: Env) {
+	return createIdentity(env);
+}
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -35,7 +32,7 @@ export async function handleGetMfaStatus(context: RouteContext) {
 	}
 	try {
 		const status = await withDb(context.env, (db) =>
-			getMfaStatus(db, context.principal.accountId!),
+			identity(context.env).getMfaStatus(db, context.principal.accountId!),
 		);
 		return jsonResponse(status);
 	} catch (error) {
@@ -57,10 +54,9 @@ export async function handleSetupMfa(context: RouteContext) {
 			if (!account) {
 				throw new Error("Account not found");
 			}
-			return setupMfa(db, {
+			return identity(context.env).setupMfa(db, {
 				accountId: context.principal.accountId!,
 				loginIdentifier: account.loginIdentifier,
-				encryptionKey: sessionSecretForEnv(context.env),
 			});
 		});
 		return jsonResponse(setup);
@@ -83,10 +79,9 @@ export async function handleConfirmMfa(context: RouteContext) {
 	}
 	try {
 		const status = await withDb(context.env, (db) =>
-			confirmMfa(db, {
+			identity(context.env).confirmMfa(db, {
 				accountId: context.principal.accountId!,
 				code: value.code,
-				encryptionKey: sessionSecretForEnv(context.env),
 			}),
 		);
 		return jsonResponse(status);
@@ -109,11 +104,10 @@ export async function handleDisableMfa(context: RouteContext) {
 	}
 	try {
 		const status = await withDb(context.env, (db) =>
-			disableMfa(db, {
+			identity(context.env).disableMfa(db, {
 				accountId: context.principal.accountId!,
 				password: value.password,
 				code: value.code,
-				encryptionKey: sessionSecretForEnv(context.env),
 			}),
 		);
 		return jsonResponse(status);
@@ -158,11 +152,14 @@ export async function handleVerifyMfaSignIn(context: RouteContext) {
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
 		const result = await withDb(context.env, (db) =>
-			completeMfaSignIn(db, {
-				mfaToken: value.mfaToken,
-				code: value.code,
-				encryptionKey: sessionSecretForEnv(context.env),
-			}, sessionMetadata),
+			identity(context.env).completeMfaSignIn(
+				db,
+				{
+					mfaToken: value.mfaToken,
+					code: value.code,
+				},
+				sessionMetadata,
+			),
 		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {

@@ -1,5 +1,4 @@
-import { apiUrl } from "@/lib/api";
-import { getErrorMessage } from "@/lib/api/errors";
+import { apiRequest } from "@/lib/api/request";
 
 export type OrganizationTabAccess =
 	| "intendant_only"
@@ -26,31 +25,17 @@ export type UpdateInstanceSettingsInput = Partial<{
 	requireRecoveryEmail: boolean;
 }>;
 
-async function parseJson<T>(response: Response): Promise<T> {
-	if (!response.ok) {
-		const body = await response.json().catch(() => null);
-		throw new Error(getErrorMessage(body) ?? "Request failed");
-	}
-	return response.json() as Promise<T>;
-}
-
 export async function fetchInstanceSettings(): Promise<InstanceSettings> {
-	const response = await fetch(apiUrl("/instance/settings"), {
-		credentials: "include",
-	});
-	return parseJson<InstanceSettings>(response);
+	return apiRequest<InstanceSettings>("/instance/settings");
 }
 
 export async function updateInstanceSettings(
 	input: UpdateInstanceSettingsInput,
 ): Promise<InstanceSettings> {
-	const response = await fetch(apiUrl("/instance/settings"), {
+	return apiRequest<InstanceSettings>("/instance/settings", {
 		method: "PATCH",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(input),
 	});
-	return parseJson<InstanceSettings>(response);
 }
 
 export const ORGANIZATION_TAB_ACCESS_OPTIONS: {

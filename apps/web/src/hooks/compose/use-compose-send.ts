@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { assertData } from "@/lib/api/errors";
 import { forwardToMessage, sendDraft } from "@/lib/api/client";
 import { ComposeSendController } from "@/lib/compose/compose-send-controller";
+import type { ComposeSession } from "@/lib/compose/compose-session";
 import { persistDraft } from "@/lib/compose/persist-draft";
 import { withPendingSend } from "@/lib/compose/with-pending-send";
 import { invalidateMailboxThreads } from "@/lib/invalidate-mailbox";
@@ -25,7 +26,7 @@ export function useComposeSend({
 	createMutation,
 	updateMutation,
 	flushPendingSave,
-	sealedRef,
+	session,
 }: {
 	mailboxId: string;
 	draftId: string | null;
@@ -50,7 +51,7 @@ export function useComposeSend({
 		}) => Promise<unknown>;
 	};
 	flushPendingSave: () => Promise<void>;
-	sealedRef: React.MutableRefObject<boolean>;
+	session: ComposeSession;
 }) {
 	const queryClient = useQueryClient();
 	const knownThreadId = reply?.threadId ?? threadId;
@@ -158,16 +159,16 @@ export function useComposeSend({
 
 	const send = useCallback(async (): Promise<SendResult> => {
 		setIsSubmitting(true);
-		sealedRef.current = true;
+		session.seal();
 		try {
 			return await controllerRef.current!.send();
 		} catch (error) {
-			sealedRef.current = false;
+			session.unseal();
 			throw error;
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [sealedRef]);
+	}, [session]);
 
 	return {
 		send,
