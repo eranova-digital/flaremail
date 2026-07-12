@@ -6,9 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAccounts } from "@/hooks/use-accounts";
 import type { AccountSummary } from "@/lib/accounts/api";
+import { canManageTarget } from "@/lib/accounts/permissions";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { AccountDetailDialog } from "@/components/settings/accounts/AccountDetailDialog";
 
 export function AccountList() {
+	const { account: actor } = useAuth();
 	const accountsQuery = useAccounts();
 	const [search, setSearch] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -48,6 +51,7 @@ export function AccountList() {
 								<AccountRow
 									key={item.id}
 									item={item}
+									canManage={canManageTarget(actor, item)}
 									onManage={() => setSelectedId(item.id)}
 								/>
 							))}
@@ -65,9 +69,11 @@ export function AccountList() {
 
 function AccountRow({
 	item,
+	canManage,
 	onManage,
 }: {
 	item: AccountSummary;
+	canManage: boolean;
 	onManage: () => void;
 }) {
 	return (
@@ -82,9 +88,11 @@ function AccountRow({
 				<Badge variant="secondary">
 					{item.role ?? "intendant"} · {item.status}
 				</Badge>
-				<Button variant="outline" size="sm" onClick={onManage}>
-					Manage
-				</Button>
+				{canManage ? (
+					<Button variant="outline" size="sm" onClick={onManage}>
+						Manage
+					</Button>
+				) : null}
 			</div>
 		</div>
 	);

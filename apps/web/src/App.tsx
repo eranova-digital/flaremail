@@ -13,6 +13,7 @@ import { HomeRedirect } from "@/routes/HomeRedirect";
 import { LoginPage } from "@/routes/LoginPage";
 import { ResetPasswordPage } from "@/routes/ResetPasswordPage";
 import { SettingsPage } from "@/routes/SettingsPage";
+import { SharedMailboxUsersPage } from "@/routes/SharedMailboxUsersPage";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { resolveFolderForMailbox } from "@/lib/mailbox-folders";
 import { isThreadFolder } from "@/lib/folders";
@@ -44,6 +45,10 @@ export default function App() {
 			<Route element={<RequireAuth />}>
 				<Route path="/" element={<HomeRedirect />} />
 				<Route path="/settings" element={<SettingsPage />} />
+				<Route
+					path="/settings/mailboxes/:mailboxId/users"
+					element={<SharedMailboxUsersPage />}
+				/>
 				<Route
 					path="/settings/domains/:domainId/validation"
 					element={<DomainValidationPage />}

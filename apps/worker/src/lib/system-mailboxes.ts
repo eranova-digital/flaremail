@@ -1,5 +1,6 @@
 import type { Database } from "../db/client";
-import { mailboxes } from "../db/schema";
+import { accounts, mailboxes } from "../db/schema";
+import { eq } from "drizzle-orm";
 import { buildEmailAddress } from "./normalize-email-address";
 
 export const SYSTEM_POSTMASTER_LOCAL_PART = "postmaster";
@@ -41,6 +42,27 @@ export function assertMailboxMutable(mailbox: {
 }): void {
 	if (isSystemManagedMailbox(mailbox)) {
 		throw new Error("System mailboxes cannot be modified or deleted");
+	}
+	if (mailbox.type === "primary") {
+		throw new Error(
+			"Primary mailboxes cannot be deleted directly. Remove the associated account instead.",
+		);
+	}
+}
+
+export async function assertMailboxNotPrimaryAccount(
+	db: Database,
+	mailboxId: string,
+): Promise<void> {
+	const [account] = await db
+		.select({ id: accounts.id })
+		.from(accounts)
+		.where(eq(accounts.primaryMailboxId, mailboxId))
+		.limit(1);
+	if (account) {
+		throw new Error(
+			"Primary mailboxes cannot be deleted directly. Remove the associated account instead.",
+		);
 	}
 }
 

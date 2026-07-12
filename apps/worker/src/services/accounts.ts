@@ -98,6 +98,36 @@ async function loadDomainAssignments(db: Database, accountId: string) {
 	return rows.map((row) => row.domainId);
 }
 
+async function loadAccountMailboxGrants(db: Database, accountId: string) {
+	const rows = await db
+		.select({ mailboxId: mailboxGrants.mailboxId })
+		.from(mailboxGrants)
+		.where(eq(mailboxGrants.accountId, accountId));
+	return rows.map((row) => row.mailboxId);
+}
+
+function assertCanManageMailboxGrants(principal: Principal): void {
+	if (isPlatformPrincipal(principal)) {
+		return;
+	}
+	if (principal.role === "admin" || principal.role === "manager") {
+		return;
+	}
+	throw new MailboxAccessDeniedError();
+}
+
+async function loadManagerSharedMailboxAssignments(db: Database, accountId: string) {
+	const rows = await db
+		.select({
+			domainId: managerSharedMailboxAssignments.domainId,
+			mailboxId: managerSharedMailboxAssignments.mailboxId,
+			allSharedMailboxes: managerSharedMailboxAssignments.allSharedMailboxes,
+		})
+		.from(managerSharedMailboxAssignments)
+		.where(eq(managerSharedMailboxAssignments.accountId, accountId));
+	return rows;
+}
+
 export async function listAccountsForPrincipal(db: Database, principal: Principal) {
 	const rows = await db
 		.select({
@@ -423,6 +453,8 @@ export async function getAccountDetail(
 
 	const lockedFields = await loadProfileLocks(db, accountId);
 	const domainIds = await loadDomainAssignments(db, accountId);
+	const managerAssignments = await loadManagerSharedMailboxAssignments(db, accountId);
+	const grantedMailboxIds = await loadAccountMailboxGrants(db, accountId);
 
 	return {
 		...toAccountListItem(row.account, row.profile, row.domainId),
@@ -443,6 +475,11 @@ export async function getAccountDetail(
 			: null,
 		lockedFields,
 		domainIds,
+		allSharedMailboxes: managerAssignments.some((row) => row.allSharedMailboxes),
+		sharedMailboxIds: managerAssignments
+			.filter((row) => row.mailboxId)
+			.map((row) => row.mailboxId as string),
+		grantedMailboxIds,
 	};
 }
 
@@ -488,7 +525,11 @@ export async function updateAccountProfile(
 	}
 
 	const existingLocks = new Set(await loadProfileLocks(db, accountId));
-	const canManageLocks = !isSelf && (isPlatformPrincipal(principal) || principal.role === "admin");
+	const canManageLocks =
+		!isSelf &&
+		(isPlatformPrincipal(principal) ||
+			principal.role === "admin" ||
+			principal.role === "manager");
 
 	if (input.profile) {
 		const patch: Record<string, string | null> = {};
@@ -529,6 +570,122 @@ export async function updateAccountProfile(
 					fieldName,
 				})),
 			);
+		}
+	}
+
+	return getAccountDetail(db, principal, accountId);
+}
+
+export async function updateAccountAssignments(
+	db: Database,
+	principal: Principal,
+	accountId: string,
+	input: {
+		domainIds?: string[];
+		allSharedMailboxes?: boolean;
+		sharedMailboxIds?: string[];
+		grantedMailboxIds?: string[];
+	},
+) {
+	await assertCanManageAccount(db, principal, accountId);
+
+	const [target] = await db
+		.select()
+		.from(accounts)
+		.where(eq(accounts.id, accountId))
+		.limit(1);
+	if (!target) {
+		throw new Error("Account not found");
+	}
+	if (target.isIntendant) {
+		throw new Error("Cannot update intendant assignments");
+	}
+
+	if (input.grantedMailboxIds !== undefined) {
+		if (target.role !== "user") {
+			throw new Error("Mailbox grants only apply to user accounts");
+		}
+		assertCanManageMailboxGrants(principal);
+		for (const mailboxId of input.grantedMailboxIds) {
+			await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
+		}
+		await db
+			.delete(mailboxGrants)
+			.where(eq(mailboxGrants.accountId, accountId));
+		for (const mailboxId of input.grantedMailboxIds) {
+			await grantMailboxAccess(db, accountId, mailboxId);
+		}
+		return getAccountDetail(db, principal, accountId);
+	}
+
+	if (target.role !== "admin" && target.role !== "manager") {
+		throw new Error("Assignments only apply to admin or manager accounts");
+	}
+
+	if (input.domainIds !== undefined) {
+		for (const domainId of input.domainIds) {
+			if (!isPlatformPrincipal(principal) && !hasDomainAccess(principal, domainId)) {
+				throw new Error("Forbidden domain assignment");
+			}
+		}
+
+		await db
+			.delete(accountDomainAssignments)
+			.where(eq(accountDomainAssignments.accountId, accountId));
+
+		if (input.domainIds.length > 0) {
+			await db.insert(accountDomainAssignments).values(
+				input.domainIds.map((domainId) => ({
+					accountId,
+					domainId,
+				})),
+			);
+		}
+	}
+
+	if (
+		target.role === "manager" &&
+		(input.allSharedMailboxes !== undefined || input.sharedMailboxIds !== undefined)
+	) {
+		const assignmentDomainIds =
+			input.domainIds ?? (await loadDomainAssignments(db, accountId));
+
+		await db
+			.delete(managerSharedMailboxAssignments)
+			.where(eq(managerSharedMailboxAssignments.accountId, accountId));
+
+		if (input.allSharedMailboxes) {
+			for (const assignmentDomainId of assignmentDomainIds) {
+				await db.insert(managerSharedMailboxAssignments).values({
+					accountId,
+					domainId: assignmentDomainId,
+					mailboxId: null,
+					allSharedMailboxes: true,
+				});
+			}
+		} else if (input.sharedMailboxIds?.length) {
+			for (const sharedMailboxId of input.sharedMailboxIds) {
+				const [sharedMailbox] = await db
+					.select({ domainId: mailboxes.domainId, type: mailboxes.type })
+					.from(mailboxes)
+					.where(eq(mailboxes.id, sharedMailboxId))
+					.limit(1);
+				if (!sharedMailbox || sharedMailbox.type !== "shared") {
+					throw new Error("Invalid shared mailbox assignment");
+				}
+				if (
+					!isPlatformPrincipal(principal) &&
+					!hasDomainAccess(principal, sharedMailbox.domainId)
+				) {
+					throw new Error("Forbidden shared mailbox assignment");
+				}
+				await db.insert(managerSharedMailboxAssignments).values({
+					accountId,
+					domainId: sharedMailbox.domainId,
+					mailboxId: sharedMailboxId,
+					allSharedMailboxes: false,
+				});
+			}
 		}
 	}
 
@@ -735,7 +892,7 @@ export async function grantSharedMailboxAccess(
 	accountId: string,
 	mailboxId: string,
 ) {
-	if (principal.role !== "manager" && !isPlatformPrincipal(principal)) {
+	if (principal.role !== "manager" && principal.role !== "admin" && !isPlatformPrincipal(principal)) {
 		throw new MailboxAccessDeniedError();
 	}
 
@@ -760,7 +917,7 @@ export async function revokeSharedMailboxAccess(
 	accountId: string,
 	mailboxId: string,
 ) {
-	if (principal.role !== "manager" && !isPlatformPrincipal(principal)) {
+	if (principal.role !== "manager" && principal.role !== "admin" && !isPlatformPrincipal(principal)) {
 		throw new MailboxAccessDeniedError();
 	}
 

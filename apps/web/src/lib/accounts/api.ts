@@ -31,6 +31,9 @@ export type AccountDetail = AccountSummary & {
 	profile: AccountProfile | null;
 	lockedFields: string[];
 	domainIds: string[];
+	allSharedMailboxes: boolean;
+	sharedMailboxIds: string[];
+	grantedMailboxIds: string[];
 };
 
 export type LocalPartPolicy = {
@@ -135,9 +138,30 @@ export async function suggestInviteLocalPart(input: {
 
 export async function updateAccount(
 	id: string,
-	body: { profile?: Partial<AccountProfile>; lockedFields?: string[] },
+	body: {
+		profile?: Partial<AccountProfile>;
+		lockedFields?: string[];
+	},
 ): Promise<AccountDetail> {
 	const response = await fetch(apiUrl(`/accounts/${id}`), {
+		method: "PATCH",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	});
+	return parseJson<AccountDetail>(response);
+}
+
+export async function updateAccountAssignments(
+	id: string,
+	body: {
+		domainIds?: string[];
+		allSharedMailboxes?: boolean;
+		sharedMailboxIds?: string[];
+		grantedMailboxIds?: string[];
+	},
+): Promise<AccountDetail> {
+	const response = await fetch(apiUrl(`/accounts/${id}/assignments`), {
 		method: "PATCH",
 		credentials: "include",
 		headers: { "Content-Type": "application/json" },

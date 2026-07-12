@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useDomains } from "@/hooks/use-domains";
+import { useMailboxes } from "@/hooks/use-mailboxes";
 import {
 	useAccount,
 	useAssignAccountRole,
@@ -18,11 +20,15 @@ import {
 	useSuspendAccount,
 	useUnsuspendAccount,
 	useUpdateAccount,
+	useUpdateAccountAssignments,
 } from "@/hooks/use-accounts";
 import { PROFILE_FIELDS, type AccountRole } from "@/lib/accounts/api";
+import { filterDomainsForAccount } from "@/lib/accounts/domains";
 import {
 	canAssignRoles,
 	canLockProfileFields,
+	canManageAssignments,
+	canManageUserMailboxGrants,
 	canRemoveTarget,
 	canSuspendTarget,
 	inviteableRoles,
@@ -43,8 +49,11 @@ export function AccountDetailDialog({
 	onClose,
 }: AccountDetailDialogProps) {
 	const { account: actor } = useAuth();
+	const domainsQuery = useDomains();
+	const mailboxesQuery = useMailboxes("manage");
 	const detailQuery = useAccount(accountId);
 	const updateMutation = useUpdateAccount();
+	const assignmentsMutation = useUpdateAccountAssignments();
 	const assignMutation = useAssignAccountRole();
 	const suspendMutation = useSuspendAccount();
 	const unsuspendMutation = useUnsuspendAccount();
@@ -55,28 +64,64 @@ export function AccountDetailDialog({
 	const [role, setRole] = useState<AccountRole>("user");
 	const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
 	const [profileValues, setProfileValues] = useState<Record<string, string>>({});
+	const [assignedDomainIds, setAssignedDomainIds] = useState<string[]>([]);
+	const [sharedMailboxIds, setSharedMailboxIds] = useState<string[]>([]);
+	const [grantedMailboxIds, setGrantedMailboxIds] = useState<string[]>([]);
+	const [allSharedMailboxes, setAllSharedMailboxes] = useState(false);
 	const [resetCode, setResetCode] = useState<string | null>(null);
 	const [inviteCode, setInviteCode] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
 	const target = detailQuery.data;
+	const availableDomains = useMemo(
+		() => filterDomainsForAccount(actor, domainsQuery.data ?? []),
+		[actor, domainsQuery.data],
+	);
+
+	const sharedMailboxes = useMemo(() => {
+		const domainFilter =
+			target?.role === "manager" && assignedDomainIds.length > 0
+				? new Set(assignedDomainIds)
+				: new Set<string>();
+		return (mailboxesQuery.data ?? []).filter((mailbox) => {
+			if (mailbox.type !== "shared" || !mailbox.id || !mailbox.domainId) {
+				return false;
+			}
+			if (target?.role === "manager") {
+				return domainFilter.has(mailbox.domainId);
+			}
+			return true;
+		});
+	}, [assignedDomainIds, mailboxesQuery.data, target?.role]);
+
+	const grantableSharedMailboxes = useMemo(
+		() =>
+			(mailboxesQuery.data ?? []).filter(
+				(mailbox) => mailbox.type === "shared" && mailbox.id,
+			),
+		[mailboxesQuery.data],
+	);
 
 	useEffect(() => {
-		if (!target?.profile) {
+		if (!target) {
 			return;
 		}
 		setProfileValues({
-			firstName: target.profile.firstName,
-			lastName: target.profile.lastName,
-			recoveryAddress: target.profile.recoveryAddress ?? "",
-			phone: target.profile.phone ?? "",
-			addressCountry: target.profile.address.country ?? "",
-			addressState: target.profile.address.state ?? "",
-			addressCity: target.profile.address.city ?? "",
-			addressLine1: target.profile.address.line1 ?? "",
-			addressLine2: target.profile.address.line2 ?? "",
+			firstName: target.profile?.firstName ?? "",
+			lastName: target.profile?.lastName ?? "",
+			recoveryAddress: target.profile?.recoveryAddress ?? "",
+			phone: target.profile?.phone ?? "",
+			addressCountry: target.profile?.address?.country ?? "",
+			addressState: target.profile?.address?.state ?? "",
+			addressCity: target.profile?.address?.city ?? "",
+			addressLine1: target.profile?.address?.line1 ?? "",
+			addressLine2: target.profile?.address?.line2 ?? "",
 		});
 		setLockedFields(new Set(target.lockedFields));
+		setAssignedDomainIds(target.domainIds);
+		setSharedMailboxIds(target.sharedMailboxIds);
+		setGrantedMailboxIds(target.grantedMailboxIds ?? []);
+		setAllSharedMailboxes(target.allSharedMailboxes);
 		if (target.role) {
 			setRole(target.role);
 		}
@@ -92,6 +137,22 @@ export function AccountDetailDialog({
 			}
 			return next;
 		});
+	};
+
+	const toggleAssignedDomain = (id: string) => {
+		setAssignedDomainIds((current) =>
+			current.includes(id)
+				? current.filter((item) => item !== id)
+				: [...current, id],
+		);
+	};
+
+	const toggleSharedMailbox = (id: string) => {
+		setSharedMailboxIds((current) =>
+			current.includes(id)
+				? current.filter((item) => item !== id)
+				: [...current, id],
+		);
 	};
 
 	const handleSave = () => {
@@ -127,8 +188,58 @@ export function AccountDetailDialog({
 		);
 	};
 
+	const toggleGrantedMailbox = (id: string) => {
+		setGrantedMailboxIds((current) =>
+			current.includes(id)
+				? current.filter((item) => item !== id)
+				: [...current, id],
+		);
+	};
+
+	const handleSaveAssignments = () => {
+		if (!accountId || !target) {
+			return;
+		}
+		setError(null);
+		assignmentsMutation.mutate(
+			{
+				id: accountId,
+				body: {
+					domainIds: assignedDomainIds,
+					allSharedMailboxes:
+						target.role === "manager" ? allSharedMailboxes : undefined,
+					sharedMailboxIds:
+						target.role === "manager" && !allSharedMailboxes
+							? sharedMailboxIds
+							: undefined,
+				},
+			},
+			{
+				onError: (err) => setError(getErrorMessage(err)),
+			},
+		);
+	};
+
+	const handleSaveUserGrants = () => {
+		if (!accountId) {
+			return;
+		}
+		setError(null);
+		assignmentsMutation.mutate(
+			{
+				id: accountId,
+				body: {
+					grantedMailboxIds,
+				},
+			},
+			{
+				onError: (err) => setError(getErrorMessage(err)),
+			},
+		);
+	};
+
 	const handleAssignRole = () => {
-		if (!accountId || !target?.domainId) {
+		if (!accountId) {
 			return;
 		}
 		assignMutation.mutate(
@@ -136,9 +247,7 @@ export function AccountDetailDialog({
 				accountId,
 				role,
 				domainIds:
-					role === "admin" || role === "manager"
-						? [target.domainId]
-						: undefined,
+					role === "admin" || role === "manager" ? assignedDomainIds : undefined,
 			},
 			{
 				onError: (err) => setError(getErrorMessage(err)),
@@ -155,6 +264,10 @@ export function AccountDetailDialog({
 
 				{detailQuery.isLoading ? (
 					<p className="text-muted-foreground text-sm">Loading…</p>
+				) : detailQuery.isError ? (
+					<p className="text-destructive text-sm">
+						{getErrorMessage(detailQuery.error)}
+					</p>
 				) : !target ? (
 					<p className="text-destructive text-sm">Account not found.</p>
 				) : (
@@ -175,7 +288,7 @@ export function AccountDetailDialog({
 									<div key={field.key} className="space-y-1">
 										<div className="flex items-center justify-between gap-2">
 											<label className="text-sm font-medium">{field.label}</label>
-											{canLockProfileFields(actor) ? (
+											{canLockProfileFields(actor) && actor?.id !== target.id ? (
 												<label className="text-muted-foreground flex items-center gap-1 text-xs">
 													<input
 														type="checkbox"
@@ -222,6 +335,131 @@ export function AccountDetailDialog({
 									disabled={assignMutation.isPending}
 								>
 									Update role
+								</Button>
+							</div>
+						) : null}
+
+						{canManageAssignments(actor) &&
+						(target.role === "admin" || target.role === "manager") ? (
+							<div className="space-y-3 rounded-md border p-3">
+								<div>
+									<p className="text-sm font-medium">Role assignments</p>
+									<p className="text-muted-foreground text-xs">
+										Domains and shared mailboxes this {target.role} can manage.
+									</p>
+								</div>
+								<div className="space-y-2">
+									{availableDomains.map((domain) =>
+										domain.id ? (
+											<label
+												key={domain.id}
+												className="flex items-center gap-2 text-sm"
+											>
+												<input
+													type="checkbox"
+													checked={assignedDomainIds.includes(domain.id)}
+													onChange={() => toggleAssignedDomain(domain.id!)}
+												/>
+												{domain.domain}
+											</label>
+										) : null,
+									)}
+								</div>
+
+								{target.role === "manager" ? (
+									<>
+										<label className="flex items-center gap-2 text-sm">
+											<input
+												type="checkbox"
+												checked={allSharedMailboxes}
+												onChange={(event) => {
+													setAllSharedMailboxes(event.target.checked);
+													if (event.target.checked) {
+														setSharedMailboxIds([]);
+													}
+												}}
+											/>
+											All shared mailboxes on assigned domains
+										</label>
+										{!allSharedMailboxes ? (
+											<div className="space-y-2">
+												{sharedMailboxes.length === 0 ? (
+													<p className="text-muted-foreground text-sm">
+														No shared mailboxes on the selected domains.
+													</p>
+												) : (
+													sharedMailboxes.map((mailbox) =>
+														mailbox.id ? (
+															<label
+																key={mailbox.id}
+																className="flex items-center gap-2 text-sm"
+															>
+																<input
+																	type="checkbox"
+																	checked={sharedMailboxIds.includes(mailbox.id)}
+																	onChange={() =>
+																		toggleSharedMailbox(mailbox.id!)
+																	}
+																/>
+																{mailbox.address}
+															</label>
+														) : null,
+													)
+												)}
+											</div>
+										) : null}
+									</>
+								) : null}
+
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleSaveAssignments}
+									disabled={assignmentsMutation.isPending}
+								>
+									Save assignments
+								</Button>
+							</div>
+						) : null}
+
+						{canManageUserMailboxGrants(actor) && target.role === "user" ? (
+							<div className="space-y-3 rounded-md border p-3">
+								<div>
+									<p className="text-sm font-medium">Shared mailbox access</p>
+									<p className="text-muted-foreground text-xs">
+										Shared mailboxes this user can read and send from.
+									</p>
+								</div>
+								<div className="space-y-2">
+									{grantableSharedMailboxes.length === 0 ? (
+										<p className="text-muted-foreground text-sm">
+											No shared mailboxes available.
+										</p>
+									) : (
+										grantableSharedMailboxes.map((mailbox) =>
+											mailbox.id ? (
+												<label
+													key={mailbox.id}
+													className="flex items-center gap-2 text-sm"
+												>
+													<input
+														type="checkbox"
+														checked={grantedMailboxIds.includes(mailbox.id)}
+														onChange={() => toggleGrantedMailbox(mailbox.id!)}
+													/>
+													{mailbox.address}
+												</label>
+											) : null,
+										)
+									)}
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={handleSaveUserGrants}
+									disabled={assignmentsMutation.isPending}
+								>
+									Save mailbox access
 								</Button>
 							</div>
 						) : null}

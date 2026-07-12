@@ -91,7 +91,9 @@ export function createRouter(routes: RouteDefinition[]) {
 				const permission = permissionForPath(route.method, pathname);
 				const authzError = authorizePrincipal(request, principal, permission, {
 					mailboxId: params.mailboxId,
-					domainId: params.domainId ?? params.id,
+					domainId:
+						params.domainId ??
+						(route.path.includes("/domains/") ? params.id : undefined),
 				});
 				if (authzError) {
 					return authzError;

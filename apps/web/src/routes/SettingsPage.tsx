@@ -14,8 +14,8 @@ import {
 	canAccessDomainsTab,
 	canAccessMailboxesTab,
 	canEditOwnProfile,
-	canManageMailboxGrants,
 	canManageMailboxes,
+	showsManagerMailboxGrantsTab,
 } from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
@@ -150,7 +150,7 @@ export function SettingsPage() {
 					) : null}
 					{showMailboxes ? (
 						<TabsContent value="mailboxes">
-							{canManageMailboxGrants(account) ? (
+							{showsManagerMailboxGrantsTab(account) ? (
 								<ManagerMailboxGrantsSection />
 							) : canManageMailboxes(account) ? (
 								<MailboxSection />

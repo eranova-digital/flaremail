@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronDown, Trash2, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -503,6 +504,8 @@ function MailboxRow({
 	const isPending = updateMailbox.isPending || deleteMailbox.isPending;
 	const mutationError = updateMailbox.error ?? deleteMailbox.error;
 	const isSystemManaged = mailbox.isSystemManaged ?? false;
+	const isPrimaryMailbox = mailbox.type === "primary";
+	const canDelete = !isSystemManaged && !isPrimaryMailbox;
 
 	return (
 		<li className="space-y-2 p-4">
@@ -532,6 +535,14 @@ function MailboxRow({
 
 				{isSystemManaged ? null : (
 					<div className="flex shrink-0 items-center gap-2">
+						{mailbox.type === "shared" && mailbox.id ? (
+							<Button variant="outline" size="sm" asChild>
+								<Link to={`/settings/mailboxes/${mailbox.id}/users`}>
+									<Users className="mr-1.5 size-3.5" />
+									Users
+								</Link>
+							</Button>
+						) : null}
 						<label className="flex items-center gap-1.5 text-sm">
 							<input
 								type="checkbox"
@@ -542,15 +553,17 @@ function MailboxRow({
 							/>
 							<span className="sr-only sm:not-sr-only">Active</span>
 						</label>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={handleDelete}
-							disabled={isPending}
-							aria-label={`Delete ${mailbox.address}`}
-						>
-							<Trash2 className="text-destructive size-4" />
-						</Button>
+						{canDelete ? (
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={handleDelete}
+								disabled={isPending}
+								aria-label={`Delete ${mailbox.address}`}
+							>
+								<Trash2 className="text-destructive size-4" />
+							</Button>
+						) : null}
 					</div>
 				)}
 			</div>

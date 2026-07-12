@@ -16,6 +16,7 @@ import {
 	suspendAccount,
 	unsuspendAccount,
 	updateAccount,
+	updateAccountAssignments,
 	updateLocalPartPolicy,
 	type InviteAccountInput,
 } from "@/lib/accounts/api";
@@ -80,6 +81,25 @@ export function useUpdateAccount() {
 			id: string;
 			body: Parameters<typeof updateAccount>[1];
 		}) => updateAccount(id, body),
+		onSuccess: (data) => {
+			void queryClient.invalidateQueries({ queryKey: accountQueryKeys.all });
+			void queryClient.invalidateQueries({
+				queryKey: accountQueryKeys.detail(data.id),
+			});
+		},
+	});
+}
+
+export function useUpdateAccountAssignments() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			id,
+			body,
+		}: {
+			id: string;
+			body: Parameters<typeof updateAccountAssignments>[1];
+		}) => updateAccountAssignments(id, body),
 		onSuccess: (data) => {
 			void queryClient.invalidateQueries({ queryKey: accountQueryKeys.all });
 			void queryClient.invalidateQueries({
