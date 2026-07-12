@@ -9,10 +9,10 @@ import {
 import { assertData } from "@/lib/api/errors";
 import { queryKeys } from "@/lib/query-keys";
 
-export function useDomain(domainId: string | undefined) {
+export function useDomain(domainId: string | undefined, enabled = true) {
 	return useQuery({
 		queryKey: queryKeys.domain(domainId ?? ""),
-		enabled: Boolean(domainId),
+		enabled: Boolean(domainId && enabled),
 		queryFn: async () => {
 			const { data } = await getDomain({
 				throwOnError: true,
@@ -25,10 +25,10 @@ export function useDomain(domainId: string | undefined) {
 	});
 }
 
-export function useDomainValidationRuns(domainId: string | undefined) {
+export function useDomainValidationRuns(domainId: string | undefined, enabled = true) {
 	return useQuery({
 		queryKey: queryKeys.domainValidationRuns(domainId ?? ""),
-		enabled: Boolean(domainId),
+		enabled: Boolean(domainId && enabled),
 		queryFn: async () => {
 			const { data } = await listDomainValidationRuns({
 				throwOnError: true,

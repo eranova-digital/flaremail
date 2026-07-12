@@ -24,6 +24,7 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 	const [pattern, setPattern] = useState("");
 	const [enforced, setEnforced] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [saved, setSaved] = useState(false);
 
 	useEffect(() => {
 		if (policyQuery.data) {
@@ -38,12 +39,14 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 
 	const handleSave = () => {
 		setError(null);
+		setSaved(false);
 		updateMutation.mutate(
 			{
 				domainId,
 				body: { pattern, enforced },
 			},
 			{
+				onSuccess: () => setSaved(true),
 				onError: (err) => setError(getErrorMessage(err)),
 			},
 		);
@@ -54,6 +57,7 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 			<button
 				type="button"
 				onClick={() => setOpen((current) => !current)}
+				aria-expanded={open}
 				className="hover:bg-muted/40 flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
 			>
 				<div>
@@ -71,16 +75,26 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 			</button>
 			{open ? (
 				<div className="space-y-3 border-t px-3 py-3">
+					<label htmlFor={`local-part-pattern-${domainId}`} className="text-sm font-medium">
+						Address pattern
+					</label>
 					<Input
+						id={`local-part-pattern-${domainId}`}
 						placeholder="Pattern e.g. {first_name}.{last_name}"
 						value={pattern}
-						onChange={(event) => setPattern(event.target.value)}
+						onChange={(event) => {
+							setPattern(event.target.value);
+							setSaved(false);
+						}}
 					/>
 					<label className="flex items-center gap-2 text-sm">
 						<input
 							type="checkbox"
 							checked={enforced}
-							onChange={(event) => setEnforced(event.target.checked)}
+							onChange={(event) => {
+								setEnforced(event.target.checked);
+								setSaved(false);
+							}}
 						/>
 						Enforce for manager invites
 					</label>
@@ -89,6 +103,11 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 						{"{last_name_initial}"}, {"{rnd_num}"}, {"{rnd_char}"}
 					</p>
 					{error ? <p className="text-destructive text-sm">{error}</p> : null}
+					{saved ? (
+						<p className="text-muted-foreground text-sm" role="status">
+							Policy saved.
+						</p>
+					) : null}
 					<Button
 						size="sm"
 						onClick={handleSave}
