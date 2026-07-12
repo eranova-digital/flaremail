@@ -1,8 +1,7 @@
 import PostalMime from 'postal-mime';
 
 import { withDb } from './db/client';
-import { tryConsumeValidationInbound } from './lib/domain-validation/consume-inbound';
-import { processTimedOutValidationRuns } from './lib/domain-validation/run-engine';
+import { DomainValidationRun } from './lib/domain-validation';
 import { resolveMailboxForEnvelope } from './lib/resolve-mailbox';
 import { isSelfSentLoopback } from './lib/messages/self-loopback';
 import { storeInboundEmail } from './lib/messages/store-inbound-email';
@@ -19,7 +18,7 @@ export default {
 				const raw = await new Response(message.raw).arrayBuffer();
 				const parsed = await PostalMime.parse(raw);
 
-				if (await tryConsumeValidationInbound(db, message, parsed)) {
+				if (await DomainValidationRun.onInboundEmail(db, message, parsed)) {
 					console.log(
 						`Consumed validation email: ${message.from} -> ${message.to}`,
 					);
@@ -92,7 +91,7 @@ export default {
 	async scheduled(_controller, env, _ctx): Promise<void> {
 		try {
 			const processed = await withDb(env, (db) =>
-				processTimedOutValidationRuns(db),
+				DomainValidationRun.tickTimeouts(db),
 			);
 			if (processed > 0) {
 				console.log(`Processed ${processed} timed-out validation run(s)`);
