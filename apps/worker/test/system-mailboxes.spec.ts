@@ -67,9 +67,15 @@ describe("assertMailboxMutable", () => {
 		).toThrow("System mailboxes cannot be modified or deleted");
 	});
 
-	it("allows normal mailboxes", () => {
+	it("rejects primary mailboxes", () => {
 		expect(() =>
 			assertMailboxMutable({ type: "primary", localPart: "patrick" }),
+		).toThrow("Primary mailboxes cannot be deleted directly");
+	});
+
+	it("allows normal mailboxes", () => {
+		expect(() =>
+			assertMailboxMutable({ type: "shared", localPart: "support" }),
 		).not.toThrow();
 	});
 });

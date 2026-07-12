@@ -25,6 +25,7 @@ import {
 	handleSuspendAccount,
 	handleUnsuspendAccount,
 	handleUpdateAccount,
+	handleUpdateAccountAssignments,
 	handleUpdateDomainLocalPartPolicy,
 } from "../controllers/accounts";
 import {
@@ -65,6 +66,11 @@ export const authRoutes: RouteDefinition[] = [
 	{ method: "GET", path: `${prefix}/accounts`, handler: handleListAccounts },
 	{ method: "GET", path: `${prefix}/accounts/:id`, handler: handleGetAccount },
 	{ method: "PATCH", path: `${prefix}/accounts/:id`, handler: handleUpdateAccount },
+	{
+		method: "PATCH",
+		path: `${prefix}/accounts/:id/assignments`,
+		handler: handleUpdateAccountAssignments,
+	},
 	{ method: "POST", path: `${prefix}/accounts/invite`, handler: handleInviteAccount },
 	{
 		method: "POST",

@@ -11,6 +11,7 @@ import {
 } from "../lib/normalize-email-address";
 import {
 	assertMailboxMutable,
+	assertMailboxNotPrimaryAccount,
 	isSystemManagedLocalPart,
 } from "../lib/system-mailboxes";
 import { deleteMailboxCascade } from "./cascade-delete";
@@ -177,5 +178,6 @@ export async function removeMailbox(
 ): Promise<void> {
 	const existing = await getMailboxRow(db, id);
 	assertMailboxMutable(existing);
+	await assertMailboxNotPrimaryAccount(db, id);
 	await deleteMailboxCascade(db, bucket, id);
 }

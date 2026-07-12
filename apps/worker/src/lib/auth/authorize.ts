@@ -147,6 +147,9 @@ export function permissionForPath(
 		return "domain_admin";
 	}
 	if (path.startsWith("/api/v1/mailboxes/")) {
+		if (path.endsWith("/grants") && method === "GET") {
+			return "domain_manage_users";
+		}
 		if (method === "GET") {
 			return "mail_read";
 		}

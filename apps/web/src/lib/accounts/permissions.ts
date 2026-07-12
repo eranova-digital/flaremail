@@ -111,13 +111,96 @@ export function canAccessMailboxesTab(account: Account | null): boolean {
 	return canManageMailboxes(account) || account?.role === "manager";
 }
 
-export function canManageMailboxGrants(account: Account | null): boolean {
+export function showsManagerMailboxGrantsTab(account: Account | null): boolean {
 	return account?.role === "manager";
+}
+
+export function canManageMailboxGrants(account: Account | null): boolean {
+	return canManageSharedMailboxUsers(account);
+}
+
+export function canManageSharedMailboxUsers(account: Account | null): boolean {
+	return (
+		!!account &&
+		(account.isIntendant ||
+			account.role === "superadmin" ||
+			account.role === "admin" ||
+			account.role === "manager")
+	);
+}
+
+export function canManageUserMailboxGrants(account: Account | null): boolean {
+	return canAccessAccountsTab(account);
 }
 
 export function canLockProfileFields(actor: Account | null): boolean {
 	return (
 		!!actor &&
-		(actor.isIntendant || actor.role === "superadmin" || actor.role === "admin")
+		(actor.isIntendant ||
+			actor.role === "superadmin" ||
+			actor.role === "admin" ||
+			actor.role === "manager")
 	);
+}
+
+export function canManageAssignments(actor: Account | null): boolean {
+	return canAssignRoles(actor);
+}
+
+const ROLE_RANK: Record<AccountRole, number> = {
+	user: 0,
+	manager: 1,
+	admin: 2,
+	superadmin: 3,
+};
+
+function roleRank(role: AccountRole): number {
+	return ROLE_RANK[role];
+}
+
+function actorRank(actor: Account): number {
+	if (actor.isIntendant) {
+		return 4;
+	}
+	if (
+		actor.role === "user" ||
+		actor.role === "manager" ||
+		actor.role === "admin" ||
+		actor.role === "superadmin"
+	) {
+		return roleRank(actor.role);
+	}
+	return -1;
+}
+
+function targetRank(target: AccountSummary): number {
+	if (target.isIntendant) {
+		return 5;
+	}
+	if (!target.role) {
+		return -1;
+	}
+	return ROLE_RANK[target.role];
+}
+
+export function canManageTarget(
+	actor: Account | null,
+	target: AccountSummary,
+): boolean {
+	if (!actor || target.isIntendant || actor.id === target.id) {
+		return false;
+	}
+	if (actorRank(actor) <= targetRank(target)) {
+		return false;
+	}
+	if (actor.isIntendant || actor.role === "superadmin") {
+		return true;
+	}
+	if (actor.role === "admin") {
+		return target.role !== "admin" && target.role !== "superadmin";
+	}
+	if (actor.role === "manager") {
+		return target.role === "user";
+	}
+	return false;
 }

@@ -20,6 +20,7 @@ import {
 	suspendAccount,
 	unsuspendAccount,
 	updateAccountProfile,
+	updateAccountAssignments,
 	updateDomainLocalPartPolicy,
 } from "../services/accounts";
 import { assertCanManageAccount } from "../lib/auth/account-access";
@@ -329,6 +330,41 @@ export async function handleUpdateDomainLocalPartPolicy(context: RouteContext) {
 			),
 		);
 		return jsonResponse(policy);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleUpdateAccountAssignments(context: RouteContext) {
+	const body = await parseJsonBody(context.request);
+	if (body instanceof Response) {
+		return body;
+	}
+	const value = body as Record<string, unknown>;
+
+	try {
+		const account = await withDb(context.env, (db) =>
+			updateAccountAssignments(db, context.principal, context.params.id, {
+				domainIds: Array.isArray(value.domainIds)
+					? value.domainIds.filter((id): id is string => typeof id === "string")
+					: undefined,
+				allSharedMailboxes:
+					typeof value.allSharedMailboxes === "boolean"
+						? value.allSharedMailboxes
+						: undefined,
+				sharedMailboxIds: Array.isArray(value.sharedMailboxIds)
+					? value.sharedMailboxIds.filter(
+							(id): id is string => typeof id === "string",
+						)
+					: undefined,
+				grantedMailboxIds: Array.isArray(value.grantedMailboxIds)
+					? value.grantedMailboxIds.filter(
+							(id): id is string => typeof id === "string",
+						)
+					: undefined,
+			}),
+		);
+		return jsonResponse(account);
 	} catch (error) {
 		return handleRouteError(error, context.request);
 	}
