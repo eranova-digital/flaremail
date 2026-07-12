@@ -1,17 +1,15 @@
-import { withDb } from "../db/client";
-import { authorizeMailbox } from "../lib/auth/access";
+import { withDb, type Database } from "../db/client";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
-import {
-	createLabel,
-	getLabel,
-	listLabels,
-	removeLabel,
-	updateLabel,
-} from "../services/labels";
+import { createMailboxReadContext } from "../lib/messages/mailbox-read-context";
+import { createMailboxMail } from "../services/mailbox-mail";
+
+function mailboxMail(env: Env, db: Database, principal: RouteContext["principal"]) {
+	return createMailboxMail(createMailboxReadContext(env, db, principal));
+}
 
 export async function handleListLabels({
 	request,
@@ -20,10 +18,9 @@ export async function handleListLabels({
 	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		const items = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, params.mailboxId, "read");
-			return listLabels(db, params.mailboxId);
-		});
+		const items = await withDb(env, (db) =>
+			mailboxMail(env, db, principal).listLabels(params.mailboxId),
+		);
 		return jsonResponse({ items });
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -47,13 +44,12 @@ export async function handleCreateLabel({
 	}
 
 	try {
-		const label = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, params.mailboxId, "read");
-			return createLabel(db, params.mailboxId, {
+		const label = await withDb(env, (db) =>
+			mailboxMail(env, db, principal).createLabel(params.mailboxId, {
 				name: value.name as string,
 				color: typeof value.color === "string" ? value.color : null,
-			});
-		});
+			}),
+		);
 		return jsonResponse(label, 201);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -67,10 +63,9 @@ export async function handleGetLabel({
 	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		const label = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, params.mailboxId, "read");
-			return getLabel(db, params.mailboxId, params.id);
-		});
+		const label = await withDb(env, (db) =>
+			mailboxMail(env, db, principal).getLabel(params.mailboxId, params.id),
+		);
 		return jsonResponse(label);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -91,9 +86,8 @@ export async function handleUpdateLabel({
 	const value = body as Record<string, unknown>;
 
 	try {
-		const label = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, params.mailboxId, "read");
-			return updateLabel(db, params.mailboxId, params.id, {
+		const label = await withDb(env, (db) =>
+			mailboxMail(env, db, principal).updateLabel(params.mailboxId, params.id, {
 				name: typeof value.name === "string" ? value.name : undefined,
 				color:
 					value.color === null
@@ -101,8 +95,8 @@ export async function handleUpdateLabel({
 						: typeof value.color === "string"
 							? value.color
 							: undefined,
-			});
-		});
+			}),
+		);
 		return jsonResponse(label);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -116,10 +110,9 @@ export async function handleDeleteLabel({
 	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, params.mailboxId, "read");
-			await removeLabel(db, params.mailboxId, params.id);
-		});
+		await withDb(env, (db) =>
+			mailboxMail(env, db, principal).removeLabel(params.mailboxId, params.id),
+		);
 		return new Response(null, { status: 204 });
 	} catch (error) {
 		return handleRouteError(error, request);

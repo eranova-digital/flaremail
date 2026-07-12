@@ -1,5 +1,4 @@
-import { withDb } from "../db/client";
-import { authorizeMailbox } from "../lib/auth/access";
+import { withDb, type Database } from "../db/client";
 import { parseLimit } from "../lib/http/cursor-pagination";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
@@ -7,13 +6,13 @@ import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import { requireQueryParam } from "../lib/http/route-helpers";
 import type { RouteContext } from "../lib/http/router";
+import { createMailboxReadContext } from "../lib/messages/mailbox-read-context";
+import { createMailboxMail } from "../services/mailbox-mail";
 import { downloadAttachment } from "../services/attachments";
-import { downloadRawMessage } from "../services/raw-message";
-import {
-	readMessageFull,
-	readMessagePreview,
-	searchMessages,
-} from "../services/threads";
+
+function mailboxMail(env: Env, db: Database, principal: RouteContext["principal"]) {
+	return createMailboxMail(createMailboxReadContext(env, db, principal));
+}
 
 export async function handleGetMessage({
 	request,
@@ -27,10 +26,9 @@ export async function handleGetMessage({
 	}
 
 	try {
-		const message = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, mailboxId, "read");
-			return readMessageFull(db, env.BUCKET, params.id, mailboxId);
-		});
+		const message = await withDb(env, (db) =>
+			mailboxMail(env, db, principal).getMessage(params.id, mailboxId),
+		);
 		return jsonResponse(message);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -49,10 +47,9 @@ export async function handleGetMessagePreview({
 	}
 
 	try {
-		const message = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, mailboxId, "read");
-			return readMessagePreview(db, params.id, mailboxId);
-		});
+		const message = await withDb(env, (db) =>
+			mailboxMail(env, db, principal).getMessagePreview(params.id, mailboxId),
+		);
 		return jsonResponse(message);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -79,16 +76,15 @@ export async function handleSearch({
 
 	try {
 		const mailboxId = value.mailboxId as string;
-		const result = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, mailboxId, "read");
-			return searchMessages(db, mailboxId, value.query as string, {
+		const result = await withDb(env, (db) =>
+			mailboxMail(env, db, principal).search(mailboxId, value.query as string, {
 				cursor: typeof value.cursor === "string" ? value.cursor : null,
 				limit:
 					typeof value.limit === "number"
 						? value.limit
 						: parseLimit(null),
-			});
-		});
+			}),
+		);
 		return jsonResponse(result);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -107,10 +103,9 @@ export async function handleDownloadRawMessage({
 	}
 
 	try {
-		return await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, mailboxId, "read");
-			return downloadRawMessage(db, env.BUCKET, params.id, mailboxId);
-		});
+		return await withDb(env, (db) =>
+			mailboxMail(env, db, principal).downloadRawMessage(params.id, mailboxId),
+		);
 	} catch (error) {
 		return handleRouteError(error, request);
 	}
