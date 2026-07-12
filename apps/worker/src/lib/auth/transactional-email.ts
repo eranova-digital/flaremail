@@ -2,9 +2,32 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { accounts, domains, mailboxes } from "../../db/schema";
+import type { Principal } from "../auth/types";
+import { loadBlackholeMailboxForDomain } from "../mailbox-queries";
+import type { OutboundContext } from "../messages/outbound-context";
+import { sendAndPersistNewMessage } from "../messages/outbound-persist";
 import { sendEmail } from "../messages/send-email";
 import { buildEmailAddress } from "../normalize-email-address";
 import { SYSTEM_BLACKHOLE_LOCAL_PART } from "../system-mailboxes";
+import { getInstanceSettings } from "../../services/instance-settings";
+
+export type TransactionalEmailDeps = {
+	email: SendEmail;
+	bucket: R2Bucket;
+};
+
+const SYSTEM_OUTBOUND_PRINCIPAL: Principal = {
+	kind: "session",
+	accountId: null,
+	isIntendant: true,
+	role: null,
+	status: null,
+	loginIdentifier: null,
+	primaryMailboxId: null,
+	domainIds: [],
+	grantMailboxIds: [],
+	sharedMailboxAssignment: [],
+};
 
 export async function resolveAccountSenderDomain(
 	db: Database,
@@ -35,11 +58,43 @@ export async function resolveDomainName(
 }
 
 export async function sendTransactionalEmail(
-	email: SendEmail,
+	db: Database,
+	deps: TransactionalEmailDeps,
 	input: { domainName: string; to: string; subject: string; text: string },
 ): Promise<void> {
+	const settings = await getInstanceSettings(db);
+
+	if (settings.persistNoreplyOutboundEmails) {
+		const mailbox = await loadBlackholeMailboxForDomain(db, input.domainName);
+		if (mailbox) {
+			const ctx: OutboundContext = {
+				db,
+				bucket: deps.bucket,
+				email: deps.email,
+				principal: SYSTEM_OUTBOUND_PRINCIPAL,
+			};
+
+			await sendAndPersistNewMessage(
+				ctx,
+				mailbox.id,
+				{
+					to: [input.to],
+					subject: input.subject,
+					text: input.text,
+				},
+				{
+					threadId: crypto.randomUUID(),
+					inReplyTo: null,
+					references: null,
+				},
+				"sent",
+			);
+			return;
+		}
+	}
+
 	const from = buildEmailAddress(SYSTEM_BLACKHOLE_LOCAL_PART, input.domainName);
-	await sendEmail(email, {
+	await sendEmail(deps.email, {
 		from,
 		to: input.to,
 		subject: input.subject,

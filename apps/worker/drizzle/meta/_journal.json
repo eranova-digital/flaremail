@@ -155,6 +155,13 @@
       "when": 1782784200000,
       "tag": "0021_instance_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1782784800000,
+      "tag": "0022_persist_noreply_outbound",
+      "breakpoints": true
     }
   ]
 }

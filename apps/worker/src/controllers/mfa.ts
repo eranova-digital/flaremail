@@ -129,7 +129,10 @@ export async function handleSendMfaDisableRecoveryCode(context: RouteContext) {
 			}
 			await sendMfaDisableRecoveryCode(
 				db,
-				context.env.EMAIL,
+				{
+					email: context.env.EMAIL,
+					bucket: context.env.BUCKET,
+				},
 				context.principal.accountId!,
 				recoveryAddress,
 			);

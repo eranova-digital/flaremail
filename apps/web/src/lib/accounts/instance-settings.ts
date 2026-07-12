@@ -15,6 +15,7 @@ export type InstanceSettings = {
 	organizationTabAccess: OrganizationTabAccess;
 	requireMfaScope: RequireMfaScope;
 	requireRecoveryEmail: boolean;
+	persistNoreplyOutboundEmails: boolean;
 	updatedAt: string;
 	updatedByAccountId: string | null;
 };
@@ -23,6 +24,7 @@ export type UpdateInstanceSettingsInput = Partial<{
 	organizationTabAccess: OrganizationTabAccess;
 	requireMfaScope: RequireMfaScope;
 	requireRecoveryEmail: boolean;
+	persistNoreplyOutboundEmails: boolean;
 }>;
 
 export async function fetchInstanceSettings(): Promise<InstanceSettings> {

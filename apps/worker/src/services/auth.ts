@@ -18,6 +18,7 @@ import {
 	passwordResetCodeEmailText,
 	resolveAccountSenderDomain,
 	sendTransactionalEmail,
+	type TransactionalEmailDeps,
 } from "../lib/auth/transactional-email";
 import {
 	loadProfileLocks,
@@ -255,7 +256,7 @@ export async function createPasswordResetCode(
 
 export async function requestPasswordReset(
 	db: Database,
-	email: SendEmail,
+	deps: TransactionalEmailDeps,
 	input: { address: string },
 ) {
 	const address = input.address.trim().toLowerCase();
@@ -310,7 +311,7 @@ export async function requestPasswordReset(
 		throw new Error("Could not determine sender domain for this account");
 	}
 
-	await sendTransactionalEmail(email, {
+	await sendTransactionalEmail(db, deps, {
 		domainName,
 		to: recoveryAddress,
 		subject: "Reset your Flaremail password",

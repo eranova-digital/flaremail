@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import {
 	ORGANIZATION_TAB_ACCESS_OPTIONS,
 	REQUIRE_MFA_SCOPE_OPTIONS,
@@ -73,6 +74,8 @@ export function OrganizationSection() {
 	const [requireMfaScope, setRequireMfaScope] =
 		useState<RequireMfaScope>("none");
 	const [requireRecoveryEmail, setRequireRecoveryEmail] = useState(false);
+	const [persistNoreplyOutboundEmails, setPersistNoreplyOutboundEmails] =
+		useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
 
@@ -81,6 +84,9 @@ export function OrganizationSection() {
 			setOrganizationTabAccess(settingsQuery.data.organizationTabAccess);
 			setRequireMfaScope(settingsQuery.data.requireMfaScope);
 			setRequireRecoveryEmail(settingsQuery.data.requireRecoveryEmail);
+			setPersistNoreplyOutboundEmails(
+				settingsQuery.data.persistNoreplyOutboundEmails,
+			);
 		}
 	}, [settingsQuery.data]);
 
@@ -107,7 +113,8 @@ export function OrganizationSection() {
 	const dirty =
 		organizationTabAccess !== baseline.organizationTabAccess ||
 		requireMfaScope !== baseline.requireMfaScope ||
-		requireRecoveryEmail !== baseline.requireRecoveryEmail;
+		requireRecoveryEmail !== baseline.requireRecoveryEmail ||
+		persistNoreplyOutboundEmails !== baseline.persistNoreplyOutboundEmails;
 
 	const handleSave = () => {
 		setError(null);
@@ -117,6 +124,7 @@ export function OrganizationSection() {
 				organizationTabAccess,
 				requireMfaScope,
 				requireRecoveryEmail,
+				persistNoreplyOutboundEmails,
 			},
 			{
 				onSuccess: () => setSaved(true),
@@ -233,6 +241,38 @@ export function OrganizationSection() {
 								setRequireRecoveryEmail(true);
 								setSaved(false);
 							}}
+						/>
+					</div>
+				</CardContent>
+			</Card>
+
+			<Card className="rounded-xl shadow-sm">
+				<CardHeader className="pb-4">
+					<CardTitle className="text-base">
+						Persist noreply outbound emails
+					</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-3">
+					<div className="flex items-start justify-between gap-4">
+						<div className="space-y-1">
+							<p className="text-sm font-medium">
+								Keep copies of system emails in noreply Sent
+							</p>
+							<p className="text-muted-foreground text-sm">
+								When enabled, transactional emails sent from{" "}
+								<code className="text-xs">noreply@</code> — such as password
+								resets, invite codes, and recovery verification — are stored in
+								each domain&apos;s noreply mailbox Sent folder.
+							</p>
+						</div>
+						<Switch
+							checked={persistNoreplyOutboundEmails}
+							disabled={updateMutation.isPending}
+							onCheckedChange={(checked) => {
+								setPersistNoreplyOutboundEmails(checked);
+								setSaved(false);
+							}}
+							aria-label="Persist noreply outbound emails"
 						/>
 					</div>
 				</CardContent>

@@ -15,6 +15,7 @@ export type InstanceSettings = {
 	organizationTabAccess: OrganizationTabAccess;
 	requireMfaScope: RequireMfaScope;
 	requireRecoveryEmail: boolean;
+	persistNoreplyOutboundEmails: boolean;
 };
 
 export type SecurityRequirements = {
@@ -31,6 +32,7 @@ export const DEFAULT_INSTANCE_SETTINGS: InstanceSettings = {
 	organizationTabAccess: "intendant_only",
 	requireMfaScope: "none",
 	requireRecoveryEmail: false,
+	persistNoreplyOutboundEmails: false,
 };
 
 const ROLE_RANK: Record<AccountRole, number> = {

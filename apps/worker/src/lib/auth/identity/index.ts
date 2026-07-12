@@ -83,7 +83,10 @@ export class Identity {
 	}
 
 	requestPasswordReset(db: Database, input: { address: string }) {
-		return requestPasswordReset(db, this.env.EMAIL, input);
+		return requestPasswordReset(db, {
+			email: this.env.EMAIL,
+			bucket: this.env.BUCKET,
+		}, input);
 	}
 
 	resetPasswordWithCode(

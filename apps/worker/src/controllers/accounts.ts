@@ -127,7 +127,10 @@ export async function handleInviteAccount(context: RouteContext) {
 						: undefined,
 					allSharedMailboxes: value.allSharedMailboxes === true,
 				},
-				context.env.EMAIL,
+				{
+					email: context.env.EMAIL,
+					bucket: context.env.BUCKET,
+				},
 			),
 		);
 		return jsonResponse(result);

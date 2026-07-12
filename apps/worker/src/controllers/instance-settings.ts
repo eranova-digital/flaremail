@@ -52,11 +52,16 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 		value.requireRecoveryEmail === undefined
 			? undefined
 			: Boolean(value.requireRecoveryEmail);
+	const persistNoreplyOutboundEmails =
+		value.persistNoreplyOutboundEmails === undefined
+			? undefined
+			: Boolean(value.persistNoreplyOutboundEmails);
 
 	if (
 		organizationTabAccess === undefined &&
 		requireMfaScope === undefined &&
-		requireRecoveryEmail === undefined
+		requireRecoveryEmail === undefined &&
+		persistNoreplyOutboundEmails === undefined
 	) {
 		return validationError(context.request, "No valid settings were provided");
 	}
@@ -84,6 +89,7 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 				organizationTabAccess,
 				requireMfaScope,
 				requireRecoveryEmail,
+				persistNoreplyOutboundEmails,
 			}),
 		);
 		return jsonResponse(settings);

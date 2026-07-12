@@ -89,6 +89,9 @@ export async function updateInstanceSettings(
 	if (input.requireRecoveryEmail !== undefined) {
 		patch.requireRecoveryEmail = input.requireRecoveryEmail;
 	}
+	if (input.persistNoreplyOutboundEmails !== undefined) {
+		patch.persistNoreplyOutboundEmails = input.persistNoreplyOutboundEmails;
+	}
 
 	await db
 		.update(instanceSettings)
@@ -105,6 +108,7 @@ function rowToRecord(
 		organizationTabAccess: row.organizationTabAccess,
 		requireMfaScope: row.requireMfaScope,
 		requireRecoveryEmail: row.requireRecoveryEmail,
+		persistNoreplyOutboundEmails: row.persistNoreplyOutboundEmails,
 		updatedAt: row.updatedAt.toISOString(),
 		updatedByAccountId: row.updatedByAccountId,
 	};

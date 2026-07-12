@@ -23,10 +23,17 @@ export async function handleSendRecoveryEmailCode(context: RouteContext) {
 	}
 	try {
 		await withDb(context.env, (db) =>
-			sendRecoveryEmailSetupCode(db, context.env.EMAIL, {
-				accountId: context.principal.accountId!,
-				recoveryAddress: value.email as string,
-			}),
+			sendRecoveryEmailSetupCode(
+				db,
+				{
+					email: context.env.EMAIL,
+					bucket: context.env.BUCKET,
+				},
+				{
+					accountId: context.principal.accountId!,
+					recoveryAddress: value.email as string,
+				},
+			),
 		);
 		return jsonResponse({ ok: true });
 	} catch (error) {

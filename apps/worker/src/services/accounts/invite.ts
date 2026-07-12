@@ -23,6 +23,7 @@ import { normalizeEmailAddress, parseEmailAddress } from "../../lib/normalize-em
 import {
 	inviteCodeEmailText,
 	sendTransactionalEmail,
+	type TransactionalEmailDeps,
 } from "../../lib/auth/transactional-email";
 import {
 	PROFILE_LOCKABLE_FIELDS,
@@ -51,7 +52,7 @@ export async function inviteAccount(
 		sharedMailboxIds?: string[];
 		allSharedMailboxes?: boolean;
 	},
-	email?: SendEmail,
+	deps?: TransactionalEmailDeps,
 ) {
 	if (!isPlatformPrincipal(principal) && !hasDomainAccess(principal, input.domainId)) {
 		throw new Error("Forbidden");
@@ -220,8 +221,8 @@ export async function inviteAccount(
 		createdByAccountId: principal.accountId!,
 	});
 
-	if (input.sendInviteEmail && input.recoveryAddress && email) {
-		await sendTransactionalEmail(email, {
+	if (input.sendInviteEmail && input.recoveryAddress && deps) {
+		await sendTransactionalEmail(db, deps, {
 			domainName: domain.name,
 			to: input.recoveryAddress.trim(),
 			subject: "Your Flaremail invite code",

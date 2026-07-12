@@ -44,3 +44,38 @@ export async function loadMailboxForSend(
 		type: row.type,
 	};
 }
+
+export async function loadBlackholeMailboxForDomain(
+	db: Database,
+	domainName: string,
+): Promise<SendMailbox | null> {
+	const [row] = await db
+		.select({
+			id: mailboxes.id,
+			address: mailboxes.address,
+			type: mailboxes.type,
+			domain: domains.name,
+		})
+		.from(mailboxes)
+		.innerJoin(domains, eq(mailboxes.domainId, domains.id))
+		.where(
+			and(
+				eq(domains.name, domainName),
+				eq(mailboxes.type, "blackhole"),
+				eq(mailboxes.isActive, true),
+				eq(domains.isActive, true),
+			),
+		)
+		.limit(1);
+
+	if (!row || !isSendingMailboxType(row.type)) {
+		return null;
+	}
+
+	return {
+		id: row.id,
+		address: row.address,
+		domain: row.domain,
+		type: row.type,
+	};
+}

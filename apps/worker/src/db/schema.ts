@@ -728,6 +728,9 @@ export const instanceSettings = pgTable("instance_settings", {
 	requireRecoveryEmail: boolean("require_recovery_email")
 		.notNull()
 		.default(false),
+	persistNoreplyOutboundEmails: boolean("persist_noreply_outbound_emails")
+		.notNull()
+		.default(false),
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),

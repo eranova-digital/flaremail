@@ -9,6 +9,7 @@ import {
 	recoveryEmailVerificationText,
 	resolveAccountSenderDomain,
 	sendTransactionalEmail,
+	type TransactionalEmailDeps,
 } from "../lib/auth/transactional-email";
 import { parseEmailAddress } from "../lib/normalize-email-address";
 
@@ -96,7 +97,7 @@ async function verifyCode(
 
 async function sendVerificationEmail(
 	db: Database,
-	email: SendEmail,
+	deps: TransactionalEmailDeps,
 	input: {
 		accountId: string;
 		to: string;
@@ -109,7 +110,7 @@ async function sendVerificationEmail(
 		throw new Error("Could not determine sender domain for this account");
 	}
 
-	await sendTransactionalEmail(email, {
+	await sendTransactionalEmail(db, deps, {
 		domainName,
 		to: input.to,
 		subject: input.subject,
@@ -119,7 +120,7 @@ async function sendVerificationEmail(
 
 export async function sendRecoveryEmailSetupCode(
 	db: Database,
-	email: SendEmail,
+	deps: TransactionalEmailDeps,
 	input: { accountId: string; recoveryAddress: string },
 ): Promise<void> {
 	const targetEmail = assertValidExternalEmail(input.recoveryAddress);
@@ -129,7 +130,7 @@ export async function sendRecoveryEmailSetupCode(
 		purpose: "recovery_setup",
 	});
 
-	await sendVerificationEmail(db, email, {
+	await sendVerificationEmail(db, deps, {
 		accountId: input.accountId,
 		to: targetEmail,
 		subject: "Verify your Flaremail recovery email",
@@ -158,7 +159,7 @@ export async function verifyAndSetRecoveryEmail(
 
 export async function sendMfaDisableRecoveryCode(
 	db: Database,
-	email: SendEmail,
+	deps: TransactionalEmailDeps,
 	accountId: string,
 	recoveryAddress: string,
 ): Promise<void> {
@@ -169,7 +170,7 @@ export async function sendMfaDisableRecoveryCode(
 		purpose: "mfa_disable",
 	});
 
-	await sendVerificationEmail(db, email, {
+	await sendVerificationEmail(db, deps, {
 		accountId,
 		to: targetEmail,
 		subject: "Disable two-factor authentication on your Flaremail account",
