@@ -11,19 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { getPostLoginPath } from "@/lib/auth/post-login";
 import { getErrorMessage } from "@/lib/api/errors";
 import type { Account } from "@/lib/auth/types";
-
-function getPostLoginPath(
-	account: { isIntendant: boolean } | null,
-	from: string | undefined,
-): string {
-	if (account?.isIntendant) {
-		return "/";
-	}
-
-	return from && from !== "/login" ? from : "/";
-}
 
 function isMfaChallenge(
 	result: Account | { requiresMfa: true; mfaToken: string },
