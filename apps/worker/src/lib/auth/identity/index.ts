@@ -6,6 +6,7 @@ import {
 	activateInvite,
 	getMe,
 	previewInvite,
+	previewPasswordReset,
 	regenerateIntendantPassword,
 	requestPasswordReset,
 	resetPasswordWithCode,
@@ -63,6 +64,10 @@ export class Identity {
 
 	previewInvite(db: Database, code: string) {
 		return previewInvite(db, code);
+	}
+
+	previewPasswordReset(db: Database, code: string) {
+		return previewPasswordReset(db, code);
 	}
 
 	activateInvite(

@@ -83,6 +83,21 @@ export async function handlePreviewInvite(context: RouteContext) {
 	}
 }
 
+export async function handlePreviewPasswordReset(context: RouteContext) {
+	const code = new URL(context.request.url).searchParams.get("code");
+	if (!code?.trim()) {
+		return validationError(context.request, "code query parameter is required");
+	}
+	try {
+		const preview = await withDb(context.env, (db) =>
+			identity(context.env).previewPasswordReset(db, code),
+		);
+		return jsonResponse(preview);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
 export async function handleActivateInvite(context: RouteContext) {
 	const body = await parseJsonBody(context.request);
 	if (body instanceof Response) {

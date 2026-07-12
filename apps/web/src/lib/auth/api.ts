@@ -144,6 +144,12 @@ export function requestPasswordReset(address: string): Promise<{ ok: true }> {
 	});
 }
 
+export function fetchPasswordResetPreview(code: string): Promise<{ address: string }> {
+	return apiRequest<{ address: string }>(
+		`/auth/reset-preview?code=${encodeURIComponent(code.trim())}`,
+	);
+}
+
 export function isUnauthenticatedError(error: unknown): boolean {
 	return (
 		error instanceof ApiError &&

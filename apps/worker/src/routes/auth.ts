@@ -4,6 +4,7 @@ import {
 	handleForgotPassword,
 	handleGetMe,
 	handlePreviewInvite,
+	handlePreviewPasswordReset,
 	handleRegenerateIntendantPassword,
 	handleResetPassword,
 	handleSignIn,
@@ -99,6 +100,12 @@ export const authRoutes: RouteDefinition[] = [
 		path: `${prefix}/auth/invite-preview`,
 		auth: false,
 		handler: handlePreviewInvite,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/auth/reset-preview`,
+		auth: false,
+		handler: handlePreviewPasswordReset,
 	},
 	{
 		method: "POST",

@@ -320,6 +320,47 @@ export async function requestPasswordReset(
 	return { ok: true as const };
 }
 
+export async function previewPasswordReset(db: Database, code: string) {
+	const codeHash = await hashSecret(normalizeCode(code));
+	const now = new Date();
+	const [row] = await db
+		.select()
+		.from(passwordResetCodes)
+		.where(
+			and(
+				eq(passwordResetCodes.codeHash, codeHash),
+				gt(passwordResetCodes.expiresAt, now),
+			),
+		)
+		.limit(1);
+	if (!row || row.usedAt) {
+		throw new Error("Invalid or expired reset code");
+	}
+
+	const [account] = await db
+		.select()
+		.from(accounts)
+		.where(eq(accounts.id, row.accountId))
+		.limit(1);
+	if (!account) {
+		throw new Error("Invalid or expired reset code");
+	}
+
+	let address = account.loginIdentifier;
+	if (account.primaryMailboxId) {
+		const [mailbox] = await db
+			.select({ address: mailboxes.address })
+			.from(mailboxes)
+			.where(eq(mailboxes.id, account.primaryMailboxId))
+			.limit(1);
+		if (mailbox?.address) {
+			address = mailbox.address;
+		}
+	}
+
+	return { address };
+}
+
 export async function resetPasswordWithCode(
 	db: Database,
 	input: { code: string; password: string },
