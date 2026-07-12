@@ -1,21 +1,85 @@
-import type { Account } from "@/lib/auth/types";
+import type { Account, AccountCapabilities } from "@/lib/auth/types";
 import type { AccountRole, AccountSummary } from "@/lib/accounts/api";
 import type { InstanceSettings } from "@/lib/accounts/instance-settings";
 
-function caps(account: Account | null) {
-	return account?.capabilities;
+function deriveCapabilities(account: Account): AccountCapabilities {
+	const accessAccountsTab =
+		account.isIntendant ||
+		account.role === "superadmin" ||
+		account.role === "admin" ||
+		account.role === "manager";
+	const accessDomainsTab =
+		account.isIntendant ||
+		account.role === "superadmin" ||
+		account.role === "admin";
+	const assignRoles =
+		account.isIntendant ||
+		account.role === "superadmin" ||
+		account.role === "admin";
+
+	let inviteableRoles: AccountRole[] = ["user"];
+	if (account.isIntendant) {
+		inviteableRoles = ["user", "manager", "admin", "superadmin"];
+	} else if (account.role === "superadmin") {
+		inviteableRoles = ["user", "manager", "admin"];
+	} else if (account.role === "admin") {
+		inviteableRoles = ["user", "manager"];
+	}
+
+	return {
+		accessManagementPage: accessAccountsTab,
+		accessAccountsTab,
+		accessOrganizationTab: account.isIntendant,
+		accessDomainsTab,
+		accessMailboxesTab: accessDomainsTab || account.role === "manager",
+		manageMailboxes: accessDomainsTab,
+		registerDomains: account.isIntendant || account.role === "superadmin",
+		assignRoles,
+		editOwnProfile: !account.isIntendant,
+		editLocalPartPolicy:
+			account.isIntendant ||
+			account.role === "superadmin" ||
+			account.role === "admin",
+		manageSharedMailboxUsers: accessAccountsTab,
+		manageUserMailboxGrants: accessAccountsTab,
+		lockProfileFields: accessAccountsTab,
+		manageAssignments: assignRoles,
+		manageManagerMailboxAssignments: assignRoles,
+		showsManagerMailboxGrantsTab: account.role === "manager",
+		inviteableRoles,
+	};
+}
+
+function hasServerCapabilities(
+	capabilities: AccountCapabilities | undefined,
+): capabilities is AccountCapabilities {
+	return (
+		capabilities !== undefined &&
+		typeof capabilities.accessManagementPage === "boolean" &&
+		typeof capabilities.editOwnProfile === "boolean"
+	);
+}
+
+function effectiveCapabilities(account: Account | null): AccountCapabilities | null {
+	if (!account) {
+		return null;
+	}
+	if (hasServerCapabilities(account.capabilities)) {
+		return account.capabilities;
+	}
+	return deriveCapabilities(account);
 }
 
 export function canAccessManagementPage(account: Account | null): boolean {
-	return caps(account)?.accessManagementPage ?? false;
+	return effectiveCapabilities(account)?.accessManagementPage ?? false;
 }
 
 export function canAccessOrganizationTab(
 	account: Account | null,
 	settings?: Pick<InstanceSettings, "organizationTabAccess">,
 ): boolean {
-	if (caps(account)) {
-		return caps(account)!.accessOrganizationTab;
+	if (hasServerCapabilities(account.capabilities)) {
+		return account.capabilities.accessOrganizationTab;
 	}
 	if (!account) {
 		return false;
@@ -30,15 +94,15 @@ export function canAccessOrganizationTab(
 }
 
 export function canAccessAccountsTab(account: Account | null): boolean {
-	return caps(account)?.accessAccountsTab ?? false;
+	return effectiveCapabilities(account)?.accessAccountsTab ?? false;
 }
 
 export function inviteableRoles(account: Account | null): AccountRole[] {
-	return (caps(account)?.inviteableRoles as AccountRole[] | undefined) ?? [];
+	return (effectiveCapabilities(account)?.inviteableRoles as AccountRole[] | undefined) ?? [];
 }
 
 export function canEditLocalPartPolicy(account: Account | null): boolean {
-	return caps(account)?.editLocalPartPolicy ?? false;
+	return effectiveCapabilities(account)?.editLocalPartPolicy ?? false;
 }
 
 export function canRemoveTarget(
@@ -77,7 +141,7 @@ export function canSuspendTarget(
 }
 
 export function canAssignRoles(actor: Account | null): boolean {
-	return caps(actor)?.assignRoles ?? false;
+	return effectiveCapabilities(actor)?.assignRoles ?? false;
 }
 
 export function canEditAccountDetails(
@@ -91,27 +155,27 @@ export function canEditAccountDetails(
 }
 
 export function canEditOwnProfile(account: Account | null): boolean {
-	return caps(account)?.editOwnProfile ?? false;
+	return effectiveCapabilities(account)?.editOwnProfile ?? false;
 }
 
 export function canRegisterDomains(account: Account | null): boolean {
-	return caps(account)?.registerDomains ?? false;
+	return effectiveCapabilities(account)?.registerDomains ?? false;
 }
 
 export function canAccessDomainsTab(account: Account | null): boolean {
-	return caps(account)?.accessDomainsTab ?? false;
+	return effectiveCapabilities(account)?.accessDomainsTab ?? false;
 }
 
 export function canManageMailboxes(account: Account | null): boolean {
-	return caps(account)?.manageMailboxes ?? false;
+	return effectiveCapabilities(account)?.manageMailboxes ?? false;
 }
 
 export function canAccessMailboxesTab(account: Account | null): boolean {
-	return caps(account)?.accessMailboxesTab ?? false;
+	return effectiveCapabilities(account)?.accessMailboxesTab ?? false;
 }
 
 export function showsManagerMailboxGrantsTab(account: Account | null): boolean {
-	return caps(account)?.showsManagerMailboxGrantsTab ?? false;
+	return effectiveCapabilities(account)?.showsManagerMailboxGrantsTab ?? false;
 }
 
 export function canManageMailboxGrants(account: Account | null): boolean {
@@ -119,25 +183,25 @@ export function canManageMailboxGrants(account: Account | null): boolean {
 }
 
 export function canManageSharedMailboxUsers(account: Account | null): boolean {
-	return caps(account)?.manageSharedMailboxUsers ?? false;
+	return effectiveCapabilities(account)?.manageSharedMailboxUsers ?? false;
 }
 
 export function canManageUserMailboxGrants(account: Account | null): boolean {
-	return caps(account)?.manageUserMailboxGrants ?? false;
+	return effectiveCapabilities(account)?.manageUserMailboxGrants ?? false;
 }
 
 export function canLockProfileFields(actor: Account | null): boolean {
-	return caps(actor)?.lockProfileFields ?? false;
+	return effectiveCapabilities(actor)?.lockProfileFields ?? false;
 }
 
 export function canManageAssignments(actor: Account | null): boolean {
-	return caps(actor)?.manageAssignments ?? false;
+	return effectiveCapabilities(actor)?.manageAssignments ?? false;
 }
 
 export function canManageManagerMailboxAssignments(
 	account: Account | null,
 ): boolean {
-	return caps(account)?.manageManagerMailboxAssignments ?? false;
+	return effectiveCapabilities(account)?.manageManagerMailboxAssignments ?? false;
 }
 
 const ROLE_RANK: Record<AccountRole, number> = {
