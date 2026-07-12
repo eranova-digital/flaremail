@@ -1,64 +1,28 @@
 import { useSearchParams } from "react-router-dom";
 
-import { DomainSection } from "@/components/settings/DomainSection";
-import { MailboxSection } from "@/components/settings/MailboxSection";
-import { ManagerMailboxGrantsSection } from "@/components/settings/ManagerMailboxGrantsSection";
-import { AccountsSection } from "@/components/settings/AccountsSection";
 import { ProfileSection } from "@/components/settings/ProfileSection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsShell } from "@/components/layout/SettingsShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	canAccessAccountsTab,
-	canAccessDomainsTab,
-	canAccessMailboxesTab,
-	canEditOwnProfile,
-	canManageMailboxes,
-	showsManagerMailboxGrantsTab,
-} from "@/lib/accounts/permissions";
+import { canEditOwnProfile } from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
-const ALL_TABS = ["profile", "domains", "mailboxes", "accounts"] as const;
+const ALL_TABS = ["profile", "identities", "preferences", "security"] as const;
 type SettingsTab = (typeof ALL_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
 	return value !== null && (ALL_TABS as readonly string[]).includes(value);
 }
 
-function defaultTab(
-	showProfile: boolean,
-	showDomains: boolean,
-	showMailboxes: boolean,
-	showAccounts: boolean,
-): SettingsTab {
-	if (showProfile) {
-		return "profile";
-	}
-	if (showDomains) {
-		return "domains";
-	}
-	if (showMailboxes) {
-		return "mailboxes";
-	}
-	if (showAccounts) {
-		return "accounts";
-	}
-	return "profile";
+function defaultTab(showProfile: boolean): SettingsTab {
+	return showProfile ? "profile" : "identities";
 }
 
 function resolveActiveTab(
 	tabParam: string | null,
 	showProfile: boolean,
-	showDomains: boolean,
-	showMailboxes: boolean,
-	showAccounts: boolean,
 ): SettingsTab {
-	const fallback = defaultTab(
-		showProfile,
-		showDomains,
-		showMailboxes,
-		showAccounts,
-	);
+	const fallback = defaultTab(showProfile);
 
 	if (!isSettingsTab(tabParam)) {
 		return fallback;
@@ -66,16 +30,22 @@ function resolveActiveTab(
 	if (tabParam === "profile" && !showProfile) {
 		return fallback;
 	}
-	if (tabParam === "domains" && !showDomains) {
-		return fallback;
-	}
-	if (tabParam === "mailboxes" && !showMailboxes) {
-		return fallback;
-	}
-	if (tabParam === "accounts" && !showAccounts) {
-		return fallback;
-	}
 	return tabParam;
+}
+
+function SettingsStubSection({
+	title,
+	description,
+}: {
+	title: string;
+	description: string;
+}) {
+	return (
+		<div className="space-y-2">
+			<h2 className="text-lg font-semibold">{title}</h2>
+			<p className="text-muted-foreground max-w-prose text-sm">{description}</p>
+		</div>
+	);
 }
 
 export function SettingsPage() {
@@ -83,16 +53,7 @@ export function SettingsPage() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tabParam = searchParams.get("tab");
 	const showProfile = canEditOwnProfile(account);
-	const showDomains = canAccessDomainsTab(account);
-	const showMailboxes = canAccessMailboxesTab(account);
-	const showAccounts = canAccessAccountsTab(account);
-	const activeTab = resolveActiveTab(
-		tabParam,
-		showProfile,
-		showDomains,
-		showMailboxes,
-		showAccounts,
-	);
+	const activeTab = resolveActiveTab(tabParam, showProfile);
 
 	const handleTabChange = (value: string) => {
 		setSearchParams(
@@ -109,47 +70,40 @@ export function SettingsPage() {
 		<SettingsShell
 			backTo="/"
 			backLabel="Back to mail"
-			actions={<LogoutButton variant="settings" />}
+			actions={<LogoutButton />}
 		>
 			<Tabs value={activeTab} onValueChange={handleTabChange}>
 				<TabsList>
 					{showProfile ? (
 						<TabsTrigger value="profile">Profile</TabsTrigger>
 					) : null}
-					{showDomains ? (
-						<TabsTrigger value="domains">Domains</TabsTrigger>
-					) : null}
-					{showMailboxes ? (
-						<TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
-					) : null}
-					{showAccounts ? (
-						<TabsTrigger value="accounts">People & access</TabsTrigger>
-					) : null}
+					<TabsTrigger value="identities">Identities</TabsTrigger>
+					<TabsTrigger value="preferences">Preferences</TabsTrigger>
+					<TabsTrigger value="security">Security</TabsTrigger>
 				</TabsList>
 				{showProfile ? (
 					<TabsContent value="profile">
 						<ProfileSection />
 					</TabsContent>
 				) : null}
-				{showDomains ? (
-					<TabsContent value="domains">
-						<DomainSection />
-					</TabsContent>
-				) : null}
-				{showMailboxes ? (
-					<TabsContent value="mailboxes">
-						{showsManagerMailboxGrantsTab(account) ? (
-							<ManagerMailboxGrantsSection />
-						) : canManageMailboxes(account) ? (
-							<MailboxSection />
-						) : null}
-					</TabsContent>
-				) : null}
-				{showAccounts ? (
-					<TabsContent value="accounts">
-						<AccountsSection />
-					</TabsContent>
-				) : null}
+				<TabsContent value="identities">
+					<SettingsStubSection
+						title="Identities"
+						description="Manage your email addresses and how you appear when sending mail."
+					/>
+				</TabsContent>
+				<TabsContent value="preferences">
+					<SettingsStubSection
+						title="Preferences"
+						description="Customize your inbox layout, notifications, and other personal defaults."
+					/>
+				</TabsContent>
+				<TabsContent value="security">
+					<SettingsStubSection
+						title="Security"
+						description="Review sign-in methods, active sessions, and account recovery options."
+					/>
+				</TabsContent>
 			</Tabs>
 		</SettingsShell>
 	);

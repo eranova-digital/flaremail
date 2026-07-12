@@ -46,7 +46,7 @@ export function ManagerMailboxGrantsSection() {
 								mailbox.id ? (
 									<li key={mailbox.id}>
 										<Link
-											to={`/settings/mailboxes/${mailbox.id}/users`}
+											to={`/management/mailboxes/${mailbox.id}/users`}
 											className="hover:bg-muted/40 flex items-center justify-between gap-3 px-4 py-3"
 										>
 											<div className="min-w-0">

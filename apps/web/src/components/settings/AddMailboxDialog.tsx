@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,10 @@ import { useDomains } from "@/hooks/use-domains";
 import { useCreateMailbox, useMailboxes } from "@/hooks/use-mailboxes";
 import type { CreateMailboxRequest, Mailbox } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
-import { filterDomainsForAccount } from "@/lib/accounts/domains";
+import {
+	filterDomainsForAccount,
+	soleAccessibleDomainId,
+} from "@/lib/accounts/domains";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { sortMailboxes } from "@/lib/sort-mailboxes";
 
@@ -114,6 +117,20 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 		() => filterDomainsForAccount(account, domainsQuery.data ?? []),
 		[account, domainsQuery.data],
 	);
+
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+		const soleDomainId = soleAccessibleDomainId(domains);
+		if (!soleDomainId) {
+			return;
+		}
+		setForm((current) =>
+			current.domainId ? current : { ...current, domainId: soleDomainId },
+		);
+	}, [domains, open]);
+
 	const mailboxes = mailboxesQuery.data ?? [];
 	const domainNamesById = useMemo(
 		() =>

@@ -292,6 +292,63 @@ export async function revokeSharedMailboxAccess(input: {
 	}
 }
 
+export type MailboxManagerAssignment = {
+	accountId: string;
+	loginIdentifier: string;
+	displayName: string;
+	role: AccountRole;
+	status: string;
+	viaAllShared: boolean;
+};
+
+export async function fetchMailboxManagerAssignments(
+	mailboxId: string,
+): Promise<MailboxManagerAssignment[]> {
+	const response = await fetch(
+		apiUrl(`/mailboxes/${mailboxId}/manager-assignments`),
+		{
+			credentials: "include",
+		},
+	);
+	const data = await parseJson<{ items: MailboxManagerAssignment[] }>(response);
+	return data.items;
+}
+
+export async function grantManagerMailboxAssignment(input: {
+	accountId: string;
+	mailboxId: string;
+}): Promise<void> {
+	const response = await fetch(
+		apiUrl(`/accounts/${input.accountId}/manager-assignments`),
+		{
+			method: "POST",
+			credentials: "include",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ mailboxId: input.mailboxId }),
+		},
+	);
+	await parseJson(response);
+}
+
+export async function revokeManagerMailboxAssignment(input: {
+	accountId: string;
+	mailboxId: string;
+}): Promise<void> {
+	const response = await fetch(
+		apiUrl(
+			`/accounts/${input.accountId}/manager-assignments/${input.mailboxId}`,
+		),
+		{
+			method: "DELETE",
+			credentials: "include",
+		},
+	);
+	if (!response.ok) {
+		const body = await response.json().catch(() => null);
+		throw new Error(getErrorMessage(body) ?? "Revoke failed");
+	}
+}
+
 export async function fetchLocalPartPolicy(
 	domainId: string,
 ): Promise<LocalPartPolicy> {

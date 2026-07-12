@@ -3,6 +3,7 @@ import { Check, ChevronDown, Copy } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -20,6 +21,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { ProfileFieldsGrid } from "@/components/settings/ProfileFieldsGrid";
+import { ProfileFieldLockToggle } from "@/components/settings/accounts/ProfileFieldLockToggle";
 import { useDomains } from "@/hooks/use-domains";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import {
@@ -28,7 +30,10 @@ import {
 	useSuggestInviteLocalPart,
 } from "@/hooks/use-accounts";
 import type { AccountRole } from "@/lib/accounts/api";
-import { filterDomainsForAccount } from "@/lib/accounts/domains";
+import {
+	filterDomainsForAccount,
+	soleAccessibleDomainId,
+} from "@/lib/accounts/domains";
 import {
 	applyLocalPartPattern,
 	getProfileFieldsUsedByPattern,
@@ -148,6 +153,17 @@ export function InviteAccountDialog({
 		() => filterDomainsForAccount(account, domainsQuery.data ?? []),
 		[account, domainsQuery.data],
 	);
+
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+		const soleDomainId = soleAccessibleDomainId(availableDomains);
+		if (!soleDomainId || domainId) {
+			return;
+		}
+		setDomainId(soleDomainId);
+	}, [availableDomains, domainId, open]);
 
 	const selectedDomain = availableDomains.find((domain) => domain.id === domainId);
 	const policyRequiredFields = useMemo(
@@ -417,6 +433,33 @@ export function InviteAccountDialog({
 					</div>
 				) : (
 					<div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+						{!policyEnforced && policyHasPattern && localPartOverridden ? (
+							<Alert
+								tone="warning"
+								title="Custom address diverges from policy"
+								className="border-amber-500/70 bg-amber-50 ring-2 ring-amber-500/30 dark:bg-amber-950/40 dark:ring-amber-500/20"
+							>
+								<p>
+									This domain expects addresses like{" "}
+									<code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs dark:bg-amber-900/60">
+										{policyPattern}
+									</code>
+									. Your custom address will not auto-update when profile fields
+									change, and may be rejected if the domain enforces the policy
+									for managers.
+								</p>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									className="mt-2 border-amber-600/40"
+									onClick={() => setLocalPartOverridden(false)}
+								>
+									Revert to policy suggestion
+								</Button>
+							</Alert>
+						) : null}
+
 						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="space-y-1">
 								<label className="text-sm font-medium" htmlFor="invite-domain">
@@ -513,26 +556,6 @@ export function InviteAccountDialog({
 							) : null}
 						</div>
 
-						{!policyEnforced && policyHasPattern && localPartOverridden ? (
-							<Alert tone="warning" title="Custom address diverges from policy">
-								<p>
-									This domain suggests addresses like{" "}
-									<code className="font-mono text-xs">{policyPattern}</code>.
-									Your custom address will no longer auto-update when profile
-									fields change.
-								</p>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									className="mt-2"
-									onClick={() => setLocalPartOverridden(false)}
-								>
-									Use policy suggestion
-								</Button>
-							</Alert>
-						) : null}
-
 						<CollapsibleSection
 							title="Profile"
 							description="Pre-fill onboarding details. Locked fields cannot be changed during activation."
@@ -544,7 +567,15 @@ export function InviteAccountDialog({
 									setProfile((current) => ({ ...current, [key]: value }))
 								}
 								requiredFields={new Set(policyRequiredFields)}
-								labelExtra={(key) => {
+								isFieldDisabled={(key) => {
+									const policyLocked =
+										policyEnforced &&
+										policyRequiredFields.includes(
+											key as "firstName" | "lastName",
+										);
+									return policyLocked || lockedFields.has(key);
+								}}
+								inputExtra={(key) => {
 									const policyLocked =
 										policyEnforced &&
 										policyRequiredFields.includes(
@@ -552,16 +583,20 @@ export function InviteAccountDialog({
 										);
 									if (canLock && !policyLocked) {
 										return (
-											<label className="text-muted-foreground flex items-center gap-1 text-xs">
-												<input
-													type="checkbox"
-													checked={lockedFields.has(key)}
-													onChange={() => toggleLock(key)}
-												/>
-												Lock
-											</label>
+											<ProfileFieldLockToggle
+												locked={lockedFields.has(key)}
+												onToggle={() => toggleLock(key)}
+											/>
 										);
 									}
+									return null;
+								}}
+								labelExtra={(key) => {
+									const policyLocked =
+										policyEnforced &&
+										policyRequiredFields.includes(
+											key as "firstName" | "lastName",
+										);
 									if (policyLocked) {
 										return (
 											<span className="text-muted-foreground text-xs">
@@ -583,17 +618,24 @@ export function InviteAccountDialog({
 								<div className="space-y-2">
 									{availableDomains.map((domain) =>
 										domain.id ? (
-											<label
+											<div
 												key={domain.id}
 												className="flex items-center gap-2 text-sm"
 											>
-												<input
-													type="checkbox"
+												<Checkbox
+													id={`invite-admin-domain-${domain.id}`}
 													checked={assignedDomainIds.includes(domain.id)}
-													onChange={() => toggleAssignedDomain(domain.id!)}
+													onCheckedChange={() =>
+														toggleAssignedDomain(domain.id!)
+													}
 												/>
-												{domain.domain}
-											</label>
+												<label
+													htmlFor={`invite-admin-domain-${domain.id}`}
+													className="cursor-pointer"
+												>
+													{domain.domain}
+												</label>
+											</div>
 										) : null,
 									)}
 								</div>
@@ -606,34 +648,46 @@ export function InviteAccountDialog({
 								description="Shared mailboxes this manager can administer."
 								defaultOpen
 							>
-								<label className="mb-3 flex items-center gap-2 text-sm">
-									<input
-										type="checkbox"
+								<div className="mb-3 flex items-center gap-2 text-sm">
+									<Checkbox
+										id="invite-all-shared-mailboxes"
 										checked={allSharedMailboxes}
-										onChange={(event) => {
-											setAllSharedMailboxes(event.target.checked);
-											if (event.target.checked) {
+										onCheckedChange={(checked) => {
+											setAllSharedMailboxes(checked === true);
+											if (checked === true) {
 												setSharedMailboxIds([]);
 											}
 										}}
 									/>
-									All shared mailboxes on assigned domains
-								</label>
+									<label
+										htmlFor="invite-all-shared-mailboxes"
+										className="cursor-pointer"
+									>
+										All shared mailboxes on assigned domains
+									</label>
+								</div>
 								<div className="mb-3 space-y-2">
 									<p className="text-muted-foreground text-xs">Assigned domains</p>
 									{availableDomains.map((domain) =>
 										domain.id ? (
-											<label
+											<div
 												key={domain.id}
 												className="flex items-center gap-2 text-sm"
 											>
-												<input
-													type="checkbox"
+												<Checkbox
+													id={`invite-manager-domain-${domain.id}`}
 													checked={assignedDomainIds.includes(domain.id)}
-													onChange={() => toggleAssignedDomain(domain.id!)}
+													onCheckedChange={() =>
+														toggleAssignedDomain(domain.id!)
+													}
 												/>
-												{domain.domain}
-											</label>
+												<label
+													htmlFor={`invite-manager-domain-${domain.id}`}
+													className="cursor-pointer"
+												>
+													{domain.domain}
+												</label>
+											</div>
 										) : null,
 									)}
 								</div>
@@ -646,17 +700,24 @@ export function InviteAccountDialog({
 										) : (
 											sharedMailboxes.map((mailbox) =>
 												mailbox.id ? (
-													<label
+													<div
 														key={mailbox.id}
 														className="flex items-center gap-2 text-sm"
 													>
-														<input
-															type="checkbox"
+														<Checkbox
+															id={`invite-shared-mailbox-${mailbox.id}`}
 															checked={sharedMailboxIds.includes(mailbox.id)}
-															onChange={() => toggleSharedMailbox(mailbox.id!)}
+															onCheckedChange={() =>
+																toggleSharedMailbox(mailbox.id!)
+															}
 														/>
-														{mailbox.address}
-													</label>
+														<label
+															htmlFor={`invite-shared-mailbox-${mailbox.id}`}
+															className="cursor-pointer"
+														>
+															{mailbox.address}
+														</label>
+													</div>
 												) : null,
 											)
 										)}
@@ -666,14 +727,18 @@ export function InviteAccountDialog({
 						) : null}
 
 						<CollapsibleSection title="Delivery">
-							<label className="flex items-center gap-2 text-sm">
-								<input
-									type="checkbox"
+							<div className="flex items-center gap-2 text-sm">
+								<Checkbox
+									id="invite-send-email"
 									checked={sendInviteEmail}
-									onChange={(event) => setSendInviteEmail(event.target.checked)}
+									onCheckedChange={(checked) =>
+										setSendInviteEmail(checked === true)
+									}
 								/>
-								Send invite code to recovery address (logs only for now)
-							</label>
+								<label htmlFor="invite-send-email" className="cursor-pointer">
+									Send invite code to recovery address (logs only for now)
+								</label>
+							</div>
 						</CollapsibleSection>
 
 						{error ? (

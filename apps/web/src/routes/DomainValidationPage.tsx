@@ -60,17 +60,19 @@ export function DomainValidationPage() {
 	const isPending = recheckDomain.isPending;
 
 	if (!domainId || !canAccess) {
-		return <Navigate to="/settings?tab=domains" replace />;
+		return <Navigate to="/management?tab=domains" replace />;
 	}
 
 	if (domainQuery.isError) {
 		return (
 			<SettingsShell
+				rootLabel="Management"
+				rootTo="/management"
 				crumbs={[
-					{ label: "Domains", to: "/settings?tab=domains" },
+					{ label: "Domains", to: "/management?tab=domains" },
 					{ label: "Domain readiness" },
 				]}
-				backTo="/settings?tab=domains"
+				backTo="/management?tab=domains"
 				backLabel="Back to domains"
 			>
 				<Alert tone="warning" title="This domain is unavailable to your account">
@@ -82,11 +84,13 @@ export function DomainValidationPage() {
 
 	return (
 		<SettingsShell
+			rootLabel="Management"
+			rootTo="/management"
 			crumbs={[
-				{ label: "Domains", to: "/settings?tab=domains" },
+				{ label: "Domains", to: "/management?tab=domains" },
 				{ label: domain?.domain ?? "Domain readiness" },
 			]}
-			backTo="/settings?tab=domains"
+			backTo="/management?tab=domains"
 			backLabel="Back to domains"
 			widthClassName="max-w-5xl"
 			actions={

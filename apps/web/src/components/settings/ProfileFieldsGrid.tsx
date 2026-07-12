@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+} from "@/components/ui/input-group";
 import { Input } from "@/components/ui/input";
 import { PROFILE_FIELDS } from "@/lib/accounts/api";
 
@@ -32,6 +37,8 @@ type ProfileFieldsGridProps = {
 	isFieldDisabled?: (key: ProfileFieldKey) => boolean;
 	/** Extra content rendered at the right end of a field's label row. */
 	labelExtra?: (key: ProfileFieldKey) => ReactNode;
+	/** Extra content rendered inside the input at the trailing edge. */
+	inputExtra?: (key: ProfileFieldKey) => ReactNode;
 	requiredFields?: ReadonlySet<string>;
 };
 
@@ -46,12 +53,15 @@ export function ProfileFieldsGrid({
 	disabled = false,
 	isFieldDisabled,
 	labelExtra,
+	inputExtra,
 	requiredFields,
 }: ProfileFieldsGridProps) {
 	const field = (key: ProfileFieldKey) => {
 		const inputId = `${idPrefix}-${key}`;
 		const isRequired = requiredFields?.has(key) ?? false;
 		const extra = labelExtra?.(key);
+		const trailing = inputExtra?.(key);
+		const isInputDisabled = disabled || (isFieldDisabled?.(key) ?? false);
 		return (
 			<div className="space-y-1">
 				<div className="flex min-h-5 items-center justify-between gap-2">
@@ -61,14 +71,28 @@ export function ProfileFieldsGrid({
 					</label>
 					{extra}
 				</div>
-				<Input
-					id={inputId}
-					value={values[key] ?? ""}
-					autoComplete={AUTOCOMPLETE[key]}
-					onChange={(event) => onChange(key, event.target.value)}
-					disabled={disabled || (isFieldDisabled?.(key) ?? false)}
-					required={isRequired}
-				/>
+				{trailing ? (
+					<InputGroup>
+						<InputGroupInput
+							id={inputId}
+							value={values[key] ?? ""}
+							autoComplete={AUTOCOMPLETE[key]}
+							onChange={(event) => onChange(key, event.target.value)}
+							disabled={isInputDisabled}
+							required={isRequired}
+						/>
+						<InputGroupAddon align="inline-end">{trailing}</InputGroupAddon>
+					</InputGroup>
+				) : (
+					<Input
+						id={inputId}
+						value={values[key] ?? ""}
+						autoComplete={AUTOCOMPLETE[key]}
+						onChange={(event) => onChange(key, event.target.value)}
+						disabled={isInputDisabled}
+						required={isRequired}
+					/>
+				)}
 			</div>
 		);
 	};

@@ -40,7 +40,7 @@ const emptyProfile = (): ProfileFormState => ({
 });
 
 function getPostActivatePath(account: { isIntendant: boolean }): string {
-	return account.isIntendant ? "/settings" : "/";
+	return account.isIntendant ? "/management" : "/";
 }
 
 function profileFromPreview(

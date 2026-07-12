@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
 	useLocalPartPolicy,
 	useUpdateLocalPartPolicy,
@@ -87,17 +88,22 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 							setSaved(false);
 						}}
 					/>
-					<label className="flex items-center gap-2 text-sm">
-						<input
-							type="checkbox"
+					<div className="flex items-center justify-between gap-3">
+						<label
+							htmlFor={`local-part-enforced-${domainId}`}
+							className="cursor-pointer text-sm"
+						>
+							Enforce for manager invites
+						</label>
+						<Switch
+							id={`local-part-enforced-${domainId}`}
 							checked={enforced}
-							onChange={(event) => {
-								setEnforced(event.target.checked);
+							onCheckedChange={(checked) => {
+								setEnforced(checked);
 								setSaved(false);
 							}}
 						/>
-						Enforce for manager invites
-					</label>
+					</div>
 					<p className="text-muted-foreground text-xs">
 						Tokens: {"{first_name}"}, {"{last_name}"}, {"{first_name_initial}"},{" "}
 						{"{last_name_initial}"}, {"{rnd_num}"}, {"{rnd_char}"}

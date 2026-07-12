@@ -10,12 +10,15 @@ import {
 	getAccountDetail,
 	getDomainLocalPartPolicy,
 	grantSharedMailboxAccess,
+	grantManagerMailboxAssignment,
 	inviteAccount,
 	listAccountsForPrincipal,
 	listMailboxGrantHolders,
+	listMailboxManagerAssignments,
 	regenerateInviteCode,
 	removeAccount,
 	revokeSharedMailboxAccess,
+	revokeManagerMailboxAssignment,
 	suggestInviteLocalPart,
 	suspendAccount,
 	unsuspendAccount,
@@ -425,6 +428,62 @@ export async function handleRevokeSharedMailboxAccess(context: RouteContext) {
 	try {
 		await withDb(context.env, (db) =>
 			revokeSharedMailboxAccess(
+				db,
+				context.principal,
+				context.params.id,
+				context.params.mailboxId,
+			),
+		);
+		return new Response(null, { status: 204 });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleListMailboxManagerAssignments(context: RouteContext) {
+	try {
+		const items = await withDb(context.env, (db) =>
+			listMailboxManagerAssignments(
+				db,
+				context.principal,
+				context.params.mailboxId,
+			),
+		);
+		return jsonResponse({ items });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleGrantManagerMailboxAssignment(context: RouteContext) {
+	const body = await parseJsonBody(context.request);
+	if (body instanceof Response) {
+		return body;
+	}
+	const value = body as Record<string, unknown>;
+	if (typeof value.mailboxId !== "string") {
+		return validationError(context.request, "mailboxId is required");
+	}
+
+	try {
+		await withDb(context.env, (db) =>
+			grantManagerMailboxAssignment(
+				db,
+				context.principal,
+				context.params.id,
+				value.mailboxId as string,
+			),
+		);
+		return jsonResponse({ ok: true });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleRevokeManagerMailboxAssignment(context: RouteContext) {
+	try {
+		await withDb(context.env, (db) =>
+			revokeManagerMailboxAssignment(
 				db,
 				context.principal,
 				context.params.id,

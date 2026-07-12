@@ -27,3 +27,12 @@ export function filterDomainsForAccount<T extends { id?: string | null }>(
 	}
 	return domains.filter((domain) => domain.id && allowed.includes(domain.id));
 }
+
+export function soleAccessibleDomainId(
+	domains: { id?: string | null }[],
+): string | null {
+	if (domains.length !== 1) {
+		return null;
+	}
+	return domains[0]?.id ?? null;
+}

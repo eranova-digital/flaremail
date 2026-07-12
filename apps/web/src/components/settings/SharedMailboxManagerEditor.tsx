@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Users } from "lucide-react";
+import { Shield } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -13,39 +13,39 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useAccounts } from "@/hooks/use-accounts";
 import {
-	useGrantSharedMailboxAccess,
-	useMailboxGrantHolders,
-	useRevokeSharedMailboxAccess,
+	useAccounts,
+	useGrantManagerMailboxAssignment,
+	useMailboxManagerAssignments,
+	useRevokeManagerMailboxAssignment,
 } from "@/hooks/use-accounts";
 import { getErrorMessage } from "@/lib/api/errors";
 
-type SharedMailboxGrantEditorProps = {
+type SharedMailboxManagerEditorProps = {
 	mailboxId: string;
 };
 
-export function SharedMailboxGrantEditor({
+export function SharedMailboxManagerEditor({
 	mailboxId,
-}: SharedMailboxGrantEditorProps) {
-	const grantsQuery = useMailboxGrantHolders(mailboxId);
+}: SharedMailboxManagerEditorProps) {
+	const assignmentsQuery = useMailboxManagerAssignments(mailboxId);
 	const accountsQuery = useAccounts();
-	const grantMutation = useGrantSharedMailboxAccess();
-	const revokeMutation = useRevokeSharedMailboxAccess();
+	const grantMutation = useGrantManagerMailboxAssignment();
+	const revokeMutation = useRevokeManagerMailboxAssignment();
 	const [selectedAccountId, setSelectedAccountId] = useState("");
 	const [error, setError] = useState<string | null>(null);
 
-	const grantableUsers = useMemo(() => {
-		const grantedIds = new Set(
-			(grantsQuery.data ?? []).map((holder) => holder.accountId),
+	const assignableManagers = useMemo(() => {
+		const assignedIds = new Set(
+			(assignmentsQuery.data ?? []).map((holder) => holder.accountId),
 		);
 		return (accountsQuery.data ?? []).filter(
 			(account) =>
-				account.role === "user" &&
+				account.role === "manager" &&
 				account.status === "active" &&
-				!grantedIds.has(account.id),
+				!assignedIds.has(account.id),
 		);
-	}, [accountsQuery.data, grantsQuery.data]);
+	}, [accountsQuery.data, assignmentsQuery.data]);
 
 	const handleGrant = () => {
 		if (!selectedAccountId) {
@@ -62,20 +62,28 @@ export function SharedMailboxGrantEditor({
 	};
 
 	return (
-		<div className="space-y-4">
-			{grantsQuery.isLoading ? (
+		<section className="space-y-4">
+			<div>
+				<h2 className="text-base font-medium">Managers</h2>
+				<p className="text-muted-foreground text-sm">
+					Managers assigned here can administer user access for this shared
+					mailbox.
+				</p>
+			</div>
+
+			{assignmentsQuery.isLoading ? (
 				<div className="space-y-2">
 					{Array.from({ length: 2 }).map((_, index) => (
 						<Skeleton key={index} className="h-14 w-full rounded-lg" />
 					))}
 				</div>
-			) : (grantsQuery.data ?? []).length === 0 ? (
+			) : (assignmentsQuery.data ?? []).length === 0 ? (
 				<Card className="gap-0 rounded-lg py-0">
 					<CardContent className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-						<Users className="text-muted-foreground/60 size-6" aria-hidden />
-						<p className="text-sm font-medium">No one has access yet</p>
+						<Shield className="text-muted-foreground/60 size-6" aria-hidden />
+						<p className="text-sm font-medium">No managers assigned yet</p>
 						<p className="text-muted-foreground max-w-sm text-sm">
-							Grant a user access below so they can read and send from this
+							Assign a manager below so they can manage user access on this
 							mailbox.
 						</p>
 					</CardContent>
@@ -84,7 +92,7 @@ export function SharedMailboxGrantEditor({
 				<Card className="gap-0 rounded-lg py-0">
 					<CardContent className="p-0">
 						<ul className="divide-border divide-y">
-							{grantsQuery.data?.map((holder) => (
+							{assignmentsQuery.data?.map((holder) => (
 								<li
 									key={holder.accountId}
 									className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
@@ -96,13 +104,9 @@ export function SharedMailboxGrantEditor({
 										</p>
 									</div>
 									<div className="flex shrink-0 items-center gap-2">
-										<Badge
-											variant={
-												holder.status === "active" ? "success" : "secondary"
-											}
-										>
-											{holder.status}
-										</Badge>
+										{holder.viaAllShared ? (
+											<Badge variant="outline">All shared mailboxes</Badge>
+										) : null}
 										<Button
 											variant="outline"
 											size="sm"
@@ -114,7 +118,7 @@ export function SharedMailboxGrantEditor({
 												})
 											}
 										>
-											Revoke
+											Remove
 										</Button>
 									</div>
 								</li>
@@ -126,21 +130,23 @@ export function SharedMailboxGrantEditor({
 
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-end">
 				<div className="min-w-0 flex-1 space-y-1">
-					<label className="text-sm font-medium" htmlFor="grant-user">
-						Add user
+					<label className="text-sm font-medium" htmlFor="assign-manager">
+						Add manager
 					</label>
 					<Select
 						value={selectedAccountId || undefined}
 						onValueChange={setSelectedAccountId}
-						disabled={grantableUsers.length === 0 || grantMutation.isPending}
+						disabled={
+							assignableManagers.length === 0 || grantMutation.isPending
+						}
 					>
-						<SelectTrigger id="grant-user">
-							<SelectValue placeholder="Select user…" />
+						<SelectTrigger id="assign-manager">
+							<SelectValue placeholder="Select manager…" />
 						</SelectTrigger>
 						<SelectContent>
-							{grantableUsers.map((user) => (
-								<SelectItem key={user.id} value={user.id}>
-									{user.displayName} ({user.loginIdentifier})
+							{assignableManagers.map((manager) => (
+								<SelectItem key={manager.id} value={manager.id}>
+									{manager.displayName} ({manager.loginIdentifier})
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -150,14 +156,14 @@ export function SharedMailboxGrantEditor({
 					onClick={handleGrant}
 					disabled={!selectedAccountId || grantMutation.isPending}
 				>
-					Grant access
+					Assign manager
 				</Button>
 			</div>
 			{error ? (
-				<Alert tone="destructive" title="Couldn't grant access">
+				<Alert tone="destructive" title="Couldn't assign manager">
 					<p>{error}</p>
 				</Alert>
 			) : null}
-		</div>
+		</section>
 	);
 }

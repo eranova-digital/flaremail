@@ -1,12 +1,44 @@
 import { useEffect, useState } from "react";
+import { HelpCircle, Loader2 } from "lucide-react";
 
+import {
+	getAccountDisplayName,
+	ProfileAvatar,
+} from "@/components/ProfileAvatar";
+import { ProfileFieldsGrid } from "@/components/settings/ProfileFieldsGrid";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { PROFILE_FIELDS } from "@/lib/accounts/api";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { apiUrl } from "@/lib/api";
 import { getErrorMessage } from "@/lib/api/errors";
+import { roleLabel } from "@/lib/accounts/roles";
+import type { AccountRole } from "@/lib/accounts/api";
+
+const LOCKED_FIELD_TOOLTIP =
+	"This information has been locked by your organization.";
+
+function LockedFieldHelp() {
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					className="text-muted-foreground hover:text-foreground inline-flex shrink-0"
+					aria-label={LOCKED_FIELD_TOOLTIP}
+				>
+					<HelpCircle className="size-3.5" aria-hidden />
+				</button>
+			</TooltipTrigger>
+			<TooltipContent>{LOCKED_FIELD_TOOLTIP}</TooltipContent>
+		</Tooltip>
+	);
+}
 
 export function ProfileSection() {
 	const { account, refresh } = useAuth();
@@ -80,53 +112,53 @@ export function ProfileSection() {
 		}
 	};
 
+	const displayName = getAccountDisplayName(account);
+
 	return (
 		<section className="space-y-4">
-			<div>
-				<h2 className="text-lg font-medium">Your profile</h2>
-				<p className="text-muted-foreground text-sm">
-					{account.loginIdentifier}
-					{account.role ? ` · ${account.role}` : account.isIntendant ? " · intendant" : ""}
-				</p>
+			<div className="flex items-center gap-4">
+				<ProfileAvatar
+					seed={account.loginIdentifier}
+					label={displayName}
+					className="size-16 text-lg"
+				/>
+				<div className="min-w-0">
+					<h2 className="truncate text-lg font-medium">{displayName}</h2>
+					<p className="text-muted-foreground truncate text-sm">
+						{account.loginIdentifier}
+						{" · "}
+						{roleLabel(account.role as AccountRole | null, account.isIntendant)}
+					</p>
+				</div>
 			</div>
 			<Card>
 				<CardHeader>
-					<CardTitle>Profile fields</CardTitle>
+					<CardTitle>Personal details</CardTitle>
 				</CardHeader>
-				<CardContent className="space-y-3">
-					{PROFILE_FIELDS.map((field) => {
-						const isLocked = locked.has(field.key);
-						const inputId = `profile-${field.key}`;
-						return (
-							<div key={field.key} className="space-y-1">
-								<label htmlFor={inputId} className="text-sm font-medium">
-									{field.label}
-									{isLocked ? (
-										<span className="text-muted-foreground ml-2 text-xs">
-											(locked)
-										</span>
-									) : null}
-								</label>
-								<Input
-									id={inputId}
-									value={values[field.key] ?? ""}
-									disabled={isLocked}
-									onChange={(event) =>
-										setValues((current) => ({
-											...current,
-											[field.key]: event.target.value,
-										}))
-									}
-								/>
-							</div>
-						);
-					})}
-					{error ? <p className="text-destructive text-sm">{error}</p> : null}
+				<CardContent className="space-y-4">
+					<ProfileFieldsGrid
+						idPrefix="profile"
+						values={values}
+						onChange={(key, value) => {
+							setSaved(false);
+							setValues((current) => ({ ...current, [key]: value }));
+						}}
+						isFieldDisabled={(key) => locked.has(key)}
+						labelExtra={(key) => (locked.has(key) ? <LockedFieldHelp /> : null)}
+					/>
+					{error ? (
+						<Alert tone="destructive" title="Couldn't save profile">
+							<p>{error}</p>
+						</Alert>
+					) : null}
 					{saved ? (
-						<p className="text-muted-foreground text-sm">Profile saved.</p>
+						<Alert tone="success">Profile saved.</Alert>
 					) : null}
 					<Button onClick={handleSave} disabled={saving}>
-						Save profile
+						{saving ? (
+							<Loader2 className="size-4 animate-spin" aria-hidden />
+						) : null}
+						{saving ? "Saving…" : "Save profile"}
 					</Button>
 				</CardContent>
 			</Card>

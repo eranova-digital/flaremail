@@ -97,15 +97,19 @@ function AccountRow({
 	const description = roleDescription(item.role, item.isIntendant);
 
 	return (
-		<li className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+		<li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_7rem_8.5rem_5.5rem]">
 			<div className="min-w-0">
 				<p className="truncate font-medium">{item.displayName}</p>
 				<p className="text-muted-foreground truncate text-xs">
 					{item.loginIdentifier}
 				</p>
 			</div>
-			<div className="flex shrink-0 items-center gap-2">
-				<Badge variant="outline" title={description ?? undefined}>
+			<div className="col-span-1 flex items-center justify-end gap-2 sm:contents">
+				<Badge
+					variant="outline"
+					title={description ?? undefined}
+					className="justify-center sm:w-full"
+				>
 					{role}
 				</Badge>
 				<Badge
@@ -116,14 +120,19 @@ function AccountRow({
 								? "warning"
 								: "secondary"
 					}
+					className="justify-center sm:w-full"
 				>
 					{status.label}
 				</Badge>
-				{canManage ? (
-					<Button variant="outline" size="sm" onClick={onManage}>
-						Manage
-					</Button>
-				) : null}
+				<div className="flex justify-end sm:w-full">
+					{canManage ? (
+						<Button variant="outline" size="sm" onClick={onManage}>
+							Manage
+						</Button>
+					) : (
+						<span aria-hidden className="inline-flex h-8 w-[4.75rem]" />
+					)}
+				</div>
 			</div>
 		</li>
 	);

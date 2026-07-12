@@ -1,14 +1,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, Globe, Trash2 } from "lucide-react";
+import { Activity, ChevronDown, Globe, Trash2 } from "lucide-react";
 
 import { ReadinessBadge } from "@/components/settings/domain-validation/ReadinessBadge";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	useCreateDomain,
@@ -21,11 +29,8 @@ import type { Domain } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
 import { canRegisterDomains } from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { DomainLocalPartPolicy } from "@/components/settings/accounts/DomainLocalPartPolicy";
 import { cn } from "@/lib/utils";
-
-const selectClassName =
-	"border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+import { DomainLocalPartPolicy } from "@/components/settings/accounts/DomainLocalPartPolicy";
 
 export function DomainSection() {
 	const { account } = useAuth();
@@ -126,6 +131,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 	const deleteDomain = useDeleteDomain();
 	const mailboxesQuery = useMailboxes("manage");
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
+	const [catchAllOpen, setCatchAllOpen] = useState(false);
 
 	if (!domain.id) {
 		return null;
@@ -137,13 +143,6 @@ function DomainRow({ domain }: { domain: Domain }) {
 			mailbox.type !== "alias" &&
 			mailbox.type !== "blackhole",
 	);
-
-	const handleToggleActive = () => {
-		updateDomain.mutate({
-			id: domain.id!,
-			body: { isActive: !domain.isActive },
-		});
-	};
 
 	const handleToggleCatchAll = () => {
 		updateDomain.mutate({
@@ -176,7 +175,9 @@ function DomainRow({ domain }: { domain: Domain }) {
 				<div className="min-w-0 space-y-1">
 					<p className="font-medium">{domain.domain}</p>
 					<div className="flex flex-wrap gap-1.5">
-						<StatusBadge active={domain.isActive ?? false} />
+						{domain.isActive === false ? (
+							<Badge variant="secondary">Disabled</Badge>
+						) : null}
 						<ReadinessBadge readiness={domain.readiness} />
 						{domain.catchAllEnabled ? (
 							<Badge variant="secondary">Catch-all</Badge>
@@ -186,7 +187,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 				<div className="flex items-center gap-1">
 					<Button variant="outline" size="sm" asChild>
 						<Link
-							to={`/settings/domains/${domain.id}/validation`}
+							to={`/management/domains/${domain.id}/validation`}
 							aria-label={`View readiness for ${domain.domain}`}
 						>
 							<Activity className="size-3.5" />
@@ -225,47 +226,76 @@ function DomainRow({ domain }: { domain: Domain }) {
 				pending={deleteDomain.isPending}
 			/>
 
-			<div className="flex flex-wrap items-center gap-4 text-sm">
-				<label className="flex items-center gap-2">
-					<input
-						type="checkbox"
-						checked={domain.isActive ?? false}
-						onChange={handleToggleActive}
-						disabled={isPending}
-						className="size-4 rounded border"
+			<div className="rounded-md border">
+				<button
+					type="button"
+					onClick={() => setCatchAllOpen((current) => !current)}
+					aria-expanded={catchAllOpen}
+					className="hover:bg-muted/40 flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
+				>
+					<div>
+						<p className="text-sm font-medium">Catch-all</p>
+						<p className="text-muted-foreground text-xs">
+							Route unmatched addresses to a mailbox on this domain.
+						</p>
+					</div>
+					<ChevronDown
+						className={cn(
+							"text-muted-foreground size-4 shrink-0 transition-transform",
+							catchAllOpen && "rotate-180",
+						)}
 					/>
-					Active
-				</label>
-				<label className="flex items-center gap-2">
-					<input
-						type="checkbox"
-						checked={domain.catchAllEnabled ?? false}
-						onChange={handleToggleCatchAll}
-						disabled={isPending}
-						className="size-4 rounded border"
-					/>
-					Catch-all enabled
-				</label>
+				</button>
+				{catchAllOpen ? (
+					<div className="space-y-3 border-t px-3 py-3">
+						<div className="flex items-center gap-2 text-sm">
+							<Checkbox
+								id={`domain-catch-all-${domain.id}`}
+								checked={domain.catchAllEnabled ?? false}
+								onCheckedChange={handleToggleCatchAll}
+								disabled={isPending}
+							/>
+							<label
+								htmlFor={`domain-catch-all-${domain.id}`}
+								className="cursor-pointer"
+							>
+								Enabled
+							</label>
+						</div>
+						{domain.catchAllEnabled ? (
+							<div className="space-y-1">
+								<label
+									className="text-muted-foreground text-xs"
+									htmlFor={`catch-all-mailbox-${domain.id}`}
+								>
+									Catch-all mailbox
+								</label>
+								<Select
+									value={domain.catchAllMailboxId ?? undefined}
+									onValueChange={handleCatchAllMailbox}
+									disabled={isPending || mailboxesQuery.isLoading}
+								>
+									<SelectTrigger
+										id={`catch-all-mailbox-${domain.id}`}
+										className="max-w-sm"
+									>
+										<SelectValue placeholder="Select mailbox…" />
+									</SelectTrigger>
+									<SelectContent>
+										{domainMailboxes.map((mailbox) =>
+											mailbox.id ? (
+												<SelectItem key={mailbox.id} value={mailbox.id}>
+													{mailbox.address}
+												</SelectItem>
+											) : null,
+										)}
+									</SelectContent>
+								</Select>
+							</div>
+						) : null}
+					</div>
+				) : null}
 			</div>
-
-			{domain.catchAllEnabled ? (
-				<div className="space-y-1">
-					<label className="text-muted-foreground text-xs">Catch-all mailbox</label>
-					<select
-						className={cn(selectClassName, "max-w-sm")}
-						value={domain.catchAllMailboxId ?? ""}
-						onChange={(event) => handleCatchAllMailbox(event.target.value)}
-						disabled={isPending || mailboxesQuery.isLoading}
-					>
-						<option value="">Select mailbox…</option>
-						{domainMailboxes.map((mailbox) => (
-							<option key={mailbox.id} value={mailbox.id}>
-								{mailbox.address}
-							</option>
-						))}
-					</select>
-				</div>
-			) : null}
 
 			{mutationError ? (
 				<Alert tone="destructive">
@@ -275,13 +305,5 @@ function DomainRow({ domain }: { domain: Domain }) {
 
 			<DomainLocalPartPolicy domainId={domain.id} />
 		</li>
-	);
-}
-
-function StatusBadge({ active }: { active: boolean }) {
-	return (
-		<Badge variant={active ? "success" : "secondary"}>
-			{active ? "Active" : "Inactive"}
-		</Badge>
 	);
 }

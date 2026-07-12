@@ -31,7 +31,7 @@ export function BootstrapPage() {
 	}
 
 	if (isAuthenticated && account) {
-		return <Navigate to={account.isIntendant ? "/settings" : "/"} replace />;
+		return <Navigate to={account.isIntendant ? "/management" : "/"} replace />;
 	}
 
 	const handleBootstrap = async () => {
