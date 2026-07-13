@@ -1,6 +1,19 @@
 import { apiRequest } from "@/lib/api/request";
 import { ApiError } from "@/lib/api/errors";
-import type { Account, AuthSession, MfaSetup, MfaStatus, SignInResult } from "@/lib/auth/types";
+import type {
+	Account,
+	AuthSession,
+	MfaSetup,
+	MfaStatus,
+	PasskeySummary,
+	SignInResult,
+} from "@/lib/auth/types";
+import type {
+	AuthenticationResponseJSON,
+	PublicKeyCredentialCreationOptionsJSON,
+	PublicKeyCredentialRequestOptionsJSON,
+	RegistrationResponseJSON,
+} from "@simplewebauthn/browser";
 
 export function bootstrapInstance(): Promise<{
 	created: boolean;
@@ -155,4 +168,56 @@ export function isUnauthenticatedError(error: unknown): boolean {
 		error instanceof ApiError &&
 		(error.status === 400 || error.status === 401)
 	);
+}
+
+export function fetchPasskeys(): Promise<{ items: PasskeySummary[] }> {
+	return apiRequest<{ items: PasskeySummary[] }>("/auth/passkeys");
+}
+
+export function beginPasskeyRegistration(): Promise<{
+	options: PublicKeyCredentialCreationOptionsJSON;
+	challengeToken: string;
+}> {
+	return apiRequest("/auth/passkeys/register/options", { method: "POST" });
+}
+
+export function completePasskeyRegistration(input: {
+	challengeToken: string;
+	response: RegistrationResponseJSON;
+	name?: string;
+}): Promise<{ items: PasskeySummary[] }> {
+	return apiRequest("/auth/passkeys/register/verify", {
+		method: "POST",
+		body: JSON.stringify(input),
+	});
+}
+
+export function beginPasskeySignIn(email?: string): Promise<{
+	options: PublicKeyCredentialRequestOptionsJSON;
+	challengeToken: string;
+}> {
+	return apiRequest("/auth/passkeys/sign-in/options", {
+		method: "POST",
+		body: JSON.stringify(email ? { email } : {}),
+	});
+}
+
+export function completePasskeySignIn(input: {
+	challengeToken: string;
+	response: AuthenticationResponseJSON;
+}): Promise<{ ok: true }> {
+	return apiRequest("/auth/passkeys/sign-in/verify", {
+		method: "POST",
+		body: JSON.stringify(input),
+	});
+}
+
+export function removePasskey(input: {
+	passkeyId: string;
+	password: string;
+}): Promise<{ items: PasskeySummary[] }> {
+	return apiRequest(`/auth/passkeys/${input.passkeyId}`, {
+		method: "DELETE",
+		body: JSON.stringify({ password: input.password }),
+	});
 }

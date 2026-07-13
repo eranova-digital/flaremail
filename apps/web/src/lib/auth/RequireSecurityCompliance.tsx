@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
+import { PasskeyReminderGate } from "@/components/auth/PasskeyReminderGate";
 import { PageLoader } from "@/components/PageLoader";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
@@ -23,7 +24,7 @@ export function RequireSecurityCompliance() {
 	}
 
 	if (!hasPendingSecurityRequirements(account)) {
-		return <Outlet />;
+		return <PasskeyReminderGate />;
 	}
 
 	if (location.pathname === "/security-compliance") {

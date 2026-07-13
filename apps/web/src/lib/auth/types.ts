@@ -81,3 +81,11 @@ export type AuthSession = {
 	browser: string | null;
 	os: string | null;
 };
+
+export type PasskeySummary = {
+	id: string;
+	name: string | null;
+	createdAt: string;
+	lastUsedAt: string | null;
+	backedUp: boolean;
+};

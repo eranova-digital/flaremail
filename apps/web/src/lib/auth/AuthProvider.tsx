@@ -17,6 +17,7 @@ import {
 	signOut as signOutRequest,
 	verifyMfaSignIn,
 } from "@/lib/auth/api";
+import { signInWithPasskey as signInWithPasskeyRequest } from "@/lib/auth/passkeys";
 import type { Account, SignInResult } from "@/lib/auth/types";
 
 type AuthContextValue = {
@@ -29,6 +30,7 @@ type AuthContextValue = {
 		password: string,
 	) => Promise<Account | { requiresMfa: true; mfaToken: string }>;
 	verifyMfa: (mfaToken: string, code: string) => Promise<Account>;
+	signInWithPasskey: (email?: string) => Promise<Account>;
 	signOut: () => Promise<void>;
 	activate: (input: {
 		code: string;
@@ -106,6 +108,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return me;
 	}, []);
 
+	const signInWithPasskey = useCallback(async (email?: string) => {
+		await signInWithPasskeyRequest(email);
+		const me = await fetchMe();
+		setAccount(me);
+		return me;
+	}, []);
+
 	const signOut = useCallback(async () => {
 		try {
 			await signOutRequest();
@@ -153,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			refresh,
 			signIn,
 			verifyMfa,
+			signInWithPasskey,
 			signOut,
 			activate,
 			resetPassword: resetPasswordAction,
@@ -163,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			refresh,
 			signIn,
 			verifyMfa,
+			signInWithPasskey,
 			signOut,
 			activate,
 			resetPasswordAction,

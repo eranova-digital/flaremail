@@ -28,6 +28,7 @@
 		"yaml": "^2.9.0"
 	},
 	"dependencies": {
+		"@simplewebauthn/server": "^13.3.2",
 		"@test-worker/mail-quoting": "*",
 		"drizzle-orm": "^0.45.2",
 		"jose": "^6.2.3",

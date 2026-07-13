@@ -33,4 +33,14 @@ describe("Identity", () => {
 		expect(typeof identity.disableMfa).toBe("function");
 		expect(typeof identity.completeMfaSignIn).toBe("function");
 	});
+
+	it("delegates passkey operations", () => {
+		const identity = createIdentity({ SESSION_SECRET: "secret" } as Env);
+		expect(typeof identity.listPasskeys).toBe("function");
+		expect(typeof identity.beginPasskeyRegistration).toBe("function");
+		expect(typeof identity.completePasskeyRegistration).toBe("function");
+		expect(typeof identity.beginPasskeySignIn).toBe("function");
+		expect(typeof identity.completePasskeySignIn).toBe("function");
+		expect(typeof identity.removePasskey).toBe("function");
+	});
 });

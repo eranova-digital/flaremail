@@ -6,6 +6,7 @@ import { PasswordInput } from "@/components/auth/PasswordInput";
 import { AuthCodeInput, isAuthCodeComplete } from "@/components/auth/AuthCodeInput";
 import { TotpCodeInput, isTotpCodeComplete } from "@/components/auth/TotpCodeInput";
 import { SessionsSection } from "@/components/settings/SessionsSection";
+import { PasskeysSection } from "@/components/settings/PasskeysSection";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -177,8 +178,8 @@ export function SecuritySection() {
 			<div className="space-y-2">
 				<h2 className="text-lg font-semibold">Security</h2>
 				<p className="text-muted-foreground max-w-prose text-sm">
-					Protect your account with an authenticator app, review active sessions,
-					and manage sign-in security settings.
+					Protect your account with an authenticator app or passkey, review active
+					sessions, and manage sign-in security settings.
 				</p>
 			</div>
 
@@ -410,6 +411,8 @@ export function SecuritySection() {
 					)}
 				</CardContent>
 			</Card>
+
+			<PasskeysSection />
 
 			<SessionsSection />
 		</div>

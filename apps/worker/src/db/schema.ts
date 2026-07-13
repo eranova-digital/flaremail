@@ -754,11 +754,36 @@ export const accountTotp = pgTable("account_totp", {
 		.defaultNow(),
 });
 
+export const accountPasskeys = pgTable(
+	"account_passkeys",
+	{
+		id: uuid("id").primaryKey(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		credentialId: text("credential_id").notNull(),
+		publicKey: text("public_key").notNull(),
+		signCount: integer("sign_count").notNull().default(0),
+		name: text("name"),
+		transports: text("transports"),
+		backedUp: boolean("backed_up").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+	},
+	(table) => [
+		uniqueIndex("account_passkeys_credential_id_idx").on(table.credentialId),
+		index("account_passkeys_account_id_idx").on(table.accountId),
+	],
+);
+
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type AccountProfile = typeof accountProfiles.$inferSelect;
 export type InstanceSettings = typeof instanceSettings.$inferSelect;
 export type AccountTotp = typeof accountTotp.$inferSelect;
+export type AccountPasskey = typeof accountPasskeys.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type OidcClient = typeof oidcClients.$inferSelect;

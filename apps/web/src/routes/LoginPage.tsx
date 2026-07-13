@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Fingerprint, Loader2 } from "lucide-react";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getPostLoginPath } from "@/lib/auth/post-login";
+import { isPasskeySupported } from "@/lib/auth/passkey-support";
 import { getErrorMessage } from "@/lib/api/errors";
 import type { Account } from "@/lib/auth/types";
 
@@ -22,9 +23,11 @@ function isMfaChallenge(
 }
 
 export function LoginPage() {
-	const { account, isAuthenticated, isLoading, signIn, verifyMfa } = useAuth();
+	const { account, isAuthenticated, isLoading, signIn, verifyMfa, signInWithPasskey } =
+		useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const passkeySupported = isPasskeySupported();
 	const locationState = location.state as
 		| { from?: string; success?: string }
 		| null;
@@ -126,6 +129,34 @@ export function LoginPage() {
 		setPassword("");
 		setError(null);
 		setSubmitting(false);
+	};
+
+	const handlePasskeySignIn = async () => {
+		if (!passkeySupported || submittingRef.current) {
+			return;
+		}
+
+		const attempt = ++loginAttemptRef.current;
+		setError(null);
+		submittingRef.current = true;
+		setSubmitting(true);
+
+		try {
+			const me = await signInWithPasskey(email.trim() || undefined);
+			if (attempt !== loginAttemptRef.current) {
+				return;
+			}
+			navigate(getPostLoginPath(me, from), { replace: true });
+		} catch (submitError) {
+			if (attempt === loginAttemptRef.current) {
+				setError(getErrorMessage(submitError));
+			}
+		} finally {
+			submittingRef.current = false;
+			if (attempt === loginAttemptRef.current) {
+				setSubmitting(false);
+			}
+		}
 	};
 
 	return (
@@ -232,6 +263,35 @@ export function LoginPage() {
 								) : null}
 								{submitting ? "Signing in…" : "Sign in"}
 							</Button>
+							{passkeySupported ? (
+								<>
+									<div className="relative py-1">
+										<div className="bg-border absolute inset-x-0 top-1/2 h-px" />
+										<p className="text-muted-foreground relative mx-auto w-fit bg-card px-2 text-xs">
+											or
+										</p>
+									</div>
+									<Button
+										type="button"
+										variant="outline"
+										className="w-full"
+										onClick={() => void handlePasskeySignIn()}
+										disabled={submitting}
+									>
+										{submitting ? (
+											<Loader2 className="size-4 animate-spin" aria-hidden />
+										) : (
+											<Fingerprint className="size-4" aria-hidden />
+										)}
+										Sign in with passkey
+									</Button>
+									<p className="text-muted-foreground text-center text-xs">
+										{email.trim()
+											? "Uses passkeys registered for this account."
+											: "Works with saved passkeys on this device."}
+									</p>
+								</>
+							) : null}
 						</form>
 					)}
 				</CardContent>

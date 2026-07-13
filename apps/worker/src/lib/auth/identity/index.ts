@@ -28,8 +28,10 @@ import {
 	getMfaStatus,
 	setupMfa,
 } from "../../../services/mfa";
+import type { PasskeySummary } from "../../../services/passkeys";
+import type { WebAuthnConfig } from "../webauthn-config";
 
-export type { NoRecoveryEmailError, SessionMetadata };
+export type { NoRecoveryEmailError, SessionMetadata, PasskeySummary };
 
 /**
  * Identity facade: session resolution, credentials, MFA, and profile behind one
@@ -171,6 +173,87 @@ export class Identity {
 				encryptionKey: this.sessionSecret(),
 			},
 			metadata,
+		);
+	}
+
+	listPasskeys(db: Database, accountId: string) {
+		return import("../../../services/passkeys").then(({ listPasskeys }) =>
+			listPasskeys(db, accountId),
+		);
+	}
+
+	beginPasskeyRegistration(
+		db: Database,
+		accountId: string,
+		config: WebAuthnConfig,
+	) {
+		return import("../../../services/passkeys").then(({ beginPasskeyRegistration }) =>
+			beginPasskeyRegistration(db, {
+				accountId,
+				encryptionKey: this.sessionSecret(),
+				config,
+			}),
+		);
+	}
+
+	completePasskeyRegistration(
+		db: Database,
+		input: {
+			accountId: string;
+			challengeToken: string;
+			response: unknown;
+			name?: string;
+		},
+		config: WebAuthnConfig,
+	) {
+		return import("../../../services/passkeys").then(({ completePasskeyRegistration }) =>
+			completePasskeyRegistration(db, {
+				...input,
+				encryptionKey: this.sessionSecret(),
+				config,
+			}),
+		);
+	}
+
+	beginPasskeySignIn(
+		db: Database,
+		input: { loginIdentifier?: string },
+		config: WebAuthnConfig,
+	) {
+		return import("../../../services/passkeys").then(({ beginPasskeySignIn }) =>
+			beginPasskeySignIn(db, {
+				...input,
+				encryptionKey: this.sessionSecret(),
+				config,
+			}),
+		);
+	}
+
+	completePasskeySignIn(
+		db: Database,
+		input: { challengeToken: string; response: unknown },
+		config: WebAuthnConfig,
+		metadata?: SessionMetadata,
+	) {
+		return import("../../../services/passkeys").then(({ completePasskeySignIn }) =>
+			completePasskeySignIn(
+				db,
+				{
+					...input,
+					encryptionKey: this.sessionSecret(),
+					config,
+				},
+				metadata,
+			),
+		);
+	}
+
+	removePasskey(
+		db: Database,
+		input: { accountId: string; passkeyId: string; password: string },
+	) {
+		return import("../../../services/passkeys").then(({ removePasskey }) =>
+			removePasskey(db, input),
 		);
 	}
 }

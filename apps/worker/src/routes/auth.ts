@@ -72,11 +72,50 @@ import {
 	handleGetInstanceSettings,
 	handleUpdateInstanceSettings,
 } from "../controllers/instance-settings";
+import {
+	handleBeginPasskeyRegistration,
+	handleBeginPasskeySignIn,
+	handleCompletePasskeyRegistration,
+	handleCompletePasskeySignIn,
+	handleListPasskeys,
+	handleRemovePasskey,
+} from "../controllers/passkeys";
 
 const prefix = "/api/v1";
 
 export const authRoutes: RouteDefinition[] = [
 	{ method: "POST", path: `${prefix}/auth/sign-in`, auth: false, handler: handleSignIn },
+	{
+		method: "POST",
+		path: `${prefix}/auth/passkeys/sign-in/options`,
+		auth: false,
+		handler: handleBeginPasskeySignIn,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/auth/passkeys/sign-in/verify`,
+		auth: false,
+		handler: handleCompletePasskeySignIn,
+	},
+	{ method: "GET", path: `${prefix}/auth/passkeys`, action: "authenticated", handler: handleListPasskeys },
+	{
+		method: "POST",
+		path: `${prefix}/auth/passkeys/register/options`,
+		action: "authenticated",
+		handler: handleBeginPasskeyRegistration,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/auth/passkeys/register/verify`,
+		action: "authenticated",
+		handler: handleCompletePasskeyRegistration,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/auth/passkeys/:id`,
+		action: "authenticated",
+		handler: handleRemovePasskey,
+	},
 	{ method: "POST", path: `${prefix}/auth/sign-out`, auth: false, handler: handleSignOut },
 	{
 		method: "POST",
