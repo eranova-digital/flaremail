@@ -511,7 +511,59 @@ export function ThreadView() {
 											</TooltipContent>
 										</Tooltip>
 									) : null}
-									<div className={cn('flex flex-col gap-1', isStructural ? 'items-stretch' : isOutbound ? 'items-end' : 'items-start')}>
+									<div
+										className={cn(
+											'flex flex-col gap-1',
+											isOutbound
+												? 'items-end'
+												: isStructural
+													? 'items-stretch'
+													: 'items-start',
+										)}
+									>
+										{(message as ThreadMessagePreview).sentBy ? (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<div
+														className={cn(
+															'text-muted-foreground flex max-w-[85%] cursor-default items-center gap-1 text-xs',
+															isOutbound ? 'mr-1 justify-end' : 'ml-1',
+														)}
+													>
+														<span className="shrink-0">Sent by</span>
+														<span className="ring-background inline-flex shrink-0 rounded-full ring-1">
+															<ProfileAvatar
+																accountId={(message as ThreadMessagePreview).sentBy?.accountId ?? ''}
+																seed={(message as ThreadMessagePreview).sentBy?.loginIdentifier ?? ''}
+																label={
+																	(message as ThreadMessagePreview).sentBy?.displayName ??
+																	(message as ThreadMessagePreview).sentBy?.loginIdentifier ??
+																	''
+																}
+																profilePicture={
+																	((message as ThreadMessagePreview).sentBy?.profilePicture as
+																		| ProfilePicture
+																		| null
+																		| undefined) ?? null
+																}
+																className="size-4 text-[8px]"
+															/>
+														</span>
+														<span className="truncate">
+															{(message as ThreadMessagePreview).sentBy?.displayName ??
+																(message as ThreadMessagePreview).sentBy?.loginIdentifier}
+														</span>
+													</div>
+												</TooltipTrigger>
+												<TooltipContent className="max-w-xs">
+													<p>This is an internal indicator.</p>
+													<small className="text-background/80 mt-1 block">
+														To the recipient, the message appears as sent by{' '}
+														{selfAddress ?? message.from}
+													</small>
+												</TooltipContent>
+											</Tooltip>
+										) : null}
 										{showReplyIndicator && parentMessage ? (
 											<button
 												type="button"
@@ -563,55 +615,15 @@ export function ThreadView() {
 											) : (
 												<>
 											<div className="mb-2 flex items-center justify-between gap-3">
-												<div className="flex min-w-0 flex-col gap-0.5 text-sm">
-													{(message as ThreadMessagePreview).sentBy ? (
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<div className="text-muted-foreground flex min-w-0 cursor-default items-center gap-1 text-xs">
-																	<span className="shrink-0">Sent by</span>
-																	<span className="ring-background inline-flex shrink-0 rounded-full ring-1">
-																		<ProfileAvatar
-																			accountId={(message as ThreadMessagePreview).sentBy?.accountId ?? ''}
-																			seed={(message as ThreadMessagePreview).sentBy?.loginIdentifier ?? ''}
-																			label={
-																				(message as ThreadMessagePreview).sentBy?.displayName ??
-																				(message as ThreadMessagePreview).sentBy?.loginIdentifier ??
-																				''
-																			}
-																			profilePicture={
-																				((message as ThreadMessagePreview).sentBy?.profilePicture as
-																					| ProfilePicture
-																					| null
-																					| undefined) ?? null
-																			}
-																			className="size-4 text-[8px]"
-																		/>
-																	</span>
-																	<span className="truncate">
-																		{(message as ThreadMessagePreview).sentBy?.displayName ??
-																			(message as ThreadMessagePreview).sentBy?.loginIdentifier}
-																	</span>
-																</div>
-															</TooltipTrigger>
-															<TooltipContent className="max-w-xs">
-																<p>This is an internal indicator.</p>
-																<small className="text-background/80 mt-1 block">
-																	To the recipient, the message appears as sent by{' '}
-																	{selfAddress ?? message.from}
-																</small>
-															</TooltipContent>
-														</Tooltip>
+												<div className="flex min-w-0 items-center gap-2 text-sm">
+													<MessageAddress address={message.from} className="font-medium" />
+													{isDraft ? <Badge variant="secondary">Draft</Badge> : null}
+													{message.hasAttachments ? (
+														<Paperclip
+															className="text-muted-foreground size-3.5"
+															aria-label="Has attachments"
+														/>
 													) : null}
-													<div className="flex min-w-0 items-center gap-2">
-														<MessageAddress address={message.from} className="font-medium" />
-														{isDraft ? <Badge variant="secondary">Draft</Badge> : null}
-														{message.hasAttachments ? (
-															<Paperclip
-																className="text-muted-foreground size-3.5"
-																aria-label="Has attachments"
-															/>
-														) : null}
-													</div>
 												</div>
 												<div className="flex shrink-0 items-center gap-1">
 													<span className="text-muted-foreground text-xs">

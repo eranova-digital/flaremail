@@ -300,21 +300,14 @@
 
 .message-html-body table {
 	border-collapse: collapse;
-	margin: 12px 0;
-	table-layout: fixed;
-	width: 100%;
+	border-spacing: 0;
+	max-width: 100%;
 }
 
-.message-html-body th,
-.message-html-body td {
-	border: 1px solid #d1d5db;
-	padding: 8px;
-	vertical-align: top;
-}
-
+.message-html-body td,
 .message-html-body th {
-	background-color: #f3f4f6;
-	font-weight: 600;
+	padding: 0;
+	vertical-align: top;
 }
 
 .message-html-body img {
