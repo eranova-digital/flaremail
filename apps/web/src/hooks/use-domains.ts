@@ -9,15 +9,19 @@ import {
 	type UpdateDomainData,
 } from "@/lib/api/client";
 import { assertData } from "@/lib/api/errors";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { queryKeys } from "@/lib/query-keys";
 
 export function useDomains() {
+	const { account } = useAuth();
+
 	return useQuery({
-		queryKey: queryKeys.domains,
+		queryKey: [...queryKeys.domains, account?.id ?? null],
 		queryFn: async () => {
 			const { data } = await listDomains({ throwOnError: true });
 			return assertData(data, "listDomains").items ?? [];
 		},
+		enabled: account !== null,
 		refetchInterval: (query) => {
 			const domains = query.state.data;
 			if (!domains?.some((domain) => domain.readiness?.badge === "checking")) {

@@ -10,6 +10,7 @@ import {
 } from "@/lib/api/client";
 import { apiRequest } from "@/lib/api/request";
 import { assertData } from "@/lib/api/errors";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { queryKeys } from "@/lib/query-keys";
 
 export type MailboxListScope = "mail" | "manage";
@@ -22,9 +23,12 @@ async function fetchMailboxes(scope: MailboxListScope): Promise<Mailbox[]> {
 }
 
 export function useMailboxes(scope: MailboxListScope = "mail") {
+	const { account } = useAuth();
+
 	return useQuery({
-		queryKey: [...queryKeys.mailboxes, scope],
+		queryKey: [...queryKeys.mailboxes, account?.id ?? null, scope],
 		queryFn: () => fetchMailboxes(scope),
+		enabled: account !== null,
 	});
 }
 

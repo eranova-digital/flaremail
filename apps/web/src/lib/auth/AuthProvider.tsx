@@ -7,6 +7,7 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
 	activateAccount,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/auth/api";
 import { signInWithPasskey as signInWithPasskeyRequest } from "@/lib/auth/passkeys";
 import type { Account, SignInResult } from "@/lib/auth/types";
+import { clearSessionQueryCache } from "@/lib/clear-session-cache";
 
 type AuthContextValue = {
 	account: Account | null;
@@ -53,6 +55,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+	const queryClient = useQueryClient();
 	const [account, setAccount] = useState<Account | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
@@ -119,9 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		try {
 			await signOutRequest();
 		} finally {
+			clearSessionQueryCache(queryClient);
 			setAccount(null);
 		}
-	}, []);
+	}, [queryClient]);
 
 	const activate = useCallback(
 		async (input: {

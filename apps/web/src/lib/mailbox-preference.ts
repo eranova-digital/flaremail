@@ -15,3 +15,11 @@ export function setLastMailboxId(mailboxId: string): void {
 		// ignore quota / private mode
 	}
 }
+
+export function clearLastMailboxId(): void {
+	try {
+		localStorage.removeItem(STORAGE_KEY);
+	} catch {
+		// ignore quota / private mode
+	}
+}
