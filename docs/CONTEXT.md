@@ -13,7 +13,7 @@ An authentication identity in the platform. Most **accounts** have exactly one *
 _Avoid_: user, login, operator
 
 **Intendant**:
-The first **account** created at deploy time. Platform configuration and management — no **primary mailbox**, no **mailbox grants**, no SSO. Exactly one per instance; role cannot be assigned to another **account**; cannot be deleted. Signs in with the literal identifier `intendant` (not an email address) and a deploy-time generated password. Can **regenerate** its own password (new random secret — never user-chosen). Can register **domains**, assign **admins**, assign any **role** (including **superadmin**), and register **OIDC clients**. May read and send mail on **system mailboxes** across all **domains** (see [ADR-0006](./adr/0006-system-mailbox-access-by-role.md)); cannot access user or shared mailboxes.
+The first **account** created at deploy time. Platform configuration and management — no **primary mailbox**, no **mailbox grants**, no SSO. Exactly one per instance; role cannot be assigned to another **account**; cannot be deleted. Signs in with the literal identifier `intendant` (not an email address) and a deploy-time generated password. Can **regenerate** its own password (new random secret — never user-chosen). Can register **domains**, assign **admins**, assign any **role** (including **superadmin**), and register **OIDC clients**. May read and send mail on all **system mailboxes** and all **shared mailboxes** across all **domains** (see [ADR-0006](./adr/0006-system-mailbox-access-by-role.md)); cannot access user **primary mailboxes**.
 _Avoid_: root, superuser, system account
 
 **Role**:
@@ -21,15 +21,15 @@ The single permission tier held by an **account**: `user`, `manager`, `admin`, o
 _Avoid_: permission, group, access level
 
 **Superadmin**:
-A platform-wide **role** assignable to an **account** by the **intendant** only. Same platform-management permissions as the **intendant** except cannot assign the **superadmin** **role**. Can register **domains**, assign **admins**, assign `user`/`manager`/`admin` **roles**, and register **OIDC clients**. The **account** has a normal **primary mailbox**. No **domain assignment** — mail scope is the entire instance (all mailboxes, including every **system mailbox**).
+A platform-wide **role** assignable to an **account** by the **intendant** only. Same platform-management permissions as the **intendant** except cannot assign the **superadmin** **role**. Can register **domains**, assign **admins**, assign `user`/`manager`/`admin` **roles**, and register **OIDC clients**. The **account** has a normal **primary mailbox**. No **domain assignment**. Mail scope is the **primary mailbox** plus all **shared mailboxes** on the instance (never other users' **primary mailboxes**).
 _Avoid_: root admin, global admin
 
 **Admin**:
-A **role** with one or more **domain assignments**. Within those **domains**, has full management powers (mailboxes, accounts, configuration) but cannot register new **domains**. Creates **shared mailboxes** and assigns **managers** to them. Can assign `user` and `manager` **roles** within their **domain assignments**. Assigned to a **domain** by an **intendant** or **superadmin**. Mail scope includes all mailboxes on assigned **domains**, including **system mailboxes** on those **domains**.
+A **role** with one or more **domain assignments**. Within those **domains**, has full management powers (mailboxes, accounts, configuration) but cannot register new **domains**. Creates **shared mailboxes** and assigns **managers** to them. Can assign `user` and `manager` **roles** within their **domain assignments**. Assigned to a **domain** by an **intendant** or **superadmin**. Mail scope is the **primary mailbox** plus all **shared mailboxes** on assigned **domains**; management APIs still cover all mailboxes on those **domains**.
 _Avoid_: domain owner, domain admin
 
 **Manager**:
-A **role** with one or more **domain assignments**, plus **shared mailbox assignments** within those **domains**. Can **invite** (always as `user`) and suspend **accounts** within assigned **domains**, and manage membership on assigned **shared mailboxes**. Cannot change **roles**, create or delete mailboxes, or permanently remove **accounts** (**account removal** is **admin**-only). Cannot register **domains**.
+A **role** with one or more **domain assignments**, plus **shared mailbox assignments** within those **domains**. Can **invite** (always as `user`) and suspend **accounts** within assigned **domains**, and manage membership on assigned **shared mailboxes**. Cannot change **roles**, create or delete mailboxes, or permanently remove **accounts** (**account removal** is **admin**-only). Cannot register **domains**. Mail scope is the **primary mailbox** plus **shared mailboxes** they are assigned to manage.
 _Avoid_: team lead, supervisor
 
 **User**:
@@ -105,7 +105,7 @@ An email address on a domain that can receive, store, and (when not an alias) se
 _Avoid_: account, user, inbox
 
 **System mailbox**:
-A platform-managed **mailbox** auto-provisioned when a **domain** is created (`postmaster@`, `noreply@`, `abuse@`). Marked `isSystemManaged: true` in the API; cannot be edited or deleted. **Intendant** and **superadmin** can access all **system mailboxes**; **admin** can access **system mailboxes** on assigned **domains** only. In the web UI, alias system addresses (e.g. `abuse@`) are not shown in the mailbox switcher — use `postmaster@` for operational mail.
+A platform-managed **mailbox** auto-provisioned when a **domain** is created (`postmaster@`, `noreply@`, `abuse@`). Marked `isSystemManaged: true` in the API; cannot be edited or deleted. **Intendant** can access all **system mailboxes**; **admin** and **superadmin** see **shared mailboxes** on their scope but need the **intendant** (or explicit **mailbox grants** for other roles) for **system mailboxes**. In the web UI, alias system addresses (e.g. `abuse@`) are not shown in the mailbox switcher — use `postmaster@` for operational mail.
 _Avoid_: postmaster mailbox, infrastructure mailbox
 
 **Alias mailbox**:

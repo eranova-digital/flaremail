@@ -100,6 +100,29 @@ describe("authorize", () => {
 		).toThrow();
 	});
 
+	it("allows admin access to domain shared mailbox without explicit grant", () => {
+		expect(() =>
+			authorize(
+				basePrincipal({
+					role: "admin",
+					domainIds: ["dom-1"],
+				}),
+				"mail_read",
+				{ mailboxId: "mb-shared" },
+			),
+		).not.toThrow();
+	});
+
+	it("allows superadmin access to shared mailbox without explicit grant", () => {
+		expect(() =>
+			authorize(
+				basePrincipal({ role: "superadmin" }),
+				"mail_read",
+				{ mailboxId: "mb-shared" },
+			),
+		).not.toThrow();
+	});
+
 	it("allows platform principals on domain_admin", () => {
 		expect(() =>
 			authorize(

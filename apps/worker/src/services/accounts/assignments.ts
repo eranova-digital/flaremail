@@ -45,8 +45,8 @@ export async function updateAccountAssignments(
 	}
 
 	if (input.grantedMailboxIds !== undefined) {
-		if (target.role !== "user") {
-			throw new Error("Mailbox grants only apply to user accounts");
+		if (target.isIntendant) {
+			throw new Error("Mailbox grants cannot apply to the intendant account");
 		}
 		assertCanManageMailboxGrants(principal);
 		for (const mailboxId of input.grantedMailboxIds) {

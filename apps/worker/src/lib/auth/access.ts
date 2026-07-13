@@ -115,14 +115,11 @@ function authorizeAccountPrincipal(
 			return;
 		case "mail_read":
 		case "mail_write":
-			if (isPlatformPrincipal(principal) || principal.role === "admin") {
-				return;
-			}
-			if (resource.mailboxId) {
+			if (resource.mailboxId && principal.role === "user") {
 				const allowed = accessibleMailboxIds(principal);
 				return allowed.has(resource.mailboxId) ? undefined : deny();
 			}
-			return principal.role ? undefined : deny();
+			return principal.role || principal.isIntendant ? undefined : deny();
 		default:
 			deny();
 	}

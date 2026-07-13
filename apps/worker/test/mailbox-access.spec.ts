@@ -34,6 +34,20 @@ const otherUserMailbox = {
 	domainId: domainA,
 	isSystemManaged: false,
 };
+const sharedMailbox = {
+	id: "mb-shared",
+	type: "shared",
+	localPart: "sales",
+	domainId: domainA,
+	isSystemManaged: false,
+};
+const sharedMailboxB = {
+	id: "mb-shared-b",
+	type: "shared",
+	localPart: "support",
+	domainId: domainB,
+	isSystemManaged: false,
+};
 
 function mockDb(
 	rows: Array<{
@@ -80,77 +94,58 @@ function principal(overrides: Partial<Principal>): Principal {
 	};
 }
 
+const allMailboxRows = [
+	{
+		id: systemPostmaster.id,
+		type: systemPostmaster.type,
+		localPart: systemPostmaster.localPart!,
+		domainId: domainA,
+	},
+	{
+		id: systemPostmasterB.id,
+		type: systemPostmasterB.type,
+		localPart: systemPostmasterB.localPart!,
+		domainId: domainB,
+	},
+	{
+		id: userMailbox.id,
+		type: userMailbox.type,
+		localPart: userMailbox.localPart!,
+		domainId: domainA,
+	},
+	{
+		id: otherUserMailbox.id,
+		type: otherUserMailbox.type,
+		localPart: otherUserMailbox.localPart!,
+		domainId: domainA,
+	},
+	{
+		id: sharedMailbox.id,
+		type: sharedMailbox.type,
+		localPart: sharedMailbox.localPart!,
+		domainId: domainA,
+	},
+	{
+		id: sharedMailboxB.id,
+		type: sharedMailboxB.type,
+		localPart: sharedMailboxB.localPart!,
+		domainId: domainB,
+	},
+];
+
 describe("filterMailboxesForPrincipal", () => {
-	it("returns only system mailboxes for the intendant", async () => {
-		const rows = [systemPostmaster, systemPostmasterB, userMailbox, otherUserMailbox];
+	it("returns system and shared mailboxes for the intendant", async () => {
+		const rows = [
+			systemPostmaster,
+			systemPostmasterB,
+			userMailbox,
+			otherUserMailbox,
+			sharedMailbox,
+			sharedMailboxB,
+		];
 		const result = await filterMailboxesForPrincipal(
-			mockDb([
-				{
-					id: systemPostmaster.id,
-					type: systemPostmaster.type,
-					localPart: systemPostmaster.localPart!,
-					domainId: domainA,
-				},
-				{
-					id: systemPostmasterB.id,
-					type: systemPostmasterB.type,
-					localPart: systemPostmasterB.localPart!,
-					domainId: domainB,
-				},
-				{
-					id: userMailbox.id,
-					type: userMailbox.type,
-					localPart: userMailbox.localPart!,
-					domainId: domainA,
-				},
-				{
-					id: otherUserMailbox.id,
-					type: otherUserMailbox.type,
-					localPart: otherUserMailbox.localPart!,
-					domainId: domainA,
-				},
-			]),
+			mockDb(allMailboxRows),
 			principal({ isIntendant: true, primaryMailboxId: null }),
-			rows,
-			"mail",
-		);
-
-		expect(result.map((row) => row.id)).toEqual([
-			systemPostmaster.id,
-			systemPostmasterB.id,
-		]);
-	});
-
-	it("returns all instance mailboxes for superadmin", async () => {
-		const rows = [systemPostmaster, systemPostmasterB, userMailbox, otherUserMailbox];
-		const result = await filterMailboxesForPrincipal(
-			mockDb([
-				{
-					id: systemPostmaster.id,
-					type: systemPostmaster.type,
-					localPart: systemPostmaster.localPart!,
-					domainId: domainA,
-				},
-				{
-					id: systemPostmasterB.id,
-					type: systemPostmasterB.type,
-					localPart: systemPostmasterB.localPart!,
-					domainId: domainB,
-				},
-				{
-					id: userMailbox.id,
-					type: userMailbox.type,
-					localPart: userMailbox.localPart!,
-					domainId: domainA,
-				},
-				{
-					id: otherUserMailbox.id,
-					type: otherUserMailbox.type,
-					localPart: otherUserMailbox.localPart!,
-					domainId: domainA,
-				},
-			]),
-			principal({ role: "superadmin", primaryMailboxId: "mb-user" }),
 			rows,
 			"mail",
 		);
@@ -159,41 +154,40 @@ describe("filterMailboxesForPrincipal", () => {
 			[
 				systemPostmaster.id,
 				systemPostmasterB.id,
-				userMailbox.id,
-				otherUserMailbox.id,
+				sharedMailbox.id,
+				sharedMailboxB.id,
 			].sort(),
 		);
 	});
 
-	it("returns all assigned-domain mailboxes for admin", async () => {
-		const rows = [systemPostmaster, systemPostmasterB, userMailbox, otherUserMailbox];
+	it("returns primary and all shared mailboxes for superadmin", async () => {
+		const rows = [systemPostmaster, userMailbox, otherUserMailbox, sharedMailbox, sharedMailboxB];
 		const result = await filterMailboxesForPrincipal(
-			mockDb([
-				{
-					id: systemPostmaster.id,
-					type: systemPostmaster.type,
-					localPart: systemPostmaster.localPart!,
-					domainId: domainA,
-				},
-				{
-					id: systemPostmasterB.id,
-					type: systemPostmasterB.type,
-					localPart: systemPostmasterB.localPart!,
-					domainId: domainB,
-				},
-				{
-					id: userMailbox.id,
-					type: userMailbox.type,
-					localPart: userMailbox.localPart!,
-					domainId: domainA,
-				},
-				{
-					id: otherUserMailbox.id,
-					type: otherUserMailbox.type,
-					localPart: otherUserMailbox.localPart!,
-					domainId: domainA,
-				},
-			], [domainA]),
+			mockDb(allMailboxRows),
+			principal({
+				role: "superadmin",
+				primaryMailboxId: "mb-user",
+			}),
+			rows,
+			"mail",
+		);
+
+		expect(result.map((row) => row.id).sort()).toEqual(
+			[userMailbox.id, sharedMailbox.id, sharedMailboxB.id].sort(),
+		);
+	});
+
+	it("returns primary and domain shared mailboxes for admin", async () => {
+		const rows = [
+			systemPostmaster,
+			systemPostmasterB,
+			userMailbox,
+			otherUserMailbox,
+			sharedMailbox,
+			sharedMailboxB,
+		];
+		const result = await filterMailboxesForPrincipal(
+			mockDb(allMailboxRows, [domainA]),
 			principal({
 				role: "admin",
 				domainIds: [domainA],
@@ -204,33 +198,56 @@ describe("filterMailboxesForPrincipal", () => {
 		);
 
 		expect(result.map((row) => row.id).sort()).toEqual(
-			[systemPostmaster.id, userMailbox.id, otherUserMailbox.id].sort(),
+			[userMailbox.id, sharedMailbox.id].sort(),
+		);
+	});
+
+	it("returns primary and assigned shared mailboxes for manager", async () => {
+		const rows = [userMailbox, otherUserMailbox, sharedMailbox, sharedMailboxB];
+		const result = await filterMailboxesForPrincipal(
+			mockDb(allMailboxRows),
+			principal({
+				role: "manager",
+				primaryMailboxId: "mb-other",
+				sharedMailboxAssignment: [
+					{
+						domainId: domainA,
+						mailboxId: sharedMailbox.id,
+						allSharedMailboxes: false,
+					},
+				],
+			}),
+			rows,
+			"mail",
+		);
+
+		expect(result.map((row) => row.id).sort()).toEqual(
+			[otherUserMailbox.id, sharedMailbox.id].sort(),
+		);
+	});
+
+	it("returns primary and granted shared mailboxes for user", async () => {
+		const rows = [userMailbox, otherUserMailbox, sharedMailbox, sharedMailboxB];
+		const result = await filterMailboxesForPrincipal(
+			mockDb(allMailboxRows),
+			principal({
+				role: "user",
+				primaryMailboxId: "mb-user",
+				grantMailboxIds: [sharedMailbox.id],
+			}),
+			rows,
+			"mail",
+		);
+
+		expect(result.map((row) => row.id).sort()).toEqual(
+			[userMailbox.id, sharedMailbox.id].sort(),
 		);
 	});
 
 	it("returns all domain mailboxes for manage scope on admin", async () => {
 		const rows = [systemPostmaster, userMailbox, otherUserMailbox];
 		const result = await filterMailboxesForPrincipal(
-			mockDb([
-				{
-					id: systemPostmaster.id,
-					type: systemPostmaster.type,
-					localPart: systemPostmaster.localPart!,
-					domainId: domainA,
-				},
-				{
-					id: userMailbox.id,
-					type: userMailbox.type,
-					localPart: userMailbox.localPart!,
-					domainId: domainA,
-				},
-				{
-					id: otherUserMailbox.id,
-					type: otherUserMailbox.type,
-					localPart: otherUserMailbox.localPart!,
-					domainId: domainA,
-				},
-			], [domainA]),
+			mockDb(allMailboxRows, [domainA]),
 			principal({ role: "admin", domainIds: [domainA] }),
 			rows,
 			"manage",

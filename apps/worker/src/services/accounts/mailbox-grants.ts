@@ -67,12 +67,12 @@ export async function grantSharedMailboxAccess(
 	await authorizeAccount(db, principal, accountId, "manage");
 
 	const [target] = await db
-		.select({ role: accounts.role })
+		.select({ isIntendant: accounts.isIntendant })
 		.from(accounts)
 		.where(eq(accounts.id, accountId))
 		.limit(1);
-	if (!target || target.role !== "user") {
-		throw new Error("Shared mailbox access can only be granted to users");
+	if (!target || target.isIntendant) {
+		throw new Error("Shared mailbox access cannot be granted to the intendant");
 	}
 
 	await grantMailboxAccess(db, accountId, mailboxId);

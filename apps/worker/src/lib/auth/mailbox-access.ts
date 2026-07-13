@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { mailboxes } from "../../db/schema";
@@ -45,18 +45,51 @@ async function loadSystemMailboxIds(
 	return ids;
 }
 
-async function loadDomainMailboxIds(
+async function loadSharedMailboxIds(
 	db: Database,
 	domainIds: string[] | null,
 ): Promise<Set<string>> {
-	const query = db.select({ id: mailboxes.id }).from(mailboxes);
-	const rows =
-		domainIds === null
-			? await query
-			: domainIds.length === 0
-				? []
-				: await query.where(inArray(mailboxes.domainId, domainIds));
-	return new Set(rows.map((row) => row.id));
+	if (domainIds !== null && domainIds.length === 0) {
+		return new Set();
+	}
+
+	const rows = await db
+		.select({
+			id: mailboxes.id,
+			domainId: mailboxes.domainId,
+			type: mailboxes.type,
+		})
+		.from(mailboxes);
+
+	const ids = new Set<string>();
+	for (const row of rows) {
+		if (row.type !== "shared") {
+			continue;
+		}
+		if (domainIds !== null && !domainIds.includes(row.domainId)) {
+			continue;
+		}
+		ids.add(row.id);
+	}
+	return ids;
+}
+
+async function loadManagerAssignedSharedMailboxIds(
+	db: Database,
+	principal: Principal,
+): Promise<Set<string>> {
+	const ids = new Set<string>();
+	for (const assignment of principal.sharedMailboxAssignment) {
+		if (assignment.allSharedMailboxes) {
+			const sharedInDomain = await loadSharedMailboxIds(db, [assignment.domainId]);
+			for (const mailboxId of sharedInDomain) {
+				ids.add(mailboxId);
+			}
+		} else if (assignment.mailboxId) {
+			ids.add(assignment.mailboxId);
+		}
+	}
+	return ids;
 }
 
 export async function collectReadableMailboxIds(
@@ -69,25 +102,37 @@ export async function collectReadableMailboxIds(
 	}
 
 	if (principal.isIntendant) {
-		return loadSystemMailboxIds(db, null);
+		const ids = await loadSystemMailboxIds(db, null);
+		const sharedIds = await loadSharedMailboxIds(db, null);
+		for (const mailboxId of sharedIds) {
+			ids.add(mailboxId);
+		}
+		return ids;
 	}
 
 	const ids = new Set(accessibleMailboxIds(principal));
 
 	if (principal.role === "superadmin") {
-		const instanceIds = await loadDomainMailboxIds(db, null);
-		for (const mailboxId of instanceIds) {
+		const sharedIds = await loadSharedMailboxIds(db, null);
+		for (const mailboxId of sharedIds) {
 			ids.add(mailboxId);
 		}
 		return ids;
 	}
 
 	if (principal.role === "admin") {
-		const domainIds = await loadDomainMailboxIds(db, principal.domainIds);
-		for (const mailboxId of domainIds) {
+		const sharedIds = await loadSharedMailboxIds(db, principal.domainIds);
+		for (const mailboxId of sharedIds) {
 			ids.add(mailboxId);
 		}
 		return ids;
+	}
+
+	if (principal.role === "manager") {
+		const sharedIds = await loadManagerAssignedSharedMailboxIds(db, principal);
+		for (const mailboxId of sharedIds) {
+			ids.add(mailboxId);
+		}
 	}
 
 	return ids;
@@ -114,26 +159,7 @@ export async function collectManageableMailboxIds(
 	}
 
 	if (principal.role === "manager") {
-		const ids = new Set<string>();
-		for (const assignment of principal.sharedMailboxAssignment) {
-			if (assignment.allSharedMailboxes) {
-				const rows = await db
-					.select({ id: mailboxes.id })
-					.from(mailboxes)
-					.where(
-						and(
-							eq(mailboxes.domainId, assignment.domainId),
-							eq(mailboxes.type, "shared"),
-						),
-					);
-				for (const row of rows) {
-					ids.add(row.id);
-				}
-			} else if (assignment.mailboxId) {
-				ids.add(assignment.mailboxId);
-			}
-		}
-		return ids;
+		return loadManagerAssignedSharedMailboxIds(db, principal);
 	}
 
 	return new Set();

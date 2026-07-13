@@ -214,11 +214,11 @@ Which mailboxes a principal sees in `GET /mailboxes` and may use on mail APIs (`
 
 | Role | Visible mailboxes | Mail read/send |
 |------|-------------------|----------------|
-| `user` | **Primary mailbox** + **mailbox grants** | Same set |
-| `manager` | Same as `user` | Same set |
-| `admin` | All mailboxes on assigned **domains** | Same set (includes **system mailboxes** on those domains) |
-| `superadmin` | All mailboxes on the instance | Same set |
-| `intendant` | All **system mailboxes** (`isSystemManaged: true`) | **System mailboxes** only |
+| `user` | **Primary mailbox** + **mailbox grants** (shared only) | Same set |
+| `manager` | **Primary mailbox** + assigned **shared mailboxes** | Same set |
+| `admin` | **Primary mailbox** + all **shared mailboxes** on assigned **domains** | Same set |
+| `superadmin` | **Primary mailbox** + all **shared mailboxes** on the instance | Same set |
+| `intendant` | All **system mailboxes** + all **shared mailboxes** | Same set |
 
 Mail endpoints require `mailboxId` (query param or body). Requests for a mailbox outside the principal's scope return **403** (`code: forbidden`).
 

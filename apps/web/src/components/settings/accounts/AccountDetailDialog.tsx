@@ -155,7 +155,7 @@ export function AccountDetailDialog({
 		(canAssignRoles(actor) && !!target?.role) ||
 		(canManageAssignments(actor) &&
 			(target?.role === "admin" || target?.role === "manager")) ||
-		(canManageUserMailboxGrants(actor) && target?.role === "user");
+		(canManageUserMailboxGrants(actor) && !!target?.role);
 
 	const showSecurityTab = !!target && canManageTargetSecurity(actor, target);
 	const showTabs = showAccessTab || showSecurityTab;
@@ -305,7 +305,7 @@ export function AccountDetailDialog({
 				});
 			}
 
-			if (canManageUserMailboxGrants(actor) && role === "user") {
+			if (canManageUserMailboxGrants(actor) && role) {
 				await assignmentsMutation.mutateAsync({
 					id: accountId,
 					body: { grantedMailboxIds },
@@ -592,10 +592,10 @@ export function AccountDetailDialog({
 											</AccessSection>
 										) : null}
 
-										{canManageUserMailboxGrants(actor) && role === "user" ? (
+										{canManageUserMailboxGrants(actor) && role ? (
 											<AccessSection
 												title="Shared mailbox access"
-												description="Shared mailboxes this user can read and send from."
+												description="Shared mailboxes this account can read and send from."
 											>
 												<div className="grid gap-2 sm:grid-cols-2">
 													{grantableSharedMailboxes.length === 0 ? (

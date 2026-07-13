@@ -28,11 +28,11 @@ System mailboxes remain immutable (no edit/delete) for all roles.
 
 | Role | Mailboxes visible in `GET /mailboxes` | Mail read/send scope |
 |------|--------------------------------------|----------------------|
-| **user** | **Primary mailbox** + **mailbox grants** | Same |
-| **manager** | Same as **user** | Same |
-| **admin** | All mailboxes on assigned **domains** (including system) | Same |
-| **superadmin** | All mailboxes on the instance | Same |
-| **intendant** | All **system mailboxes** on the instance | **System mailboxes** only |
+| **user** | **Primary mailbox** + **mailbox grants** (shared only) | Same |
+| **manager** | **Primary mailbox** + assigned **shared mailboxes** | Same |
+| **admin** | **Primary mailbox** + all **shared mailboxes** on assigned **domains** | Same |
+| **superadmin** | **Primary mailbox** + all **shared mailboxes** on the instance | Same |
+| **intendant** | All **system mailboxes** + all **shared mailboxes** | Same |
 
 The **intendant** still has no **primary mailbox**, no **mailbox grants**, and no SSO participation. It cannot read or send from user, shared, or non-system mailboxes.
 
@@ -44,7 +44,7 @@ The **intendant** still has no **primary mailbox**, no **mailbox grants**, and n
 
 ## Consequences
 
-- [ADR-0005](./0005-intendant-break-glass-account.md) is amended: the **intendant** may use mail APIs for **system mailboxes** only.
+- [ADR-0005](./0005-intendant-break-glass-account.md) is amended: the **intendant** may use mail APIs for **system mailboxes** and **shared mailboxes** only — never user **primary mailboxes**.
 - Web app: **intendant** post-login redirect goes to `/` (mailbox picker) so system inboxes are reachable; platform settings remain under `/settings`.
 - OIDC userinfo and authorization still reject the **intendant** (no **primary mailbox** for SSO).
 - Future per-route mailbox scoping for **user** / **manager** roles beyond list filtering is unchanged.
