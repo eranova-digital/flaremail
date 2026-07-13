@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { HelpCircle, Loader2 } from "lucide-react";
 
-import {
-	getAccountDisplayName,
-	ProfileAvatar,
-} from "@/components/ProfileAvatar";
+import { getAccountDisplayName } from "@/components/ProfileAvatar";
 import { RecoveryEmailSetup } from "@/components/auth/RecoveryEmailSetup";
 import { ProfileFieldsGrid } from "@/components/settings/ProfileFieldsGrid";
+import { ProfilePictureControls } from "@/components/settings/ProfilePictureControls";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,11 +14,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { accountQueryKeys } from "@/hooks/use-accounts";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { apiUrl } from "@/lib/api";
 import { getErrorMessage } from "@/lib/api/errors";
 import { roleLabel } from "@/lib/accounts/roles";
 import type { AccountRole } from "@/lib/accounts/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 const LOCKED_FIELD_TOOLTIP =
 	"This information has been locked by your organization.";
@@ -44,6 +43,7 @@ function LockedFieldHelp() {
 
 export function ProfileSection() {
 	const { account, refresh } = useAuth();
+	const queryClient = useQueryClient();
 	const [values, setValues] = useState<Record<string, string>>({});
 	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
@@ -122,21 +122,26 @@ export function ProfileSection() {
 
 	return (
 		<section className="space-y-4">
-			<div className="flex items-center gap-4">
-				<ProfileAvatar
-					seed={account.loginIdentifier}
-					label={displayName}
-					className="size-16 text-lg"
-				/>
-				<div className="min-w-0">
-					<h2 className="truncate text-lg font-medium">{displayName}</h2>
-					<p className="text-muted-foreground truncate text-sm">
-						{account.loginIdentifier}
-						{" · "}
-						{roleLabel(account.role as AccountRole | null, account.isIntendant)}
-					</p>
-				</div>
-			</div>
+			<ProfilePictureControls
+				accountId={account.id}
+				loginIdentifier={account.loginIdentifier}
+				displayName={displayName}
+				profilePicture={account.profilePicture ?? null}
+				onUpdated={async () => {
+					await refresh();
+					await queryClient.invalidateQueries({ queryKey: accountQueryKeys.all });
+				}}
+				details={
+					<>
+						<h2 className="truncate text-lg font-medium">{displayName}</h2>
+						<p className="text-muted-foreground truncate text-sm">
+							{account.loginIdentifier}
+							{" · "}
+							{roleLabel(account.role as AccountRole | null, account.isIntendant)}
+						</p>
+					</>
+				}
+			/>
 			<Card>
 				<CardHeader>
 					<CardTitle>Personal details</CardTitle>

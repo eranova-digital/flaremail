@@ -1,3 +1,5 @@
+import type { ProfilePicture } from "@/lib/profile-picture";
+
 export type AccountProfile = {
 	firstName: string | null;
 	lastName: string | null;
@@ -43,6 +45,7 @@ export type Account = {
 	profile: AccountProfile | null;
 	lockedFields?: string[];
 	displayName?: string;
+	profilePicture?: ProfilePicture | null;
 	mfaEnabled?: boolean;
 	mfaEnabledAt?: string | null;
 	securityRequirements?: {

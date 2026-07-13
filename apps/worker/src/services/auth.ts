@@ -13,6 +13,7 @@ import {
 import { formatCode, randomToken } from "../lib/auth/crypto";
 import { hashPassword, hashSecret, verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
+import { toProfilePicturePayload } from "../lib/profile-picture/payload";
 import { requireSessionSecret } from "../lib/auth/resolve-principal";
 import {
 	passwordResetCodeEmailText,
@@ -468,6 +469,7 @@ export async function getMe(db: Database, accountId: string) {
 		organizationPolicies,
 		capabilities,
 		profile: profilePayload,
+		profilePicture: toProfilePicturePayload(profile?.profilePictureUpdatedAt),
 		displayName: profile
 			? `${profile.firstName} ${profile.lastName}`.trim()
 			: account.loginIdentifier,

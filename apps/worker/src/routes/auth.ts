@@ -73,6 +73,13 @@ import {
 	handleUpdateInstanceSettings,
 } from "../controllers/instance-settings";
 import {
+	handleDeleteProfilePicture,
+	handleDeleteAccountProfilePicture,
+	handleGetProfilePicture,
+	handleUploadAccountProfilePicture,
+	handleUploadProfilePicture,
+} from "../controllers/profile-picture";
+import {
 	handleBeginPasskeyRegistration,
 	handleBeginPasskeySignIn,
 	handleCompletePasskeyRegistration,
@@ -155,6 +162,36 @@ export const authRoutes: RouteDefinition[] = [
 	{ method: "POST", path: `${prefix}/auth/reset-password`, auth: false, handler: handleResetPassword },
 	{ method: "GET", path: `${prefix}/auth/me`, action: "authenticated", handler: handleGetMe },
 	{ method: "PATCH", path: `${prefix}/auth/me`, action: "authenticated", handler: handleUpdateMe },
+	{
+		method: "PUT",
+		path: `${prefix}/auth/me/profile-picture`,
+		action: "authenticated",
+		handler: handleUploadProfilePicture,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/auth/me/profile-picture`,
+		action: "authenticated",
+		handler: handleDeleteProfilePicture,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/accounts/:id/profile-picture`,
+		action: "authenticated",
+		handler: handleGetProfilePicture,
+	},
+	{
+		method: "PUT",
+		path: `${prefix}/accounts/:id/profile-picture`,
+		action: "domain_manage_users",
+		handler: handleUploadAccountProfilePicture,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/accounts/:id/profile-picture`,
+		action: "domain_manage_users",
+		handler: handleDeleteAccountProfilePicture,
+	},
 	{
 		method: "POST",
 		path: `${prefix}/auth/recovery-email/send`,

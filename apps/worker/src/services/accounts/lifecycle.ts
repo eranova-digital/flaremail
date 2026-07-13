@@ -9,6 +9,7 @@ import type { AccountRole, Principal } from "../../lib/auth/types";
 import { authorizeAccount } from "../../lib/auth/access";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
 import { deleteMailboxCascade } from "../cascade-delete";
+import { deleteAccountProfilePictures } from "./profile-picture";
 
 export async function assignRole(
 	db: Database,
@@ -116,6 +117,8 @@ export async function removeAccount(
 	if (target.primaryMailboxId) {
 		await deleteMailboxCascade(db, bucket, target.primaryMailboxId);
 	}
+
+	await deleteAccountProfilePictures(db, bucket, accountId);
 
 	await db.delete(accounts).where(eq(accounts.id, accountId));
 }

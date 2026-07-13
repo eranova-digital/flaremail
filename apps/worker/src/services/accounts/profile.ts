@@ -24,6 +24,7 @@ import {
 	profileInputToPatch,
 	toAccountListItem,
 } from "./shared";
+import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
 import type { Principal } from "../../lib/auth/types";
 
 export async function loadProfileLocks(db: Database, accountId: string) {
@@ -79,6 +80,7 @@ export async function getAccountDetail(
 					},
 				}
 			: null,
+		profilePicture: toProfilePicturePayload(row.profile?.profilePictureUpdatedAt),
 		lockedFields,
 		domainIds,
 		allSharedMailboxes: managerAssignments.some((row) => row.allSharedMailboxes),

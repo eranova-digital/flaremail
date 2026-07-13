@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -97,7 +98,14 @@ function AccountRow({
 	const description = roleDescription(item.role, item.isIntendant);
 
 	return (
-		<li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_7rem_8.5rem_5.5rem]">
+		<li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-sm sm:grid-cols-[auto_minmax(0,1fr)_7rem_8.5rem_5.5rem]">
+			<ProfileAvatar
+				accountId={item.id}
+				seed={item.loginIdentifier}
+				label={item.displayName}
+				profilePicture={item.profilePicture}
+				className="size-9 text-xs"
+			/>
 			<div className="min-w-0">
 				<p className="truncate font-medium">{item.displayName}</p>
 				<p className="text-muted-foreground truncate text-xs">

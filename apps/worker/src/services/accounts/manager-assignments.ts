@@ -9,6 +9,7 @@ import {
 } from "../../db/schema";
 import type { AccountRole, Principal } from "../../lib/auth/types";
 import { authorizeAccount } from "../../lib/auth/access";
+import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
 import {
 	assertCanGrantOnSharedMailbox,
 	assertCanManageManagerAssignments,
@@ -41,6 +42,7 @@ export async function listMailboxManagerAssignments(
 			loginIdentifier: accounts.loginIdentifier,
 			firstName: accountProfiles.firstName,
 			lastName: accountProfiles.lastName,
+			profilePictureUpdatedAt: accountProfiles.profilePictureUpdatedAt,
 			role: accounts.role,
 			status: accounts.status,
 		})
@@ -63,6 +65,7 @@ export async function listMailboxManagerAssignments(
 			accountId: string;
 			loginIdentifier: string;
 			displayName: string;
+			profilePicture: ReturnType<typeof toProfilePicturePayload>;
 			role: AccountRole;
 			status: string;
 			viaAllShared: boolean;
@@ -93,6 +96,7 @@ export async function listMailboxManagerAssignments(
 			displayName:
 				[row.firstName, row.lastName].filter(Boolean).join(" ").trim() ||
 				row.loginIdentifier,
+			profilePicture: toProfilePicturePayload(row.profilePictureUpdatedAt),
 			role: row.role as AccountRole,
 			status: row.status,
 			viaAllShared,

@@ -10,6 +10,7 @@ import {
 	managerSharedMailboxAssignments,
 	profileFieldLocks,
 } from "../../db/schema";
+import { profilePictureFromProfile } from "./profile-picture";
 import type { Principal } from "../../lib/auth/types";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
 import {
@@ -59,6 +60,7 @@ export function toAccountListItem(
 		displayName: profile
 			? `${profile.firstName} ${profile.lastName}`.trim() || row.loginIdentifier
 			: row.loginIdentifier,
+		profilePicture: profilePictureFromProfile(profile),
 	};
 }
 

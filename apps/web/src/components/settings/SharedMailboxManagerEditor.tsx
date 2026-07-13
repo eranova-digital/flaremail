@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Shield } from "lucide-react";
 
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,11 +98,20 @@ export function SharedMailboxManagerEditor({
 									key={holder.accountId}
 									className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
 								>
-									<div className="min-w-0">
+									<div className="flex min-w-0 items-center gap-3">
+										<ProfileAvatar
+											accountId={holder.accountId}
+											seed={holder.loginIdentifier}
+											label={holder.displayName}
+											profilePicture={holder.profilePicture}
+											className="size-9 text-xs"
+										/>
+										<div className="min-w-0">
 										<p className="truncate font-medium">{holder.displayName}</p>
 										<p className="text-muted-foreground truncate text-xs">
 											{holder.loginIdentifier}
 										</p>
+										</div>
 									</div>
 									<div className="flex shrink-0 items-center gap-2">
 										{holder.viaAllShared ? (

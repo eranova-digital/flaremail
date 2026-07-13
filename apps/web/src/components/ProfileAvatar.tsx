@@ -1,5 +1,10 @@
 import type { Account } from "@/lib/auth/types";
 import { profileAvatarColorsFromSeed } from "@/lib/profile-avatar-colors";
+import {
+	pickProfilePictureSize,
+	profilePictureUrl,
+	type ProfilePicture,
+} from "@/lib/profile-picture";
 import { cn } from "@/lib/utils";
 
 export function getAccountDisplayName(account: Account): string {
@@ -27,14 +32,41 @@ export function getInitialsFromLabel(label: string): string {
 }
 
 type ProfileAvatarProps = {
+	accountId: string;
 	seed: string;
 	label: string;
+	profilePicture?: ProfilePicture | null;
 	className?: string;
 };
 
-export function ProfileAvatar({ seed, label, className }: ProfileAvatarProps) {
+export function ProfileAvatar({
+	accountId,
+	seed,
+	label,
+	profilePicture,
+	className,
+}: ProfileAvatarProps) {
 	const { background, foreground } = profileAvatarColorsFromSeed(seed);
 	const initials = getInitialsFromLabel(label);
+	const imageUrl = profilePictureUrl(
+		accountId,
+		pickProfilePictureSize(className ?? ""),
+		profilePicture,
+	);
+
+	if (imageUrl) {
+		return (
+			<img
+				src={imageUrl}
+				alt=""
+				aria-hidden
+				className={cn(
+					"shrink-0 rounded-full object-cover",
+					className,
+				)}
+			/>
+		);
+	}
 
 	return (
 		<span

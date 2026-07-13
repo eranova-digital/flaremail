@@ -33,6 +33,14 @@ export {
 	grantManagerMailboxAssignment,
 	revokeManagerMailboxAssignment,
 } from "./manager-assignments";
+export {
+	deleteAccountProfilePictures,
+	downloadProfilePicture,
+	removeProfilePicture,
+	removeProfilePictureForAccount,
+	uploadProfilePicture,
+	uploadProfilePictureForAccount,
+} from "./profile-picture";
 export { parseProfileInput } from "./parse-profile-input";
 export {
 	adminCreatePasswordResetCode,

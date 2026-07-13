@@ -54,8 +54,10 @@ export function UserCard({ collapsed }: UserCardProps) {
 				)}
 			>
 				<ProfileAvatar
+					accountId={account.id}
 					seed={account.loginIdentifier}
 					label={displayName}
+					profilePicture={account.profilePicture}
 					className="size-8 text-xs"
 				/>
 				{!collapsed ? (

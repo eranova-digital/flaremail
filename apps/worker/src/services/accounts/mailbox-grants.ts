@@ -11,6 +11,7 @@ import type { Principal } from "../../lib/auth/types";
 import { authorizeAccount } from "../../lib/auth/access";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
 import { MailboxAccessDeniedError } from "../../lib/auth/mailbox-access";
+import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
 import { assertCanGrantOnSharedMailbox } from "./shared";
 
 export async function grantMailboxAccess(
@@ -34,6 +35,7 @@ export async function listMailboxGrantHolders(
 			loginIdentifier: accounts.loginIdentifier,
 			firstName: accountProfiles.firstName,
 			lastName: accountProfiles.lastName,
+			profilePictureUpdatedAt: accountProfiles.profilePictureUpdatedAt,
 			role: accounts.role,
 			status: accounts.status,
 		})
@@ -48,6 +50,7 @@ export async function listMailboxGrantHolders(
 		displayName:
 			[row.firstName, row.lastName].filter(Boolean).join(" ").trim() ||
 			row.loginIdentifier,
+		profilePicture: toProfilePicturePayload(row.profilePictureUpdatedAt),
 		role: row.role,
 		status: row.status,
 	}));

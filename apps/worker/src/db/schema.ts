@@ -449,6 +449,9 @@ export const accountProfiles = pgTable("account_profiles", {
 	addressCity: text("address_city"),
 	addressLine1: text("address_line1"),
 	addressLine2: text("address_line2"),
+	profilePictureUpdatedAt: timestamp("profile_picture_updated_at", {
+		withTimezone: true,
+	}),
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),

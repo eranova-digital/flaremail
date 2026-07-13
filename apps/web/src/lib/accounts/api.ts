@@ -1,6 +1,8 @@
 import { apiRequest } from "@/lib/api/request";
 import type { AuthSession, MfaStatus } from "@/lib/auth/types";
 
+import type { ProfilePicture } from "@/lib/profile-picture";
+
 export type AccountRole = "user" | "manager" | "admin" | "superadmin";
 
 export type AccountProfile = {
@@ -25,10 +27,12 @@ export type AccountSummary = {
 	isIntendant: boolean;
 	domainId: string | null;
 	displayName: string;
+	profilePicture: ProfilePicture | null;
 };
 
 export type AccountDetail = AccountSummary & {
 	profile: AccountProfile | null;
+	profilePicture: ProfilePicture | null;
 	lockedFields: string[];
 	domainIds: string[];
 	allSharedMailboxes: boolean;
@@ -200,6 +204,7 @@ export type MailboxGrantHolder = {
 	accountId: string;
 	loginIdentifier: string;
 	displayName: string;
+	profilePicture: ProfilePicture | null;
 	role: AccountRole | null;
 	status: string;
 };
@@ -237,6 +242,7 @@ export type MailboxManagerAssignment = {
 	accountId: string;
 	loginIdentifier: string;
 	displayName: string;
+	profilePicture: ProfilePicture | null;
 	role: AccountRole;
 	status: string;
 	viaAllShared: boolean;

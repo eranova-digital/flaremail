@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Loader2, MoreHorizontal } from "lucide-react";
 
@@ -36,7 +36,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDomains } from "@/hooks/use-domains";
 import { useMailboxes } from "@/hooks/use-mailboxes";
+import { useQueryClient } from "@tanstack/react-query";
 import {
+	accountQueryKeys,
 	useAccount,
 	useAssignAccountRole,
 	useCreatePasswordResetCode,
@@ -53,6 +55,7 @@ import {
 	canAssignRoles,
 	canLockProfileFields,
 	canManageAssignments,
+	canManageTarget,
 	canManageUserMailboxGrants,
 	canManageTargetSecurity,
 	canRemoveTarget,
@@ -61,6 +64,7 @@ import {
 } from "@/lib/accounts/permissions";
 import { ROLE_META, roleLabel, statusMeta } from "@/lib/accounts/roles";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { apiUrl } from "@/lib/api";
 import { getErrorMessage } from "@/lib/api/errors";
 
 type AccountDetailDialogProps = {
@@ -95,6 +99,10 @@ export function AccountDetailDialog({
 	onClose,
 }: AccountDetailDialogProps) {
 	const { account: actor } = useAuth();
+	const queryClient = useQueryClient();
+	const pictureInputRef = useRef<HTMLInputElement>(null);
+	const [pictureBusy, setPictureBusy] = useState(false);
+	const [pictureError, setPictureError] = useState<string | null>(null);
 	const domainsQuery = useDomains();
 	const mailboxesQuery = useMailboxes("manage");
 	const detailQuery = useAccount(accountId);
@@ -322,7 +330,62 @@ export function AccountDetailDialog({
 		saving ||
 		updateMutation.isPending ||
 		assignmentsMutation.isPending ||
-		assignMutation.isPending;
+		assignMutation.isPending ||
+		pictureBusy;
+
+	const canManagePicture = !!target && canManageTarget(actor, target);
+
+	const handlePictureUpload = async (file: File, accountId: string) => {
+		setPictureBusy(true);
+		setPictureError(null);
+		try {
+			const formData = new FormData();
+			formData.append("file", file);
+			const response = await fetch(apiUrl(`/accounts/${accountId}/profile-picture`), {
+				method: "PUT",
+				credentials: "include",
+				body: formData,
+			});
+			if (!response.ok) {
+				const body = await response.json().catch(() => null);
+				throw new Error(getErrorMessage(body) ?? "Upload failed");
+			}
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: accountQueryKeys.detail(accountId) }),
+				queryClient.invalidateQueries({ queryKey: accountQueryKeys.all }),
+			]);
+		} catch (err) {
+			setPictureError(getErrorMessage(err));
+		} finally {
+			setPictureBusy(false);
+			if (pictureInputRef.current) {
+				pictureInputRef.current.value = "";
+			}
+		}
+	};
+
+	const handlePictureRemove = async (accountId: string) => {
+		setPictureBusy(true);
+		setPictureError(null);
+		try {
+			const response = await fetch(apiUrl(`/accounts/${accountId}/profile-picture`), {
+				method: "DELETE",
+				credentials: "include",
+			});
+			if (!response.ok) {
+				const body = await response.json().catch(() => null);
+				throw new Error(getErrorMessage(body) ?? "Remove failed");
+			}
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: accountQueryKeys.detail(accountId) }),
+				queryClient.invalidateQueries({ queryKey: accountQueryKeys.all }),
+			]);
+		} catch (err) {
+			setPictureError(getErrorMessage(err));
+		} finally {
+			setPictureBusy(false);
+		}
+	};
 
 	return (
 		<Dialog open={!!accountId} onOpenChange={(open) => !open && onClose()}>
@@ -330,11 +393,63 @@ export function AccountDetailDialog({
 				<DialogHeader className="border-b px-6 py-4">
 					{target ? (
 						<div className="flex items-start gap-4 pr-8">
-							<ProfileAvatar
-								seed={target.loginIdentifier}
-								label={target.displayName}
-								className="size-12 text-sm"
+							<input
+								ref={pictureInputRef}
+								type="file"
+								accept="image/jpeg,image/png,image/webp"
+								className="sr-only"
+								disabled={!canManagePicture || isBusy}
+								onChange={(event) => {
+									const file = event.target.files?.[0];
+									if (file && target) {
+										void handlePictureUpload(file, target.id);
+									}
+								}}
 							/>
+							{canManagePicture ? (
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<button
+											type="button"
+											disabled={isBusy}
+											className="rounded-full"
+											aria-label="Profile picture actions"
+										>
+											<ProfileAvatar
+												accountId={target.id}
+												seed={target.loginIdentifier}
+												label={target.displayName}
+												profilePicture={target.profilePicture}
+												className="size-12 text-sm"
+											/>
+										</button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="start">
+										<DropdownMenuItem
+											disabled={isBusy}
+											onSelect={() => pictureInputRef.current?.click()}
+										>
+											{target.profilePicture ? "Change photo" : "Upload photo"}
+										</DropdownMenuItem>
+										{target.profilePicture ? (
+											<DropdownMenuItem
+												disabled={isBusy}
+												onSelect={() => void handlePictureRemove(target.id)}
+											>
+												Remove photo
+											</DropdownMenuItem>
+										) : null}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							) : (
+								<ProfileAvatar
+									accountId={target.id}
+									seed={target.loginIdentifier}
+									label={target.displayName}
+									profilePicture={target.profilePicture}
+									className="size-12 text-sm"
+								/>
+							)}
 							<div className="min-w-0 flex-1">
 								<DialogTitle>{target.displayName}</DialogTitle>
 								<DialogDescription asChild>
@@ -673,6 +788,11 @@ export function AccountDetailDialog({
 								{error ? (
 									<Alert tone="destructive" title="Couldn't save changes">
 										<p>{error}</p>
+									</Alert>
+								) : null}
+								{pictureError ? (
+									<Alert tone="destructive" title="Couldn't update photo">
+										<p>{pictureError}</p>
 									</Alert>
 								) : null}
 							</div>
