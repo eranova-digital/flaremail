@@ -249,6 +249,9 @@ export const messages = pgTable(
 		rawEmlKey: text("raw_eml_key").notNull(),
 		sendErrorCode: text("send_error_code"),
 		sendErrorMessage: text("send_error_message"),
+		sentByAccountId: uuid("sent_by_account_id").references(() => accounts.id, {
+			onDelete: "set null",
+		}),
 	},
 	(table) => [
 		index("messages_thread_id_received_at_idx").on(
@@ -260,6 +263,31 @@ export const messages = pgTable(
 			table.actualMailboxId,
 			table.receivedAt,
 		),
+		index("messages_sent_by_account_id_idx").on(table.sentByAccountId),
+	],
+);
+
+export const threadSeenBy = pgTable(
+	"thread_seen_by",
+	{
+		threadId: uuid("thread_id")
+			.notNull()
+			.references(() => threads.id, { onDelete: "cascade" }),
+		mailboxId: uuid("mailbox_id")
+			.notNull()
+			.references(() => mailboxes.id, { onDelete: "cascade" }),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(table) => [
+		primaryKey({ columns: [table.threadId, table.mailboxId, table.accountId] }),
+		index("thread_seen_by_mailbox_id_thread_id_idx").on(
+			table.mailboxId,
+			table.threadId,
+		),
+		index("thread_seen_by_thread_id_idx").on(table.threadId),
 	],
 );
 
@@ -388,6 +416,8 @@ export type Label = typeof labels.$inferSelect;
 export type NewLabel = typeof labels.$inferInsert;
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+export type ThreadSeenBy = typeof threadSeenBy.$inferSelect;
+export type NewThreadSeenBy = typeof threadSeenBy.$inferInsert;
 export type Attachment = typeof attachments.$inferSelect;
 export type NewAttachment = typeof attachments.$inferInsert;
 export type DomainValidationRun = typeof domainValidationRuns.$inferSelect;

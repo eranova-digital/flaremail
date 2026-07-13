@@ -17,6 +17,7 @@ type CompleteDraftSendInput = {
 	mimeContent: MimeMessageContent;
 	attachmentInputs: StoredAttachmentInput[];
 	sentAt: Date;
+	sentByAccountId: string | null;
 };
 
 async function absorbDraftIntoInboundCopy(
@@ -67,6 +68,7 @@ export async function completeDraftSend(
 				receivedAt: input.sentAt,
 				sendErrorCode: null,
 				sendErrorMessage: null,
+				sentByAccountId: input.sentByAccountId,
 			},
 		);
 	} catch (error) {

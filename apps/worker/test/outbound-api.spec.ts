@@ -8,8 +8,6 @@ import { describe, expect, it } from "vitest";
 import worker from "../src/index";
 import { PROBLEM_CONTENT_TYPE } from "../src/lib/http/problem";
 
-const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
-
 function authHeaders(token = env.API_BEARER_TOKEN): HeadersInit {
 	return {
 		Authorization: `Bearer ${token}`,
@@ -19,7 +17,7 @@ function authHeaders(token = env.API_BEARER_TOKEN): HeadersInit {
 
 describe("v1 API auth", () => {
 	it("rejects protected routes without authorization", async () => {
-		const request = new IncomingRequest("http://example.com/api/v1/messages/send", {
+		const request = new Request("http://example.com/api/v1/messages/send", {
 			method: "POST",
 			body: JSON.stringify({
 				mailboxId: "00000000-0000-0000-0000-000000000001",
@@ -45,7 +43,7 @@ describe("v1 API auth", () => {
 	});
 
 	it("rejects protected routes with invalid bearer token", async () => {
-		const request = new IncomingRequest("http://example.com/api/v1/messages/send", {
+		const request = new Request("http://example.com/api/v1/messages/send", {
 			method: "POST",
 			headers: authHeaders("wrong"),
 			body: JSON.stringify({

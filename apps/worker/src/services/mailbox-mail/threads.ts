@@ -1,6 +1,7 @@
 import type { ThreadAction, ThreadFolder } from "../../lib/mailbox-types";
 import { assertMailboxReadAccess } from "../../lib/messages/mailbox-read-auth";
 import type { MailboxReadContext } from "../../lib/messages/mailbox-read-context";
+import { markThreadSeenBy } from "../../lib/thread-seen-by";
 import { runThreadAction } from "../thread-commands";
 import {
 	getThread,
@@ -29,6 +30,7 @@ export async function readGetThread(
 	mailboxId: string,
 ) {
 	await assertMailboxReadAccess(ctx, mailboxId);
+	await markThreadSeenBy(ctx.db, ctx.principal, { threadId, mailboxId });
 	return getThread(ctx.db, threadId, mailboxId);
 }
 

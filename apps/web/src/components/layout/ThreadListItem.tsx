@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 
 import type { Label, Thread } from "@/lib/api/client";
+import { SeenByAvatarGroup } from "@/components/SeenByAvatarGroup";
 import { DEFAULT_LABEL_COLOR } from "@/lib/label-colors";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +61,15 @@ export function ThreadListItem({
 						</span>
 					</div>
 				</div>
-				<p className="mt-1 truncate text-sm">{thread.subject || "(no subject)"}</p>
+				<div className="mt-1 flex items-center justify-between gap-2">
+					<p className="min-w-0 flex-1 truncate text-sm">
+						{thread.subject || "(no subject)"}
+					</p>
+					<SeenByAvatarGroup
+						seenBy={thread.seenBy}
+						className="shrink-0"
+					/>
+				</div>
 				{threadLabels.length > 0 ? (
 					<div className="mt-1.5 flex flex-wrap gap-1">
 						{threadLabels.map((label) => (

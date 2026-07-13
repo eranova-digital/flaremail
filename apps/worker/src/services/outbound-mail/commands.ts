@@ -116,6 +116,7 @@ export async function sendDraftMessage(
 		}),
 		attachmentInputs,
 		sentAt: now,
+		sentByAccountId: ctx.principal.accountId,
 	});
 
 	await onOutboundSent(ctx.db, {

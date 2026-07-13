@@ -18,6 +18,7 @@ import {
 } from "../../lib/http/cursor-pagination";
 import type { ThreadFolder } from "../../lib/mailbox-types";
 import { assertThreadInMailbox } from "../../lib/thread-mailbox";
+import { listThreadSeenByForMailbox } from "../../lib/thread-seen-by";
 import { toThreadDto } from "../dto";
 import {
 	getLabelIdsForThreads,
@@ -130,12 +131,19 @@ export async function listThreads(
 		rows.map((row) => row.thread.id),
 	);
 
+	const seenByMap = await listThreadSeenByForMailbox(
+		db,
+		mailboxId,
+		rows.map((row) => row.thread.id),
+	);
+
 	const items = rows.map((row) =>
 		toThreadDto(
 			row.thread,
 			row.mailboxView,
 			labelMap.get(row.thread.id) ?? [],
 			partiesMap.get(row.thread.id),
+			seenByMap.get(row.thread.id) ?? [],
 		),
 	);
 
@@ -201,10 +209,13 @@ export async function getThread(
 		])
 	).get(threadId);
 
+	const seenByMap = await listThreadSeenByForMailbox(db, mailboxId, [threadId]);
+
 	return toThreadDto(
 		row.thread,
 		row.mailboxView,
 		labelRows.map((labelRow) => labelRow.labelId),
 		parties,
+		seenByMap.get(threadId) ?? [],
 	);
 }

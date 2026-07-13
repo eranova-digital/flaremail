@@ -2045,6 +2045,29 @@
                 }
               }
             }
+          },
+          "sentBy": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Present only when viewing a shared mailbox. Internal-only identity of the user who sent the outbound message.\n",
+            "properties": {
+              "accountId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "loginIdentifier": {
+                "type": "string",
+                "format": "email"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "profilePicture": {
+                "$ref": "#/components/schemas/ProfilePicture"
+              }
+            }
           }
         }
       },
@@ -2298,6 +2321,48 @@
               "type": "string",
               "format": "email"
             }
+          },
+          "seenBy": {
+            "type": "array",
+            "description": "Present only when viewing a shared mailbox. List of users who have opened the thread since the latest message.\n",
+            "items": {
+              "$ref": "#/components/schemas/SeenByViewer"
+            }
+          }
+        }
+      },
+      "ProfilePicture": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SeenByViewer": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loginIdentifier": {
+            "type": "string",
+            "format": "email"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePicture": {
+            "$ref": "#/components/schemas/ProfilePicture"
+          },
+          "seenAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

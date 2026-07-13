@@ -176,6 +176,13 @@
       "when": 1782786000000,
       "tag": "0024_profile_picture",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1782786600000,
+      "tag": "0025_thread_seen_by_and_message_sent_by",
+      "breakpoints": true
     }
   ]
 }

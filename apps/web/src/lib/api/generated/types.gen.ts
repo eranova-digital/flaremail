@@ -210,6 +210,16 @@ export type ThreadMessagePreview = {
         disposition?: string | null;
         contentId?: string | null;
     }>;
+    /**
+     * Present only when viewing a shared mailbox. Internal-only identity of the user who sent the outbound message.
+     *
+     */
+    sentBy?: {
+        accountId?: string;
+        loginIdentifier?: string;
+        displayName?: string;
+        profilePicture?: ProfilePicture;
+    } | null;
 };
 
 export type ThreadMessagesResponse = {
@@ -278,6 +288,23 @@ export type Thread = {
      * Unique participant email addresses in the thread, excluding the viewing mailbox.
      */
     participants?: Array<string>;
+    /**
+     * Present only when viewing a shared mailbox. List of users who have opened the thread since the latest message.
+     *
+     */
+    seenBy?: Array<SeenByViewer>;
+};
+
+export type ProfilePicture = {
+    updatedAt?: string;
+} | null;
+
+export type SeenByViewer = {
+    accountId?: string;
+    loginIdentifier?: string;
+    displayName?: string;
+    profilePicture?: ProfilePicture;
+    seenAt?: string;
 };
 
 export type ThreadPage = {

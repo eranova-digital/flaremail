@@ -3,6 +3,10 @@ import { eq } from "drizzle-orm";
 import type { Database } from "../../db/client";
 import { messages, threads } from "../../db/schema";
 import {
+	clearThreadSeenByForSharedMailboxes,
+	setThreadSeenBySenderIfSharedOutbound,
+} from "../thread-seen-by";
+import {
 	promoteThreadMailboxFromDrafts,
 	refreshAllThreadMailboxes,
 	refreshThreadMailboxStats,
@@ -65,6 +69,30 @@ export async function onMessagePersisted(
 		event.messageId,
 		event.touch,
 	);
+
+	const [row] = await db
+		.select({
+			sendStatus: messages.sendStatus,
+			direction: messages.direction,
+			actualMailboxId: messages.actualMailboxId,
+			sentByAccountId: messages.sentByAccountId,
+		})
+		.from(messages)
+		.where(eq(messages.id, event.messageId))
+		.limit(1);
+
+	if (!row || row.sendStatus === "draft") {
+		return;
+	}
+
+	await clearThreadSeenByForSharedMailboxes(db, event.threadId);
+	if (row.direction === "outbound") {
+		await setThreadSeenBySenderIfSharedOutbound(db, {
+			threadId: event.threadId,
+			mailboxId: row.actualMailboxId,
+			sentByAccountId: row.sentByAccountId,
+		});
+	}
 }
 export async function onOutboundSent(
 	db: Database,
@@ -74,6 +102,16 @@ export async function onOutboundSent(
 
 	if (message) {
 		await relinkMessageMailboxesAfterSend(db, message, data);
+	}
+
+	// Draft -> sent doesn't emit onMessagePersisted. Apply the same "seen by" rules here.
+	if (message?.sendStatus !== "draft") {
+		await clearThreadSeenByForSharedMailboxes(db, threadId);
+		await setThreadSeenBySenderIfSharedOutbound(db, {
+			threadId,
+			mailboxId: data.actualMailboxId,
+			sentByAccountId: message?.sentByAccountId,
+		});
 	}
 
 	if (data.promoteFromDrafts) {

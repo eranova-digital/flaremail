@@ -112,6 +112,7 @@ export async function sendAndPersistNewMessage(
 				receivedAt: now,
 				sendErrorCode: null,
 				sendErrorMessage: null,
+				sentByAccountId: ctx.principal.accountId,
 			},
 			mimeContent: buildOutboundMimeContent({
 				from: mailbox.address,
@@ -235,6 +236,7 @@ export async function persistDraftMessage(
 				receivedAt: now,
 				sendErrorCode: null,
 				sendErrorMessage: null,
+				sentByAccountId: null,
 			},
 			mimeContent: buildOutboundMimeContent({
 				from: mailbox.address,

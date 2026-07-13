@@ -9,11 +9,9 @@ import worker from "../src/index";
 import { PROBLEM_CONTENT_TYPE } from "../src/lib/http/problem";
 import { authHeaders } from "./helpers/auth";
 
-const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
-
 describe("threads API", () => {
 	it("rejects thread list without authorization", async () => {
-		const request = new IncomingRequest(
+		const request = new Request(
 			"http://example.com/api/v1/threads?mailboxId=00000000-0000-0000-0000-000000000001",
 		);
 		const ctx = createExecutionContext();
@@ -25,7 +23,7 @@ describe("threads API", () => {
 	});
 
 	it("rejects thread list with invalid bearer token", async () => {
-		const request = new IncomingRequest(
+		const request = new Request(
 			"http://example.com/api/v1/threads?mailboxId=00000000-0000-0000-0000-000000000001",
 			{ headers: authHeaders("wrong") },
 		);
@@ -39,7 +37,7 @@ describe("threads API", () => {
 
 describe("outbound-mail service (HTTP)", () => {
 	it("validates draft create payload through outbound-mail controller", async () => {
-		const request = new IncomingRequest(
+		const request = new Request(
 			"http://example.com/api/v1/messages/drafts",
 			{
 				method: "POST",

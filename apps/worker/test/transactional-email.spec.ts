@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { sendTransactionalEmail } from "../src/lib/auth/transactional-email";
@@ -7,23 +8,35 @@ const loadBlackholeMailboxForDomain = vi.fn();
 const sendAndPersistNewMessage = vi.fn();
 const sendEmail = vi.fn();
 
-vi.mock("../src/services/instance-settings", () => ({
-	getInstanceSettings: (...args: unknown[]) => getInstanceSettings(...args),
-}));
+vi.mock(
+	fileURLToPath(new URL("../src/services/instance-settings.ts", import.meta.url)),
+	() => ({
+		getInstanceSettings: (...args: unknown[]) => getInstanceSettings(...args),
+	}),
+);
 
-vi.mock("../src/lib/mailbox-queries", () => ({
-	loadBlackholeMailboxForDomain: (...args: unknown[]) =>
-		loadBlackholeMailboxForDomain(...args),
-}));
+vi.mock(
+	fileURLToPath(new URL("../src/lib/mailbox-queries.ts", import.meta.url)),
+	() => ({
+		loadBlackholeMailboxForDomain: (...args: unknown[]) =>
+			loadBlackholeMailboxForDomain(...args),
+	}),
+);
 
-vi.mock("../src/lib/messages/outbound-persist", () => ({
-	sendAndPersistNewMessage: (...args: unknown[]) =>
-		sendAndPersistNewMessage(...args),
-}));
+vi.mock(
+	fileURLToPath(new URL("../src/lib/messages/outbound-persist.ts", import.meta.url)),
+	() => ({
+		sendAndPersistNewMessage: (...args: unknown[]) =>
+			sendAndPersistNewMessage(...args),
+	}),
+);
 
-vi.mock("../src/lib/messages/send-email", () => ({
-	sendEmail: (...args: unknown[]) => sendEmail(...args),
-}));
+vi.mock(
+	fileURLToPath(new URL("../src/lib/messages/send-email.ts", import.meta.url)),
+	() => ({
+		sendEmail: (...args: unknown[]) => sendEmail(...args),
+	}),
+);
 
 describe("sendTransactionalEmail", () => {
 	const db = {} as never;

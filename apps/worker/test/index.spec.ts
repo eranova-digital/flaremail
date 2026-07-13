@@ -7,11 +7,9 @@ import {
 import { describe, it, expect } from "vitest";
 import worker from "../src/index";
 
-const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
-
 describe("email catch-all worker", () => {
 	it("returns health check (unit style)", async () => {
-		const request = new IncomingRequest("http://example.com/health");
+		const request = new Request("http://example.com/health");
 		const ctx = createExecutionContext();
 		const response = await worker.fetch(request, env, ctx);
 		await waitOnExecutionContext(ctx);

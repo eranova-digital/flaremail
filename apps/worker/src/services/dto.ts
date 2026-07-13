@@ -2,6 +2,7 @@ import type { Message, Thread, ThreadMailbox } from "../db/schema";
 import type { ThreadParties } from "../lib/thread-participants";
 import { isSystemManagedMailbox } from "../lib/system-mailboxes";
 import { normalizeMessageId } from "../lib/threading-headers";
+import type { ThreadSeenByViewer } from "../lib/thread-seen-by";
 
 export function buildRfcMessageIdToUuidMap(
 	threadMessages: Message[],
@@ -274,6 +275,7 @@ export function toThreadDto(
 	mailboxView: ThreadMailbox,
 	labelIds: string[],
 	parties?: ThreadParties,
+	seenBy: ThreadSeenByViewer[] = [],
 ) {
 	return {
 		id: thread.id,
@@ -287,6 +289,7 @@ export function toThreadDto(
 		labelIds,
 		sender: parties?.sender ?? null,
 		participants: parties?.participants ?? [],
+		seenBy,
 	};
 }
 

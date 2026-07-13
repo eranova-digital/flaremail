@@ -9,12 +9,14 @@ import { Card } from '@/components/ui/card';
 import { MessageActionsMenu } from '@/components/message/MessageActionsMenu';
 import { MessageAddress } from '@/components/message/MessageAddress';
 import { MessageBody } from '@/components/message/MessageBody';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThreadActions } from '@/components/layout/ThreadActions';
 import { useAutoThreadReadStatus } from '@/hooks/use-auto-thread-read-status';
+import { useAutoThreadSeenBy } from '@/hooks/use-auto-thread-seen-by';
 import { useDeleteDraft, useSendDraft, useThreadMessages } from '@/hooks/use-thread';
 import { useSyncOpenThreadFromList } from '@/hooks/use-sync-open-thread-from-list';
 import { useMailboxes } from '@/hooks/use-mailboxes';
@@ -26,6 +28,7 @@ import { formatAddedCcRecipients, formatRecipientList, getNewCcRecipients, parse
 import { composePath, labelListPath } from '@/lib/mailbox-routes';
 import type { ThreadMessagePreview } from '@/lib/api/generated';
 import { usePendingSends } from '@/lib/compose/pending-sends';
+import type { ProfilePicture } from '@/lib/profile-picture';
 import type { SendResult } from '@/lib/thread-messages-cache';
 import { cn } from '@/lib/utils';
 
@@ -192,10 +195,19 @@ export function ThreadView() {
 	const folderFromQuery = searchParams.get('folder');
 	const folderParam = folderFromQuery ?? 'inbox';
 	const folder = isThreadFolder(folderParam) ? folderParam : 'inbox';
+	const mailboxesQuery = useMailboxes();
+	const isSharedMailbox = useMemo(
+		() =>
+			(mailboxesQuery.data ?? []).some(
+				(mailbox) => mailbox.id === mailboxId && mailbox.type === 'shared',
+			),
+		[mailboxesQuery.data, mailboxId],
+	);
 	const messagesQuery = useThreadMessages(mailboxId ?? '', threadId, {
 		includeBody: true,
 	});
 	useSyncOpenThreadFromList(mailboxId ?? '', threadId, folder);
+	useAutoThreadSeenBy(mailboxId ?? '', threadId, isSharedMailbox);
 	const { thread, messages: serverMessages = [] } = messagesQuery.data ?? {};
 	const actionFolder =
 		thread?.folder && isThreadFolder(thread.folder) ? thread.folder : folder;
@@ -277,7 +289,6 @@ export function ThreadView() {
 		return merged;
 	}, [serverMessages, pendingSends, composerDraftId]);
 	const showReplyAll = (thread?.participants?.length ?? 0) > 1;
-	const mailboxesQuery = useMailboxes();
 	const selfAddress = mailboxesQuery.data?.find((mailbox) => mailbox.id === mailboxId)?.address ?? null;
 
 	useEffect(() => {
@@ -546,12 +557,56 @@ export function ThreadView() {
 											) : (
 												<>
 											<div className="mb-2 flex items-center justify-between gap-3">
-												<div className="flex min-w-0 items-center gap-2 text-sm">
-													<MessageAddress address={message.from} className="font-medium" />
-													{isDraft ? <Badge variant="secondary">Draft</Badge> : null}
-													{message.hasAttachments ? (
-														<Paperclip className="text-muted-foreground size-3.5" aria-label="Has attachments" />
-													) : null}												</div>
+												<div className="flex min-w-0 flex-col gap-0.5 text-sm">
+													{(message as ThreadMessagePreview).sentBy ? (
+														<Tooltip>
+															<TooltipTrigger asChild>
+																<div className="text-muted-foreground flex min-w-0 cursor-default items-center gap-1 text-xs">
+																	<span className="shrink-0">Sent by</span>
+																	<span className="ring-background inline-flex shrink-0 rounded-full ring-1">
+																		<ProfileAvatar
+																			accountId={(message as ThreadMessagePreview).sentBy?.accountId ?? ''}
+																			seed={(message as ThreadMessagePreview).sentBy?.loginIdentifier ?? ''}
+																			label={
+																				(message as ThreadMessagePreview).sentBy?.displayName ??
+																				(message as ThreadMessagePreview).sentBy?.loginIdentifier ??
+																				''
+																			}
+																			profilePicture={
+																				((message as ThreadMessagePreview).sentBy?.profilePicture as
+																					| ProfilePicture
+																					| null
+																					| undefined) ?? null
+																			}
+																			className="size-4 text-[8px]"
+																		/>
+																	</span>
+																	<span className="truncate">
+																		{(message as ThreadMessagePreview).sentBy?.displayName ??
+																			(message as ThreadMessagePreview).sentBy?.loginIdentifier}
+																	</span>
+																</div>
+															</TooltipTrigger>
+															<TooltipContent className="max-w-xs">
+																<p>This is an internal indicator.</p>
+																<small className="text-background/80 mt-1 block">
+																	To the recipient, the message appears as sent by{' '}
+																	{selfAddress ?? message.from}
+																</small>
+															</TooltipContent>
+														</Tooltip>
+													) : null}
+													<div className="flex min-w-0 items-center gap-2">
+														<MessageAddress address={message.from} className="font-medium" />
+														{isDraft ? <Badge variant="secondary">Draft</Badge> : null}
+														{message.hasAttachments ? (
+															<Paperclip
+																className="text-muted-foreground size-3.5"
+																aria-label="Has attachments"
+															/>
+														) : null}
+													</div>
+												</div>
 												<div className="flex shrink-0 items-center gap-1">
 													<span className="text-muted-foreground text-xs">
 														{isDraft ? 'Not sent' : formatMessageTime(message.sentAt ?? message.receivedAt ?? '')}
