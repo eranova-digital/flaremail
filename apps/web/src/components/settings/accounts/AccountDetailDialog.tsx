@@ -412,7 +412,7 @@ export function AccountDetailDialog({
 										<button
 											type="button"
 											disabled={isBusy}
-											className="rounded-full"
+											className="group relative cursor-pointer rounded-full outline-none disabled:cursor-not-allowed"
 											aria-label="Profile picture actions"
 										>
 											<ProfileAvatar
@@ -420,7 +420,11 @@ export function AccountDetailDialog({
 												seed={target.loginIdentifier}
 												label={target.displayName}
 												profilePicture={target.profilePicture}
-												className="size-12 text-sm"
+												className="size-12 text-sm transition group-hover:ring-2 group-hover:ring-ring/40 group-hover:ring-offset-2 group-hover:ring-offset-background group-active:ring-ring/60 group-disabled:ring-0"
+											/>
+											<span
+												aria-hidden
+												className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-transparent transition group-hover:ring-ring/20 group-disabled:ring-transparent"
 											/>
 										</button>
 									</DropdownMenuTrigger>
