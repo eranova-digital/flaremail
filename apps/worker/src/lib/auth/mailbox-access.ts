@@ -113,6 +113,10 @@ export async function collectReadableMailboxIds(
 	const ids = new Set(accessibleMailboxIds(principal));
 
 	if (principal.role === "superadmin") {
+		const systemIds = await loadSystemMailboxIds(db, null);
+		for (const mailboxId of systemIds) {
+			ids.add(mailboxId);
+		}
 		const sharedIds = await loadSharedMailboxIds(db, null);
 		for (const mailboxId of sharedIds) {
 			ids.add(mailboxId);
@@ -121,6 +125,10 @@ export async function collectReadableMailboxIds(
 	}
 
 	if (principal.role === "admin") {
+		const systemIds = await loadSystemMailboxIds(db, principal.domainIds);
+		for (const mailboxId of systemIds) {
+			ids.add(mailboxId);
+		}
 		const sharedIds = await loadSharedMailboxIds(db, principal.domainIds);
 		for (const mailboxId of sharedIds) {
 			ids.add(mailboxId);

@@ -160,8 +160,15 @@ describe("filterMailboxesForPrincipal", () => {
 		);
 	});
 
-	it("returns primary and all shared mailboxes for superadmin", async () => {
-		const rows = [systemPostmaster, userMailbox, otherUserMailbox, sharedMailbox, sharedMailboxB];
+	it("returns primary, system, and all shared mailboxes for superadmin", async () => {
+		const rows = [
+			systemPostmaster,
+			systemPostmasterB,
+			userMailbox,
+			otherUserMailbox,
+			sharedMailbox,
+			sharedMailboxB,
+		];
 		const result = await filterMailboxesForPrincipal(
 			mockDb(allMailboxRows),
 			principal({
@@ -173,11 +180,11 @@ describe("filterMailboxesForPrincipal", () => {
 		);
 
 		expect(result.map((row) => row.id).sort()).toEqual(
-			[userMailbox.id, sharedMailbox.id, sharedMailboxB.id].sort(),
+			[userMailbox.id, systemPostmaster.id, systemPostmasterB.id, sharedMailbox.id, sharedMailboxB.id].sort(),
 		);
 	});
 
-	it("returns primary and domain shared mailboxes for admin", async () => {
+	it("returns primary, domain system, and domain shared mailboxes for admin", async () => {
 		const rows = [
 			systemPostmaster,
 			systemPostmasterB,
@@ -198,7 +205,7 @@ describe("filterMailboxesForPrincipal", () => {
 		);
 
 		expect(result.map((row) => row.id).sort()).toEqual(
-			[userMailbox.id, sharedMailbox.id].sort(),
+			[userMailbox.id, systemPostmaster.id, sharedMailbox.id].sort(),
 		);
 	});
 
