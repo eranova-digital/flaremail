@@ -19,9 +19,13 @@ function viewerDisplayName(viewer: SeenByViewer): string {
 export function SeenByAvatarGroup({
 	seenBy,
 	className,
+	size = "md",
+	showLabel = false,
 }: {
 	seenBy: SeenByViewer[] | null | undefined;
 	className?: string;
+	size?: "sm" | "md";
+	showLabel?: boolean;
 }) {
 	const list = seenBy ?? [];
 	if (list.length === 0) {
@@ -31,10 +35,15 @@ export function SeenByAvatarGroup({
 	const maxVisible = list.length > 5 ? 4 : list.length;
 	const visible = list.slice(0, maxVisible);
 	const extra = list.length > 5 ? list.length - 4 : 0;
+	const avatarClassName = size === "sm" ? "size-4 text-[8px]" : "size-5 text-[10px]";
+	const labelClassName = size === "sm" ? "text-[9px]" : "text-[10px]";
+	const overflowClassName = size === "sm" ? "size-4 text-[8px]" : "size-5 text-[10px]";
 
 	return (
-		<div className={cn("flex shrink-0 items-center gap-1.5", className)}>
-			<span className="text-muted-foreground shrink-0 text-[10px]">Seen by</span>
+		<div className={cn("flex shrink-0 items-center", showLabel && "gap-1.5", className)}>
+			{showLabel ? (
+				<span className={cn("text-muted-foreground shrink-0", labelClassName)}>Seen by</span>
+			) : null}
 			<div className="flex items-center -space-x-2">
 				{visible.map((viewer) => (
 					<Tooltip key={viewer.accountId}>
@@ -45,7 +54,7 @@ export function SeenByAvatarGroup({
 									seed={viewer.loginIdentifier ?? viewer.accountId ?? ""}
 									label={viewerDisplayName(viewer)}
 									profilePicture={viewer.profilePicture}
-									className="size-5 text-[10px]"
+									className={avatarClassName}
 								/>
 							</span>
 						</TooltipTrigger>
@@ -54,7 +63,12 @@ export function SeenByAvatarGroup({
 				))}
 
 				{extra > 0 ? (
-					<span className="ring-background bg-muted text-muted-foreground inline-flex size-5 items-center justify-center rounded-full text-[10px] font-semibold ring-2">
+					<span
+						className={cn(
+							"ring-background bg-muted text-muted-foreground inline-flex items-center justify-center rounded-full font-semibold ring-2",
+							overflowClassName,
+						)}
+					>
 						+{extra}
 					</span>
 				) : null}

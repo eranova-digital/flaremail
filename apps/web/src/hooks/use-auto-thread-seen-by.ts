@@ -2,11 +2,11 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { patchThreadSeenByInCaches } from "@/lib/thread-seen-by-cache";
+import { patchMessageSeenByInCaches } from "@/lib/thread-seen-by-cache";
 
 /**
- * Optimistically adds the current user to a shared mailbox thread's seen-by
- * list when the thread is opened, before the next thread list poll.
+ * Optimistically adds the current user to each message's seen-by list when a shared
+ * mailbox thread is opened, before the next poll.
  */
 export function useAutoThreadSeenBy(
 	mailboxId: string,
@@ -33,6 +33,6 @@ export function useAutoThreadSeenBy(
 		}
 
 		didPatchRef.current = true;
-		patchThreadSeenByInCaches(queryClient, mailboxId, threadId, account);
+		patchMessageSeenByInCaches(queryClient, mailboxId, threadId, account);
 	}, [account, isSharedMailbox, mailboxId, queryClient, threadId]);
 }

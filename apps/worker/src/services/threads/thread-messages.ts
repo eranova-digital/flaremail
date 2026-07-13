@@ -2,7 +2,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { accountProfiles, accounts, messageMailboxes, messages } from "../../db/schema";
-import { isSharedMailbox } from "../../lib/thread-seen-by";
+import { isSharedMailbox, listMessageSeenByForMessages } from "../../lib/message-seen-by";
 import { loadMessageBody } from "../../lib/messages/message-body";
 import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
 import {
@@ -82,12 +82,18 @@ export async function listThreadMessages(
 		}
 	}
 
+	const messageIds = messageRows.map((message) => message.id);
+	const seenByMap = sharedViewer
+		? await listMessageSeenByForMessages(db, mailboxId, messageIds)
+		: new Map<string, never>();
+
 	const mapped = await Promise.all(
 		messageRows.map(async (message) => {
 			const inReplyTo = resolveInReplyToMessageUuid(
 				message.inReplyTo,
 				rfcMessageIdToUuid,
 			);
+			const seenBy = sharedViewer ? seenByMap.get(message.id) ?? [] : undefined;
 
 			if (options?.includeBody && options.bucket) {
 				const body = await loadMessageBody(db, options.bucket, message);
@@ -97,6 +103,9 @@ export async function listThreadMessages(
 						? sentByMap.get(message.sentByAccountId) ?? null
 						: null;
 				}
+				if (sharedViewer) {
+					dto.seenBy = seenBy;
+				}
 				return dto;
 			}
 
@@ -105,6 +114,9 @@ export async function listThreadMessages(
 				dto.sentBy = message.sentByAccountId
 					? sentByMap.get(message.sentByAccountId) ?? null
 					: null;
+			}
+			if (sharedViewer) {
+				dto.seenBy = seenBy;
 			}
 			return dto;
 		}),

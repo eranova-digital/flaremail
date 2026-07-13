@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThreadActions } from '@/components/layout/ThreadActions';
+import { SeenByAvatarGroup } from '@/components/SeenByAvatarGroup';
 import { useAutoThreadReadStatus } from '@/hooks/use-auto-thread-read-status';
 import { useAutoThreadSeenBy } from '@/hooks/use-auto-thread-seen-by';
 import { useDeleteDraft, useSendDraft, useThreadMessages } from '@/hooks/use-thread';
@@ -26,6 +27,7 @@ import { getErrorMessage, isNotFoundError } from '@/lib/api/errors';
 import { formatSubjectForDisplay, isSubjectChange } from '@/lib/subject';
 import { formatAddedCcRecipients, formatRecipientList, getNewCcRecipients, parseAddresses } from '@/lib/cc-recipients';
 import { composePath, labelListPath } from '@/lib/mailbox-routes';
+import { computeMessageDisplaySeenBy } from '@/lib/message-seen-by-display';
 import type { ThreadMessagePreview } from '@/lib/api/generated';
 import { usePendingSends } from '@/lib/compose/pending-sends';
 import type { ProfilePicture } from '@/lib/profile-picture';
@@ -288,6 +290,10 @@ export function ThreadView() {
 		}
 		return merged;
 	}, [serverMessages, pendingSends, composerDraftId]);
+	const messageDisplaySeenBy = useMemo(
+		() => computeMessageDisplaySeenBy(messages),
+		[messages],
+	);
 	const showReplyAll = (thread?.participants?.length ?? 0) > 1;
 	const selfAddress = mailboxesQuery.data?.find((mailbox) => mailbox.id === mailboxId)?.address ?? null;
 
@@ -717,6 +723,13 @@ export function ThreadView() {
 												</>
 											)}
 										</Card>
+										{isSharedMailbox && !isDraft && message.id ? (
+											<SeenByAvatarGroup
+												seenBy={messageDisplaySeenBy.get(message.id)}
+												size="sm"
+												className={cn('mt-1', isOutbound ? 'mr-1' : 'ml-1')}
+											/>
+										) : null}
 									</div>
 								</Fragment>
 							);

@@ -183,6 +183,13 @@
       "when": 1782786600000,
       "tag": "0025_thread_seen_by_and_message_sent_by",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1782787200000,
+      "tag": "0026_message_seen_by",
+      "breakpoints": true
     }
   ]
 }

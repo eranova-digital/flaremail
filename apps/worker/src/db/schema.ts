@@ -267,12 +267,12 @@ export const messages = pgTable(
 	],
 );
 
-export const threadSeenBy = pgTable(
-	"thread_seen_by",
+export const messageSeenBy = pgTable(
+	"message_seen_by",
 	{
-		threadId: uuid("thread_id")
+		messageId: uuid("message_id")
 			.notNull()
-			.references(() => threads.id, { onDelete: "cascade" }),
+			.references(() => messages.id, { onDelete: "cascade" }),
 		mailboxId: uuid("mailbox_id")
 			.notNull()
 			.references(() => mailboxes.id, { onDelete: "cascade" }),
@@ -282,12 +282,12 @@ export const threadSeenBy = pgTable(
 		seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
-		primaryKey({ columns: [table.threadId, table.mailboxId, table.accountId] }),
-		index("thread_seen_by_mailbox_id_thread_id_idx").on(
+		primaryKey({ columns: [table.messageId, table.mailboxId, table.accountId] }),
+		index("message_seen_by_mailbox_id_message_id_idx").on(
 			table.mailboxId,
-			table.threadId,
+			table.messageId,
 		),
-		index("thread_seen_by_thread_id_idx").on(table.threadId),
+		index("message_seen_by_message_id_idx").on(table.messageId),
 	],
 );
 
@@ -416,8 +416,8 @@ export type Label = typeof labels.$inferSelect;
 export type NewLabel = typeof labels.$inferInsert;
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
-export type ThreadSeenBy = typeof threadSeenBy.$inferSelect;
-export type NewThreadSeenBy = typeof threadSeenBy.$inferInsert;
+export type MessageSeenBy = typeof messageSeenBy.$inferSelect;
+export type NewMessageSeenBy = typeof messageSeenBy.$inferInsert;
 export type Attachment = typeof attachments.$inferSelect;
 export type NewAttachment = typeof attachments.$inferInsert;
 export type DomainValidationRun = typeof domainValidationRuns.$inferSelect;

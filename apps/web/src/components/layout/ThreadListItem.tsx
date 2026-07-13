@@ -67,6 +67,7 @@ export function ThreadListItem({
 					</p>
 					<SeenByAvatarGroup
 						seenBy={thread.seenBy}
+						showLabel
 						className="shrink-0"
 					/>
 				</div>

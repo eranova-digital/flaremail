@@ -1227,6 +1227,12 @@ components:
               type: string
             profilePicture:
               $ref: "#/components/schemas/ProfilePicture"
+        seenBy:
+          type: array
+          description: >
+            Present only when viewing a shared mailbox. Users who have read this message.
+          items:
+            $ref: "#/components/schemas/SeenByViewer"
 
     ThreadMessagesResponse:
       type: object
@@ -1369,8 +1375,8 @@ components:
         seenBy:
           type: array
           description: >
-            Present only when viewing a shared mailbox. List of users who have opened
-            the thread since the latest message.
+            Present only when viewing a shared mailbox. Seen-by list for the latest
+            message in the thread.
           items:
             $ref: "#/components/schemas/SeenByViewer"
 

@@ -18,7 +18,7 @@ import {
 } from "../../lib/http/cursor-pagination";
 import type { ThreadFolder } from "../../lib/mailbox-types";
 import { assertThreadInMailbox } from "../../lib/thread-mailbox";
-import { listThreadSeenByForMailbox } from "../../lib/thread-seen-by";
+import { listLatestMessageSeenByForThreads } from "../../lib/message-seen-by";
 import { toThreadDto } from "../dto";
 import {
 	getLabelIdsForThreads,
@@ -131,7 +131,7 @@ export async function listThreads(
 		rows.map((row) => row.thread.id),
 	);
 
-	const seenByMap = await listThreadSeenByForMailbox(
+	const seenByMap = await listLatestMessageSeenByForThreads(
 		db,
 		mailboxId,
 		rows.map((row) => row.thread.id),
@@ -209,7 +209,7 @@ export async function getThread(
 		])
 	).get(threadId);
 
-	const seenByMap = await listThreadSeenByForMailbox(db, mailboxId, [threadId]);
+	const seenByMap = await listLatestMessageSeenByForThreads(db, mailboxId, [threadId]);
 
 	return toThreadDto(
 		row.thread,

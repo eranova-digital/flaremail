@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import { getAccountDisplayName } from "@/components/ProfileAvatar";
-import type { Thread, ThreadPage, SeenByViewer } from "@/lib/api/client";
+import type { Thread, ThreadMessagePreview, ThreadPage, SeenByViewer } from "@/lib/api/client";
 import type { Account } from "@/lib/auth/types";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -27,23 +27,86 @@ function withSeenByViewer(
 	return [viewer, ...list];
 }
 
-function patchThreadSeenBy(
-	thread: Thread,
-	viewer: SeenByViewer,
-): Thread {
+function isNonDraftMessage(message: ThreadMessagePreview): boolean {
+	return message.sendStatus !== "draft";
+}
+
+function latestNonDraftMessage(
+	messages: ThreadMessagePreview[] | undefined,
+): ThreadMessagePreview | undefined {
+	if (!messages?.length) {
+		return undefined;
+	}
+
+	return [...messages]
+		.filter(isNonDraftMessage)
+		.sort((left, right) => {
+			const leftAt = left.sentAt ?? left.receivedAt ?? "";
+			const rightAt = right.sentAt ?? right.receivedAt ?? "";
+			return rightAt.localeCompare(leftAt);
+		})[0];
+}
+
+function patchThreadSeenBy(thread: Thread, viewer: SeenByViewer): Thread {
 	return {
 		...thread,
 		seenBy: withSeenByViewer(thread.seenBy, viewer),
 	};
 }
 
-export function patchThreadSeenByInCaches(
+function patchMessageSeenBy(
+	message: ThreadMessagePreview,
+	viewer: SeenByViewer,
+): ThreadMessagePreview {
+	if (!isNonDraftMessage(message)) {
+		return message;
+	}
+
+	return {
+		...message,
+		seenBy: withSeenByViewer(message.seenBy, viewer),
+	};
+}
+
+export function patchMessageSeenByInCaches(
 	queryClient: QueryClient,
 	mailboxId: string,
 	threadId: string,
 	account: Account,
 ) {
 	const viewer = seenByViewerFromAccount(account);
+
+	queryClient.setQueriesData<{ thread?: Thread; messages?: ThreadMessagePreview[] }>(
+		{
+			predicate: (query) =>
+				Array.isArray(query.queryKey) &&
+				query.queryKey[0] === "thread-messages" &&
+				query.queryKey[1] === mailboxId &&
+				query.queryKey[2] === threadId,
+		},
+		(old) => {
+			if (!old?.messages) {
+				return old;
+			}
+
+			const messages = old.messages.map((message) =>
+				patchMessageSeenBy(message, viewer),
+			);
+			const latest = latestNonDraftMessage(messages);
+
+			return {
+				...old,
+				messages,
+				thread:
+					old.thread && latest
+						? {
+								...old.thread,
+								seenBy: latest.seenBy ?? [],
+							}
+						: old.thread,
+			};
+		},
+	);
 
 	queryClient.setQueriesData<ThreadPage>(
 		{
@@ -70,19 +133,5 @@ export function patchThreadSeenByInCaches(
 	queryClient.setQueryData<Thread>(
 		queryKeys.thread(mailboxId, threadId),
 		(old) => (old ? patchThreadSeenBy(old, viewer) : old),
-	);
-
-	queryClient.setQueriesData<{ thread?: Thread; messages?: unknown[] }>(
-		{
-			predicate: (query) =>
-				Array.isArray(query.queryKey) &&
-				query.queryKey[0] === "thread-messages" &&
-				query.queryKey[1] === mailboxId &&
-				query.queryKey[2] === threadId,
-		},
-		(old) =>
-			old?.thread
-				? { ...old, thread: patchThreadSeenBy(old.thread, viewer) }
-				: old,
 	);
 }

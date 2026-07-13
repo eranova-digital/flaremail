@@ -2,10 +2,7 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { messages, threads } from "../../db/schema";
-import {
-	clearThreadSeenByForSharedMailboxes,
-	setThreadSeenBySenderIfSharedOutbound,
-} from "../thread-seen-by";
+import { setMessageSeenBySender } from "../message-seen-by";
 import {
 	promoteThreadMailboxFromDrafts,
 	refreshAllThreadMailboxes,
@@ -81,18 +78,15 @@ export async function onMessagePersisted(
 		.where(eq(messages.id, event.messageId))
 		.limit(1);
 
-	if (!row || row.sendStatus === "draft") {
+	if (!row || row.sendStatus === "draft" || row.direction !== "outbound") {
 		return;
 	}
 
-	await clearThreadSeenByForSharedMailboxes(db, event.threadId);
-	if (row.direction === "outbound") {
-		await setThreadSeenBySenderIfSharedOutbound(db, {
-			threadId: event.threadId,
-			mailboxId: row.actualMailboxId,
-			sentByAccountId: row.sentByAccountId,
-		});
-	}
+	await setMessageSeenBySender(db, {
+		messageId: event.messageId,
+		mailboxId: row.actualMailboxId,
+		sentByAccountId: row.sentByAccountId,
+	});
 }
 export async function onOutboundSent(
 	db: Database,
@@ -104,13 +98,12 @@ export async function onOutboundSent(
 		await relinkMessageMailboxesAfterSend(db, message, data);
 	}
 
-	// Draft -> sent doesn't emit onMessagePersisted. Apply the same "seen by" rules here.
-	if (message?.sendStatus !== "draft") {
-		await clearThreadSeenByForSharedMailboxes(db, threadId);
-		await setThreadSeenBySenderIfSharedOutbound(db, {
-			threadId,
+	// Draft -> sent doesn't emit onMessagePersisted.
+	if (message?.sendStatus !== "draft" && message?.id) {
+		await setMessageSeenBySender(db, {
+			messageId: message.id,
 			mailboxId: data.actualMailboxId,
-			sentByAccountId: message?.sentByAccountId,
+			sentByAccountId: message.sentByAccountId,
 		});
 	}
 

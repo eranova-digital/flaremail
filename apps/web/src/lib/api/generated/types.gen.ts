@@ -220,6 +220,11 @@ export type ThreadMessagePreview = {
         displayName?: string;
         profilePicture?: ProfilePicture;
     } | null;
+    /**
+     * Present only when viewing a shared mailbox. Users who have read this message.
+     *
+     */
+    seenBy?: Array<SeenByViewer>;
 };
 
 export type ThreadMessagesResponse = {
@@ -289,7 +294,7 @@ export type Thread = {
      */
     participants?: Array<string>;
     /**
-     * Present only when viewing a shared mailbox. List of users who have opened the thread since the latest message.
+     * Present only when viewing a shared mailbox. Seen-by list for the latest message in the thread.
      *
      */
     seenBy?: Array<SeenByViewer>;

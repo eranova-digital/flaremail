@@ -2068,6 +2068,13 @@
                 "$ref": "#/components/schemas/ProfilePicture"
               }
             }
+          },
+          "seenBy": {
+            "type": "array",
+            "description": "Present only when viewing a shared mailbox. Users who have read this message.\n",
+            "items": {
+              "$ref": "#/components/schemas/SeenByViewer"
+            }
           }
         }
       },
@@ -2324,7 +2331,7 @@
           },
           "seenBy": {
             "type": "array",
-            "description": "Present only when viewing a shared mailbox. List of users who have opened the thread since the latest message.\n",
+            "description": "Present only when viewing a shared mailbox. Seen-by list for the latest message in the thread.\n",
             "items": {
               "$ref": "#/components/schemas/SeenByViewer"
             }
