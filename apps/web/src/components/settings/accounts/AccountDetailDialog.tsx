@@ -407,7 +407,7 @@ export function AccountDetailDialog({
 								}}
 							/>
 							{canManagePicture ? (
-								<DropdownMenu>
+								<DropdownMenu modal={false}>
 									<DropdownMenuTrigger asChild>
 										<button
 											type="button"
@@ -803,7 +803,7 @@ export function AccountDetailDialog({
 						</Tabs>
 
 						<DialogFooter className="items-center border-t px-6 py-4 sm:justify-between">
-							<DropdownMenu>
+							<DropdownMenu modal={false}>
 								<DropdownMenuTrigger asChild>
 									<Button variant="outline" size="sm" disabled={isBusy}>
 										<MoreHorizontal className="size-4" />
