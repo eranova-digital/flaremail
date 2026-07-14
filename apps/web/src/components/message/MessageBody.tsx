@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { EmailHtmlBody } from "@/components/message/EmailHtmlBody";
 import { MessageAttachments } from "@/components/message/MessageAttachments";
 import { hydrateInlineImagesForDisplay } from "@/lib/email-html";
 import { getPlainTextSource, parseReplyBody } from "@/lib/parse-reply-body";
@@ -75,10 +76,7 @@ export function MessageBody({
 				{parsedReply.visibleText.trim() || "(empty message)"}
 			</pre>
 		) : html ? (
-			<div
-				className="message-html-body text-sm"
-				dangerouslySetInnerHTML={{ __html: displayHtml || html }}
-			/>
+			<EmailHtmlBody html={displayHtml || html} />
 		) : (
 			<pre className="text-sm whitespace-pre-wrap">
 				{text || preview || "(empty message)"}
