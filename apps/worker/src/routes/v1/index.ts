@@ -31,6 +31,7 @@ import {
 	handleCreateLabel,
 	handleDeleteLabel,
 	handleDownloadAttachment,
+	handleDownloadMessageExternalImage,
 	handleDownloadRawMessage,
 	handleGetLabel,
 	handleGetMessage,
@@ -164,6 +165,12 @@ export const v1Routes: RouteDefinition[] = [
 		handler: handleDownloadRawMessage,
 	},
 	{ method: "GET", path: `${prefix}/messages/:id`, action: "mail_read", handler: handleGetMessage },
+	{
+		method: "GET",
+		path: `${prefix}/messages/:id/images/:imageId`,
+		action: "mail_read",
+		handler: handleDownloadMessageExternalImage,
+	},
 
 	{ method: "GET", path: `${prefix}/threads`, action: "mail_read", handler: handleListThreads },
 	{

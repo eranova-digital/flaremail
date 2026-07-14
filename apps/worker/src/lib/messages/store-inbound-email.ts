@@ -15,6 +15,7 @@ import { buildPreview, parseSentAt } from "./message-utils";
 import { storeMessage } from "./message-store";
 import { postalEmailToMimeContent } from "./postal-to-mime-content";
 import type { StoredAttachmentInput } from "./stored-attachment-input";
+import { processInboundHtmlImages } from "../email-images/process-inbound-html";
 
 export async function storeInboundEmail(
 	db: Database,
@@ -60,6 +61,21 @@ export async function storeInboundEmail(
 		.map((part, index) => postalAttachmentToStoredInput(part, index))
 		.filter((part): part is StoredAttachmentInput => part !== null);
 
+	const mimeContent = postalEmailToMimeContent(parsed);
+	let externalImageInputs: Awaited<
+		ReturnType<typeof processInboundHtmlImages>
+	>["externalImages"] = [];
+
+	if (mimeContent.html) {
+		const processed = await processInboundHtmlImages(
+			mimeContent.html,
+			id,
+			bucket,
+		);
+		mimeContent.html = processed.html;
+		externalImageInputs = processed.externalImages;
+	}
+
 	return storeMessage(
 		{
 			db,
@@ -84,15 +100,16 @@ export async function storeInboundEmail(
 				subject,
 				textBody,
 				preview,
-				hasHtml: Boolean(parsed.html),
+				hasHtml: Boolean(mimeContent.html),
 				hasAttachments: attachmentInputs.length > 0,
 				sentAt: parseSentAt(message.headers.get("date"), parsed.date),
 				receivedAt,
 				sendErrorCode: null,
 				sendErrorMessage: null,
 			},
-			mimeContent: postalEmailToMimeContent(parsed),
+			mimeContent,
 			attachmentInputs,
+			externalImageInputs,
 			threadTouch,
 			isNewThread,
 		},

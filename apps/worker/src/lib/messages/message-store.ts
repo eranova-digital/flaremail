@@ -1,8 +1,17 @@
 import { eq } from "drizzle-orm";
 
-import { attachments, messages, type NewMessage } from "../../db/schema";
 import type { Database } from "../../db/client";
+import {
+	attachments,
+	messageExternalImages,
+	messages,
+	type NewMessage,
+	type NewMessageExternalImage,
+} from "../../db/schema";
 import { buildStrippedEml } from "../build-stripped-eml";
+import { deleteR2Objects } from "../r2-cleanup";
+import { storeAttachments } from "../store-attachments";
+import { storeRawEml } from "../store-raw-eml";
 import {
 	deleteThreadIfEmpty,
 	linkMessageMailboxes,
@@ -10,9 +19,6 @@ import {
 	resolveMessageMailboxIds,
 	type ThreadTouchData,
 } from "../thread-mailbox";
-import { deleteR2Objects } from "../r2-cleanup";
-import { storeAttachments } from "../store-attachments";
-import { storeRawEml } from "../store-raw-eml";
 import type { MimeMessageContent } from "./mime-message-content";
 import type { StoredAttachmentInput } from "./stored-attachment-input";
 
@@ -24,6 +30,7 @@ export type PersistMessageInput = {
 	row: Omit<NewMessage, "id" | "rawEmlKey">;
 	mimeContent: MimeMessageContent;
 	attachmentInputs: StoredAttachmentInput[];
+	externalImageInputs?: NewMessageExternalImage[];
 	threadTouch: ThreadTouchData;
 	isNewThread: boolean;
 };
@@ -71,6 +78,12 @@ async function persistMessageRow(
 		try {
 			if (storedAttachments.length > 0) {
 				await input.db.insert(attachments).values(storedAttachments);
+			}
+
+			if (input.externalImageInputs && input.externalImageInputs.length > 0) {
+				await input.db
+					.insert(messageExternalImages)
+					.values(input.externalImageInputs);
 			}
 
 			const mailboxIds = await resolveMessageMailboxIds(input.db, input.row);

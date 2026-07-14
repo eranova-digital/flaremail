@@ -9,6 +9,7 @@ import type { RouteContext } from "../lib/http/router";
 import { createMailboxReadContext } from "../lib/messages/mailbox-read-context";
 import { createMailboxMail } from "../services/mailbox-mail";
 import { downloadAttachment } from "../services/attachments";
+import { downloadMessageExternalImage } from "../services/email-images";
 
 function mailboxMail(env: Env, db: Database, principal: RouteContext["principal"]) {
 	return createMailboxMail(createMailboxReadContext(env, db, principal));
@@ -119,6 +120,27 @@ export async function handleDownloadAttachment({
 	try {
 		return await withDb(env, (db) =>
 			downloadAttachment(db, env.BUCKET, params.id),
+		);
+	} catch (error) {
+		return handleRouteError(error, request);
+	}
+}
+
+export async function handleDownloadMessageExternalImage({
+	request,
+	env,
+	params,
+	principal,
+}: RouteContext): Promise<Response> {
+	try {
+		return await withDb(env, (db) =>
+			downloadMessageExternalImage(
+				db,
+				env.BUCKET,
+				principal,
+				params.id,
+				params.imageId,
+			),
 		);
 	} catch (error) {
 		return handleRouteError(error, request);

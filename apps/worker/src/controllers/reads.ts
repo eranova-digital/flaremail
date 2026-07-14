@@ -8,6 +8,7 @@ export {
 
 export {
 	handleDownloadAttachment,
+	handleDownloadMessageExternalImage,
 	handleDownloadRawMessage,
 	handleGetMessage,
 	handleGetMessagePreview,

@@ -324,6 +324,24 @@ export const attachments = pgTable(
 	(table) => [index("attachments_message_id_idx").on(table.messageId)],
 );
 
+export const messageExternalImages = pgTable(
+	"message_external_images",
+	{
+		id: uuid("id").primaryKey(),
+		messageId: uuid("message_id")
+			.notNull()
+			.references(() => messages.id, { onDelete: "cascade" }),
+		sourceUrl: text("source_url").notNull(),
+		cacheKey: text("cache_key"),
+		mimeType: text("mime_type").notNull(),
+		sizeBytes: integer("size_bytes").notNull(),
+		fetched: boolean("fetched").notNull().default(false),
+	},
+	(table) => [
+		index("message_external_images_message_id_idx").on(table.messageId),
+	],
+);
+
 export const domainValidationRuns = pgTable(
 	"domain_validation_runs",
 	{
@@ -420,6 +438,9 @@ export type MessageSeenBy = typeof messageSeenBy.$inferSelect;
 export type NewMessageSeenBy = typeof messageSeenBy.$inferInsert;
 export type Attachment = typeof attachments.$inferSelect;
 export type NewAttachment = typeof attachments.$inferInsert;
+export type MessageExternalImage = typeof messageExternalImages.$inferSelect;
+export type NewMessageExternalImage =
+	typeof messageExternalImages.$inferInsert;
 export type DomainValidationRun = typeof domainValidationRuns.$inferSelect;
 export type NewDomainValidationRun = typeof domainValidationRuns.$inferInsert;
 export type DomainValidationCheck = typeof domainValidationChecks.$inferSelect;
