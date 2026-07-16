@@ -1,17 +1,15 @@
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import { jwtVerify } from "jose";
 
 import { withDb } from "../../db/client";
-import { apiKeys, oidcClients, sessions } from "../../db/schema";
-import { parseStoredApiKeyScopes } from "./api-key-scopes";
+import { oidcClients, sessions } from "../../db/schema";
+import { API_KEY_PREFIX, resolveApiKeyPrincipal } from "./api-key";
 import { parseCookies, SESSION_COOKIE_NAME } from "./cookies";
 import { hashSecret } from "./password";
 import { loadPrincipalForAccount } from "./principal";
 import { touchSession } from "../../services/auth-session";
 import type { Principal } from "./types";
 import { problemResponse, requestInstance } from "../http/problem";
-
-const API_KEY_PREFIX = "fmu_";
 
 export async function resolvePrincipal(
 	request: Request,
@@ -60,45 +58,11 @@ async function tryApiKey(
 		return null;
 	}
 
-	return withDb(env, async (db) => {
-		const prefix = token.slice(0, 16);
-		const [row] = await db
-			.select()
-			.from(apiKeys)
-			.where(and(eq(apiKeys.prefix, prefix), isNull(apiKeys.revokedAt)))
-			.limit(1);
-		if (!row) {
-			return problemResponse(401, "Invalid API key", {
-				code: "unauthorized",
-				instance: requestInstance(request),
-			});
-		}
-		const tokenHash = await hashSecret(token);
-		if (tokenHash !== row.keyHash) {
-			return problemResponse(401, "Invalid API key", {
-				code: "unauthorized",
-				instance: requestInstance(request),
-			});
-		}
-
-		await db
-			.update(apiKeys)
-			.set({ lastUsedAt: new Date() })
-			.where(eq(apiKeys.id, row.id));
-
-		const scopes = parseStoredApiKeyScopes(row.scopes ?? []);
-		const principal = await loadPrincipalForAccount(db, row.accountId, "api_key", {
-			apiKeyId: row.id,
-			apiKeyScopes: scopes,
-		});
-		if (!principal || principal.status === "suspended") {
-			return problemResponse(401, "Invalid API key", {
-				code: "unauthorized",
-				instance: requestInstance(request),
-			});
-		}
-		return principal;
-	});
+	return withDb(env, (db) =>
+		resolveApiKeyPrincipal(db, token, {
+			instance: requestInstance(request),
+		}),
+	);
 }
 
 async function tryOidcBearer(

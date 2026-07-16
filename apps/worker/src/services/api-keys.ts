@@ -8,12 +8,9 @@ import {
 	parseStoredApiKeyScopes,
 	type ApiKeyScope,
 } from "../lib/auth/api-key-scopes";
-import { randomToken } from "../lib/auth/crypto";
+import { buildSecret } from "../lib/auth/api-key";
 import { hashSecret } from "../lib/auth/password";
 import type { Principal } from "../lib/auth/types";
-
-const API_KEY_PREFIX = "fmu_";
-const KEY_PREFIX_LENGTH = 16;
 
 type CreateApiKeyInput = {
 	accountId: string;
@@ -21,14 +18,6 @@ type CreateApiKeyInput = {
 	scopes: string[];
 	principal: Principal;
 };
-
-function buildSecret() {
-	const secret = `${API_KEY_PREFIX}${randomToken(24)}`;
-	return {
-		secret,
-		keyPrefix: secret.slice(0, KEY_PREFIX_LENGTH),
-	};
-}
 
 function normalizeName(name: string): string {
 	return name.trim() || "API key";
