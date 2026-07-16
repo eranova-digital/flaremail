@@ -1,3 +1,5 @@
+import { AuthorizationDeniedError } from "./actions";
+import { authorize } from "./access";
 import type { AuthAction } from "./actions";
 import type { Principal } from "./types";
 
@@ -177,31 +179,14 @@ export function canPrincipalGrantApiKeyScope(
 	if (principal.kind === "api_key") {
 		return false;
 	}
-	if (principal.status !== "active") {
-		return false;
-	}
-	switch (SCOPE_ACTION_REQUIREMENTS[scope]) {
-		case "authenticated":
-		case "mail_read":
-		case "mail_write":
-			return Boolean(principal.isIntendant || principal.role);
-		case "domain_manage_users":
-			return (
-				principal.isIntendant ||
-				principal.role === "superadmin" ||
-				principal.role === "admin" ||
-				principal.role === "manager"
-			);
-		case "domain_admin":
-			return (
-				principal.isIntendant ||
-				principal.role === "superadmin" ||
-				principal.role === "admin"
-			);
-		case "platform":
-			return principal.isIntendant || principal.role === "superadmin";
-		case "public":
-			return true;
+	try {
+		authorize(principal, SCOPE_ACTION_REQUIREMENTS[scope]);
+		return true;
+	} catch (error) {
+		if (error instanceof AuthorizationDeniedError) {
+			return false;
+		}
+		throw error;
 	}
 }
 
