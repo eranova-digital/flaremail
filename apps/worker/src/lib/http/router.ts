@@ -1,8 +1,8 @@
-import { authorizeRoute } from "../auth/authorize";
 import type { AuthAction } from "../auth/actions";
 import type { ApiKeyScope } from "../auth/api-key-scopes";
-import { createIdentity } from "../auth/identity";
 import type { Principal } from "../auth/types";
+import { authorizeRoute } from "../auth/authorize";
+import { createIdentity } from "../auth/identity";
 import { handleRouteError } from "./handle-route-error";
 
 export type RouteContext = {
@@ -14,19 +14,36 @@ export type RouteContext = {
 
 export type RouteHandler = (context: RouteContext) => Promise<Response>;
 
+export type RouteScopeResolver = (context: {
+	principal: Principal;
+	params: Record<string, string>;
+}) => readonly ApiKeyScope[] | null;
+
 /**
  * Route capability registry entry.
  * - `action`: coarse RBAC check
- * - `scopes`: API key scopes (any-of). Omit/`null` on authenticated routes → API keys forbidden.
+ * - `scopes`: API key scopes (any-of), or a resolver for contextual scopes.
+ *   Omit/`null` on authenticated routes → API keys forbidden.
  */
 export type RouteDefinition = {
 	method: string;
 	path: string;
 	auth?: boolean;
 	action?: AuthAction;
-	scopes?: readonly ApiKeyScope[] | null;
+	scopes?: readonly ApiKeyScope[] | null | RouteScopeResolver;
 	handler: RouteHandler;
 };
+
+export function resolveRouteScopes(
+	scopes: RouteDefinition["scopes"],
+	principal: Principal,
+	params: Record<string, string>,
+): readonly ApiKeyScope[] | null {
+	if (typeof scopes === "function") {
+		return scopes({ principal, params });
+	}
+	return scopes ?? null;
+}
 
 function pathToPattern(path: string): {
 	pattern: RegExp;
@@ -100,7 +117,7 @@ export function createRouter(routes: RouteDefinition[]) {
 				const action = route.action ?? "authenticated";
 				const authzError = await authorizeRoute(request, principal, {
 					action,
-					scopes: route.scopes ?? null,
+					scopes: resolveRouteScopes(route.scopes, principal, params),
 					routePath: route.path,
 					params,
 					resource: {

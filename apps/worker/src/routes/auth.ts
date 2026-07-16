@@ -192,7 +192,10 @@ export const authRoutes: RouteDefinition[] = [
 		method: "GET",
 		path: `${prefix}/accounts/:id/profile-picture`,
 		action: "authenticated",
-		scopes: ["account_profile_pictures:read"],
+		scopes: ({ principal, params }) =>
+			principal.accountId && params.id === principal.accountId
+				? ["profile_picture:read"]
+				: ["account_profile_pictures:read"],
 		handler: handleGetProfilePicture,
 	},
 	{

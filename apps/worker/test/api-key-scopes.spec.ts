@@ -5,8 +5,8 @@ import {
 	normalizeApiKeyScopes,
 	parseStoredApiKeyScopes,
 } from "../src/lib/auth/api-key-scopes";
-import { resolveApiKeyScopesForRoute } from "../src/lib/auth/authorize";
 import type { Principal } from "../src/lib/auth/types";
+import { resolveRouteScopes } from "../src/lib/http/router";
 import { authRoutes } from "../src/routes/auth";
 import { v1Routes } from "../src/routes/v1";
 
@@ -58,24 +58,21 @@ describe("API key scopes", () => {
 	});
 
 	it("uses self profile picture scope for own account picture reads", () => {
+		const route = authRoutes.find(
+			(entry) =>
+				entry.method === "GET" &&
+				entry.path === "/api/v1/accounts/:id/profile-picture",
+		);
 		expect(
-			resolveApiKeyScopesForRoute(
-				["account_profile_pictures:read"],
-				basePrincipal({ accountId: "acc-1" }),
-				{
-					routePath: "/api/v1/accounts/:id/profile-picture",
-					params: { id: "acc-1" },
-				},
-			),
+			resolveRouteScopes(route?.scopes, basePrincipal({ accountId: "acc-1" }), {
+				id: "acc-1",
+			}),
 		).toEqual(["profile_picture:read"]);
 		expect(
-			resolveApiKeyScopesForRoute(
-				["account_profile_pictures:read"],
+			resolveRouteScopes(
+				route?.scopes,
 				basePrincipal({ accountId: "acc-1", role: "admin" }),
-				{
-					routePath: "/api/v1/accounts/:id/profile-picture",
-					params: { id: "acc-2" },
-				},
+				{ id: "acc-2" },
 			),
 		).toEqual(["account_profile_pictures:read"]);
 	});

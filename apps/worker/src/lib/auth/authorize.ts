@@ -1,13 +1,7 @@
 import { problemResponse, requestInstance } from "../http/problem";
 import type { ApiKeyScope } from "./api-key-scopes";
 import { AuthorizationDeniedError } from "./actions";
-import {
-	authorize,
-	authorizeAccount,
-	authorizeDraftCommand,
-	authorizeMailbox,
-	authorizeMailboxAccess,
-} from "./access";
+import { authorize } from "./access";
 import type { AuthAction, AuthResource } from "./actions";
 import type { RoutePermission } from "./types";
 import type { Principal } from "./types";
@@ -31,37 +25,16 @@ export type AuthorizeRouteInput = {
 	resource?: AuthResource;
 };
 
-/**
- * Resolve required scopes for an API key on a route.
- * Temporary self/other profile-picture override until contextual scopes land on RouteDefinition.
- */
-export function resolveApiKeyScopesForRoute(
-	scopes: readonly ApiKeyScope[] | null | undefined,
-	principal: Principal,
-	context: { routePath: string; params: Record<string, string> },
-): readonly ApiKeyScope[] | null {
-	if (
-		context.routePath === "/api/v1/accounts/:id/profile-picture" &&
-		principal.accountId &&
-		context.params.id === principal.accountId
-	) {
-		return ["profile_picture:read"];
-	}
-	return scopes ?? null;
-}
-
 function authorizeApiKeyScopes(
 	request: Request,
 	principal: Principal,
 	scopes: readonly ApiKeyScope[] | null | undefined,
-	context: { routePath: string; params: Record<string, string> },
 ): Response | null {
 	if (principal.kind !== "api_key") {
 		return null;
 	}
 
-	const requiredScopes = resolveApiKeyScopesForRoute(scopes, principal, context);
-	if (!requiredScopes || requiredScopes.length === 0) {
+	if (!scopes || scopes.length === 0) {
 		return problemResponse(403, "API keys cannot access this endpoint", {
 			code: "forbidden",
 			instance: requestInstance(request),
@@ -69,11 +42,11 @@ function authorizeApiKeyScopes(
 	}
 
 	const held = new Set(principal.apiKeyScopes ?? []);
-	if (requiredScopes.some((scope) => held.has(scope))) {
+	if (scopes.some((scope) => held.has(scope))) {
 		return null;
 	}
 
-	const scopeList = requiredScopes.join("' or '");
+	const scopeList = scopes.join("' or '");
 	return problemResponse(403, `API key scope '${scopeList}' is required`, {
 		code: "forbidden",
 		instance: requestInstance(request),
@@ -102,10 +75,7 @@ export async function authorizeRoute(
 		throw error;
 	}
 
-	return authorizeApiKeyScopes(request, principal, input.scopes, {
-		routePath: input.routePath,
-		params: input.params,
-	});
+	return authorizeApiKeyScopes(request, principal, input.scopes);
 }
 
 /** @deprecated Prefer authorizeRoute. */
@@ -129,9 +99,8 @@ export function authorizeApiKeyRoute(
 	request: Request,
 	principal: Principal,
 	scopes: readonly ApiKeyScope[] | null,
-	context: { routePath: string; params: Record<string, string> },
 ): Response | null {
-	return authorizeApiKeyScopes(request, principal, scopes, context);
+	return authorizeApiKeyScopes(request, principal, scopes);
 }
 
 /** @deprecated Use authorizeRoute — kept for incremental migration. */
