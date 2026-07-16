@@ -34,13 +34,13 @@ export async function canPrincipalViewAccount(
 	if (principal.kind === "legacy") {
 		return true;
 	}
+	if (isPlatformPrincipal(principal)) {
+		return true;
+	}
 	if (!principal.accountId) {
 		return false;
 	}
 	if (principal.accountId === targetAccountId) {
-		return true;
-	}
-	if (isPlatformPrincipal(principal)) {
 		return true;
 	}
 	const domainId = await getAccountPrimaryDomainId(db, targetAccountId);
@@ -68,6 +68,9 @@ export async function assertCanManageAccount(
 	if (principal.kind === "legacy") {
 		return;
 	}
+	if (isPlatformPrincipal(principal)) {
+		return;
+	}
 	if (!principal.accountId) {
 		throw new AccountAccessDeniedError();
 	}
@@ -85,10 +88,6 @@ export async function assertCanManageAccount(
 	}
 	if (target.isIntendant) {
 		throw new AccountAccessDeniedError("The intendant account cannot be managed");
-	}
-
-	if (isPlatformPrincipal(principal)) {
-		return;
 	}
 
 	const domainId = await getAccountPrimaryDomainId(db, targetAccountId);
@@ -117,6 +116,12 @@ export function assertCanAssignInviteRole(
 	principal: Principal,
 	role: AccountRole,
 ): void {
+	if (isPlatformPrincipal(principal)) {
+		if (principal.role === "superadmin" && role === "superadmin") {
+			throw new AccountAccessDeniedError("Superadmins cannot create other superadmins");
+		}
+		return;
+	}
 	if (principal.isIntendant) {
 		return;
 	}
@@ -184,6 +189,9 @@ export async function assertCanManageTargetSecurity(
 	if (principal.kind === "legacy") {
 		return;
 	}
+	if (isPlatformPrincipal(principal)) {
+		return;
+	}
 	if (!principal.accountId) {
 		throw new AccountAccessDeniedError();
 	}
@@ -205,10 +213,6 @@ export async function assertCanManageTargetSecurity(
 
 	if (principalRank(principal) <= targetSecurityRank(target)) {
 		throw new AccountAccessDeniedError();
-	}
-
-	if (isPlatformPrincipal(principal)) {
-		return;
 	}
 
 	const domainId = await getAccountPrimaryDomainId(db, targetAccountId);

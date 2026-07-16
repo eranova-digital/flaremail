@@ -1,4 +1,4 @@
-import { authorizeRequest } from "../auth/authorize";
+import { authorizeApiKeyRoute, authorizeRequest } from "../auth/authorize";
 import type { AuthAction } from "../auth/actions";
 import { createIdentity } from "../auth/identity";
 import type { Principal } from "../auth/types";
@@ -99,6 +99,16 @@ export function createRouter(routes: RouteDefinition[]) {
 				});
 				if (authzError) {
 					return authzError;
+				}
+				const apiKeyScopeError = authorizeApiKeyRoute(
+					request,
+					principal,
+					route.method,
+					route.path,
+					params,
+				);
+				if (apiKeyScopeError) {
+					return apiKeyScopeError;
 				}
 			}
 

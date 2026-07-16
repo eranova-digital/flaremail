@@ -18,6 +18,8 @@ export type Principal = {
 		mailboxId: string | null;
 		allSharedMailboxes: boolean;
 	}[];
+	apiKeyId?: string;
+	apiKeyScopes?: string[];
 	oidcClientId?: string;
 	oidcScopes?: string[];
 	m2mPermissions?: string[];
