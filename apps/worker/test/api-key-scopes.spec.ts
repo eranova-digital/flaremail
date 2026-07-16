@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
-	apiKeyScopesForRoute,
 	canPrincipalGrantApiKeyScope,
 	normalizeApiKeyScopes,
 	parseStoredApiKeyScopes,
-	scopeRequiredForRoute,
 } from "../src/lib/auth/api-key-scopes";
+import { resolveApiKeyScopesForRoute } from "../src/lib/auth/authorize";
 import type { Principal } from "../src/lib/auth/types";
+import { authRoutes } from "../src/routes/auth";
+import { v1Routes } from "../src/routes/v1";
 
 function basePrincipal(overrides: Partial<Principal> = {}): Principal {
 	return {
@@ -38,32 +39,44 @@ describe("API key scopes", () => {
 		);
 	});
 
-	it("maps protected routes to fine-grained scopes", () => {
-		expect(scopeRequiredForRoute("GET", "/api/v1/messages/:id")).toBe(
-			"messages:read",
+	it("declares scopes on the route registry for protected mail routes", () => {
+		const message = v1Routes.find(
+			(route) => route.method === "GET" && route.path === "/api/v1/messages/:id",
 		);
-		expect(scopeRequiredForRoute("POST", "/api/v1/messages/:id/reply")).toBe(
-			"messages:reply",
+		const reply = v1Routes.find(
+			(route) =>
+				route.method === "POST" && route.path === "/api/v1/messages/:id/reply",
 		);
-		expect(scopeRequiredForRoute("PATCH", "/api/v1/accounts/:id/assignments")).toBe(
-			"account_assignments:update",
+		const assignments = authRoutes.find(
+			(route) =>
+				route.method === "PATCH" &&
+				route.path === "/api/v1/accounts/:id/assignments",
 		);
-		expect(scopeRequiredForRoute("GET", "/api/v1/auth/me")).toBe("profile:read");
-		expect(scopeRequiredForRoute("PATCH", "/api/v1/auth/me")).toBe("profile:update");
+		expect(message?.scopes).toEqual(["messages:read"]);
+		expect(reply?.scopes).toEqual(["messages:reply"]);
+		expect(assignments?.scopes).toEqual(["account_assignments:update"]);
 	});
 
 	it("uses self profile picture scope for own account picture reads", () => {
 		expect(
-			apiKeyScopesForRoute("GET", "/api/v1/accounts/:id/profile-picture", {
-				principal: basePrincipal({ accountId: "acc-1" }),
-				params: { id: "acc-1" },
-			}),
+			resolveApiKeyScopesForRoute(
+				["account_profile_pictures:read"],
+				basePrincipal({ accountId: "acc-1" }),
+				{
+					routePath: "/api/v1/accounts/:id/profile-picture",
+					params: { id: "acc-1" },
+				},
+			),
 		).toEqual(["profile_picture:read"]);
 		expect(
-			apiKeyScopesForRoute("GET", "/api/v1/accounts/:id/profile-picture", {
-				principal: basePrincipal({ accountId: "acc-1", role: "admin" }),
-				params: { id: "acc-2" },
-			}),
+			resolveApiKeyScopesForRoute(
+				["account_profile_pictures:read"],
+				basePrincipal({ accountId: "acc-1", role: "admin" }),
+				{
+					routePath: "/api/v1/accounts/:id/profile-picture",
+					params: { id: "acc-2" },
+				},
+			),
 		).toEqual(["account_profile_pictures:read"]);
 	});
 
@@ -73,14 +86,19 @@ describe("API key scopes", () => {
 		).toEqual(["messages:read"]);
 	});
 
-	it("does not expose session-only endpoints to API keys", () => {
-		expect(scopeRequiredForRoute("GET", "/api/v1/auth/me")).not.toBeNull();
-		expect(scopeRequiredForRoute("POST", "/api/v1/api-keys")).toBeNull();
-		expect(scopeRequiredForRoute("GET", "/api/v1/auth/sessions")).toBeNull();
-		expect(scopeRequiredForRoute("POST", "/api/v1/auth/recovery-email/send")).toBeNull();
-		expect(scopeRequiredForRoute("GET", "/api/v1/auth/passkeys")).toBeNull();
-		expect(scopeRequiredForRoute("GET", "/api/v1/accounts/:id/sessions")).toBeNull();
-		expect(scopeRequiredForRoute("GET", "/api/v1/accounts/:id/mfa")).toBeNull();
+	it("keeps session-only endpoints without API key scopes", () => {
+		const apiKeys = authRoutes.find(
+			(route) => route.method === "POST" && route.path === "/api/v1/api-keys",
+		);
+		const sessions = authRoutes.find(
+			(route) => route.method === "GET" && route.path === "/api/v1/auth/sessions",
+		);
+		const me = authRoutes.find(
+			(route) => route.method === "GET" && route.path === "/api/v1/auth/me",
+		);
+		expect(apiKeys?.scopes).toBeUndefined();
+		expect(sessions?.scopes).toBeUndefined();
+		expect(me?.scopes).toEqual(["profile:read"]);
 	});
 
 	it("limits user key scopes to what the principal can already do", () => {

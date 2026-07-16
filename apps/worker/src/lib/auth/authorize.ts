@@ -1,18 +1,21 @@
 import { problemResponse, requestInstance } from "../http/problem";
-import { apiKeyScopesForRoute } from "./api-key-scopes";
-import { actionForPath, AuthorizationDeniedError } from "./actions";
+import type { ApiKeyScope } from "./api-key-scopes";
+import { AuthorizationDeniedError } from "./actions";
 import { authorize, authorizeMailboxAccess } from "./access";
 import type { AuthAction, AuthResource } from "./actions";
 import type { RoutePermission } from "./types";
 import type { Principal } from "./types";
 
-export { actionForPath, AuthorizationDeniedError } from "./actions";
-export { authorize, authorizeAccount, authorizeMailbox, authorizeMailboxAccess, authorizeDraftCommand } from "./access";
+export { AuthorizationDeniedError } from "./actions";
+export {
+	authorize,
+	authorizeAccount,
+	authorizeMailbox,
+	authorizeMailboxAccess,
+	authorizeDraftCommand,
+} from "./access";
 export type { AccountOperation, MailboxOperation } from "./actions";
 export type { AuthAction, AuthResource } from "./actions";
-
-/** @deprecated Use actionForPath — kept for incremental migration. */
-export const permissionForPath = actionForPath;
 
 export async function authorizeRequest(
 	request: Request,
@@ -36,30 +39,50 @@ export async function authorizeRequest(
 	}
 }
 
+export type ApiKeyScopeContext = {
+	routePath: string;
+	params: Record<string, string>;
+};
+
+/**
+ * Resolve required scopes for an API key on a route.
+ * Temporary self/other profile-picture override until contextual scopes land on RouteDefinition.
+ */
+export function resolveApiKeyScopesForRoute(
+	scopes: readonly ApiKeyScope[] | null,
+	principal: Principal,
+	context: ApiKeyScopeContext,
+): readonly ApiKeyScope[] | null {
+	if (
+		context.routePath === "/api/v1/accounts/:id/profile-picture" &&
+		principal.accountId &&
+		context.params.id === principal.accountId
+	) {
+		return ["profile_picture:read"];
+	}
+	return scopes;
+}
+
 export function authorizeApiKeyRoute(
 	request: Request,
 	principal: Principal,
-	method: string,
-	routePath: string,
-	params: Record<string, string> = {},
+	scopes: readonly ApiKeyScope[] | null,
+	context: ApiKeyScopeContext,
 ): Response | null {
 	if (principal.kind !== "api_key") {
 		return null;
 	}
 
-	const requiredScopes = apiKeyScopesForRoute(method, routePath, {
-		principal,
-		params,
-	});
-	if (!requiredScopes) {
+	const requiredScopes = resolveApiKeyScopesForRoute(scopes, principal, context);
+	if (!requiredScopes || requiredScopes.length === 0) {
 		return problemResponse(403, "API keys cannot access this endpoint", {
 			code: "forbidden",
 			instance: requestInstance(request),
 		});
 	}
 
-	const scopes = new Set(principal.apiKeyScopes ?? []);
-	if (requiredScopes.some((scope) => scopes.has(scope))) {
+	const held = new Set(principal.apiKeyScopes ?? []);
+	if (requiredScopes.some((scope) => held.has(scope))) {
 		return null;
 	}
 

@@ -1,5 +1,6 @@
 import { authorizeApiKeyRoute, authorizeRequest } from "../auth/authorize";
 import type { AuthAction } from "../auth/actions";
+import type { ApiKeyScope } from "../auth/api-key-scopes";
 import { createIdentity } from "../auth/identity";
 import type { Principal } from "../auth/types";
 import { handleRouteError } from "./handle-route-error";
@@ -13,11 +14,17 @@ export type RouteContext = {
 
 export type RouteHandler = (context: RouteContext) => Promise<Response>;
 
+/**
+ * Route capability registry entry.
+ * - `action`: coarse RBAC check
+ * - `scopes`: API key scopes (any-of). Omit/`null` on authenticated routes → API keys forbidden.
+ */
 export type RouteDefinition = {
 	method: string;
 	path: string;
 	auth?: boolean;
 	action?: AuthAction;
+	scopes?: readonly ApiKeyScope[] | null;
 	handler: RouteHandler;
 };
 
@@ -103,9 +110,11 @@ export function createRouter(routes: RouteDefinition[]) {
 				const apiKeyScopeError = authorizeApiKeyRoute(
 					request,
 					principal,
-					route.method,
-					route.path,
-					params,
+					route.scopes ?? null,
+					{
+						routePath: route.path,
+						params,
+					},
 				);
 				if (apiKeyScopeError) {
 					return apiKeyScopeError;

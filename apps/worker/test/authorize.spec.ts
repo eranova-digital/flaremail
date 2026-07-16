@@ -148,15 +148,3 @@ describe("authorize", () => {
 		).toThrow(AuthorizationDeniedError);
 	});
 });
-
-describe("actionForPath", () => {
-	it("maps draft routes to mail_write", async () => {
-		const { actionForPath } = await import("../src/lib/auth/actions");
-		expect(actionForPath("PATCH", "/api/v1/messages/drafts/abc")).toBe(
-			"mail_write",
-		);
-		expect(actionForPath("GET", "/api/v1/messages/drafts/abc")).toBe(
-			"mail_read",
-		);
-	});
-});
