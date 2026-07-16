@@ -227,11 +227,17 @@ Machine-readable:
 - OpenAPI YAML: [`apps/worker/openapi.yaml`](./apps/worker/openapi.yaml)
 - Live JSON: `GET /api/v1/openapi.json` (no auth)
 
-All protected routes require:
+All protected routes require either a signed-in web session or an API key:
 
 ```
-Authorization: Bearer <API_BEARER_TOKEN>
+Authorization: Bearer <api-key>
 ```
+
+API key format:
+
+- API keys: `fmu_...`
+
+Create API keys from `/settings?tab=security`.
 
 Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) Problem Details (`application/problem+json`).
 

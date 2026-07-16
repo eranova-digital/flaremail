@@ -30,15 +30,48 @@ Unversioned:
 
 ## Authentication
 
-Protected endpoints require a Bearer token:
+Protected endpoints require either a signed-in web session or an API key in the
+`Authorization` header:
 
 ```
-Authorization: Bearer <API_BEARER_TOKEN>
+Authorization: Bearer <api-key>
 ```
 
-Configure `API_BEARER_TOKEN` in `apps/worker/.env` for local dev and via `wrangler secret put API_BEARER_TOKEN` for deployed Workers (`secrets.required` in `wrangler.jsonc`).
+API key format:
 
-The web app sends the same token from `apps/web/.env`. v1 uses a single shared token — there is no per-user auth.
+- API keys start with `fmu_`
+
+### API keys
+
+Create and revoke them from the web app under `/settings?tab=security`.
+
+- They are tied to one account.
+- Effective access is the intersection of:
+  - the account's normal role/mailbox access
+  - the scopes selected on the key
+
+Profile scopes (`profile:*`, `profile_picture:*`) cover name, address, phone, and
+profile picture changes for the key holder. Security operations — recovery email,
+sessions, API keys, MFA, and passkeys — are session-only and cannot be granted to
+API keys.
+
+Example:
+
+```bash
+curl \
+  -H "Authorization: Bearer fmu_xxx" \
+  "https://your-host/api/v1/threads?mailboxId=<mailbox-uuid>"
+```
+
+### Managing keys over HTTP
+
+API key endpoints require a signed-in session:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api-keys` | List your API keys and grantable scopes |
+| POST | `/api-keys` | Create an API key |
+| DELETE | `/api-keys/:id` | Revoke one of your API keys |
 
 ---
 

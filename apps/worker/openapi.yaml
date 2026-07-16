@@ -743,6 +743,13 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
+      description: |
+        Use an API key in the `Authorization` header:
+
+        `Authorization: Bearer <api-key>`
+
+        User API keys start with `fmu_`. Effective access is the holder's
+        normal account permissions intersected with the key's scopes.
 
   parameters:
     UuidId:
