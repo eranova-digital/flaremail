@@ -1,10 +1,10 @@
 import { withDb } from "../db/client";
-import { authorizeMailbox } from "../lib/auth/access";
 import {
 	assertPrincipalCanManageDomain,
+	authorizeMailbox,
 	filterMailboxesForPrincipal,
 	type MailboxListScope,
-} from "../lib/auth/mailbox-access";
+} from "../lib/auth/access";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";

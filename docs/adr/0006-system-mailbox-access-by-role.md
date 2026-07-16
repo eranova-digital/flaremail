@@ -51,6 +51,6 @@ The **intendant** still has no **primary mailbox**, no **mailbox grants**, and n
 
 ## References
 
-- Implementation: `filterMailboxesForPrincipal` (`apps/worker/src/services/accounts.ts`), `assertPrincipalCanAccessMailbox` (`apps/worker/src/lib/auth/mailbox-access.ts`)
+- Implementation: `filterMailboxesForPrincipal` / `authorizeMailbox` via `apps/worker/src/lib/auth/access.ts` (policy helpers live in `mailbox-access.ts`)
 - Glossary: [`CONTEXT.md`](../CONTEXT.md) — **System mailbox**, **Intendant**
 - API: [`API.md`](../API.md) — Mailbox access

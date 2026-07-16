@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import {
@@ -8,15 +8,13 @@ import {
 	mailboxGrants,
 	mailboxes,
 	managerSharedMailboxAssignments,
-	profileFieldLocks,
 } from "../../db/schema";
 import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
-import type { Principal } from "../../lib/auth/types";
-import { isPlatformPrincipal } from "../../lib/auth/principal";
 import {
-	collectManageableMailboxIds,
-	MailboxAccessDeniedError,
-} from "../../lib/auth/mailbox-access";
+	authorize,
+	authorizeMailbox,
+} from "../../lib/auth/access";
+import type { Principal } from "../../lib/auth/types";
 
 export const PROFILE_LOCKABLE_FIELDS = [
 	"firstName",
@@ -81,13 +79,7 @@ export async function loadAccountMailboxGrants(db: Database, accountId: string) 
 }
 
 export function assertCanManageMailboxGrants(principal: Principal): void {
-	if (isPlatformPrincipal(principal)) {
-		return;
-	}
-	if (principal.role === "admin" || principal.role === "manager") {
-		return;
-	}
-	throw new MailboxAccessDeniedError();
+	authorize(principal, "domain_manage_users");
 }
 
 export async function loadManagerSharedMailboxAssignments(
@@ -124,24 +116,7 @@ export async function assertCanGrantOnSharedMailbox(
 	principal: Principal,
 	mailboxId: string,
 ): Promise<void> {
-	if (isPlatformPrincipal(principal)) {
-		const [mailbox] = await db
-			.select({ type: mailboxes.type })
-			.from(mailboxes)
-			.where(eq(mailboxes.id, mailboxId))
-			.limit(1);
-		if (!mailbox || mailbox.type !== "shared") {
-			throw new Error("Only shared mailboxes support grants");
-		}
-		return;
-	}
-
-	const manageable = await collectManageableMailboxIds(db, principal);
-	if (!manageable.has(mailboxId)) {
-		throw new MailboxAccessDeniedError(
-			"You do not have permission to manage grants for this mailbox",
-		);
-	}
+	await authorizeMailbox(db, principal, mailboxId, "manage");
 
 	const [mailbox] = await db
 		.select({ type: mailboxes.type })
@@ -154,10 +129,5 @@ export async function assertCanGrantOnSharedMailbox(
 }
 
 export function assertCanManageManagerAssignments(principal: Principal): void {
-	if (isPlatformPrincipal(principal) || principal.role === "admin") {
-		return;
-	}
-	throw new MailboxAccessDeniedError(
-		"You do not have permission to manage manager assignments",
-	);
+	authorize(principal, "domain_admin");
 }

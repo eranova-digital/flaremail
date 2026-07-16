@@ -1,6 +1,7 @@
 import type { Database } from "../../db/client";
 import { findDraftById } from "../messages/message-queries";
 import {
+	AccountAccessDeniedError,
 	assertCanAssignInviteRole,
 	assertCanManageAccount,
 	assertCanManageTargetSecurity,
@@ -9,7 +10,13 @@ import {
 } from "./account-access";
 import {
 	assertPrincipalCanAccessMailbox,
+	assertPrincipalCanManageDomain,
 	assertPrincipalCanManageMailbox,
+	collectManageableMailboxIds,
+	collectReadableMailboxIds,
+	filterMailboxesForPrincipal,
+	MailboxAccessDeniedError,
+	type MailboxListScope,
 } from "./mailbox-access";
 import { assertCanSendFrom } from "../authorize-mailbox";
 import {
@@ -26,6 +33,16 @@ import type {
 import { AuthorizationDeniedError } from "./actions";
 import type { AccountRole } from "./types";
 import type { Principal } from "./types";
+
+export {
+	AccountAccessDeniedError,
+	MailboxAccessDeniedError,
+	assertPrincipalCanManageDomain,
+	collectManageableMailboxIds,
+	collectReadableMailboxIds,
+	filterMailboxesForPrincipal,
+};
+export type { MailboxListScope };
 
 function deny(message?: string): never {
 	throw new AuthorizationDeniedError(message);

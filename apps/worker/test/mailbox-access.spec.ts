@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { filterMailboxesForPrincipal } from "../src/lib/auth/mailbox-access";
+import { filterMailboxesForPrincipal } from "../src/lib/auth/access";
 import type { Principal } from "../src/lib/auth/types";
 
 const domainA = "domain-a";

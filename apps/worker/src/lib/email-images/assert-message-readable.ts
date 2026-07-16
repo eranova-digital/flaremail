@@ -2,7 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { messageMailboxes } from "../../db/schema";
-import { collectReadableMailboxIds } from "../auth/mailbox-access";
+import { collectReadableMailboxIds } from "../auth/access";
 import type { Principal } from "../auth/types";
 
 export async function assertPrincipalCanReadMessage(

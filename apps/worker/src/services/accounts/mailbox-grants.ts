@@ -7,10 +7,11 @@ import {
 	mailboxGrants,
 	mailboxes,
 } from "../../db/schema";
+import {
+	authorize,
+	authorizeAccount,
+} from "../../lib/auth/access";
 import type { Principal } from "../../lib/auth/types";
-import { authorizeAccount } from "../../lib/auth/access";
-import { isPlatformPrincipal } from "../../lib/auth/principal";
-import { MailboxAccessDeniedError } from "../../lib/auth/mailbox-access";
 import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
 import { assertCanGrantOnSharedMailbox } from "./shared";
 
@@ -62,10 +63,7 @@ export async function grantSharedMailboxAccess(
 	accountId: string,
 	mailboxId: string,
 ) {
-	if (principal.role !== "manager" && principal.role !== "admin" && !isPlatformPrincipal(principal)) {
-		throw new MailboxAccessDeniedError();
-	}
-
+	authorize(principal, "domain_manage_users");
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
 	await authorizeAccount(db, principal, accountId, "manage");
 
@@ -87,10 +85,7 @@ export async function revokeSharedMailboxAccess(
 	accountId: string,
 	mailboxId: string,
 ) {
-	if (principal.role !== "manager" && principal.role !== "admin" && !isPlatformPrincipal(principal)) {
-		throw new MailboxAccessDeniedError();
-	}
-
+	authorize(principal, "domain_manage_users");
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
 	await authorizeAccount(db, principal, accountId, "manage");
 

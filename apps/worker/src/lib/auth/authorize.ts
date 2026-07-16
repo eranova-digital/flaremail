@@ -8,14 +8,21 @@ import type { Principal } from "./types";
 
 export { AuthorizationDeniedError } from "./actions";
 export {
+	AccountAccessDeniedError,
+	MailboxAccessDeniedError,
 	authorize,
 	authorizeAccount,
 	authorizeMailbox,
 	authorizeMailboxAccess,
 	authorizeDraftCommand,
+	assertPrincipalCanManageDomain,
+	collectManageableMailboxIds,
+	collectReadableMailboxIds,
+	filterMailboxesForPrincipal,
 } from "./access";
 export type { AccountOperation, MailboxOperation } from "./actions";
 export type { AuthAction, AuthResource } from "./actions";
+export type { MailboxListScope } from "./access";
 
 export type AuthorizeRouteInput = {
 	action: AuthAction;

@@ -1,6 +1,8 @@
-import { AuthorizationDeniedError } from "../auth/authorize";
-import { MailboxAccessDeniedError } from "../auth/mailbox-access";
-import { AccountAccessDeniedError } from "../auth/account-access";
+import {
+	AccountAccessDeniedError,
+	AuthorizationDeniedError,
+	MailboxAccessDeniedError,
+} from "../auth/authorize";
 import { EmailSendError, emailSendErrorStatus } from "../messages/send-email";
 import { NoRecoveryEmailError } from "../../services/auth";
 import { problemResponse, problemTitle, requestInstance } from "./problem";
