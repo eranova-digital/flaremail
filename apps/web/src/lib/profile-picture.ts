@@ -3,7 +3,7 @@ import { apiUrl } from "@/lib/api";
 export type ProfilePictureSize = "small" | "large";
 
 export type ProfilePicture = {
-	updatedAt: string;
+	updatedAt?: string;
 };
 
 export function profilePictureUrl(

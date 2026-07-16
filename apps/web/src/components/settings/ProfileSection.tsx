@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { HelpCircle, Loader2 } from "lucide-react";
 
+import { apiUrl } from "@/lib/api";
 import { getAccountDisplayName } from "@/components/ProfileAvatar";
 import { RecoveryEmailSetup } from "@/components/auth/RecoveryEmailSetup";
 import { ProfileFieldsGrid } from "@/components/settings/ProfileFieldsGrid";
