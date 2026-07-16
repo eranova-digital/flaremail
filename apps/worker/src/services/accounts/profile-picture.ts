@@ -14,7 +14,11 @@ import {
 	type ProfilePictureSize,
 } from "../../lib/profile-picture/keys";
 import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
-import { processProfilePicture } from "../../lib/profile-picture/process";
+
+async function processUploadedProfilePicture(bytes: ArrayBuffer, mimeType: string) {
+	const { processProfilePicture } = await import("../../lib/profile-picture/process");
+	return processProfilePicture(bytes, mimeType);
+}
 
 async function assertCanEditProfilePicture(
 	db: Database,
@@ -50,7 +54,7 @@ export async function uploadProfilePictureForAccount(
 
 	const mimeType = file.type.trim().toLowerCase();
 	const bytes = await file.arrayBuffer();
-	const variants = await processProfilePicture(bytes, mimeType);
+	const variants = await processUploadedProfilePicture(bytes, mimeType);
 
 	try {
 		await storeProfilePictureVariants(bucket, accountId, variants);

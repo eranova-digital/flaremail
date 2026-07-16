@@ -1,42 +1,15 @@
-import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../src/services/instance-settings");
+vi.mock("../src/lib/mailbox-queries");
+vi.mock("../src/lib/messages/outbound-persist");
+vi.mock("../src/lib/messages/send-email");
+
 import { sendTransactionalEmail } from "../src/lib/auth/transactional-email";
-
-const getInstanceSettings = vi.fn();
-const loadBlackholeMailboxForDomain = vi.fn();
-const sendAndPersistNewMessage = vi.fn();
-const sendEmail = vi.fn();
-
-vi.mock(
-	fileURLToPath(new URL("../src/services/instance-settings.ts", import.meta.url)),
-	() => ({
-		getInstanceSettings: (...args: unknown[]) => getInstanceSettings(...args),
-	}),
-);
-
-vi.mock(
-	fileURLToPath(new URL("../src/lib/mailbox-queries.ts", import.meta.url)),
-	() => ({
-		loadBlackholeMailboxForDomain: (...args: unknown[]) =>
-			loadBlackholeMailboxForDomain(...args),
-	}),
-);
-
-vi.mock(
-	fileURLToPath(new URL("../src/lib/messages/outbound-persist.ts", import.meta.url)),
-	() => ({
-		sendAndPersistNewMessage: (...args: unknown[]) =>
-			sendAndPersistNewMessage(...args),
-	}),
-);
-
-vi.mock(
-	fileURLToPath(new URL("../src/lib/messages/send-email.ts", import.meta.url)),
-	() => ({
-		sendEmail: (...args: unknown[]) => sendEmail(...args),
-	}),
-);
+import { loadBlackholeMailboxForDomain } from "../src/lib/mailbox-queries";
+import { sendAndPersistNewMessage } from "../src/lib/messages/outbound-persist";
+import { sendEmail } from "../src/lib/messages/send-email";
+import { getInstanceSettings } from "../src/services/instance-settings";
 
 describe("sendTransactionalEmail", () => {
 	const db = {} as never;
@@ -53,12 +26,12 @@ describe("sendTransactionalEmail", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		sendEmail.mockResolvedValue({ messageId: "<test@example.com>" });
-		sendAndPersistNewMessage.mockResolvedValue({ id: "message-id" });
+		vi.mocked(sendEmail).mockResolvedValue({ messageId: "<test@example.com>" });
+		vi.mocked(sendAndPersistNewMessage).mockResolvedValue({ id: "message-id" });
 	});
 
 	it("sends without persisting when the setting is disabled", async () => {
-		getInstanceSettings.mockResolvedValue({
+		vi.mocked(getInstanceSettings).mockResolvedValue({
 			persistNoreplyOutboundEmails: false,
 		});
 
@@ -75,10 +48,10 @@ describe("sendTransactionalEmail", () => {
 	});
 
 	it("persists to noreply sent when the setting is enabled", async () => {
-		getInstanceSettings.mockResolvedValue({
+		vi.mocked(getInstanceSettings).mockResolvedValue({
 			persistNoreplyOutboundEmails: true,
 		});
-		loadBlackholeMailboxForDomain.mockResolvedValue({
+		vi.mocked(loadBlackholeMailboxForDomain).mockResolvedValue({
 			id: "noreply-mailbox-id",
 			address: "noreply@example.com",
 			domain: "example.com",
@@ -102,6 +75,7 @@ describe("sendTransactionalEmail", () => {
 			expect.objectContaining({
 				inReplyTo: null,
 				references: null,
+				isReply: false,
 			}),
 			"sent",
 		);
@@ -109,10 +83,10 @@ describe("sendTransactionalEmail", () => {
 	});
 
 	it("falls back to send-only when persistence is enabled but noreply is missing", async () => {
-		getInstanceSettings.mockResolvedValue({
+		vi.mocked(getInstanceSettings).mockResolvedValue({
 			persistNoreplyOutboundEmails: true,
 		});
-		loadBlackholeMailboxForDomain.mockResolvedValue(null);
+		vi.mocked(loadBlackholeMailboxForDomain).mockResolvedValue(null);
 
 		await sendTransactionalEmail(db, deps, input);
 

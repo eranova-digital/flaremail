@@ -86,6 +86,7 @@ export async function sendTransactionalEmail(
 					threadId: crypto.randomUUID(),
 					inReplyTo: null,
 					references: null,
+					isReply: false,
 				},
 				"sent",
 			);
