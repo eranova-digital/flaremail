@@ -458,7 +458,6 @@ export const accountStatusEnum = pgEnum("account_status", [
 	"active",
 	"suspended",
 ]);
-
 export const accounts = pgTable(
 	"accounts",
 	{
@@ -689,8 +688,9 @@ export const apiKeys = pgTable(
 			.notNull()
 			.references(() => accounts.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
-		prefix: text("prefix").notNull(),
+		prefix: text("prefix").notNull().unique(),
 		keyHash: text("key_hash").notNull(),
+		scopes: text("scopes").array().notNull().default([]),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -840,4 +840,5 @@ export type AccountTotp = typeof accountTotp.$inferSelect;
 export type AccountPasskey = typeof accountPasskeys.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
 export type OidcClient = typeof oidcClients.$inferSelect;

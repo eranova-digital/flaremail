@@ -1,0 +1,80 @@
+CREATE TYPE "public"."api_key_kind" AS ENUM('user', 'application');--> statement-breakpoint
+ALTER TABLE "api_keys" ADD COLUMN "kind" "api_key_kind" DEFAULT 'user' NOT NULL;--> statement-breakpoint
+ALTER TABLE "api_keys" ADD COLUMN "created_by_account_id" uuid;--> statement-breakpoint
+ALTER TABLE "api_keys" ADD COLUMN "scopes" text[] DEFAULT '{}' NOT NULL;--> statement-breakpoint
+UPDATE "api_keys"
+SET
+	"created_by_account_id" = "account_id",
+	"scopes" = ARRAY[
+		'domains:list',
+		'domains:create',
+		'domains:read',
+		'domains:update',
+		'domains:delete',
+		'domain_validation_runs:list',
+		'domain_validation_runs:create',
+		'domain_validation_runs:read',
+		'domain_local_part_policies:read',
+		'domain_local_part_policies:update',
+		'mailboxes:list',
+		'mailboxes:create',
+		'mailboxes:read',
+		'mailboxes:update',
+		'mailboxes:delete',
+		'mailbox_grants:list',
+		'mailbox_manager_assignments:list',
+		'labels:list',
+		'labels:create',
+		'labels:read',
+		'labels:update',
+		'labels:delete',
+		'messages:send',
+		'drafts:create',
+		'drafts:update',
+		'drafts:delete',
+		'drafts:send',
+		'messages:reply',
+		'messages:forward',
+		'messages:read_preview',
+		'messages:read_raw',
+		'messages:read',
+		'messages:read_images',
+		'threads:list',
+		'threads:read',
+		'threads:update',
+		'search:read',
+		'attachments:read',
+		'accounts:list',
+		'accounts:read',
+		'accounts:update',
+		'account_assignments:update',
+		'accounts:invite',
+		'accounts:suggest_local_part',
+		'accounts:assign_role',
+		'accounts:suspend',
+		'accounts:unsuspend',
+		'accounts:delete',
+		'account_password_reset_codes:create',
+		'account_invites:regenerate',
+		'account_sessions:list',
+		'account_sessions:revoke',
+		'account_sessions:revoke_all',
+		'account_mfa:read',
+		'account_mfa:disable',
+		'account_mailbox_grants:create',
+		'account_mailbox_grants:delete',
+		'account_manager_assignments:create',
+		'account_manager_assignments:delete',
+		'account_profile_pictures:read',
+		'account_profile_pictures:update',
+		'account_profile_pictures:delete',
+		'oidc_clients:create',
+		'instance_settings:read',
+		'instance_settings:update'
+	]::text[];--> statement-breakpoint
+ALTER TABLE "api_keys" ALTER COLUMN "created_by_account_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "api_keys" ALTER COLUMN "account_id" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_prefix_unique" UNIQUE("prefix");--> statement-breakpoint
+ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_created_by_account_id_accounts_id_fk" FOREIGN KEY ("created_by_account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "api_keys_created_by_account_id_idx" ON "api_keys" USING btree ("created_by_account_id");--> statement-breakpoint
+CREATE INDEX "api_keys_kind_idx" ON "api_keys" USING btree ("kind");
