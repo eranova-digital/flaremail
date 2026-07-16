@@ -2,7 +2,7 @@ import type { AuthAction } from "../auth/actions";
 import type { ApiKeyScope } from "../auth/api-key-scopes";
 import type { Principal } from "../auth/types";
 import { authorizeRoute } from "../auth/authorize";
-import { createIdentity } from "../auth/identity";
+import { resolvePrincipal } from "../auth/resolve-principal";
 import { handleRouteError } from "./handle-route-error";
 
 export type RouteContext = {
@@ -108,7 +108,7 @@ export function createRouter(routes: RouteDefinition[]) {
 			};
 
 			if (route.auth) {
-				const principalResult = await createIdentity(env).resolvePrincipal(request);
+				const principalResult = await resolvePrincipal(request, env);
 				if (principalResult instanceof Response) {
 					return principalResult;
 				}

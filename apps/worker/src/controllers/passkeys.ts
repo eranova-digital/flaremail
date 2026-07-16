@@ -6,11 +6,15 @@ import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
-import { createIdentity } from "../lib/auth/identity";
-
-function identity(env: Env) {
-	return createIdentity(env);
-}
+import { sessionSecretForEnv } from "../services/auth";
+import {
+	beginPasskeyRegistration,
+	beginPasskeySignIn,
+	completePasskeyRegistration,
+	completePasskeySignIn,
+	listPasskeys,
+	removePasskey,
+} from "../services/passkeys";
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -28,7 +32,7 @@ export async function handleListPasskeys(context: RouteContext) {
 	}
 	try {
 		const items = await withDb(context.env, (db) =>
-			identity(context.env).listPasskeys(db, context.principal.accountId!),
+			listPasskeys(db, context.principal.accountId!),
 		);
 		return jsonResponse({ items });
 	} catch (error) {
@@ -42,11 +46,11 @@ export async function handleBeginPasskeyRegistration(context: RouteContext) {
 	}
 	try {
 		const result = await withDb(context.env, (db) =>
-			identity(context.env).beginPasskeyRegistration(
-				db,
-				context.principal.accountId!,
-				resolveWebAuthnConfig(context.request),
-			),
+			beginPasskeyRegistration(db, {
+				accountId: context.principal.accountId!,
+				encryptionKey: sessionSecretForEnv(context.env),
+				config: resolveWebAuthnConfig(context.request),
+			}),
 		);
 		return jsonResponse(result);
 	} catch (error) {
@@ -71,16 +75,14 @@ export async function handleCompletePasskeyRegistration(context: RouteContext) {
 	}
 	try {
 		const items = await withDb(context.env, (db) =>
-			identity(context.env).completePasskeyRegistration(
-				db,
-				{
-					accountId: context.principal.accountId!,
-					challengeToken: value.challengeToken,
-					response: value.response,
-					name: typeof value.name === "string" ? value.name : undefined,
-				},
-				resolveWebAuthnConfig(context.request),
-			),
+			completePasskeyRegistration(db, {
+				accountId: context.principal.accountId!,
+				challengeToken: value.challengeToken,
+				response: value.response,
+				name: typeof value.name === "string" ? value.name : undefined,
+				encryptionKey: sessionSecretForEnv(context.env),
+				config: resolveWebAuthnConfig(context.request),
+			}),
 		);
 		return jsonResponse({ items });
 	} catch (error) {
@@ -98,13 +100,11 @@ export async function handleBeginPasskeySignIn(context: RouteContext) {
 		typeof value.email === "string" ? value.email : undefined;
 	try {
 		const result = await withDb(context.env, (db) =>
-			identity(context.env).beginPasskeySignIn(
-				db,
-				{
-					loginIdentifier,
-				},
-				resolveWebAuthnConfig(context.request),
-			),
+			beginPasskeySignIn(db, {
+				loginIdentifier,
+				encryptionKey: sessionSecretForEnv(context.env),
+				config: resolveWebAuthnConfig(context.request),
+			}),
 		);
 		return jsonResponse(result);
 	} catch (error) {
@@ -127,13 +127,14 @@ export async function handleCompletePasskeySignIn(context: RouteContext) {
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
 		const result = await withDb(context.env, (db) =>
-			identity(context.env).completePasskeySignIn(
+			completePasskeySignIn(
 				db,
 				{
 					challengeToken: value.challengeToken,
 					response: value.response,
+					encryptionKey: sessionSecretForEnv(context.env),
+					config: resolveWebAuthnConfig(context.request),
 				},
-				resolveWebAuthnConfig(context.request),
 				sessionMetadata,
 			),
 		);
@@ -161,7 +162,7 @@ export async function handleRemovePasskey(context: RouteContext) {
 	}
 	try {
 		const items = await withDb(context.env, (db) =>
-			identity(context.env).removePasskey(db, {
+			removePasskey(db, {
 				accountId: context.principal.accountId!,
 				passkeyId,
 				password: value.password,
