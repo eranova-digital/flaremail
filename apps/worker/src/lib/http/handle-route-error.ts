@@ -3,8 +3,8 @@ import {
 	AuthorizationDeniedError,
 	MailboxAccessDeniedError,
 } from "../auth/authorize";
+import { NoRecoveryEmailError } from "../auth/errors";
 import { EmailSendError, emailSendErrorStatus } from "../messages/send-email";
-import { NoRecoveryEmailError } from "../../services/auth";
 import { problemResponse, problemTitle, requestInstance } from "./problem";
 
 export function handleRouteError(error: unknown, request?: Request): Response {

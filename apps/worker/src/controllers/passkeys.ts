@@ -7,14 +7,11 @@ import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
 import { sessionSecretForEnv } from "../services/auth";
-import {
-	beginPasskeyRegistration,
-	beginPasskeySignIn,
-	completePasskeyRegistration,
-	completePasskeySignIn,
-	listPasskeys,
-	removePasskey,
-} from "../services/passkeys";
+
+/** Dynamic import keeps @simplewebauthn out of the static workers test graph. */
+function passkeys() {
+	return import("../services/passkeys");
+}
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -31,6 +28,7 @@ export async function handleListPasskeys(context: RouteContext) {
 		return validationError(context.request, "Authentication required");
 	}
 	try {
+		const { listPasskeys } = await passkeys();
 		const items = await withDb(context.env, (db) =>
 			listPasskeys(db, context.principal.accountId!),
 		);
@@ -45,6 +43,7 @@ export async function handleBeginPasskeyRegistration(context: RouteContext) {
 		return validationError(context.request, "Authentication required");
 	}
 	try {
+		const { beginPasskeyRegistration } = await passkeys();
 		const result = await withDb(context.env, (db) =>
 			beginPasskeyRegistration(db, {
 				accountId: context.principal.accountId!,
@@ -74,6 +73,7 @@ export async function handleCompletePasskeyRegistration(context: RouteContext) {
 		);
 	}
 	try {
+		const { completePasskeyRegistration } = await passkeys();
 		const items = await withDb(context.env, (db) =>
 			completePasskeyRegistration(db, {
 				accountId: context.principal.accountId!,
@@ -99,6 +99,7 @@ export async function handleBeginPasskeySignIn(context: RouteContext) {
 	const loginIdentifier =
 		typeof value.email === "string" ? value.email : undefined;
 	try {
+		const { beginPasskeySignIn } = await passkeys();
 		const result = await withDb(context.env, (db) =>
 			beginPasskeySignIn(db, {
 				loginIdentifier,
@@ -125,6 +126,7 @@ export async function handleCompletePasskeySignIn(context: RouteContext) {
 		);
 	}
 	try {
+		const { completePasskeySignIn } = await passkeys();
 		const sessionMetadata = extractSessionMetadata(context.request);
 		const result = await withDb(context.env, (db) =>
 			completePasskeySignIn(
@@ -161,6 +163,7 @@ export async function handleRemovePasskey(context: RouteContext) {
 		return validationError(context.request, "password is required");
 	}
 	try {
+		const { removePasskey } = await passkeys();
 		const items = await withDb(context.env, (db) =>
 			removePasskey(db, {
 				accountId: context.principal.accountId!,

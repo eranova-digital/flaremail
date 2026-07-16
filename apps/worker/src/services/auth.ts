@@ -11,6 +11,7 @@ import {
 	profileFieldLocks,
 } from "../db/schema";
 import { formatCode, randomToken } from "../lib/auth/crypto";
+import { NoRecoveryEmailError } from "../lib/auth/errors";
 import { hashPassword, hashSecret, verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { toProfilePicturePayload } from "../lib/profile-picture/payload";
@@ -21,11 +22,11 @@ import {
 	sendTransactionalEmail,
 	type TransactionalEmailDeps,
 } from "../lib/auth/transactional-email";
-import {
-	loadProfileLocks,
-	type AccountProfileInput,
-	type ProfileLockableField,
-} from "./accounts";
+import { loadProfileLocks } from "./accounts/profile";
+import type {
+	AccountProfileInput,
+	ProfileLockableField,
+} from "./accounts/shared";
 import { createSession, signOutSession, type SessionMetadata } from "./auth-session";
 import {
 	createMfaChallengeToken,
@@ -39,14 +40,7 @@ import { getSecurityRequirements, getOrganizationPolicies } from "./security-com
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 24 * 60 * 60 * 1000;
 
-export class NoRecoveryEmailError extends Error {
-	constructor() {
-		super(
-			"You haven't configured a recovery email. Please ask a supervisor for a recovery code.",
-		);
-		this.name = "NoRecoveryEmailError";
-	}
-}
+export { NoRecoveryEmailError } from "../lib/auth/errors";
 
 export async function signIn(
 	db: Database,
