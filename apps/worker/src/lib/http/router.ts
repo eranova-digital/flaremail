@@ -1,4 +1,4 @@
-import { authorizeApiKeyRoute, authorizeRequest } from "../auth/authorize";
+import { authorizeRoute } from "../auth/authorize";
 import type { AuthAction } from "../auth/actions";
 import type { ApiKeyScope } from "../auth/api-key-scopes";
 import { createIdentity } from "../auth/identity";
@@ -98,26 +98,20 @@ export function createRouter(routes: RouteDefinition[]) {
 				principal = principalResult;
 
 				const action = route.action ?? "authenticated";
-				const authzError = await authorizeRequest(request, principal, action, {
-					mailboxId: params.mailboxId,
-					domainId:
-						params.domainId ??
-						(route.path.includes("/domains/") ? params.id : undefined),
+				const authzError = await authorizeRoute(request, principal, {
+					action,
+					scopes: route.scopes ?? null,
+					routePath: route.path,
+					params,
+					resource: {
+						mailboxId: params.mailboxId,
+						domainId:
+							params.domainId ??
+							(route.path.includes("/domains/") ? params.id : undefined),
+					},
 				});
 				if (authzError) {
 					return authzError;
-				}
-				const apiKeyScopeError = authorizeApiKeyRoute(
-					request,
-					principal,
-					route.scopes ?? null,
-					{
-						routePath: route.path,
-						params,
-					},
-				);
-				if (apiKeyScopeError) {
-					return apiKeyScopeError;
 				}
 			}
 

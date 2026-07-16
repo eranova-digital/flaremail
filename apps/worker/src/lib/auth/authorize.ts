@@ -1,7 +1,13 @@
 import { problemResponse, requestInstance } from "../http/problem";
 import type { ApiKeyScope } from "./api-key-scopes";
 import { AuthorizationDeniedError } from "./actions";
-import { authorize, authorizeMailboxAccess } from "./access";
+import {
+	authorize,
+	authorizeAccount,
+	authorizeDraftCommand,
+	authorizeMailbox,
+	authorizeMailboxAccess,
+} from "./access";
 import type { AuthAction, AuthResource } from "./actions";
 import type { RoutePermission } from "./types";
 import type { Principal } from "./types";
@@ -17,31 +23,12 @@ export {
 export type { AccountOperation, MailboxOperation } from "./actions";
 export type { AuthAction, AuthResource } from "./actions";
 
-export async function authorizeRequest(
-	request: Request,
-	principal: Principal,
-	action: AuthAction,
-	resource: AuthResource = {},
-): Promise<Response | null> {
-	try {
-		authorize(principal, action, resource);
-		return null;
-	} catch (error) {
-		if (error instanceof AuthorizationDeniedError) {
-			const status = error.message === "Account is suspended" ? 401 : 403;
-			const code = status === 401 ? "unauthorized" : "forbidden";
-			return problemResponse(status, error.message, {
-				code,
-				instance: requestInstance(request),
-			});
-		}
-		throw error;
-	}
-}
-
-export type ApiKeyScopeContext = {
+export type AuthorizeRouteInput = {
+	action: AuthAction;
+	scopes?: readonly ApiKeyScope[] | null;
 	routePath: string;
 	params: Record<string, string>;
+	resource?: AuthResource;
 };
 
 /**
@@ -49,9 +36,9 @@ export type ApiKeyScopeContext = {
  * Temporary self/other profile-picture override until contextual scopes land on RouteDefinition.
  */
 export function resolveApiKeyScopesForRoute(
-	scopes: readonly ApiKeyScope[] | null,
+	scopes: readonly ApiKeyScope[] | null | undefined,
 	principal: Principal,
-	context: ApiKeyScopeContext,
+	context: { routePath: string; params: Record<string, string> },
 ): readonly ApiKeyScope[] | null {
 	if (
 		context.routePath === "/api/v1/accounts/:id/profile-picture" &&
@@ -60,14 +47,14 @@ export function resolveApiKeyScopesForRoute(
 	) {
 		return ["profile_picture:read"];
 	}
-	return scopes;
+	return scopes ?? null;
 }
 
-export function authorizeApiKeyRoute(
+function authorizeApiKeyScopes(
 	request: Request,
 	principal: Principal,
-	scopes: readonly ApiKeyScope[] | null,
-	context: ApiKeyScopeContext,
+	scopes: readonly ApiKeyScope[] | null | undefined,
+	context: { routePath: string; params: Record<string, string> },
 ): Response | null {
 	if (principal.kind !== "api_key") {
 		return null;
@@ -93,12 +80,72 @@ export function authorizeApiKeyRoute(
 	});
 }
 
-/** @deprecated Use authorizeRequest — kept for incremental migration. */
+/**
+ * Single request-authz seam: coarse RBAC then API key scopes.
+ */
+export async function authorizeRoute(
+	request: Request,
+	principal: Principal,
+	input: AuthorizeRouteInput,
+): Promise<Response | null> {
+	try {
+		authorize(principal, input.action, input.resource ?? {});
+	} catch (error) {
+		if (error instanceof AuthorizationDeniedError) {
+			const status = error.message === "Account is suspended" ? 401 : 403;
+			const code = status === 401 ? "unauthorized" : "forbidden";
+			return problemResponse(status, error.message, {
+				code,
+				instance: requestInstance(request),
+			});
+		}
+		throw error;
+	}
+
+	return authorizeApiKeyScopes(request, principal, input.scopes, {
+		routePath: input.routePath,
+		params: input.params,
+	});
+}
+
+/** @deprecated Prefer authorizeRoute. */
+export async function authorizeRequest(
+	request: Request,
+	principal: Principal,
+	action: AuthAction,
+	resource: AuthResource = {},
+): Promise<Response | null> {
+	return authorizeRoute(request, principal, {
+		action,
+		scopes: null,
+		routePath: "",
+		params: {},
+		resource,
+	});
+}
+
+/** @deprecated Prefer authorizeRoute. */
+export function authorizeApiKeyRoute(
+	request: Request,
+	principal: Principal,
+	scopes: readonly ApiKeyScope[] | null,
+	context: { routePath: string; params: Record<string, string> },
+): Response | null {
+	return authorizeApiKeyScopes(request, principal, scopes, context);
+}
+
+/** @deprecated Use authorizeRoute — kept for incremental migration. */
 export async function authorizePrincipal(
 	request: Request,
 	principal: Principal,
 	permission: RoutePermission,
 	context?: { domainId?: string; mailboxId?: string },
 ): Promise<Response | null> {
-	return authorizeRequest(request, principal, permission, context ?? {});
+	return authorizeRoute(request, principal, {
+		action: permission,
+		scopes: null,
+		routePath: "",
+		params: {},
+		resource: context ?? {},
+	});
 }
