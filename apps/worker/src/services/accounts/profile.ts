@@ -136,6 +136,9 @@ export async function updateAccountProfile(
 			if (value === undefined) {
 				continue;
 			}
+			if (principal.kind === "api_key" && field === "recoveryAddress") {
+				continue;
+			}
 			if (isSelf && field === "recoveryAddress") {
 				continue;
 			}
@@ -157,7 +160,7 @@ export async function updateAccountProfile(
 		}
 	}
 
-	if (input.lockedFields && canManageLocks) {
+	if (input.lockedFields && canManageLocks && principal.kind !== "api_key") {
 		const nextLocks = input.lockedFields.filter((field): field is ProfileLockableField =>
 			(PROFILE_LOCKABLE_FIELDS as readonly string[]).includes(field),
 		);

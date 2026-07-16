@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { AuthCodeInput, isAuthCodeComplete } from "@/components/auth/AuthCodeInput";
+import { ApiKeysSection } from "@/components/settings/ApiKeysSection";
 import { TotpCodeInput, isTotpCodeComplete } from "@/components/auth/TotpCodeInput";
 import { SessionsSection } from "@/components/settings/SessionsSection";
 import { PasskeysSection } from "@/components/settings/PasskeysSection";
@@ -13,8 +14,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import {
 	confirmMfa,
+	createApiKey,
+	fetchApiKeys,
 	disableMfa,
 	fetchMfaStatus,
+	revokeApiKey,
 	sendMfaDisableRecoveryCode,
 	setupMfa,
 } from "@/lib/auth/api";
@@ -413,6 +417,20 @@ export function SecuritySection() {
 			</Card>
 
 			<PasskeysSection />
+
+			<ApiKeysSection
+				title="API keys"
+				description="Create scoped API keys for scripts and integrations. Effective access is your account permissions intersected with the scopes you choose."
+				emptyState="No API keys created yet."
+				createLabel="Create API key"
+				dialogTitle="Create API key"
+				dialogDescription="Choose a name and the narrowest scopes this key needs."
+				namePlaceholder="Mailbox sync script"
+				secretTitle="New API key created"
+				loadKeys={fetchApiKeys}
+				createKey={createApiKey}
+				revokeKey={revokeApiKey}
+			/>
 
 			<SessionsSection />
 		</div>

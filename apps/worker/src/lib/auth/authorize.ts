@@ -1,4 +1,5 @@
 import { problemResponse, requestInstance } from "../http/problem";
+import { apiKeyScopesForRoute } from "./api-key-scopes";
 import { actionForPath, AuthorizationDeniedError } from "./actions";
 import { authorize, authorizeMailboxAccess } from "./access";
 import type { AuthAction, AuthResource } from "./actions";
@@ -33,6 +34,40 @@ export async function authorizeRequest(
 		}
 		throw error;
 	}
+}
+
+export function authorizeApiKeyRoute(
+	request: Request,
+	principal: Principal,
+	method: string,
+	routePath: string,
+	params: Record<string, string> = {},
+): Response | null {
+	if (principal.kind !== "api_key") {
+		return null;
+	}
+
+	const requiredScopes = apiKeyScopesForRoute(method, routePath, {
+		principal,
+		params,
+	});
+	if (!requiredScopes) {
+		return problemResponse(403, "API keys cannot access this endpoint", {
+			code: "forbidden",
+			instance: requestInstance(request),
+		});
+	}
+
+	const scopes = new Set(principal.apiKeyScopes ?? []);
+	if (requiredScopes.some((scope) => scopes.has(scope))) {
+		return null;
+	}
+
+	const scopeList = requiredScopes.join("' or '");
+	return problemResponse(403, `API key scope '${scopeList}' is required`, {
+		code: "forbidden",
+		instance: requestInstance(request),
+	});
 }
 
 /** @deprecated Use authorizeRequest — kept for incremental migration. */

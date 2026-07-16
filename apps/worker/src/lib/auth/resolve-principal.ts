@@ -3,6 +3,7 @@ import { jwtVerify } from "jose";
 
 import { withDb } from "../../db/client";
 import { apiKeys, oidcClients, sessions } from "../../db/schema";
+import { parseStoredApiKeyScopes } from "./api-key-scopes";
 import { parseCookies, SESSION_COOKIE_NAME } from "./cookies";
 import { hashSecret } from "./password";
 import { loadPrincipalForAccount } from "./principal";
@@ -10,17 +11,12 @@ import { touchSession } from "../../services/auth-session";
 import type { Principal } from "./types";
 import { problemResponse, requestInstance } from "../http/problem";
 
-const API_KEY_PREFIX = "fm_";
+const API_KEY_PREFIX = "fmu_";
 
 export async function resolvePrincipal(
 	request: Request,
 	env: Env,
 ): Promise<Principal | Response> {
-	const legacy = await tryLegacyBearer(request, env);
-	if (legacy) {
-		return legacy;
-	}
-
 	const apiKeyPrincipal = await tryApiKey(request, env);
 	if (apiKeyPrincipal) {
 		if (apiKeyPrincipal instanceof Response) {
@@ -51,32 +47,6 @@ export async function resolvePrincipal(
 	});
 }
 
-async function tryLegacyBearer(
-	request: Request,
-	env: Env,
-): Promise<Principal | null> {
-	const header = request.headers.get("Authorization");
-	if (!header?.startsWith("Bearer ") || !env.API_BEARER_TOKEN) {
-		return null;
-	}
-	const token = header.slice("Bearer ".length).trim();
-	if (token !== env.API_BEARER_TOKEN || token.startsWith(API_KEY_PREFIX)) {
-		return null;
-	}
-	return {
-		kind: "legacy",
-		accountId: null,
-		isIntendant: true,
-		role: "superadmin",
-		status: "active",
-		loginIdentifier: null,
-		primaryMailboxId: null,
-		domainIds: [],
-		grantMailboxIds: [],
-		sharedMailboxAssignment: [],
-	};
-}
-
 async function tryApiKey(
 	request: Request,
 	env: Env,
@@ -91,7 +61,7 @@ async function tryApiKey(
 	}
 
 	return withDb(env, async (db) => {
-		const prefix = token.slice(0, 11);
+		const prefix = token.slice(0, 16);
 		const [row] = await db
 			.select()
 			.from(apiKeys)
@@ -110,7 +80,17 @@ async function tryApiKey(
 				instance: requestInstance(request),
 			});
 		}
-		const principal = await loadPrincipalForAccount(db, row.accountId, "api_key");
+
+		await db
+			.update(apiKeys)
+			.set({ lastUsedAt: new Date() })
+			.where(eq(apiKeys.id, row.id));
+
+		const scopes = parseStoredApiKeyScopes(row.scopes ?? []);
+		const principal = await loadPrincipalForAccount(db, row.accountId, "api_key", {
+			apiKeyId: row.id,
+			apiKeyScopes: scopes,
+		});
 		if (!principal || principal.status === "suspended") {
 			return problemResponse(401, "Invalid API key", {
 				code: "unauthorized",
@@ -152,7 +132,7 @@ async function tryOidcBearer(
 					});
 				}
 				return {
-					kind: "oidc_client" as const,
+					kind: "oidc_client",
 					accountId: null,
 					isIntendant: false,
 					role: null,

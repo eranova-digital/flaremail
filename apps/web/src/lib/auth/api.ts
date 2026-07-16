@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/api/request";
 import { ApiError } from "@/lib/api/errors";
 import type {
 	Account,
+	ApiKeySummary,
 	AuthSession,
 	MfaSetup,
 	MfaStatus,
@@ -110,6 +111,27 @@ export function revokeAllSessions(options?: {
 }): Promise<{ ok: true; signedOutCurrent: boolean }> {
 	const query = options?.includeCurrent ? "?includeCurrent=true" : "";
 	return apiRequest(`/auth/sessions${query}`, { method: "DELETE" });
+}
+
+export function fetchApiKeys(): Promise<{
+	items: ApiKeySummary[];
+	availableScopes: string[];
+}> {
+	return apiRequest("/api-keys");
+}
+
+export function createApiKey(input: {
+	name: string;
+	scopes: string[];
+}): Promise<{ secret: string; prefix: string; scopes: string[] }> {
+	return apiRequest("/api-keys", {
+		method: "POST",
+		body: JSON.stringify(input),
+	});
+}
+
+export function revokeApiKey(keyId: string): Promise<{ ok: true }> {
+	return apiRequest(`/api-keys/${keyId}`, { method: "DELETE" });
 }
 
 export function activateAccount(input: {

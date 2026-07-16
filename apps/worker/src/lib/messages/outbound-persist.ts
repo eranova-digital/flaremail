@@ -5,9 +5,9 @@ import {
 	findThreadMailbox,
 	linkMessageMailboxes,
 	prepareThreadForMessage,
-	type ThreadFolder,
 	type ThreadTouchData,
 } from "../thread-mailbox";
+import type { ThreadFolder } from "../mailbox-types";
 import { isBlackholeMailboxType } from "../mailbox-types";
 import { loadMailboxForSend } from "../mailbox-queries";
 import {

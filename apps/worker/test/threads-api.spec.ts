@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import worker from "../src/index";
 import { PROBLEM_CONTENT_TYPE } from "../src/lib/http/problem";
-import { authHeaders } from "./helpers/auth";
+import { authHeaders, createSessionHeaders } from "./helpers/auth";
 
 describe("threads API", () => {
 	it("rejects thread list without authorization", async () => {
@@ -41,7 +41,7 @@ describe("outbound-mail service (HTTP)", () => {
 			"http://example.com/api/v1/messages/drafts",
 			{
 				method: "POST",
-				headers: authHeaders(env.API_BEARER_TOKEN),
+				headers: await createSessionHeaders(),
 				body: JSON.stringify({
 					mailboxId: "00000000-0000-0000-0000-000000000001",
 					subject: "Missing body",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { authorize } from "../src/lib/auth/access";
+import { AuthorizationDeniedError } from "../src/lib/auth/actions";
 import type { Principal } from "../src/lib/auth/types";
 
 function basePrincipal(overrides: Partial<Principal> = {}): Principal {
@@ -131,6 +132,20 @@ describe("authorize", () => {
 				{ domainId: "dom-1" },
 			),
 		).not.toThrow();
+	});
+
+	it("denies API key principals without platform role on platform actions", () => {
+		expect(() =>
+			authorize(
+				basePrincipal({
+					kind: "api_key",
+					accountId: "acc-1",
+					role: "user",
+					apiKeyScopes: ["accounts:list"],
+				}),
+				"platform",
+			),
+		).toThrow(AuthorizationDeniedError);
 	});
 });
 

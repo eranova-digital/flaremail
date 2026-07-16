@@ -7,13 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import worker from "../src/index";
 import { PROBLEM_CONTENT_TYPE } from "../src/lib/http/problem";
-
-function authHeaders(token = env.API_BEARER_TOKEN): HeadersInit {
-	return {
-		Authorization: `Bearer ${token}`,
-		"Content-Type": "application/json",
-	};
-}
+import { authHeaders, createSessionHeaders } from "./helpers/auth";
 
 describe("v1 API auth", () => {
 	it("rejects protected routes without authorization", async () => {
@@ -61,9 +55,9 @@ describe("v1 API auth", () => {
 	});
 
 	it("validates direct send payload with RFC 9457 problem details", async () => {
-		const request = new IncomingRequest("http://example.com/api/v1/messages/send", {
+		const request = new Request("http://example.com/api/v1/messages/send", {
 			method: "POST",
-			headers: authHeaders(),
+			headers: await createSessionHeaders(),
 			body: JSON.stringify({
 				mailboxId: "00000000-0000-0000-0000-000000000001",
 				subject: "Missing recipients",
@@ -86,8 +80,8 @@ describe("v1 API auth", () => {
 	});
 
 	it("requires mailboxId on thread list", async () => {
-		const request = new IncomingRequest("http://example.com/api/v1/threads", {
-			headers: authHeaders(),
+		const request = new Request("http://example.com/api/v1/threads", {
+			headers: await createSessionHeaders(),
 		});
 		const ctx = createExecutionContext();
 		const response = await worker.fetch(request, env, ctx);
@@ -99,9 +93,9 @@ describe("v1 API auth", () => {
 	});
 
 	it("requires mailboxId on message preview", async () => {
-		const request = new IncomingRequest(
+		const request = new Request(
 			"http://example.com/api/v1/messages/00000000-0000-0000-0000-000000000001/preview",
-			{ headers: authHeaders() },
+			{ headers: await createSessionHeaders() },
 		);
 		const ctx = createExecutionContext();
 		const response = await worker.fetch(request, env, ctx);
@@ -113,8 +107,8 @@ describe("v1 API auth", () => {
 	});
 
 	it("returns RFC 9457 problem for unknown routes", async () => {
-		const request = new IncomingRequest("http://example.com/api/v1/unknown", {
-			headers: authHeaders(),
+		const request = new Request("http://example.com/api/v1/unknown", {
+			headers: await createSessionHeaders(),
 		});
 		const ctx = createExecutionContext();
 		const response = await worker.fetch(request, env, ctx);
@@ -125,7 +119,7 @@ describe("v1 API auth", () => {
 	});
 
 	it("serves OpenAPI document without auth", async () => {
-		const request = new IncomingRequest("http://example.com/api/v1/openapi.json");
+		const request = new Request("http://example.com/api/v1/openapi.json");
 		const ctx = createExecutionContext();
 		const response = await worker.fetch(request, env, ctx);
 		await waitOnExecutionContext(ctx);

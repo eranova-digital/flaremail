@@ -78,11 +78,11 @@ export function canAccessOrganizationTab(
 	account: Account | null,
 	settings?: Pick<InstanceSettings, "organizationTabAccess">,
 ): boolean {
-	if (hasServerCapabilities(account.capabilities)) {
-		return account.capabilities.accessOrganizationTab;
-	}
 	if (!account) {
 		return false;
+	}
+	if (hasServerCapabilities(account.capabilities)) {
+		return account.capabilities.accessOrganizationTab;
 	}
 	if (account.isIntendant) {
 		return true;

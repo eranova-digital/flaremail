@@ -53,7 +53,7 @@ export function useComposeDraft(
 	const session = useMemo(
 		() => new ComposeSession(options?.existingDraftId ?? null),
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- one session per compose mount
-		[mailboxId, options?.existingDraftId, options?.reply?.messageId, options?.forward?.messageId],
+		[mailboxId, options?.existingDraftId, options?.reply?.inReplyToMessageId, options?.forward?.messageId],
 	);
 
 	const fieldsRef = useRef(fields);
