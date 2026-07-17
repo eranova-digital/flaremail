@@ -7,6 +7,7 @@ import {
 	primaryKey,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 	varchar,
@@ -709,6 +710,10 @@ export const oidcClients = pgTable("oidc_clients", {
 	allowedScopes: text("allowed_scopes").array().notNull(),
 	m2mPermissions: text("m2m_permissions").array().notNull().default([]),
 	isConfidential: boolean("is_confidential").notNull().default(true),
+	requireConsent: boolean("require_consent").notNull().default(true),
+	createdByAccountId: uuid("created_by_account_id").references(() => accounts.id, {
+		onDelete: "set null",
+	}),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
@@ -744,6 +749,7 @@ export const oidcRefreshTokens = pgTable(
 	{
 		id: uuid("id").primaryKey(),
 		tokenHash: text("token_hash").notNull().unique(),
+		familyId: uuid("family_id").notNull(),
 		clientId: text("client_id").notNull(),
 		accountId: uuid("account_id")
 			.notNull()
@@ -755,7 +761,56 @@ export const oidcRefreshTokens = pgTable(
 			.notNull()
 			.defaultNow(),
 	},
-	(table) => [index("oidc_refresh_tokens_account_id_idx").on(table.accountId)],
+	(table) => [
+		index("oidc_refresh_tokens_account_id_idx").on(table.accountId),
+		index("oidc_refresh_tokens_family_id_idx").on(table.familyId),
+	],
+);
+
+export const oidcConsentGrants = pgTable(
+	"oidc_consent_grants",
+	{
+		id: uuid("id").primaryKey(),
+		accountId: uuid("account_id")
+			.notNull()
+			.references(() => accounts.id, { onDelete: "cascade" }),
+		clientId: text("client_id").notNull(),
+		scopes: text("scopes").array().notNull(),
+		grantedAt: timestamp("granted_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("oidc_consent_grants_client_id_idx").on(table.clientId),
+		unique("oidc_consent_grants_account_client_uid").on(
+			table.accountId,
+			table.clientId,
+		),
+	],
+);
+
+export const oidcPendingAuthorizations = pgTable(
+	"oidc_pending_authorizations",
+	{
+		id: uuid("id").primaryKey(),
+		clientId: text("client_id").notNull(),
+		redirectUri: text("redirect_uri").notNull(),
+		scopes: text("scopes").array().notNull(),
+		state: text("state"),
+		nonce: text("nonce"),
+		codeChallenge: text("code_challenge").notNull(),
+		codeChallengeMethod: text("code_challenge_method").notNull(),
+		accountId: uuid("account_id").references(() => accounts.id, {
+			onDelete: "cascade",
+		}),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("oidc_pending_authorizations_expires_at_idx").on(table.expiresAt),
+	],
 );
 
 export const organizationTabAccessEnum = pgEnum("organization_tab_access", [
@@ -842,3 +897,5 @@ export type Session = typeof sessions.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
 export type OidcClient = typeof oidcClients.$inferSelect;
+export type OidcConsentGrant = typeof oidcConsentGrants.$inferSelect;
+export type OidcPendingAuthorization = typeof oidcPendingAuthorizations.$inferSelect;
