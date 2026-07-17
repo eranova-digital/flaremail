@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Fingerprint, Loader2 } from "lucide-react";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { getPostLoginPath } from "@/lib/auth/post-login";
+import { getPostLoginPath, isFullPageReturnTo, isSafeReturnTo } from "@/lib/auth/post-login";
 import { isPasskeySupported } from "@/lib/auth/passkey-support";
 import { getErrorMessage } from "@/lib/api/errors";
 import type { Account } from "@/lib/auth/types";
@@ -27,11 +27,15 @@ export function LoginPage() {
 		useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const [searchParams] = useSearchParams();
 	const passkeySupported = isPasskeySupported();
 	const locationState = location.state as
 		| { from?: string; success?: string }
 		| null;
-	const from = locationState?.from;
+	const returnToParam = searchParams.get("return_to");
+	const from = isSafeReturnTo(returnToParam)
+		? returnToParam
+		: locationState?.from;
 	const success = locationState?.success;
 
 	const [email, setEmail] = useState("");
@@ -49,8 +53,22 @@ export function LoginPage() {
 	}
 
 	if (isAuthenticated) {
-		return <Navigate to={getPostLoginPath(account, from)} replace />;
+		const path = getPostLoginPath(account, from);
+		if (isFullPageReturnTo(path)) {
+			window.location.replace(path);
+			return <PageLoader label="Continuing…" />;
+		}
+		return <Navigate to={path} replace />;
 	}
+
+	const finishLogin = (result: Account) => {
+		const path = getPostLoginPath(result, from);
+		if (isFullPageReturnTo(path)) {
+			window.location.replace(path);
+			return;
+		}
+		navigate(path, { replace: true });
+	};
 
 	const handlePasswordSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
@@ -73,7 +91,7 @@ export function LoginPage() {
 				setMfaCode("");
 				return;
 			}
-			navigate(getPostLoginPath(result, from), { replace: true });
+			finishLogin(result);
 		} catch (submitError) {
 			if (attempt === loginAttemptRef.current) {
 				setError(getErrorMessage(submitError));
@@ -102,7 +120,7 @@ export function LoginPage() {
 			if (attempt !== loginAttemptRef.current) {
 				return;
 			}
-			navigate(getPostLoginPath(me, from), { replace: true });
+			finishLogin(me);
 		} catch (submitError) {
 			if (attempt === loginAttemptRef.current) {
 				setError(getErrorMessage(submitError));
@@ -146,7 +164,7 @@ export function LoginPage() {
 			if (attempt !== loginAttemptRef.current) {
 				return;
 			}
-			navigate(getPostLoginPath(me, from), { replace: true });
+			finishLogin(me);
 		} catch (submitError) {
 			if (attempt === loginAttemptRef.current) {
 				setError(getErrorMessage(submitError));

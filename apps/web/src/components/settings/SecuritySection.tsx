@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { AuthCodeInput, isAuthCodeComplete } from "@/components/auth/AuthCodeInput";
 import { ApiKeysSection } from "@/components/settings/ApiKeysSection";
+import { ConnectedAppsSection } from "@/components/settings/ConnectedAppsSection";
 import { TotpCodeInput, isTotpCodeComplete } from "@/components/auth/TotpCodeInput";
 import { SessionsSection } from "@/components/settings/SessionsSection";
 import { PasskeysSection } from "@/components/settings/PasskeysSection";
@@ -417,6 +418,8 @@ export function SecuritySection() {
 			</Card>
 
 			<PasskeysSection />
+
+			<ConnectedAppsSection />
 
 			<ApiKeysSection
 				title="API keys"

@@ -7,6 +7,7 @@ import { RequireAuth } from "@/lib/auth/RequireAuth";
 import { RequireSecurityCompliance } from "@/lib/auth/RequireSecurityCompliance";
 import { ActivatePage } from "@/routes/ActivatePage";
 import { BootstrapPage } from "@/routes/BootstrapPage";
+import { ConsentPage } from "@/routes/ConsentPage";
 import { DefaultFolderRedirect } from "@/routes/DefaultFolderRedirect";
 import { DomainValidationPage } from "@/routes/DomainValidationPage";
 import { EmptyReadingPane } from "@/routes/EmptyReadingPane";
@@ -48,6 +49,7 @@ export default function App() {
 			<Route path="/activate" element={<ActivatePage />} />
 			<Route path="/reset-password" element={<ResetPasswordPage />} />
 			<Route element={<RequireAuth />}>
+				<Route path="/oauth/consent" element={<ConsentPage />} />
 				<Route path="/security-compliance" element={<SecurityCompliancePage />} />
 				<Route element={<RequireSecurityCompliance />}>
 					<Route path="/" element={<HomeRedirect />} />

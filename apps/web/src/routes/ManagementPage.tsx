@@ -5,6 +5,7 @@ import { MailboxSection } from "@/components/settings/MailboxSection";
 import { ManagerMailboxGrantsSection } from "@/components/settings/ManagerMailboxGrantsSection";
 import { AccountsSection } from "@/components/settings/AccountsSection";
 import { OrganizationSection } from "@/components/settings/OrganizationSection";
+import { OidcClientsSection } from "@/components/settings/OidcClientsSection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsShell } from "@/components/layout/SettingsShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,12 +15,13 @@ import {
 	canAccessMailboxesTab,
 	canAccessManagementPage,
 	canManageMailboxes,
+	canManageOidcClients,
 	showsManagerMailboxGrantsTab,
 } from "@/lib/accounts/permissions";
 import { useCanAccessOrganizationTab } from "@/hooks/use-instance-settings";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
-const ALL_TABS = ["domains", "mailboxes", "accounts", "organization"] as const;
+const ALL_TABS = ["domains", "mailboxes", "accounts", "organization", "oidc"] as const;
 type ManagementTab = (typeof ALL_TABS)[number];
 
 function isManagementTab(value: string | null): value is ManagementTab {
@@ -31,6 +33,7 @@ function defaultTab(
 	showMailboxes: boolean,
 	showAccounts: boolean,
 	showOrganization: boolean,
+	showOidc: boolean,
 ): ManagementTab {
 	if (showDomains) {
 		return "domains";
@@ -44,6 +47,9 @@ function defaultTab(
 	if (showOrganization) {
 		return "organization";
 	}
+	if (showOidc) {
+		return "oidc";
+	}
 	return "domains";
 }
 
@@ -53,12 +59,14 @@ function resolveActiveTab(
 	showMailboxes: boolean,
 	showAccounts: boolean,
 	showOrganization: boolean,
+	showOidc: boolean,
 ): ManagementTab {
 	const fallback = defaultTab(
 		showDomains,
 		showMailboxes,
 		showAccounts,
 		showOrganization,
+		showOidc,
 	);
 
 	if (!isManagementTab(tabParam)) {
@@ -76,6 +84,9 @@ function resolveActiveTab(
 	if (tabParam === "organization" && !showOrganization) {
 		return fallback;
 	}
+	if (tabParam === "oidc" && !showOidc) {
+		return fallback;
+	}
 	return tabParam;
 }
 
@@ -88,12 +99,14 @@ export function ManagementPage() {
 	const showMailboxes = canAccessMailboxesTab(account);
 	const showAccounts = canAccessAccountsTab(account);
 	const showOrganization = organizationAccess.canAccess;
+	const showOidc = canManageOidcClients(account);
 	const activeTab = resolveActiveTab(
 		tabParam,
 		showDomains,
 		showMailboxes,
 		showAccounts,
 		showOrganization,
+		showOidc,
 	);
 
 	if (!canAccessManagementPage(account)) {
@@ -133,6 +146,7 @@ export function ManagementPage() {
 					{showOrganization ? (
 						<TabsTrigger value="organization">Organization</TabsTrigger>
 					) : null}
+					{showOidc ? <TabsTrigger value="oidc">OIDC clients</TabsTrigger> : null}
 				</TabsList>
 				{showDomains ? (
 					<TabsContent value="domains">
@@ -156,6 +170,11 @@ export function ManagementPage() {
 				{showOrganization ? (
 					<TabsContent value="organization">
 						<OrganizationSection />
+					</TabsContent>
+				) : null}
+				{showOidc ? (
+					<TabsContent value="oidc">
+						<OidcClientsSection />
 					</TabsContent>
 				) : null}
 			</Tabs>

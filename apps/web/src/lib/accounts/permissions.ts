@@ -162,6 +162,13 @@ export function canRegisterDomains(account: Account | null): boolean {
 	return effectiveCapabilities(account)?.registerDomains ?? false;
 }
 
+export function canManageOidcClients(account: Account | null): boolean {
+	if (!account) {
+		return false;
+	}
+	return account.isIntendant || account.role === "superadmin";
+}
+
 export function canAccessDomainsTab(account: Account | null): boolean {
 	return effectiveCapabilities(account)?.accessDomainsTab ?? false;
 }
