@@ -28,15 +28,18 @@ Implement OIDC provider endpoints: discovery, authorize, token, JWKS, userinfo. 
 
 ## Implementation Decisions
 
-- Endpoints: `/.well-known/openid-configuration`, `/oauth/authorize`, `/oauth/token`, `/oauth/jwks`, `/oauth/userinfo` (paths under `/api/v1` or root — pick one namespace, document in OpenAPI).
-- **OIDC client** table: client_id, client_secret_hash (confidential), redirect_uris[], grant_types, scopes_allowed[], m2m_permissions[], created_by account.
-- Authorization Code + PKCE (S256); refresh token rotation recommended.
-- ID token claims: `sub` (account UUID), `email` (primary mailbox), `name` (display name). No `email_verified`.
-- Access token: JWT signed RS256 or ES256; includes `sub`, scopes, client_id, token type (user vs client_credentials).
+- Endpoints: `/.well-known/openid-configuration`, `/api/v1/oauth/authorize`, `/api/v1/oauth/token`, `/api/v1/oauth/jwks`, `/api/v1/oauth/userinfo`, plus `/api/v1/oauth/pending/:id` and `/api/v1/oauth/consent` for the web consent UI.
+- **OIDC client** table: client_id, client_secret_hash (confidential), redirect_uris[], allowed_scopes[], m2m_permissions[], is_confidential, require_consent (default true), created_by account.
+- Authorization Code + PKCE (**S256 required for all clients**, ADR-0008); refresh token rotation with family reuse detection.
+- ID/access tokens signed **ES256** via `OIDC_SIGNING_JWK` (ADR-0007); JWKS publishes the public key only.
+- Redirect URI validation: exact string match; OAuth error redirects only when client_id and redirect_uri are both valid.
+- Unauthenticated authorize → web `/login?return_to=…` then resume pending authorization; consent UI at web `/oauth/consent`.
+- Consent grants persisted per account–client when require_consent; skipped with no grant row when require_consent is false. Self-service and intendant/superadmin revoke.
 - Client Credentials: token has `client_id` principal with registered m2m permissions (not tied to **account**).
 - User access token on mail API: RBAC middleware resolves OIDC user principal same as session; scopes gate mail endpoints (`mail:read`, `mail:send` minimum).
 - Intendant cannot complete user OIDC flows (no primary mailbox / excluded from SSO).
-- Consent screen: first-party styled; records granted scopes per account-client pair.
+- TTLs: authorization code 10m, access/ID 1h, refresh 30d.
+- Admin: list/update/delete/regenerate-secret under `/api/v1/oidc-clients`; web Management → OIDC clients tab.
 
 ### Scope vocabulary (V1)
 
