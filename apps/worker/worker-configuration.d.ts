@@ -6,6 +6,7 @@ interface __BaseEnv_Env {
 	HYPERDRIVE: Hyperdrive;
 	EMAIL: SendEmail;
 	SESSION_SECRET: string;
+	OIDC_SIGNING_JWK: string;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
@@ -18,7 +19,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "SESSION_SECRET">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "SESSION_SECRET" | "OIDC_SIGNING_JWK">> {}
 }
 
 // Begin runtime types

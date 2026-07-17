@@ -25,7 +25,7 @@
 		},
 	],
 	"secrets": {
-		"required": ["SESSION_SECRET"],
+		"required": ["SESSION_SECRET", "OIDC_SIGNING_JWK"],
 	},
 	"send_email": [
 		{
