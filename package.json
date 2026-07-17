@@ -22,6 +22,10 @@
 		"web:build": "npm run build -w @test-worker/web",
 		"web:start": "npm run start -w @test-worker/web",
 		"web:test": "npm run test -w @test-worker/web",
-		"web:apigen": "npm run api:generate -w @test-worker/web"
+		"web:apigen": "npm run api:generate -w @test-worker/web",
+		"3p-demo:dev": "npm run dev -w @test-worker/3p-demo",
+		"3p-demo:build": "npm run build -w @test-worker/3p-demo",
+		"3p-demo:db:push": "npm run db:push -w @test-worker/3p-demo",
+		"3p-demo:db:studio": "npm run db:studio -w @test-worker/3p-demo"
 	}
 }
