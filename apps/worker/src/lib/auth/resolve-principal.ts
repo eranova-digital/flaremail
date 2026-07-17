@@ -1,10 +1,10 @@
 import { and, eq, gt } from "drizzle-orm";
-import { jwtVerify } from "jose";
 
 import { withDb } from "../../db/client";
 import { oidcClients, sessions } from "../../db/schema";
 import { API_KEY_PREFIX, resolveApiKeyPrincipal } from "./api-key";
 import { parseCookies, SESSION_COOKIE_NAME } from "./cookies";
+import { verifyOidcJwt } from "./oidc-signing";
 import { hashSecret } from "./password";
 import { loadPrincipalForAccount } from "./principal";
 import { touchSession } from "../../services/auth-session";
@@ -45,6 +45,18 @@ export async function resolvePrincipal(
 	});
 }
 
+/** Session cookie only — no 401 when missing (for OIDC authorize). */
+export async function tryResolveSessionPrincipal(
+	request: Request,
+	env: Env,
+): Promise<Principal | null> {
+	const result = await trySession(request, env);
+	if (!result || result instanceof Response) {
+		return null;
+	}
+	return result;
+}
+
 async function tryApiKey(
 	request: Request,
 	env: Env,
@@ -79,8 +91,7 @@ async function tryOidcBearer(
 	}
 
 	try {
-		const secret = new TextEncoder().encode(requireSessionSecret(env));
-		const { payload } = await jwtVerify(token, secret);
+		const { payload } = await verifyOidcJwt(env, token);
 		if (payload.typ === "client_credentials") {
 			return withDb(env, async (db) => {
 				const clientId = String(payload.client_id ?? "");
@@ -96,7 +107,7 @@ async function tryOidcBearer(
 					});
 				}
 				return {
-					kind: "oidc_client",
+					kind: "oidc_client" as const,
 					accountId: null,
 					isIntendant: false,
 					role: null,
@@ -112,15 +123,20 @@ async function tryOidcBearer(
 			});
 		}
 
-		const accountId = String(payload.sub ?? "");
+		const accountId = typeof payload.sub === "string" ? payload.sub : null;
+		if (!accountId) {
+			return problemResponse(401, "Invalid token", {
+				code: "unauthorized",
+				instance: requestInstance(request),
+			});
+		}
 		return withDb(env, async (db) => {
 			const principal = await loadPrincipalForAccount(db, accountId, "oidc_user", {
-				oidcScopes: Array.isArray(payload.scope)
-					? payload.scope.map(String)
-					: String(payload.scope ?? "")
-							.split(" ")
-							.filter(Boolean),
-				oidcClientId: String(payload.client_id ?? ""),
+				oidcScopes: String(payload.scope ?? "")
+					.split(/\s+/)
+					.filter(Boolean),
+				oidcClientId:
+					typeof payload.client_id === "string" ? payload.client_id : undefined,
 			});
 			if (!principal || principal.status === "suspended") {
 				return problemResponse(401, "Invalid token", {

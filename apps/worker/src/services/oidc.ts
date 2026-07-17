@@ -1,6 +1,5 @@
-import { SignJWT, jwtVerify } from "jose";
-import { and, eq, gt, isNull } from "drizzle-orm";
 import { createHash, timingSafeEqual } from "node:crypto";
+import { and, eq, gt, isNull } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import {
@@ -8,11 +7,49 @@ import {
 	accounts,
 	oidcAuthorizationCodes,
 	oidcClients,
+	oidcConsentGrants,
+	oidcPendingAuthorizations,
 	oidcRefreshTokens,
+	type OidcClient,
+	type OidcPendingAuthorization,
 } from "../db/schema";
 import { randomToken } from "../lib/auth/crypto";
+import { signOidcJwt } from "../lib/auth/oidc-signing";
 import { hashSecret } from "../lib/auth/password";
-import { requireSessionSecret } from "../lib/auth/resolve-principal";
+
+export type { OidcPendingAuthorization };
+
+export const OIDC_IDENTITY_SCOPES = ["openid", "profile", "email"] as const;
+export const OIDC_MAIL_SCOPES = ["mail:read", "mail:send"] as const;
+export const OIDC_SUPPORTED_SCOPES = [
+	...OIDC_IDENTITY_SCOPES,
+	...OIDC_MAIL_SCOPES,
+] as const;
+
+const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
+const PENDING_TTL_MS = 10 * 60 * 1000;
+const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const ACCESS_EXPIRES_IN = 3600;
+
+export class OidcError extends Error {
+	constructor(
+		message: string,
+		readonly code:
+			| "invalid_request"
+			| "invalid_client"
+			| "invalid_grant"
+			| "unauthorized_client"
+			| "access_denied"
+			| "server_error"
+			| "login_required"
+			| "consent_required",
+		readonly status = 400,
+		readonly redirectSafe = false,
+	) {
+		super(message);
+		this.name = "OidcError";
+	}
+}
 
 export function issuerUrl(request: Request): string {
 	const url = new URL(request.url);
@@ -34,44 +71,186 @@ export function discoveryDocument(request: Request) {
 			"client_credentials",
 		],
 		code_challenge_methods_supported: ["S256"],
-		scopes_supported: ["openid", "profile", "email", "mail:read", "mail:send"],
+		scopes_supported: [...OIDC_SUPPORTED_SCOPES],
 		token_endpoint_auth_methods_supported: [
 			"client_secret_post",
 			"client_secret_basic",
 			"none",
 		],
 		subject_types_supported: ["public"],
-		id_token_signing_alg_values_supported: ["HS256"],
+		id_token_signing_alg_values_supported: ["ES256"],
 	};
 }
 
-export async function createOidcClient(
+export function parseScopeList(scope: string | null | undefined): string[] {
+	if (!scope?.trim()) {
+		return ["openid", "profile", "email"];
+	}
+	return [...new Set(scope.split(/\s+/).filter(Boolean))];
+}
+
+export function intersectScopes(requested: string[], allowed: string[]): string[] {
+	const allow = new Set(allowed);
+	return requested.filter((scope) => allow.has(scope));
+}
+
+export function scopesCovered(granted: string[], requested: string[]): boolean {
+	const set = new Set(granted);
+	return requested.every((scope) => set.has(scope));
+}
+
+export function isExactRedirectUri(client: OidcClient, redirectUri: string): boolean {
+	return client.redirectUris.includes(redirectUri);
+}
+
+function verifyPkce(challenge: string, method: string, verifier: string): boolean {
+	if (method !== "S256" || !verifier) {
+		return false;
+	}
+	const digest = createHash("sha256").update(verifier).digest("base64url");
+	const expected = Buffer.from(digest);
+	const actual = Buffer.from(challenge);
+	if (expected.length !== actual.length) {
+		return false;
+	}
+	return timingSafeEqual(expected, actual);
+}
+
+export async function getOidcClientByClientId(
+	db: Database,
+	clientId: string,
+): Promise<OidcClient | null> {
+	const [client] = await db
+		.select()
+		.from(oidcClients)
+		.where(eq(oidcClients.clientId, clientId))
+		.limit(1);
+	return client ?? null;
+}
+
+export async function createPendingAuthorization(
 	db: Database,
 	input: {
-		name: string;
-		redirectUris: string[];
-		allowedScopes: string[];
-		m2mPermissions?: string[];
-		isConfidential?: boolean;
+		clientId: string;
+		redirectUri: string;
+		scopes: string[];
+		state: string | null;
+		nonce: string | null;
+		codeChallenge: string;
+		codeChallengeMethod: string;
 	},
-) {
-	const clientId = `client_${randomToken(8)}`;
-	const clientSecret = input.isConfidential === false ? null : randomToken(24);
-	const id = crypto.randomUUID();
+): Promise<OidcPendingAuthorization> {
 	const now = new Date();
-	await db.insert(oidcClients).values({
-		id,
-		clientId,
-		clientSecretHash: clientSecret ? await hashSecret(clientSecret) : null,
-		name: input.name,
-		redirectUris: input.redirectUris,
-		allowedScopes: input.allowedScopes,
-		m2mPermissions: input.m2mPermissions ?? [],
-		isConfidential: input.isConfidential ?? true,
+	const row = {
+		id: crypto.randomUUID(),
+		clientId: input.clientId,
+		redirectUri: input.redirectUri,
+		scopes: input.scopes,
+		state: input.state,
+		nonce: input.nonce,
+		codeChallenge: input.codeChallenge,
+		codeChallengeMethod: input.codeChallengeMethod,
+		accountId: null as string | null,
+		expiresAt: new Date(now.getTime() + PENDING_TTL_MS),
 		createdAt: now,
-		updatedAt: now,
+	};
+	await db.insert(oidcPendingAuthorizations).values(row);
+	return row;
+}
+
+export async function getPendingAuthorization(
+	db: Database,
+	id: string,
+): Promise<OidcPendingAuthorization | null> {
+	const now = new Date();
+	const [row] = await db
+		.select()
+		.from(oidcPendingAuthorizations)
+		.where(
+			and(
+				eq(oidcPendingAuthorizations.id, id),
+				gt(oidcPendingAuthorizations.expiresAt, now),
+			),
+		)
+		.limit(1);
+	return row ?? null;
+}
+
+export async function bindPendingAuthorizationAccount(
+	db: Database,
+	pendingId: string,
+	accountId: string,
+): Promise<void> {
+	await db
+		.update(oidcPendingAuthorizations)
+		.set({ accountId })
+		.where(eq(oidcPendingAuthorizations.id, pendingId));
+}
+
+export async function deletePendingAuthorization(
+	db: Database,
+	id: string,
+): Promise<void> {
+	await db
+		.delete(oidcPendingAuthorizations)
+		.where(eq(oidcPendingAuthorizations.id, id));
+}
+
+export async function getConsentGrant(
+	db: Database,
+	accountId: string,
+	clientId: string,
+) {
+	const [grant] = await db
+		.select()
+		.from(oidcConsentGrants)
+		.where(
+			and(
+				eq(oidcConsentGrants.accountId, accountId),
+				eq(oidcConsentGrants.clientId, clientId),
+			),
+		)
+		.limit(1);
+	return grant ?? null;
+}
+
+export async function upsertConsentGrant(
+	db: Database,
+	input: { accountId: string; clientId: string; scopes: string[] },
+): Promise<void> {
+	const existing = await getConsentGrant(db, input.accountId, input.clientId);
+	const now = new Date();
+	if (existing) {
+		const merged = [...new Set([...existing.scopes, ...input.scopes])];
+		await db
+			.update(oidcConsentGrants)
+			.set({ scopes: merged, grantedAt: now })
+			.where(eq(oidcConsentGrants.id, existing.id));
+		return;
+	}
+	await db.insert(oidcConsentGrants).values({
+		id: crypto.randomUUID(),
+		accountId: input.accountId,
+		clientId: input.clientId,
+		scopes: input.scopes,
+		grantedAt: now,
 	});
-	return { clientId, clientSecret };
+}
+
+export async function needsConsent(
+	db: Database,
+	client: OidcClient,
+	accountId: string,
+	scopes: string[],
+): Promise<boolean> {
+	if (!client.requireConsent) {
+		return false;
+	}
+	const grant = await getConsentGrant(db, accountId, client.clientId);
+	if (!grant) {
+		return true;
+	}
+	return !scopesCovered(grant.scopes, scopes);
 }
 
 export async function createAuthorizationCode(
@@ -81,10 +260,10 @@ export async function createAuthorizationCode(
 		accountId: string;
 		redirectUri: string;
 		scopes: string[];
-		codeChallenge?: string;
-		codeChallengeMethod?: string;
+		codeChallenge: string;
+		codeChallengeMethod: string;
 	},
-) {
+): Promise<string> {
 	const code = randomToken(24);
 	const now = new Date();
 	await db.insert(oidcAuthorizationCodes).values({
@@ -94,27 +273,77 @@ export async function createAuthorizationCode(
 		accountId: input.accountId,
 		redirectUri: input.redirectUri,
 		scopes: input.scopes,
-		codeChallenge: input.codeChallenge ?? null,
-		codeChallengeMethod: input.codeChallengeMethod ?? null,
-		expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+		codeChallenge: input.codeChallenge,
+		codeChallengeMethod: input.codeChallengeMethod,
+		expiresAt: new Date(now.getTime() + AUTH_CODE_TTL_MS),
 		createdAt: now,
 	});
 	return code;
 }
 
-function verifyPkce(
-	challenge: string | null,
-	method: string | null,
-	verifier: string,
-): boolean {
-	if (!challenge) {
-		return true;
+export function buildClientRedirect(
+	redirectUri: string,
+	params: Record<string, string | undefined>,
+): string {
+	const target = new URL(redirectUri);
+	for (const [key, value] of Object.entries(params)) {
+		if (value !== undefined) {
+			target.searchParams.set(key, value);
+		}
 	}
-	if (method !== "S256") {
-		return false;
+	return target.toString();
+}
+
+export async function completeAuthorization(
+	db: Database,
+	pending: OidcPendingAuthorization,
+	accountId: string,
+): Promise<string> {
+	const code = await createAuthorizationCode(db, {
+		clientId: pending.clientId,
+		accountId,
+		redirectUri: pending.redirectUri,
+		scopes: pending.scopes,
+		codeChallenge: pending.codeChallenge,
+		codeChallengeMethod: pending.codeChallengeMethod,
+	});
+	await deletePendingAuthorization(db, pending.id);
+	return buildClientRedirect(pending.redirectUri, {
+		code,
+		state: pending.state ?? undefined,
+	});
+}
+
+export async function denyAuthorization(
+	db: Database,
+	pending: OidcPendingAuthorization,
+): Promise<string> {
+	await deletePendingAuthorization(db, pending.id);
+	return buildClientRedirect(pending.redirectUri, {
+		error: "access_denied",
+		error_description: "The resource owner denied the request",
+		state: pending.state ?? undefined,
+	});
+}
+
+async function authenticateClient(
+	db: Database,
+	input: { clientId: string; clientSecret?: string },
+): Promise<OidcClient> {
+	const client = await getOidcClientByClientId(db, input.clientId);
+	if (!client) {
+		throw new OidcError("Invalid client", "invalid_client", 401);
 	}
-	const digest = createHash("sha256").update(verifier).digest("base64url");
-	return timingSafeEqual(Buffer.from(digest), Buffer.from(challenge));
+	if (client.isConfidential) {
+		if (!input.clientSecret || !client.clientSecretHash) {
+			throw new OidcError("Client authentication required", "invalid_client", 401);
+		}
+		const secretHash = await hashSecret(input.clientSecret);
+		if (secretHash !== client.clientSecretHash) {
+			throw new OidcError("Invalid client credentials", "invalid_client", 401);
+		}
+	}
+	return client;
 }
 
 export async function exchangeAuthorizationCode(
@@ -129,22 +358,9 @@ export async function exchangeAuthorizationCode(
 		clientSecret?: string;
 	},
 ) {
-	const [client] = await db
-		.select()
-		.from(oidcClients)
-		.where(eq(oidcClients.clientId, input.clientId))
-		.limit(1);
-	if (!client) {
-		throw new Error("Invalid client");
-	}
-	if (client.isConfidential) {
-		if (!input.clientSecret || !client.clientSecretHash) {
-			throw new Error("Client authentication required");
-		}
-		const secretHash = await hashSecret(input.clientSecret);
-		if (secretHash !== client.clientSecretHash) {
-			throw new Error("Invalid client credentials");
-		}
+	const client = await authenticateClient(db, input);
+	if (!input.codeVerifier) {
+		throw new OidcError("code_verifier is required", "invalid_request");
 	}
 
 	const codeHash = await hashSecret(input.code);
@@ -162,16 +378,18 @@ export async function exchangeAuthorizationCode(
 		)
 		.limit(1);
 	if (!authCode || authCode.redirectUri !== input.redirectUri) {
-		throw new Error("Invalid authorization code");
+		throw new OidcError("Invalid authorization code", "invalid_grant");
 	}
 	if (
+		!authCode.codeChallenge ||
+		!authCode.codeChallengeMethod ||
 		!verifyPkce(
 			authCode.codeChallenge,
 			authCode.codeChallengeMethod,
-			input.codeVerifier ?? "",
+			input.codeVerifier,
 		)
 	) {
-		throw new Error("Invalid PKCE verifier");
+		throw new OidcError("Invalid PKCE verifier", "invalid_grant");
 	}
 
 	await db
@@ -179,10 +397,12 @@ export async function exchangeAuthorizationCode(
 		.set({ usedAt: now })
 		.where(eq(oidcAuthorizationCodes.id, authCode.id));
 
+	const scopes = intersectScopes(authCode.scopes, client.allowedScopes);
 	return issueUserTokens(db, env, request, {
 		accountId: authCode.accountId,
 		clientId: client.clientId,
-		scopes: authCode.scopes,
+		scopes,
+		familyId: crypto.randomUUID(),
 	});
 }
 
@@ -192,35 +412,35 @@ export async function exchangeClientCredentials(
 	request: Request,
 	input: { clientId: string; clientSecret?: string; scope?: string },
 ) {
-	const [client] = await db
-		.select()
-		.from(oidcClients)
-		.where(eq(oidcClients.clientId, input.clientId))
-		.limit(1);
-	if (!client?.clientSecretHash || !input.clientSecret) {
-		throw new Error("Invalid client");
+	const client = await authenticateClient(db, {
+		clientId: input.clientId,
+		clientSecret: input.clientSecret,
+	});
+	if (!client.isConfidential) {
+		throw new OidcError(
+			"Public clients cannot use client_credentials",
+			"unauthorized_client",
+		);
 	}
-	const secretHash = await hashSecret(input.clientSecret);
-	if (secretHash !== client.clientSecretHash) {
-		throw new Error("Invalid client credentials");
-	}
-	const secret = new TextEncoder().encode(requireSessionSecret(env));
-	const accessToken = await new SignJWT({
-		typ: "client_credentials",
-		client_id: client.clientId,
-		scope: input.scope ?? client.m2mPermissions.join(" "),
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setIssuer(issuerUrl(request))
-		.setAudience(client.clientId)
-		.setIssuedAt()
-		.setExpirationTime("1h")
-		.sign(secret);
+	const requested = parseScopeList(input.scope ?? client.m2mPermissions.join(" "));
+	const scopes = intersectScopes(requested, client.m2mPermissions);
+	const accessToken = await signOidcJwt(
+		env,
+		{
+			typ: "client_credentials",
+			client_id: client.clientId,
+			scope: scopes.join(" "),
+		},
+		{
+			issuer: issuerUrl(request),
+			audience: client.clientId,
+		},
+	);
 	return {
 		access_token: accessToken,
 		token_type: "Bearer",
-		expires_in: 3600,
-		scope: input.scope ?? client.m2mPermissions.join(" "),
+		expires_in: ACCESS_EXPIRES_IN,
+		scope: scopes.join(" "),
 	};
 }
 
@@ -228,10 +448,12 @@ export async function refreshUserToken(
 	db: Database,
 	env: Env,
 	request: Request,
-	input: { refreshToken: string; clientId: string },
+	input: { refreshToken: string; clientId: string; clientSecret?: string },
 ) {
+	const client = await authenticateClient(db, input);
 	const tokenHash = await hashSecret(input.refreshToken);
 	const now = new Date();
+
 	const [row] = await db
 		.select()
 		.from(oidcRefreshTokens)
@@ -239,18 +461,42 @@ export async function refreshUserToken(
 			and(
 				eq(oidcRefreshTokens.tokenHash, tokenHash),
 				eq(oidcRefreshTokens.clientId, input.clientId),
-				gt(oidcRefreshTokens.expiresAt, now),
-				isNull(oidcRefreshTokens.revokedAt),
 			),
 		)
 		.limit(1);
+
 	if (!row) {
-		throw new Error("Invalid refresh token");
+		throw new OidcError("Invalid refresh token", "invalid_grant");
 	}
+
+	if (row.revokedAt) {
+		await db
+			.update(oidcRefreshTokens)
+			.set({ revokedAt: now })
+			.where(
+				and(
+					eq(oidcRefreshTokens.familyId, row.familyId),
+					isNull(oidcRefreshTokens.revokedAt),
+				),
+			);
+		throw new OidcError("Refresh token reuse detected", "invalid_grant");
+	}
+
+	if (row.expiresAt <= now) {
+		throw new OidcError("Refresh token expired", "invalid_grant");
+	}
+
+	await db
+		.update(oidcRefreshTokens)
+		.set({ revokedAt: now })
+		.where(eq(oidcRefreshTokens.id, row.id));
+
+	const scopes = intersectScopes(row.scopes, client.allowedScopes);
 	return issueUserTokens(db, env, request, {
 		accountId: row.accountId,
 		clientId: row.clientId,
-		scopes: row.scopes,
+		scopes,
+		familyId: row.familyId,
 	});
 }
 
@@ -258,7 +504,12 @@ async function issueUserTokens(
 	db: Database,
 	env: Env,
 	request: Request,
-	input: { accountId: string; clientId: string; scopes: string[] },
+	input: {
+		accountId: string;
+		clientId: string;
+		scopes: string[];
+		familyId: string;
+	},
 ) {
 	const [account] = await db
 		.select()
@@ -266,7 +517,7 @@ async function issueUserTokens(
 		.where(eq(accounts.id, input.accountId))
 		.limit(1);
 	if (!account || account.status !== "active" || account.isIntendant) {
-		throw new Error("Account cannot receive tokens");
+		throw new OidcError("Account cannot receive tokens", "access_denied");
 	}
 	const [profile] = await db
 		.select()
@@ -274,51 +525,51 @@ async function issueUserTokens(
 		.where(eq(accountProfiles.accountId, account.id))
 		.limit(1);
 
-	const secret = new TextEncoder().encode(requireSessionSecret(env));
 	const issuer = issuerUrl(request);
 	const scope = input.scopes.join(" ");
-	const accessToken = await new SignJWT({
-		sub: account.id,
-		client_id: input.clientId,
-		scope,
-		email: account.loginIdentifier,
-		name: profile ? `${profile.firstName} ${profile.lastName}`.trim() : undefined,
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setIssuer(issuer)
-		.setAudience(input.clientId)
-		.setIssuedAt()
-		.setExpirationTime("1h")
-		.sign(secret);
+	const displayName = profile
+		? `${profile.firstName} ${profile.lastName}`.trim()
+		: undefined;
 
-	const idToken = await new SignJWT({
-		sub: account.id,
-		email: account.loginIdentifier,
-		name: profile ? `${profile.firstName} ${profile.lastName}`.trim() : undefined,
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setIssuer(issuer)
-		.setAudience(input.clientId)
-		.setIssuedAt()
-		.setExpirationTime("1h")
-		.sign(secret);
+	const accessToken = await signOidcJwt(
+		env,
+		{
+			sub: account.id,
+			client_id: input.clientId,
+			scope,
+			email: account.loginIdentifier,
+			name: displayName,
+		},
+		{ issuer, audience: input.clientId },
+	);
+
+	const idToken = await signOidcJwt(
+		env,
+		{
+			sub: account.id,
+			email: account.loginIdentifier,
+			name: displayName,
+		},
+		{ issuer, audience: input.clientId },
+	);
 
 	const refreshToken = randomToken(32);
 	const now = new Date();
 	await db.insert(oidcRefreshTokens).values({
 		id: crypto.randomUUID(),
 		tokenHash: await hashSecret(refreshToken),
+		familyId: input.familyId,
 		clientId: input.clientId,
 		accountId: account.id,
 		scopes: input.scopes,
-		expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+		expiresAt: new Date(now.getTime() + REFRESH_TTL_MS),
 		createdAt: now,
 	});
 
 	return {
 		access_token: accessToken,
 		token_type: "Bearer",
-		expires_in: 3600,
+		expires_in: ACCESS_EXPIRES_IN,
 		refresh_token: refreshToken,
 		id_token: idToken,
 		scope,
@@ -332,7 +583,7 @@ export async function getUserInfo(db: Database, accountId: string) {
 		.where(eq(accounts.id, accountId))
 		.limit(1);
 	if (!account) {
-		throw new Error("Account not found");
+		throw new OidcError("Account not found", "invalid_request", 404);
 	}
 	const [profile] = await db
 		.select()
@@ -346,8 +597,94 @@ export async function getUserInfo(db: Database, accountId: string) {
 	};
 }
 
-export async function verifyAccessToken(env: Env, request: Request, token: string) {
-	const secret = new TextEncoder().encode(requireSessionSecret(env));
-	const { payload } = await jwtVerify(token, secret);
-	return payload;
+export async function revokeConsentGrant(
+	db: Database,
+	accountId: string,
+	clientId: string,
+): Promise<boolean> {
+	const grant = await getConsentGrant(db, accountId, clientId);
+	if (!grant) {
+		return false;
+	}
+	const now = new Date();
+	await db.delete(oidcConsentGrants).where(eq(oidcConsentGrants.id, grant.id));
+	await db
+		.update(oidcRefreshTokens)
+		.set({ revokedAt: now })
+		.where(
+			and(
+				eq(oidcRefreshTokens.accountId, accountId),
+				eq(oidcRefreshTokens.clientId, clientId),
+				isNull(oidcRefreshTokens.revokedAt),
+			),
+		);
+	return true;
+}
+
+export async function listConsentGrantsForAccount(db: Database, accountId: string) {
+	const grants = await db
+		.select({
+			id: oidcConsentGrants.id,
+			clientId: oidcConsentGrants.clientId,
+			scopes: oidcConsentGrants.scopes,
+			grantedAt: oidcConsentGrants.grantedAt,
+			clientName: oidcClients.name,
+		})
+		.from(oidcConsentGrants)
+		.leftJoin(oidcClients, eq(oidcConsentGrants.clientId, oidcClients.clientId))
+		.where(eq(oidcConsentGrants.accountId, accountId));
+	return grants.map((g) => ({
+		id: g.id,
+		clientId: g.clientId,
+		clientName: g.clientName ?? g.clientId,
+		scopes: g.scopes,
+		grantedAt: g.grantedAt.toISOString(),
+	}));
+}
+
+export async function listConsentGrantsForClient(db: Database, clientId: string) {
+	const grants = await db
+		.select({
+			id: oidcConsentGrants.id,
+			accountId: oidcConsentGrants.accountId,
+			scopes: oidcConsentGrants.scopes,
+			grantedAt: oidcConsentGrants.grantedAt,
+			loginIdentifier: accounts.loginIdentifier,
+		})
+		.from(oidcConsentGrants)
+		.innerJoin(accounts, eq(oidcConsentGrants.accountId, accounts.id))
+		.where(eq(oidcConsentGrants.clientId, clientId));
+	return grants.map((g) => ({
+		id: g.id,
+		accountId: g.accountId,
+		loginIdentifier: g.loginIdentifier,
+		scopes: g.scopes,
+		grantedAt: g.grantedAt.toISOString(),
+	}));
+}
+
+export async function cascadeDeleteOidcClient(
+	db: Database,
+	client: OidcClient,
+): Promise<void> {
+	const now = new Date();
+	await db
+		.delete(oidcConsentGrants)
+		.where(eq(oidcConsentGrants.clientId, client.clientId));
+	await db
+		.delete(oidcPendingAuthorizations)
+		.where(eq(oidcPendingAuthorizations.clientId, client.clientId));
+	await db
+		.delete(oidcAuthorizationCodes)
+		.where(eq(oidcAuthorizationCodes.clientId, client.clientId));
+	await db
+		.update(oidcRefreshTokens)
+		.set({ revokedAt: now })
+		.where(
+			and(
+				eq(oidcRefreshTokens.clientId, client.clientId),
+				isNull(oidcRefreshTokens.revokedAt),
+			),
+		);
+	await db.delete(oidcClients).where(eq(oidcClients.id, client.id));
 }

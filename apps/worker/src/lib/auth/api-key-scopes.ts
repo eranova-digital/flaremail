@@ -67,6 +67,9 @@ export const API_KEY_SCOPES = [
 	"profile_picture:update",
 	"profile_picture:delete",
 	"oidc_clients:create",
+	"oidc_clients:read",
+	"oidc_clients:update",
+	"oidc_clients:delete",
 	"instance_settings:read",
 	"instance_settings:update",
 ] as const;
@@ -140,6 +143,9 @@ export const SCOPE_ACTION_REQUIREMENTS: Record<ApiKeyScope, AuthAction> = {
 	"profile_picture:update": "authenticated",
 	"profile_picture:delete": "authenticated",
 	"oidc_clients:create": "platform",
+	"oidc_clients:read": "platform",
+	"oidc_clients:update": "platform",
+	"oidc_clients:delete": "platform",
 	"instance_settings:read": "platform",
 	"instance_settings:update": "platform",
 };
