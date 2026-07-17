@@ -89,8 +89,20 @@ First-party authentication for the Flaremail web app. Separate from the OIDC IdP
 _Avoid_: login, JWT, cookie
 
 **OIDC client**:
-A registered relying party (e.g. CRM X) allowed to use Flaremail as an SSO source. Registered and managed by the **intendant** or a **superadmin** only. V1 flows: Authorization Code with PKCE (user login), refresh tokens, and Client Credentials (machine-to-machine). Each client has its own service permissions configured at registration, independent of any **account**. User access tokens may call the Flaremail mail API when the authorize request includes the required scopes (e.g. `mail:read`, `mail:send`).
+A registered relying party (e.g. CRM X) allowed to use Flaremail as an SSO source. Registered and managed by the **intendant** or a **superadmin** only. V1 flows: Authorization Code with PKCE (user login), refresh tokens, and Client Credentials (machine-to-machine). Each client has its own service permissions configured at registration, independent of any **account**. Whether an **OIDC client** requires a **consent** screen is configured per client (`require_consent`, default on). User access tokens may call the Flaremail mail API when the authorize request includes the required scopes (e.g. `mail:read`, `mail:send`).
 _Avoid_: OAuth app, SSO integration, application
+
+**Consent**:
+The end-user approval step during OIDC authorization where an **account** reviews and accepts the scopes an **OIDC client** is requesting. Shown when the client requires it and no covering **consent grant** exists yet (or requested scopes exceed a prior grant). Skipped entirely when the client does not require consent — no grant row is recorded in that case.
+_Avoid_: permission prompt, OAuth approval, authorize screen
+
+**Consent grant**:
+The persisted record that an **account** has approved a set of scopes for a specific **OIDC client**. Used to skip re-prompting until the client asks for scopes beyond what was granted. Revocable by the **account** holder, or by an **intendant** / **superadmin**; revocation also invalidates refresh tokens for that account–client pair.
+_Avoid_: authorization, permission, token grant
+
+**Pending authorization**:
+A short-lived server-side record of an in-flight OIDC Authorization Code request, created when the flow must pause for sign-in or **consent**. Identified by an opaque id passed to the web app; consumed when the code is issued or when it expires.
+_Avoid_: OAuth state, login challenge, authorize session
 
 **Suspended account**:
 An **account** blocked from signing in and from all outbound actions (send, reply, forward). Inbound mail to its **primary mailbox** and any granted **mailboxes** continues to be received and stored. OIDC authorization is rejected immediately — relying parties cannot obtain new tokens.
