@@ -38,6 +38,9 @@
     },
     {
       "name": "Attachments"
+    },
+    {
+      "name": "OIDC"
     }
   ],
   "security": [
@@ -1242,13 +1245,354 @@
           }
         }
       }
+    },
+    "/oidc-clients": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "List OIDC clients",
+        "operationId": "listOidcClients",
+        "responses": {
+          "200": {
+            "description": "OIDC client list"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Create OIDC client",
+        "operationId": "createOidcClient",
+        "responses": {
+          "201": {
+            "description": "Created client (clientSecret returned once when confidential)"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oidc-clients/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Get OIDC client",
+        "operationId": "getOidcClient",
+        "responses": {
+          "200": {
+            "description": "OIDC client"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Update OIDC client",
+        "operationId": "updateOidcClient",
+        "responses": {
+          "200": {
+            "description": "Updated client"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Delete OIDC client",
+        "operationId": "deleteOidcClient",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oidc-clients/{id}/regenerate-secret": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Regenerate OIDC client secret",
+        "operationId": "regenerateOidcClientSecret",
+        "responses": {
+          "200": {
+            "description": "New secret (once)"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oidc-clients/{id}/grants": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "List consent grants for a client",
+        "operationId": "listOidcClientGrants",
+        "responses": {
+          "200": {
+            "description": "Consent grants"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oidc-clients/{id}/grants/{accountId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "accountId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Admin-revoke a consent grant",
+        "operationId": "adminRevokeOidcClientGrant",
+        "responses": {
+          "204": {
+            "description": "Revoked"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/me/oidc-grants": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "List my OIDC consent grants",
+        "operationId": "listMyOidcGrants",
+        "responses": {
+          "200": {
+            "description": "Connected apps"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/me/oidc-grants/{clientId}": {
+      "parameters": [
+        {
+          "name": "clientId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Revoke my consent grant",
+        "operationId": "revokeMyOidcGrant",
+        "responses": {
+          "204": {
+            "description": "Revoked"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oauth/authorize": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OAuth authorization endpoint",
+        "operationId": "oauthAuthorize",
+        "security": [],
+        "responses": {
+          "302": {
+            "description": "Redirect to login, consent, or client"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oauth/token": {
+      "post": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OAuth token endpoint",
+        "operationId": "oauthToken",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Token response"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oauth/jwks": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "JSON Web Key Set",
+        "operationId": "oauthJwks",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Public ES256 JWKS"
+          }
+        }
+      }
+    },
+    "/oauth/userinfo": {
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OIDC userinfo",
+        "operationId": "oauthUserinfo",
+        "responses": {
+          "200": {
+            "description": "User claims"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oauth/pending/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Pending authorization for consent UI",
+        "operationId": "getOidcPending",
+        "responses": {
+          "200": {
+            "description": "Pending details"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oauth/consent": {
+      "post": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Approve or deny pending authorization",
+        "operationId": "oauthConsent",
+        "responses": {
+          "200": {
+            "description": "Relaying-party redirect URL"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
     }
   },
   "components": {
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
-        "scheme": "bearer"
+        "scheme": "bearer",
+        "description": "Use an API key in the `Authorization` header:\n\n`Authorization: Bearer <api-key>`\n\nUser API keys start with `fmu_`. Effective access is the holder's\nnormal account permissions intersected with the key's scopes.\n"
       }
     },
     "parameters": {

@@ -103,13 +103,23 @@ In `apps/worker/.env`:
 | Variable | Purpose |
 |----------|---------|
 | `DATABASE_URL` | Direct Neon URL — local dev and migrations only |
-| `API_BEARER_TOKEN` | Bearer token for all `/api/v1/*` routes |
+| `SESSION_SECRET` | Session cookie signing secret |
+| `OIDC_SIGNING_JWK` | ES256 private JWK JSON for OIDC access/ID tokens (ADR-0007) |
 
-**Deployed Workers** use Hyperdrive (configured in `apps/worker/wrangler.jsonc`), not `DATABASE_URL`. Set the API secret in production:
+**Deployed Workers** use Hyperdrive (configured in `apps/worker/wrangler.jsonc`), not `DATABASE_URL`. Set secrets in production:
 
 ```bash
-npx wrangler secret put API_BEARER_TOKEN
+npx wrangler secret put SESSION_SECRET
+npx wrangler secret put OIDC_SIGNING_JWK
 ```
+
+Generate an ES256 signing JWK (local or CI):
+
+```bash
+node -e "const {generateKeyPairSync}=require('crypto');const {exportJWK}=require('jose');(async()=>{const {privateKey}=generateKeyPairSync('ec',{namedCurve:'P-256'});const jwk=await exportJWK(privateKey);jwk.kid='flaremail';jwk.alg='ES256';jwk.use='sig';console.log(JSON.stringify(jwk))})()"
+```
+
+Paste the JSON into `OIDC_SIGNING_JWK` (`.dev.vars` locally, or pipe into `wrangler secret put OIDC_SIGNING_JWK`).
 
 #### Hyperdrive
 
