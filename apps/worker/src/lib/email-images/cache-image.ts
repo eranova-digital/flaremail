@@ -84,11 +84,14 @@ export function isAllowedRemoteImageUrl(rawUrl: string): boolean {
 		return false;
 	}
 
+	// IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1)
+	const v4Mapped = lowerHost.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+	if (v4Mapped && isPrivateIpv4(v4Mapped[1])) {
+		return false;
+	}
+
 	if (port && port !== "80" && port !== "443") {
-		const portNumber = Number(port);
-		if (!Number.isFinite(portNumber) || portNumber <= 0 || portNumber > 65535) {
-			return false;
-		}
+		return false;
 	}
 
 	return true;
@@ -163,13 +166,22 @@ export class RemoteImageFetchError extends Error {
 	}
 }
 
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+	"image/png",
+	"image/jpeg",
+	"image/jpg",
+	"image/gif",
+	"image/webp",
+	"image/avif",
+]);
+
 function isImageContentType(contentType: string | null): boolean {
 	if (!contentType) {
 		return false;
 	}
 
 	const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
-	return mimeType.startsWith("image/");
+	return ALLOWED_IMAGE_MIME_TYPES.has(mimeType);
 }
 
 async function readResponseBytes(response: Response): Promise<ArrayBuffer> {
