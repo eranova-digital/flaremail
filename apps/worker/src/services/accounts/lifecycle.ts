@@ -7,7 +7,6 @@ import {
 } from "../../db/schema";
 import type { AccountRole, Principal } from "../../lib/auth/types";
 import { authorizeAccount } from "../../lib/auth/access";
-import { isPlatformPrincipal } from "../../lib/auth/principal";
 import { deleteMailboxCascade } from "../cascade-delete";
 import { deleteAccountProfilePictures } from "./profile-picture";
 
@@ -20,7 +19,7 @@ export async function assignRole(
 		domainIds?: string[];
 	},
 ) {
-	await authorizeAccount(db, principal, input.accountId, "manage");
+	await authorizeAccount(db, principal, input.accountId, "manage_security");
 	await authorizeAccount(db, principal, input.accountId, "assign_invite_role", {
 		inviteRole: input.role,
 	});
@@ -56,7 +55,7 @@ export async function suspendAccount(
 	principal: Principal,
 	accountId: string,
 ) {
-	await authorizeAccount(db, principal, accountId, "manage");
+	await authorizeAccount(db, principal, accountId, "manage_security");
 
 	const [target] = await db
 		.select()
@@ -68,11 +67,6 @@ export async function suspendAccount(
 	}
 	if (target.isIntendant) {
 		throw new Error("Cannot suspend intendant");
-	}
-	if (target.role === "admin" || target.role === "superadmin") {
-		if (!isPlatformPrincipal(principal) && principal.role !== "admin") {
-			throw new Error("Managers cannot suspend admins");
-		}
 	}
 
 	const now = new Date();
@@ -87,7 +81,7 @@ export async function unsuspendAccount(
 	principal: Principal,
 	accountId: string,
 ) {
-	await authorizeAccount(db, principal, accountId, "manage");
+	await authorizeAccount(db, principal, accountId, "manage_security");
 	const now = new Date();
 	await db
 		.update(accounts)

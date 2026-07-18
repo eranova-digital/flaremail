@@ -90,6 +90,10 @@ export async function assertCanManageAccount(
 		throw new AccountAccessDeniedError("The intendant account cannot be managed");
 	}
 
+	if (principalRank(principal) <= targetSecurityRank(target)) {
+		throw new AccountAccessDeniedError();
+	}
+
 	const domainId = await getAccountPrimaryDomainId(db, targetAccountId);
 	if (!domainId || !hasDomainAccess(principal, domainId)) {
 		throw new AccountAccessDeniedError();
@@ -103,7 +107,7 @@ export async function assertCanManageAccount(
 	}
 
 	if (principal.role === "admin") {
-		if (target.role === "superadmin") {
+		if (target.role === "admin" || target.role === "superadmin") {
 			throw new AccountAccessDeniedError();
 		}
 		return;
