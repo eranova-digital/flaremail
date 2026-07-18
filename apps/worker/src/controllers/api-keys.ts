@@ -85,8 +85,7 @@ export async function handleRevokeApiKey(context: RouteContext) {
 		await withDb(context.env, (db) =>
 			revokeApiKey(
 				db,
-				accountId,
-				keyId,
+				{ accountId, keyId },
 				parseLogContextFromRequest(context.request),
 			),
 		);
