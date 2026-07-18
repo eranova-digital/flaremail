@@ -2,6 +2,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { ProfileSection } from "@/components/settings/ProfileSection";
 import { IdentitiesSection } from "@/components/settings/IdentitiesSection";
+import { PreferencesSection } from "@/components/settings/PreferencesSection";
 import { SecuritySection } from "@/components/settings/SecuritySection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsShell } from "@/components/layout/SettingsShell";
@@ -33,21 +34,6 @@ function resolveActiveTab(
 		return fallback;
 	}
 	return tabParam;
-}
-
-function SettingsStubSection({
-	title,
-	description,
-}: {
-	title: string;
-	description: string;
-}) {
-	return (
-		<div className="space-y-2">
-			<h2 className="text-lg font-semibold">{title}</h2>
-			<p className="text-muted-foreground max-w-prose text-sm">{description}</p>
-		</div>
-	);
 }
 
 export function SettingsPage() {
@@ -92,10 +78,7 @@ export function SettingsPage() {
 					<IdentitiesSection />
 				</TabsContent>
 				<TabsContent value="preferences">
-					<SettingsStubSection
-						title="Preferences"
-						description="Customize your inbox layout, notifications, and other personal defaults."
-					/>
+					<PreferencesSection />
 				</TabsContent>
 				<TabsContent value="security">
 					<SecuritySection />

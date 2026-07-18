@@ -9,6 +9,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import "./lib/api/client";
 import { getApiUrl } from "./lib/api";
 import { AuthProvider } from "./lib/auth/AuthProvider";
+import { ThemeProvider } from "./lib/theme/ThemeProvider";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -36,13 +37,15 @@ function Root() {
 
 	return (
 		<QueryClientProvider client={queryClient}>
-			<TooltipProvider delayDuration={300}>
-				<BrowserRouter>
-					<AuthProvider>
-						<App />
-					</AuthProvider>
-				</BrowserRouter>
-			</TooltipProvider>
+			<ThemeProvider>
+				<TooltipProvider delayDuration={300}>
+					<BrowserRouter>
+						<AuthProvider>
+							<App />
+						</AuthProvider>
+					</BrowserRouter>
+				</TooltipProvider>
+			</ThemeProvider>
 		</QueryClientProvider>
 	);
 }
