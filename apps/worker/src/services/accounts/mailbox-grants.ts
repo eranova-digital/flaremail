@@ -12,6 +12,8 @@ import {
 	authorizeAccount,
 } from "../../lib/auth/access";
 import type { Principal } from "../../lib/auth/types";
+import type { LogContext } from "../../lib/logs/context";
+import { safeEmitLog } from "../../lib/logs/emit";
 import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
 import { assertCanGrantOnSharedMailbox } from "./shared";
 
@@ -62,6 +64,7 @@ export async function grantSharedMailboxAccess(
 	principal: Principal,
 	accountId: string,
 	mailboxId: string,
+	logContext?: LogContext | null,
 ) {
 	authorize(principal, "domain_manage_users");
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
@@ -77,6 +80,21 @@ export async function grantSharedMailboxAccess(
 	}
 
 	await grantMailboxAccess(db, accountId, mailboxId);
+
+	if (principal.accountId) {
+		await safeEmitLog(db, {
+			importance: 5,
+			type: "mailboxes",
+			summary: "{actor} granted {mailbox} to {account}",
+			refs: {
+				actor: { kind: "account", id: principal.accountId },
+				account: { kind: "account", id: accountId },
+				mailbox: { kind: "mailbox", id: mailboxId },
+			},
+			actorAccountId: principal.accountId,
+			context: logContext,
+		});
+	}
 }
 
 export async function revokeSharedMailboxAccess(
@@ -84,6 +102,7 @@ export async function revokeSharedMailboxAccess(
 	principal: Principal,
 	accountId: string,
 	mailboxId: string,
+	logContext?: LogContext | null,
 ) {
 	authorize(principal, "domain_manage_users");
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
@@ -97,4 +116,19 @@ export async function revokeSharedMailboxAccess(
 				eq(mailboxGrants.mailboxId, mailboxId),
 			),
 		);
+
+	if (principal.accountId) {
+		await safeEmitLog(db, {
+			importance: 5,
+			type: "mailboxes",
+			summary: "{actor} revoked {mailbox} from {account}",
+			refs: {
+				actor: { kind: "account", id: principal.accountId },
+				account: { kind: "account", id: accountId },
+				mailbox: { kind: "mailbox", id: mailboxId },
+			},
+			actorAccountId: principal.accountId,
+			context: logContext,
+		});
+	}
 }

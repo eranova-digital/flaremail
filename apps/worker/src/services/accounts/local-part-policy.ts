@@ -9,6 +9,8 @@ import {
 	generatePatternRandomValues,
 	isValidMailboxLocalPart,
 } from "../../lib/local-part-policy";
+import type { LogContext } from "../../lib/logs/context";
+import { safeEmitLog } from "../../lib/logs/emit";
 
 export async function getDomainLocalPartPolicy(db: Database, domainId: string) {
 	const [policy] = await db
@@ -28,6 +30,7 @@ export async function updateDomainLocalPartPolicy(
 	principal: Principal,
 	domainId: string,
 	input: { enforced?: boolean; pattern?: string | null },
+	logContext?: LogContext | null,
 ) {
 	if (!isPlatformPrincipal(principal) && !hasDomainAccess(principal, domainId)) {
 		throw new Error("Forbidden");
@@ -59,6 +62,32 @@ export async function updateDomainLocalPartPolicy(
 			enforced: input.enforced ?? false,
 			pattern: input.pattern ?? null,
 			updatedAt: now,
+		});
+	}
+
+	const accountId = principal.accountId;
+	if (accountId) {
+		await safeEmitLog(db, {
+			importance: 5,
+			type: "domains",
+			summary: "{actor} updated local-part policy for {domain}",
+			refs: {
+				actor: { kind: "account", id: accountId },
+				domain: { kind: "domain", id: domainId },
+			},
+			actorAccountId: accountId,
+			context: logContext,
+		});
+	} else {
+		await safeEmitLog(db, {
+			importance: 5,
+			type: "domains",
+			summary: "Updated local-part policy for {domain}",
+			refs: {
+				domain: { kind: "domain", id: domainId },
+			},
+			actorAccountId: null,
+			context: logContext,
 		});
 	}
 
