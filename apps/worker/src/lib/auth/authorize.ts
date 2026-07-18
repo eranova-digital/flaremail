@@ -13,7 +13,6 @@ export {
 	authorize,
 	authorizeAccount,
 	authorizeMailbox,
-	authorizeMailboxAccess,
 	authorizeDraftCommand,
 	assertPrincipalCanManageDomain,
 	collectManageableMailboxIds,

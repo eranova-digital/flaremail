@@ -1,4 +1,4 @@
-import { assertMailboxReadAccess } from "../../lib/messages/mailbox-read-auth";
+import { authorizeMailbox } from "../../lib/auth/access";
 import type { MailboxReadContext } from "../../lib/messages/mailbox-read-context";
 import {
 	createLabel,
@@ -12,7 +12,7 @@ export async function readListLabels(
 	ctx: MailboxReadContext,
 	mailboxId: string,
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return listLabels(ctx.db, mailboxId);
 }
 
@@ -21,7 +21,7 @@ export async function readCreateLabel(
 	mailboxId: string,
 	input: { name: string; color: string | null },
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return createLabel(ctx.db, mailboxId, input);
 }
 
@@ -30,7 +30,7 @@ export async function readGetLabel(
 	mailboxId: string,
 	labelId: string,
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return getLabel(ctx.db, mailboxId, labelId);
 }
 
@@ -40,7 +40,7 @@ export async function readUpdateLabel(
 	labelId: string,
 	input: { name?: string; color?: string | null },
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return updateLabel(ctx.db, mailboxId, labelId, input);
 }
 
@@ -49,6 +49,6 @@ export async function readRemoveLabel(
 	mailboxId: string,
 	labelId: string,
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	await removeLabel(ctx.db, mailboxId, labelId);
 }

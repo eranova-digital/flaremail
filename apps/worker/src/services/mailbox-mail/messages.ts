@@ -1,4 +1,4 @@
-import { assertMailboxReadAccess } from "../../lib/messages/mailbox-read-auth";
+import { authorizeMailbox } from "../../lib/auth/access";
 import type { MailboxReadContext } from "../../lib/messages/mailbox-read-context";
 import { emitLog } from "../logs";
 import { downloadRawMessage } from "../raw-message";
@@ -13,7 +13,7 @@ export async function readGetMessage(
 	messageId: string,
 	mailboxId: string,
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	const message = await readMessageFull(
 		ctx.db,
 		ctx.bucket,
@@ -50,7 +50,7 @@ export async function readGetMessagePreview(
 	messageId: string,
 	mailboxId: string,
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return readMessagePreview(ctx.db, messageId, mailboxId);
 }
 
@@ -60,7 +60,7 @@ export async function readSearchMessages(
 	query: string,
 	options: { cursor: string | null; limit: number },
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return searchMessages(ctx.db, mailboxId, query, options);
 }
 
@@ -69,6 +69,6 @@ export async function readDownloadRawMessage(
 	messageId: string,
 	mailboxId: string,
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return downloadRawMessage(ctx.db, ctx.bucket, messageId, mailboxId);
 }

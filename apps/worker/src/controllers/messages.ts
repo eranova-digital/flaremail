@@ -1,5 +1,5 @@
 import { withDb, type Database } from "../db/client";
-import { authorizeDraftCommand, authorizeMailboxAccess } from "../lib/auth/access";
+import { authorizeDraftCommand, authorizeMailbox } from "../lib/auth/access";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -43,7 +43,7 @@ export async function handleSendMessage({
 	try {
 		const payload = parseSendMessageBody(body);
 		const message = await withDb(env, async (db) => {
-			await authorizeMailboxAccess(db, principal, payload.mailboxId);
+			await authorizeMailbox(db, principal, payload.mailboxId, "read");
 			return outboundMail(env, db, principal, request).send(payload.mailboxId, payload);
 		});
 		return jsonResponse(toSendResponse(message), 201);
@@ -65,7 +65,7 @@ export async function handleCreateDraft({
 	try {
 		const payload = parseCreateDraftBody(body);
 		const message = await withDb(env, async (db) => {
-			await authorizeMailboxAccess(db, principal, payload.mailboxId);
+			await authorizeMailbox(db, principal, payload.mailboxId, "read");
 			return outboundMail(env, db, principal, request).createDraft(payload);
 		});
 		return jsonResponse(toSendResponse(message), 201);
@@ -145,7 +145,7 @@ export async function handleReplyToMessage({
 	try {
 		const payload = parseReplyBody(body);
 		const message = await withDb(env, async (db) => {
-			await authorizeMailboxAccess(db, principal, payload.mailboxId);
+			await authorizeMailbox(db, principal, payload.mailboxId, "read");
 			return outboundMail(env, db, principal, request).reply(params.id, payload);
 		});
 		return jsonResponse(toSendResponse(message), 201);
@@ -168,7 +168,7 @@ export async function handleForwardToMessage({
 	try {
 		const payload = parseForwardBody(body);
 		const message = await withDb(env, async (db) => {
-			await authorizeMailboxAccess(db, principal, payload.mailboxId);
+			await authorizeMailbox(db, principal, payload.mailboxId, "read");
 			return outboundMail(env, db, principal, request).forward(params.id, payload);
 		});
 		return jsonResponse(toSendResponse(message), 201);

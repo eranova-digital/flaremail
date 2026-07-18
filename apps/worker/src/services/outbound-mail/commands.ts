@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import PostalMime from "postal-mime";
 
 import { messages, threadMailboxes } from "../../db/schema";
-import { assertOutboundMailboxAccess } from "../../lib/messages/outbound-auth";
+import { authorizeMailbox } from "../../lib/auth/access";
 import { assertCanSendFrom } from "../../lib/authorize-mailbox";
 import { loadMailboxForSend } from "../../lib/mailbox-queries";
 import { isBlackholeMailboxType } from "../../lib/mailbox-types";
@@ -72,7 +72,7 @@ export async function sendDraftMessage(
 		throw new Error("Draft not found");
 	}
 
-	await assertOutboundMailboxAccess(ctx, draft.actualMailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, draft.actualMailboxId, "read");
 
 	const mailbox = await loadMailboxForSend(ctx.db, draft.actualMailboxId);
 	if (!mailbox) {
@@ -201,7 +201,7 @@ export async function directSend(
 	mailboxId: string,
 	body: OutboundMessageBody,
 ) {
-	await assertOutboundMailboxAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return sendAndPersistNewMessage(
 		ctx,
 		mailboxId,
@@ -226,7 +226,7 @@ export async function replyToMessage(
 		throw new Error("Message not found");
 	}
 
-	await assertOutboundMailboxAccess(ctx, body.mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "read");
 
 	const mailbox = await loadMailboxForSend(ctx.db, body.mailboxId);
 	if (!mailbox) {
@@ -323,7 +323,7 @@ export async function forwardMessage(
 	body: ForwardBody,
 ) {
 	await assertMessageVisibleInMailbox(ctx.db, messageId, body.mailboxId);
-	await assertOutboundMailboxAccess(ctx, body.mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "read");
 
 	const parent = await findMessageById(ctx.db, messageId);
 	if (!parent) {

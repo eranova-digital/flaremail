@@ -1,5 +1,5 @@
 import type { ThreadAction, ThreadFolder } from "../../lib/mailbox-types";
-import { assertMailboxReadAccess } from "../../lib/messages/mailbox-read-auth";
+import { authorizeMailbox } from "../../lib/auth/access";
 import type { MailboxReadContext } from "../../lib/messages/mailbox-read-context";
 import { markThreadMessagesSeenBy } from "../../lib/message-seen-by";
 import { emitLog } from "../logs";
@@ -21,7 +21,7 @@ export async function readListThreads(
 		limit: number;
 	},
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return listThreads(ctx.db, mailboxId, options);
 }
 
@@ -30,7 +30,7 @@ export async function readGetThread(
 	threadId: string,
 	mailboxId: string,
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	await markThreadMessagesSeenBy(ctx.db, ctx.principal, { threadId, mailboxId });
 
 	const accountId = ctx.principal.accountId;
@@ -62,7 +62,7 @@ export async function readListThreadMessages(
 	mailboxId: string,
 	options: { includeBody: boolean },
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	await markThreadMessagesSeenBy(ctx.db, ctx.principal, { threadId, mailboxId });
 	return listThreadMessages(ctx.db, threadId, mailboxId, {
 		bucket: options.includeBody ? ctx.bucket : undefined,
@@ -76,7 +76,7 @@ export async function readRunThreadAction(
 	mailboxId: string,
 	action: ThreadAction,
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	await getThread(ctx.db, threadId, mailboxId);
 	await runThreadAction(ctx.db, threadId, mailboxId, action);
 
@@ -111,6 +111,6 @@ export async function readReplaceThreadLabels(
 	mailboxId: string,
 	labelIds: string[],
 ) {
-	await assertMailboxReadAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
 	return replaceThreadLabels(ctx.db, threadId, mailboxId, labelIds);
 }

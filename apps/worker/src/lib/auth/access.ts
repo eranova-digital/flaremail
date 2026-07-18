@@ -223,15 +223,6 @@ export async function authorizeMailbox(
 	}
 }
 
-/** @deprecated Use authorizeMailbox(..., 'read') */
-export async function authorizeMailboxAccess(
-	db: Database,
-	principal: Principal,
-	mailboxId: string,
-): Promise<void> {
-	return authorizeMailbox(db, principal, mailboxId, "read");
-}
-
 export async function authorizeDraftCommand(
 	db: Database,
 	principal: Principal,
