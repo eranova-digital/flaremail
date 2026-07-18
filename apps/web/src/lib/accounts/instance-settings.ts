@@ -21,9 +21,14 @@ export type InstanceSettings = {
 	defaultIdentityNamePattern: string;
 	defaultIdentityCustomName: string | null;
 	defaultIdentitySignatureHtml: string | null;
+	logsEnabled: boolean;
+	maxImportanceStored: number;
+	logRetentionDays: LogRetentionDays;
 	updatedAt: string;
 	updatedByAccountId: string | null;
 };
+
+export type LogRetentionDays = 3 | 7 | 14 | 30 | 60 | 90;
 
 export type UpdateInstanceSettingsInput = Partial<{
 	organizationTabAccess: OrganizationTabAccess;
@@ -35,6 +40,9 @@ export type UpdateInstanceSettingsInput = Partial<{
 	defaultIdentityNamePattern: string;
 	defaultIdentityCustomName: string | null;
 	defaultIdentitySignatureHtml: string | null;
+	logsEnabled: boolean;
+	maxImportanceStored: number;
+	logRetentionDays: LogRetentionDays;
 }>;
 
 export async function fetchInstanceSettings(): Promise<InstanceSettings> {
@@ -98,4 +106,16 @@ export const REQUIRE_MFA_SCOPE_OPTIONS: {
 		label: "Owners and above",
 		description: "Only owner accounts must enable 2FA.",
 	},
+];
+
+export const LOG_RETENTION_DAY_OPTIONS: {
+	value: LogRetentionDays;
+	label: string;
+}[] = [
+	{ value: 3, label: "3 days" },
+	{ value: 7, label: "7 days" },
+	{ value: 14, label: "14 days" },
+	{ value: 30, label: "30 days" },
+	{ value: 60, label: "60 days" },
+	{ value: 90, label: "90 days" },
 ];

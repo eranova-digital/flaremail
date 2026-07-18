@@ -8,12 +8,14 @@ import { AccountsSection } from "@/components/settings/AccountsSection";
 import { OrganizationSection } from "@/components/settings/OrganizationSection";
 import { OidcClientsSection } from "@/components/settings/OidcClientsSection";
 import { TemplatesSection } from "@/components/settings/TemplatesSection";
+import { LogsSection } from "@/components/settings/LogsSection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsShell } from "@/components/layout/SettingsShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	canAccessAccountsTab,
 	canAccessDomainsTab,
+	canAccessLogsTab,
 	canAccessMailboxesTab,
 	canAccessManagementPage,
 	canAccessTemplatesTab,
@@ -31,6 +33,7 @@ const ALL_TABS = [
 	"templates",
 	"organization",
 	"oidc",
+	"logs",
 ] as const;
 type ManagementTab = (typeof ALL_TABS)[number];
 
@@ -45,6 +48,7 @@ function defaultTab(
 	showTemplates: boolean,
 	showOrganization: boolean,
 	showOidc: boolean,
+	showLogs: boolean,
 ): ManagementTab {
 	if (showDomains) {
 		return "domains";
@@ -64,6 +68,9 @@ function defaultTab(
 	if (showOidc) {
 		return "oidc";
 	}
+	if (showLogs) {
+		return "logs";
+	}
 	return "domains";
 }
 
@@ -75,6 +82,7 @@ function resolveActiveTab(
 	showTemplates: boolean,
 	showOrganization: boolean,
 	showOidc: boolean,
+	showLogs: boolean,
 ): ManagementTab {
 	const fallback = defaultTab(
 		showDomains,
@@ -83,6 +91,7 @@ function resolveActiveTab(
 		showTemplates,
 		showOrganization,
 		showOidc,
+		showLogs,
 	);
 
 	if (!isManagementTab(tabParam)) {
@@ -106,6 +115,9 @@ function resolveActiveTab(
 	if (tabParam === "oidc" && !showOidc) {
 		return fallback;
 	}
+	if (tabParam === "logs" && !showLogs) {
+		return fallback;
+	}
 	return tabParam;
 }
 
@@ -121,6 +133,7 @@ export function ManagementPage() {
 	const showTemplates = canAccessTemplatesTab(account);
 	const showOrganization = organizationAccess.canAccess;
 	const showOidc = canManageOidcClients(account);
+	const showLogs = canAccessLogsTab(account);
 	const activeTab = resolveActiveTab(
 		tabParam,
 		showDomains,
@@ -129,6 +142,7 @@ export function ManagementPage() {
 		showTemplates,
 		showOrganization,
 		showOidc,
+		showLogs,
 	);
 
 	useEffect(() => {
@@ -156,6 +170,15 @@ export function ManagementPage() {
 				next.set("tab", value);
 				if (value !== "accounts") {
 					next.delete("account");
+				}
+				if (value !== "logs") {
+					next.delete("q");
+					next.delete("maxImportance");
+					next.delete("type");
+					next.delete("from");
+					next.delete("to");
+				} else if (!next.has("maxImportance")) {
+					next.set("maxImportance", "5");
 				}
 				return next;
 			},
@@ -189,6 +212,7 @@ export function ManagementPage() {
 						<TabsTrigger value="organization">Organization</TabsTrigger>
 					) : null}
 					{showOidc ? <TabsTrigger value="oidc">OIDC clients</TabsTrigger> : null}
+					{showLogs ? <TabsTrigger value="logs">Logs</TabsTrigger> : null}
 				</TabsList>
 				{showDomains ? (
 					<TabsContent value="domains">
@@ -222,6 +246,11 @@ export function ManagementPage() {
 				{showOidc ? (
 					<TabsContent value="oidc">
 						<OidcClientsSection />
+					</TabsContent>
+				) : null}
+				{showLogs ? (
+					<TabsContent value="logs">
+						<LogsSection />
 					</TabsContent>
 				) : null}
 			</Tabs>

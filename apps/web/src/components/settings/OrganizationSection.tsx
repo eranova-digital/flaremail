@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
+	LOG_RETENTION_DAY_OPTIONS,
 	ORGANIZATION_TAB_ACCESS_OPTIONS,
 	REQUIRE_MFA_SCOPE_OPTIONS,
+	type LogRetentionDays,
 	type OrganizationTabAccess,
 	type RequireMfaScope,
 } from "@/lib/accounts/instance-settings";
@@ -75,6 +77,10 @@ export function OrganizationSection() {
 		useState("");
 	const [defaultIdentitySignatureHtml, setDefaultIdentitySignatureHtml] =
 		useState("");
+	const [logsEnabled, setLogsEnabled] = useState(true);
+	const [maxImportanceStored, setMaxImportanceStored] = useState(10);
+	const [logRetentionDays, setLogRetentionDays] =
+		useState<LogRetentionDays>(14);
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
 
@@ -97,6 +103,9 @@ export function OrganizationSection() {
 			setDefaultIdentitySignatureHtml(
 				settingsQuery.data.defaultIdentitySignatureHtml ?? "",
 			);
+			setLogsEnabled(settingsQuery.data.logsEnabled);
+			setMaxImportanceStored(settingsQuery.data.maxImportanceStored);
+			setLogRetentionDays(settingsQuery.data.logRetentionDays);
 		}
 	}, [settingsQuery.data]);
 
@@ -131,7 +140,10 @@ export function OrganizationSection() {
 		defaultIdentityCustomName !==
 			(baseline.defaultIdentityCustomName ?? "") ||
 		defaultIdentitySignatureHtml !==
-			(baseline.defaultIdentitySignatureHtml ?? "");
+			(baseline.defaultIdentitySignatureHtml ?? "") ||
+		logsEnabled !== baseline.logsEnabled ||
+		maxImportanceStored !== baseline.maxImportanceStored ||
+		logRetentionDays !== baseline.logRetentionDays;
 
 	const markDirty = () => setSaved(false);
 
@@ -153,6 +165,9 @@ export function OrganizationSection() {
 						: null,
 				defaultIdentitySignatureHtml:
 					defaultIdentitySignatureHtml.trim() || null,
+				logsEnabled,
+				maxImportanceStored,
+				logRetentionDays,
 			},
 			{
 				onSuccess: () => setSaved(true),
@@ -421,6 +436,90 @@ export function OrganizationSection() {
 								}}
 							/>
 						</div>
+					</div>
+				</CardContent>
+			</Card>
+
+			<Card className="rounded-xl shadow-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="text-base">Logs</CardTitle>
+				</CardHeader>
+				<CardContent className="divide-y p-0">
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Logs enabled"
+							description="When off, new logs are not stored. Existing logs remain readable until retention deletes them."
+							control={
+								<div className="flex h-9 items-center justify-end">
+									<Switch
+										checked={logsEnabled}
+										disabled={updateMutation.isPending}
+										onCheckedChange={(checked) => {
+											setLogsEnabled(checked);
+											markDirty();
+										}}
+										aria-label="Logs enabled"
+									/>
+								</div>
+							}
+						/>
+					</div>
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Max importance stored"
+							description="Only logs with importance at or below this value are stored (0 is most important)."
+							control={
+								<Select
+									value={String(maxImportanceStored)}
+									disabled={updateMutation.isPending}
+									onValueChange={(value) => {
+										setMaxImportanceStored(Number(value));
+										markDirty();
+									}}
+								>
+									<SelectTrigger aria-label="Max importance stored">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{Array.from({ length: 11 }, (_, i) => (
+											<SelectItem key={i} value={String(i)}>
+												≤ {i}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							}
+						/>
+					</div>
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Log retention"
+							description="How long logs are kept before the scheduled purge removes them."
+							control={
+								<Select
+									value={String(logRetentionDays)}
+									disabled={updateMutation.isPending}
+									onValueChange={(value) => {
+										setLogRetentionDays(Number(value) as LogRetentionDays);
+										markDirty();
+									}}
+								>
+									<SelectTrigger aria-label="Log retention">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{LOG_RETENTION_DAY_OPTIONS.map((option) => (
+											<SelectItem
+												key={option.value}
+												value={String(option.value)}
+											>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							}
+						/>
 					</div>
 				</CardContent>
 			</Card>
