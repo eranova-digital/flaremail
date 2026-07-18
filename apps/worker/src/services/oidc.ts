@@ -16,6 +16,7 @@ import {
 import { randomToken } from "../lib/auth/crypto";
 import { signOidcJwt } from "../lib/auth/oidc-signing";
 import { hashSecret } from "../lib/auth/password";
+import type { Principal } from "../lib/auth/types";
 import { oidcProfilePictureClaimUrl } from "../lib/oidc/profile-picture-claim";
 
 export type { OidcPendingAuthorization };
@@ -325,6 +326,321 @@ export async function denyAuthorization(
 		error_description: "The resource owner denied the request",
 		state: pending.state ?? undefined,
 	});
+}
+
+export type OidcAuthorizationLogHint = {
+	importance: number;
+	summary: string;
+	refs: {
+		actor: { kind: "account"; id: string };
+		client: { kind: "oidc-client"; id: string };
+	};
+	actorAccountId: string;
+};
+
+export type OidcAuthorizationHtmlError = {
+	kind: "html_error";
+	title: string;
+	message: string;
+};
+
+export type OidcAuthorizationRedirect = {
+	kind: "redirect";
+	url: string;
+	logs?: OidcAuthorizationLogHint[];
+};
+
+export type OidcAuthorizationResult =
+	| OidcAuthorizationHtmlError
+	| OidcAuthorizationRedirect;
+
+export type OidcAuthorizationStartInput = {
+	pendingId: string | null;
+	clientId: string | null;
+	redirectUri: string | null;
+	state: string | null;
+	nonce: string | null;
+	codeChallenge: string | null;
+	codeChallengeMethod: string | null;
+	responseType: string;
+	scope: string | null;
+};
+
+export type OidcConsentDecisionInput = {
+	pendingId: string;
+	decision: "approve" | "deny";
+	accountId: string;
+};
+
+export type OidcConsentDecisionResult = {
+	redirectTo: string;
+	logs: OidcAuthorizationLogHint[];
+};
+
+export async function continueAuthorization(
+	db: Database,
+	pending: OidcPendingAuthorization,
+	client: OidcClient,
+	session: Principal | null,
+	webOrigin: string,
+): Promise<OidcAuthorizationResult> {
+	if (!session?.accountId) {
+		const resume = `/api/v1/oauth/authorize?pending=${encodeURIComponent(pending.id)}`;
+		const login = new URL("/login", webOrigin);
+		login.searchParams.set("return_to", resume);
+		return { kind: "redirect", url: login.toString() };
+	}
+
+	const accountId = session.accountId;
+
+	if (session.isIntendant) {
+		await denyAuthorization(db, pending);
+		return {
+			kind: "redirect",
+			url: buildClientRedirect(pending.redirectUri, {
+				error: "access_denied",
+				error_description: "Intendant cannot use OIDC",
+				state: pending.state ?? undefined,
+			}),
+			logs: [
+				{
+					importance: 6,
+					summary: "{actor} denied authorization for {client}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						client: { kind: "oidc-client", id: client.id },
+					},
+					actorAccountId: accountId,
+				},
+			],
+		};
+	}
+
+	if (session.status !== "active") {
+		return {
+			kind: "redirect",
+			url: buildClientRedirect(pending.redirectUri, {
+				error: "access_denied",
+				error_description: "Account is not active",
+				state: pending.state ?? undefined,
+			}),
+			logs: [
+				{
+					importance: 6,
+					summary: "{actor} denied authorization for {client}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						client: { kind: "oidc-client", id: client.id },
+					},
+					actorAccountId: accountId,
+				},
+			],
+		};
+	}
+
+	if (pending.accountId && pending.accountId !== accountId) {
+		return {
+			kind: "html_error",
+			title: "Session mismatch",
+			message: "This authorization request belongs to a different account.",
+		};
+	}
+
+	let activePending = pending;
+	if (!pending.accountId) {
+		await bindPendingAuthorizationAccount(db, pending.id, accountId);
+		activePending = { ...pending, accountId };
+	}
+
+	if (await needsConsent(db, client, accountId, activePending.scopes)) {
+		const consent = new URL("/oauth/consent", webOrigin);
+		consent.searchParams.set("pending", activePending.id);
+		return { kind: "redirect", url: consent.toString() };
+	}
+
+	const location = await completeAuthorization(db, activePending, accountId);
+	return {
+		kind: "redirect",
+		url: location,
+		logs: [
+			{
+				importance: 6,
+				summary: "{actor} authorized {client}",
+				refs: {
+					actor: { kind: "account", id: accountId },
+					client: { kind: "oidc-client", id: client.id },
+				},
+				actorAccountId: accountId,
+			},
+		],
+	};
+}
+
+export async function startAuthorization(
+	db: Database,
+	input: OidcAuthorizationStartInput,
+	session: Principal | null,
+	webOrigin: string,
+): Promise<OidcAuthorizationResult> {
+	if (input.pendingId) {
+		const pending = await getPendingAuthorization(db, input.pendingId);
+		if (!pending) {
+			return {
+				kind: "html_error",
+				title: "Invalid request",
+				message: "This authorization request has expired.",
+			};
+		}
+		const client = await getOidcClientByClientId(db, pending.clientId);
+		if (!client) {
+			return {
+				kind: "html_error",
+				title: "Invalid client",
+				message: "The OIDC client no longer exists.",
+			};
+		}
+		return continueAuthorization(db, pending, client, session, webOrigin);
+	}
+
+	const { clientId, redirectUri, state, nonce, codeChallenge, codeChallengeMethod } =
+		input;
+
+	if (!clientId || !redirectUri) {
+		return {
+			kind: "html_error",
+			title: "Invalid request",
+			message: "client_id and redirect_uri are required.",
+		};
+	}
+
+	const client = await getOidcClientByClientId(db, clientId);
+	if (!client || !isExactRedirectUri(client, redirectUri)) {
+		return {
+			kind: "html_error",
+			title: "Invalid client",
+			message: "Unknown client_id or redirect_uri is not registered.",
+		};
+	}
+
+	if (input.responseType !== "code") {
+		return {
+			kind: "redirect",
+			url: buildClientRedirect(redirectUri, {
+				error: "unsupported_response_type",
+				state: state ?? undefined,
+			}),
+		};
+	}
+
+	if (!codeChallenge || codeChallengeMethod !== "S256") {
+		return {
+			kind: "redirect",
+			url: buildClientRedirect(redirectUri, {
+				error: "invalid_request",
+				error_description: "PKCE with S256 is required",
+				state: state ?? undefined,
+			}),
+		};
+	}
+
+	const requested = parseScopeList(input.scope);
+	const scopes = intersectScopes(requested, client.allowedScopes);
+	if (!scopes.includes("openid")) {
+		return {
+			kind: "redirect",
+			url: buildClientRedirect(redirectUri, {
+				error: "invalid_scope",
+				error_description: "openid scope is required",
+				state: state ?? undefined,
+			}),
+		};
+	}
+
+	const pending = await createPendingAuthorization(db, {
+		clientId: client.clientId,
+		redirectUri,
+		scopes,
+		state,
+		nonce,
+		codeChallenge,
+		codeChallengeMethod,
+	});
+
+	return continueAuthorization(db, pending, client, session, webOrigin);
+}
+
+export async function decideConsent(
+	db: Database,
+	input: OidcConsentDecisionInput,
+): Promise<OidcConsentDecisionResult> {
+	const { pendingId, decision, accountId } = input;
+	const pending = await getPendingAuthorization(db, pendingId);
+	if (!pending) {
+		throw new OidcError(
+			"Pending authorization not found",
+			"invalid_request",
+			404,
+		);
+	}
+	if (pending.accountId && pending.accountId !== accountId) {
+		throw new OidcError("Session mismatch", "access_denied", 403);
+	}
+	if (!pending.accountId) {
+		await bindPendingAuthorizationAccount(db, pending.id, accountId);
+	}
+	const client = await getOidcClientByClientId(db, pending.clientId);
+	if (!client) {
+		throw new OidcError("Invalid client", "invalid_client", 400);
+	}
+
+	if (decision === "deny") {
+		const redirectTo = await denyAuthorization(db, {
+			...pending,
+			accountId,
+		});
+		return {
+			redirectTo,
+			logs: [
+				{
+					importance: 6,
+					summary: "{actor} denied authorization for {client}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						client: { kind: "oidc-client", id: client.id },
+					},
+					actorAccountId: accountId,
+				},
+			],
+		};
+	}
+
+	await upsertConsentGrant(db, {
+		accountId,
+		clientId: client.clientId,
+		scopes: pending.scopes,
+	});
+	const logs: OidcAuthorizationLogHint[] = [
+		{
+			importance: 5,
+			summary: "{actor} granted consent to {client}",
+			refs: {
+				actor: { kind: "account", id: accountId },
+				client: { kind: "oidc-client", id: client.id },
+			},
+			actorAccountId: accountId,
+		},
+	];
+	const redirectTo = await completeAuthorization(db, pending, accountId);
+	logs.push({
+		importance: 6,
+		summary: "{actor} authorized {client}",
+		refs: {
+			actor: { kind: "account", id: accountId },
+			client: { kind: "oidc-client", id: client.id },
+		},
+		actorAccountId: accountId,
+	});
+	return { redirectTo, logs };
 }
 
 async function authenticateClient(
