@@ -6,7 +6,6 @@ import {
 	parseStoredApiKeyScopes,
 } from "../src/lib/auth/api-key-scopes";
 import type { Principal } from "../src/lib/auth/types";
-import { resolveRouteScopes } from "../src/lib/http/router";
 import { authRoutes } from "../src/routes/auth";
 import { v1Routes } from "../src/routes/v1";
 
