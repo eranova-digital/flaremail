@@ -129,7 +129,12 @@ async function assertCanReadTemplate(
 		);
 	}
 
-	await authorizeMailbox(db, principal, template.mailboxId, "read");
+	try {
+		await authorizeMailbox(db, principal, template.mailboxId, "read");
+	} catch {
+		// Management preview: allow if the principal can manage the mailbox.
+		await authorizeMailbox(db, principal, template.mailboxId, "manage");
+	}
 }
 
 export async function listTemplatesForMailbox(

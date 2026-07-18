@@ -1,0 +1,68 @@
+import { useQuery } from "@tanstack/react-query";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+type TemplateHtmlPreviewProps = {
+	html: string | null | undefined;
+	isLoading?: boolean;
+	error?: string | null;
+	emptyLabel?: string;
+	className?: string;
+};
+
+/** Renders template HTML in a sandboxed iframe (no scripts). */
+export function TemplateHtmlPreview({
+	html,
+	isLoading = false,
+	error = null,
+	emptyLabel = "Select a template to preview",
+	className,
+}: TemplateHtmlPreviewProps) {
+	if (isLoading) {
+		return (
+			<div className={cn("space-y-2 p-3", className)}>
+				<Skeleton className="h-4 w-2/3" />
+				<Skeleton className="h-4 w-full" />
+				<Skeleton className="h-4 w-5/6" />
+				<Skeleton className="h-24 w-full" />
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<p className={cn("text-destructive p-3 text-xs", className)}>{error}</p>
+		);
+	}
+
+	if (!html?.trim()) {
+		return (
+			<p className={cn("text-muted-foreground p-3 text-xs", className)}>
+				{emptyLabel}
+			</p>
+		);
+	}
+
+	return (
+		<iframe
+			title="Template preview"
+			sandbox=""
+			srcDoc={html}
+			className={cn("bg-background h-full w-full border-0", className)}
+		/>
+	);
+}
+
+export function useTemplateHtml(
+	queryKey: readonly unknown[],
+	fetcher: () => Promise<string>,
+	enabled: boolean,
+) {
+	return useQuery({
+		queryKey,
+		queryFn: fetcher,
+		enabled,
+		staleTime: 60_000,
+	});
+}

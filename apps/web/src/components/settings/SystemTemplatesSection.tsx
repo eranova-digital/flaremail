@@ -11,6 +11,7 @@ import {
 	useSystemEmailTemplates,
 	useUploadSystemEmailTemplate,
 } from "@/hooks/use-email-templates";
+import { SystemTemplatePreviewButton } from "@/components/email-templates/TemplatePreviewButton";
 import { getErrorMessage } from "@/lib/api/errors";
 import type {
 	SystemEmailTemplate,
@@ -110,6 +111,10 @@ export function SystemTemplatesSection() {
 											}
 											event.target.value = "";
 										}}
+									/>
+									<SystemTemplatePreviewButton
+										templateKey={template.key}
+										disabled={!template.configured}
 									/>
 									<Button
 										type="button"

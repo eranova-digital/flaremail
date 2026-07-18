@@ -47,12 +47,13 @@ export async function listManageableTemplates(): Promise<EmailTemplateListResult
 
 export async function fetchTemplateContent(
 	templateId: string,
-	mailboxId: string,
+	mailboxId?: string,
 ): Promise<string> {
+	const query = mailboxId
+		? `?mailboxId=${encodeURIComponent(mailboxId)}`
+		: "";
 	const response = await fetch(
-		apiUrl(
-			`/templates/${encodeURIComponent(templateId)}/content?mailboxId=${encodeURIComponent(mailboxId)}`,
-		),
+		apiUrl(`/templates/${encodeURIComponent(templateId)}/content${query}`),
 		{ credentials: "include" },
 	);
 
@@ -171,4 +172,24 @@ export async function deleteSystemEmailTemplate(
 	await apiRequest<void>(`/system-templates/${encodeURIComponent(key)}`, {
 		method: "DELETE",
 	});
+}
+
+export async function fetchSystemTemplateContent(
+	key: SystemEmailTemplateKey,
+): Promise<string> {
+	const response = await fetch(
+		apiUrl(`/system-templates/${encodeURIComponent(key)}/content`),
+		{ credentials: "include" },
+	);
+
+	if (!response.ok) {
+		const problem = await parseProblem(response);
+		throw new ApiError(
+			problem?.detail ?? `Request failed with status ${response.status}`,
+			problem,
+			response.status,
+		);
+	}
+
+	return response.text();
 }

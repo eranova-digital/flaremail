@@ -35,6 +35,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import type { EmailTemplate } from "@/lib/email-templates/api";
 import { useCanAccessOrganizationTab } from "@/hooks/use-instance-settings";
 import { SystemTemplatesSection } from "@/components/settings/SystemTemplatesSection";
+import { ComposeTemplatePreviewButton } from "@/components/email-templates/TemplatePreviewButton";
 
 const GLOBAL_SCOPE = "__global__";
 
@@ -332,16 +333,19 @@ function TemplateRow({
 					)}
 				</div>
 			</div>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon-xs"
-				aria-label={`Delete ${template.name}`}
-				disabled={deleting}
-				onClick={onDelete}
-			>
-				<Trash2 className="size-4" />
-			</Button>
+			<div className="flex shrink-0 items-center gap-1">
+				<ComposeTemplatePreviewButton templateId={template.id} />
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon-xs"
+					aria-label={`Delete ${template.name}`}
+					disabled={deleting}
+					onClick={onDelete}
+				>
+					<Trash2 className="size-4" />
+				</Button>
+			</div>
 		</li>
 	);
 }
