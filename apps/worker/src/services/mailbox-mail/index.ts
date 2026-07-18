@@ -1,28 +1,29 @@
 import type { ThreadAction, ThreadFolder } from "../../lib/mailbox-types";
+import { authorizeMailbox } from "../../lib/auth/access";
 import {
 	createMailboxReadContext,
 	type MailboxReadContext,
 } from "../../lib/messages/mailbox-read-context";
+import { markThreadMessagesSeenBy } from "../../lib/message-seen-by";
 import {
-	readCreateLabel,
-	readGetLabel,
-	readListLabels,
-	readRemoveLabel,
-	readUpdateLabel,
-} from "./labels";
+	createLabel,
+	getLabel,
+	listLabels,
+	removeLabel,
+	updateLabel,
+} from "../labels";
+import { emitLog } from "../logs";
+import { downloadRawMessage } from "../raw-message";
+import { runThreadAction } from "../thread-commands";
 import {
-	readDownloadRawMessage,
-	readGetMessage,
-	readGetMessagePreview,
-	readSearchMessages,
-} from "./messages";
-import {
-	readGetThread,
-	readListThreadMessages,
-	readListThreads,
-	readReplaceThreadLabels,
-	readRunThreadAction,
-} from "./threads";
+	getThread,
+	listThreadMessages,
+	listThreads,
+	readMessageFull,
+	readMessagePreview,
+	replaceThreadLabels,
+	searchMessages,
+} from "../threads";
 
 export type MailboxMailContext = MailboxReadContext;
 export { createMailboxReadContext };
@@ -34,7 +35,11 @@ export { createMailboxReadContext };
 export class MailboxMail {
 	constructor(private readonly ctx: MailboxReadContext) {}
 
-	listThreads(
+	private authorizeRead(mailboxId: string) {
+		return authorizeMailbox(this.ctx.db, this.ctx.principal, mailboxId, "read");
+	}
+
+	async listThreads(
 		mailboxId: string,
 		options: {
 			folder: ThreadFolder | null;
@@ -43,74 +48,186 @@ export class MailboxMail {
 			limit: number;
 		},
 	) {
-		return readListThreads(this.ctx, mailboxId, options);
+		await this.authorizeRead(mailboxId);
+		return listThreads(this.ctx.db, mailboxId, options);
 	}
 
-	getThread(threadId: string, mailboxId: string) {
-		return readGetThread(this.ctx, threadId, mailboxId);
+	async getThread(threadId: string, mailboxId: string) {
+		await this.authorizeRead(mailboxId);
+		await markThreadMessagesSeenBy(this.ctx.db, this.ctx.principal, {
+			threadId,
+			mailboxId,
+		});
+
+		const accountId = this.ctx.principal.accountId;
+		if (accountId) {
+			try {
+				await emitLog(this.ctx.db, {
+					importance: 10,
+					type: "threads",
+					summary: "{actor} viewed {thread}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						thread: { kind: "thread", id: threadId },
+						mailbox: { kind: "mailbox", id: mailboxId },
+					},
+					actorAccountId: accountId,
+					context: this.ctx.logContext ?? null,
+				});
+			} catch (error) {
+				console.error("Failed to emit thread view log:", error);
+			}
+		}
+
+		return getThread(this.ctx.db, threadId, mailboxId);
 	}
 
-	listThreadMessages(
+	async listThreadMessages(
 		threadId: string,
 		mailboxId: string,
 		options: { includeBody: boolean },
 	) {
-		return readListThreadMessages(this.ctx, threadId, mailboxId, options);
+		await this.authorizeRead(mailboxId);
+		await markThreadMessagesSeenBy(this.ctx.db, this.ctx.principal, {
+			threadId,
+			mailboxId,
+		});
+		return listThreadMessages(this.ctx.db, threadId, mailboxId, {
+			bucket: options.includeBody ? this.ctx.bucket : undefined,
+			includeBody: options.includeBody,
+		});
 	}
 
-	runThreadAction(threadId: string, mailboxId: string, action: ThreadAction) {
-		return readRunThreadAction(this.ctx, threadId, mailboxId, action);
+	async runThreadAction(
+		threadId: string,
+		mailboxId: string,
+		action: ThreadAction,
+	) {
+		await this.authorizeRead(mailboxId);
+		await getThread(this.ctx.db, threadId, mailboxId);
+		await runThreadAction(this.ctx.db, threadId, mailboxId, action);
+
+		if (action === "mark-read") {
+			const accountId = this.ctx.principal.accountId;
+			if (accountId) {
+				try {
+					await emitLog(this.ctx.db, {
+						importance: 10,
+						type: "threads",
+						summary: "{actor} marked {thread} read",
+						refs: {
+							actor: { kind: "account", id: accountId },
+							thread: { kind: "thread", id: threadId },
+							mailbox: { kind: "mailbox", id: mailboxId },
+						},
+						actorAccountId: accountId,
+						context: this.ctx.logContext ?? null,
+					});
+				} catch (error) {
+					console.error("Failed to emit thread mark-read log:", error);
+				}
+			}
+		}
+
+		return getThread(this.ctx.db, threadId, mailboxId);
 	}
 
-	replaceThreadLabels(threadId: string, mailboxId: string, labelIds: string[]) {
-		return readReplaceThreadLabels(this.ctx, threadId, mailboxId, labelIds);
+	async replaceThreadLabels(
+		threadId: string,
+		mailboxId: string,
+		labelIds: string[],
+	) {
+		await this.authorizeRead(mailboxId);
+		return replaceThreadLabels(this.ctx.db, threadId, mailboxId, labelIds);
 	}
 
-	getMessage(messageId: string, mailboxId: string) {
-		return readGetMessage(this.ctx, messageId, mailboxId);
+	async getMessage(messageId: string, mailboxId: string) {
+		await this.authorizeRead(mailboxId);
+		const message = await readMessageFull(
+			this.ctx.db,
+			this.ctx.bucket,
+			messageId,
+			mailboxId,
+		);
+
+		const accountId = this.ctx.principal.accountId;
+		if (accountId) {
+			try {
+				await emitLog(this.ctx.db, {
+					importance: 9,
+					type: "messages",
+					summary: "{actor} read {message}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						message: { kind: "message", id: message.id },
+						thread: { kind: "thread", id: message.threadId },
+						mailbox: { kind: "mailbox", id: mailboxId },
+					},
+					actorAccountId: accountId,
+					context: this.ctx.logContext ?? null,
+				});
+			} catch (error) {
+				console.error("Failed to emit message read log:", error);
+			}
+		}
+
+		return message;
 	}
 
-	getMessagePreview(messageId: string, mailboxId: string) {
-		return readGetMessagePreview(this.ctx, messageId, mailboxId);
+	async getMessagePreview(messageId: string, mailboxId: string) {
+		await this.authorizeRead(mailboxId);
+		return readMessagePreview(this.ctx.db, messageId, mailboxId);
 	}
 
-	search(
+	async search(
 		mailboxId: string,
 		query: string,
 		options: { cursor: string | null; limit: number },
 	) {
-		return readSearchMessages(this.ctx, mailboxId, query, options);
+		await this.authorizeRead(mailboxId);
+		return searchMessages(this.ctx.db, mailboxId, query, options);
 	}
 
-	downloadRawMessage(messageId: string, mailboxId: string) {
-		return readDownloadRawMessage(this.ctx, messageId, mailboxId);
+	async downloadRawMessage(messageId: string, mailboxId: string) {
+		await this.authorizeRead(mailboxId);
+		return downloadRawMessage(
+			this.ctx.db,
+			this.ctx.bucket,
+			messageId,
+			mailboxId,
+		);
 	}
 
-	listLabels(mailboxId: string) {
-		return readListLabels(this.ctx, mailboxId);
+	async listLabels(mailboxId: string) {
+		await this.authorizeRead(mailboxId);
+		return listLabels(this.ctx.db, mailboxId);
 	}
 
-	createLabel(
+	async createLabel(
 		mailboxId: string,
 		input: { name: string; color: string | null },
 	) {
-		return readCreateLabel(this.ctx, mailboxId, input);
+		await this.authorizeRead(mailboxId);
+		return createLabel(this.ctx.db, mailboxId, input);
 	}
 
-	getLabel(mailboxId: string, labelId: string) {
-		return readGetLabel(this.ctx, mailboxId, labelId);
+	async getLabel(mailboxId: string, labelId: string) {
+		await this.authorizeRead(mailboxId);
+		return getLabel(this.ctx.db, mailboxId, labelId);
 	}
 
-	updateLabel(
+	async updateLabel(
 		mailboxId: string,
 		labelId: string,
 		input: { name?: string; color?: string | null },
 	) {
-		return readUpdateLabel(this.ctx, mailboxId, labelId, input);
+		await this.authorizeRead(mailboxId);
+		return updateLabel(this.ctx.db, mailboxId, labelId, input);
 	}
 
-	removeLabel(mailboxId: string, labelId: string) {
-		return readRemoveLabel(this.ctx, mailboxId, labelId);
+	async removeLabel(mailboxId: string, labelId: string) {
+		await this.authorizeRead(mailboxId);
+		await removeLabel(this.ctx.db, mailboxId, labelId);
 	}
 }
 
