@@ -30,6 +30,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { TableInsertButton } from "@/components/compose/editor/TableControls";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
@@ -158,30 +159,99 @@ function uploadImage(editor: Editor, file: File) {
 	reader.readAsDataURL(file);
 }
 
+const HEX_COLOR_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+function normalizeHexColor(color: string | undefined): string | null {
+	if (!color) {
+		return null;
+	}
+
+	const trimmed = color.trim();
+	if (!HEX_COLOR_RE.test(trimmed)) {
+		return null;
+	}
+
+	if (trimmed.length === 4) {
+		const [, r, g, b] = trimmed;
+		return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+	}
+
+	return trimmed.toLowerCase();
+}
+
 function ColorSwatches({
 	colors,
+	value,
 	onPick,
 	onClear,
 	clearLabel,
 }: {
 	colors: readonly string[];
+	value?: string;
 	onPick: (color: string) => void;
 	onClear?: () => void;
 	clearLabel?: string;
 }) {
+	const activeHex = normalizeHexColor(value);
+	const [hexDraft, setHexDraft] = useState(activeHex ?? "");
+
+	useEffect(() => {
+		setHexDraft(activeHex ?? "");
+	}, [activeHex]);
+
+	const applyHexDraft = () => {
+		const normalized = normalizeHexColor(hexDraft);
+		if (normalized) {
+			onPick(normalized);
+			setHexDraft(normalized);
+			return;
+		}
+
+		setHexDraft(activeHex ?? "");
+	};
+
 	return (
 		<div className="grid grid-cols-4 gap-2">
 			{colors.map((color) => (
 				<button
 					key={color}
 					type="button"
-					className="size-7 rounded-md border shadow-sm"
+					className={cn(
+						"size-7 rounded-md border shadow-sm",
+						activeHex === color.toLowerCase() && "ring-ring ring-2 ring-offset-1",
+					)}
 					style={{ backgroundColor: color }}
 					aria-label={`Color ${color}`}
+					aria-pressed={activeHex === color.toLowerCase()}
 					tabIndex={-1}
 					onClick={() => onPick(color)}
 				/>
 			))}
+			<div className="col-span-4 flex items-center gap-2 border-t pt-2">
+				<input
+					type="color"
+					className="border-input size-8 cursor-pointer rounded-md border bg-transparent p-0.5"
+					value={activeHex ?? "#000000"}
+					aria-label="Custom color"
+					tabIndex={-1}
+					onChange={(event) => onPick(event.target.value)}
+				/>
+				<Input
+					value={hexDraft}
+					placeholder="#000000"
+					aria-label="Custom color hex"
+					className="h-8 font-mono text-xs"
+					tabIndex={-1}
+					onChange={(event) => setHexDraft(event.target.value)}
+					onBlur={applyHexDraft}
+					onKeyDown={(event) => {
+						if (event.key === "Enter") {
+							event.preventDefault();
+							applyHexDraft();
+						}
+					}}
+				/>
+			</div>
 			{onClear ? (
 				<button
 					type="button"
@@ -197,6 +267,9 @@ function ColorSwatches({
 }
 
 export function MarkControls({ editor, disabled = false }: ControlProps) {
+	const currentHighlight =
+		(editor.getAttributes("highlight").color as string | undefined) ?? "";
+
 	return (
 		<>
 			<ToolbarButton
@@ -260,6 +333,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 				<PopoverContent className="w-auto p-3" align="start">
 					<ColorSwatches
 						colors={HIGHLIGHT_COLORS}
+						value={currentHighlight}
 						onPick={(color) =>
 							editor.chain().focus().toggleHighlight({ color }).run()
 						}
@@ -336,6 +410,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 					</p>
 					<ColorSwatches
 						colors={TEXT_COLORS}
+						value={currentColor}
 						onPick={(color) => editor.chain().focus().setColor(color).run()}
 						onClear={() => editor.chain().focus().unsetColor().run()}
 						clearLabel="Default color"
@@ -365,6 +440,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 					</p>
 					<ColorSwatches
 						colors={BACKGROUND_COLORS}
+						value={currentBackground}
 						onPick={(color) =>
 							editor.chain().focus().setBackgroundColor(color).run()
 						}
