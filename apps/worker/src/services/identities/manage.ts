@@ -2,12 +2,12 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { accounts, identities, mailboxes } from "../../db/schema";
-import { authorizeAccount } from "../../lib/auth/access";
 import {
-	assertPrincipalCanAccessMailbox,
+	authorizeAccount,
+	authorizeMailbox,
 	collectManageableMailboxIds,
 	collectReadableMailboxIds,
-} from "../../lib/auth/mailbox-access";
+} from "../../lib/auth/access";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
 import type { Principal } from "../../lib/auth/types";
 import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
@@ -130,7 +130,7 @@ async function assertCanListMailboxIdentities(
 			throw error;
 		}
 	}
-	await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+	await authorizeMailbox(db, principal, mailboxId, "read");
 }
 
 export async function listMailboxIdentities(
@@ -238,7 +238,7 @@ async function buildAccountIdentitiesOverview(
 
 	if (primaryMailboxId) {
 		if (viewingSelf) {
-			await assertPrincipalCanAccessMailbox(db, viewer, primaryMailboxId);
+			await authorizeMailbox(db, viewer, primaryMailboxId, "read");
 		}
 		const rows = await db
 			.select()

@@ -2,7 +2,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { identities, mailboxes } from "../../db/schema";
-import { assertPrincipalCanAccessMailbox } from "../../lib/auth/mailbox-access";
+import { authorizeMailbox } from "../../lib/auth/access";
 import type { Principal } from "../../lib/auth/types";
 import { resolveFromName, type IdentityNamePattern } from "@test-worker/identity-name-pattern";
 import { getInstanceSettings } from "../instance-settings";
@@ -24,7 +24,7 @@ export async function listAvailableIdentitiesForSend(
 	principal: Principal,
 	activeMailboxId: string,
 ): Promise<IdentityDto[]> {
-	await assertPrincipalCanAccessMailbox(db, principal, activeMailboxId);
+	await authorizeMailbox(db, principal, activeMailboxId, "read");
 	const active = await getMailboxRow(db, activeMailboxId);
 	const profile = await loadProfileForAccount(db, principal.accountId);
 	const result: IdentityDto[] = [];
@@ -91,7 +91,7 @@ export async function listAvailableIdentitiesForSend(
 			const readable = await Promise.all(
 				exportIds.map(async (id) => {
 					try {
-						await assertPrincipalCanAccessMailbox(db, principal, id);
+						await authorizeMailbox(db, principal, id, "read");
 						return id;
 					} catch {
 						return null;
