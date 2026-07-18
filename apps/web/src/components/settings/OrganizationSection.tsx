@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
 import { ComposeEditor } from "@/components/compose/ComposeEditor";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
 	ORGANIZATION_TAB_ACCESS_OPTIONS,
@@ -20,49 +27,32 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 
-type SettingOptionProps<T extends string> = {
-	name: string;
-	value: T;
-	currentValue: T;
-	label: string;
-	description: string;
-	disabled?: boolean;
-	onChange: (value: T) => void;
-};
-
-function SettingOption<T extends string>({
-	name,
-	value,
-	currentValue,
+function SettingRow({
 	label,
 	description,
-	disabled = false,
-	onChange,
-}: SettingOptionProps<T>) {
-	const selected = value === currentValue;
-
+	control,
+	className,
+}: {
+	label: string;
+	description: ReactNode;
+	control: ReactNode;
+	className?: string;
+}) {
 	return (
-		<label
+		<div
 			className={cn(
-				"flex cursor-pointer gap-3 rounded-lg border px-4 py-3 transition-colors",
-				selected && "border-primary bg-primary/5",
-				disabled && "cursor-not-allowed opacity-60",
+				"flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between",
+				className,
 			)}
 		>
-			<input
-				type="radio"
-				name={name}
-				value={value}
-				checked={selected}
-				disabled={disabled}
-				onChange={() => onChange(value)}
-				className="mt-1"
-			/>
-			<span className="space-y-1">
-				<span className="block text-sm font-medium">{label}</span>
-				<span className="text-muted-foreground block text-xs">{description}</span>
-			</span>
-		</label>
+			<div className="min-w-0 space-y-1 sm:pr-6">
+				<p className="text-sm font-medium">{label}</p>
+				<p className="text-muted-foreground text-xs leading-relaxed">
+					{description}
+				</p>
+			</div>
+			<div className="shrink-0 sm:w-56">{control}</div>
+		</div>
 	);
 }
 
@@ -143,6 +133,8 @@ export function OrganizationSection() {
 		defaultIdentitySignatureHtml !==
 			(baseline.defaultIdentitySignatureHtml ?? "");
 
+	const markDirty = () => setSaved(false);
+
 	const handleSave = () => {
 		setError(null);
 		setSaved(false);
@@ -184,236 +176,235 @@ export function OrganizationSection() {
 			) : null}
 
 			<Card className="rounded-xl shadow-sm">
-				<CardHeader className="pb-4">
-					<CardTitle className="text-base">Organization tab access</CardTitle>
+				<CardHeader className="pb-3">
+					<CardTitle className="text-base">Access & security</CardTitle>
 				</CardHeader>
-				<CardContent className="space-y-3">
-					<p className="text-muted-foreground text-sm">
-						Choose who can view this Organization tab in Management.
-						{isIntendant
-							? " Only you can change this setting."
-							: " Only the recovery account can change this setting."}
-					</p>
-					<div className="space-y-2">
-						{ORGANIZATION_TAB_ACCESS_OPTIONS.map((option) => (
-							<SettingOption
-								key={option.value}
-								name="organization-tab-access"
-								value={option.value}
-								currentValue={organizationTabAccess}
-								label={option.label}
-								description={option.description}
-								disabled={!isIntendant || updateMutation.isPending}
-								onChange={(value) => {
-									setOrganizationTabAccess(value);
-									setSaved(false);
-								}}
-							/>
-						))}
-					</div>
-				</CardContent>
-			</Card>
-
-			<Card className="rounded-xl shadow-sm">
-				<CardHeader className="pb-4">
-					<CardTitle className="text-base">Require two-factor authentication</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-3">
-					<p className="text-muted-foreground text-sm">
-						Accounts in scope must enable 2FA during activation or on their next
-						sign-in before using Flaremail.
-					</p>
-					<div className="space-y-2">
-						{REQUIRE_MFA_SCOPE_OPTIONS.map((option) => (
-							<SettingOption
-								key={option.value}
-								name="require-mfa-scope"
-								value={option.value}
-								currentValue={requireMfaScope}
-								label={option.label}
-								description={option.description}
-								disabled={updateMutation.isPending}
-								onChange={(value) => {
-									setRequireMfaScope(value);
-									setSaved(false);
-								}}
-							/>
-						))}
-					</div>
-				</CardContent>
-			</Card>
-
-			<Card className="rounded-xl shadow-sm">
-				<CardHeader className="pb-4">
-					<CardTitle className="text-base">Require recovery email</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-3">
-					<p className="text-muted-foreground text-sm">
-						When enabled, every account must verify a recovery email during
-						activation or on their next sign-in. Skipping recovery email setup is
-						not allowed.
-					</p>
-					<div className="space-y-2">
-						<SettingOption
-							name="require-recovery-email"
-							value="false"
-							currentValue={requireRecoveryEmail ? "true" : "false"}
-							label="Optional"
-							description="Accounts may skip recovery email setup during activation."
-							disabled={updateMutation.isPending}
-							onChange={() => {
-								setRequireRecoveryEmail(false);
-								setSaved(false);
-							}}
-						/>
-						<SettingOption
-							name="require-recovery-email"
-							value="true"
-							currentValue={requireRecoveryEmail ? "true" : "false"}
-							label="Required for all accounts"
-							description="Every account must set up and verify a recovery email."
-							disabled={updateMutation.isPending}
-							onChange={() => {
-								setRequireRecoveryEmail(true);
-								setSaved(false);
-							}}
+				<CardContent className="divide-y p-0">
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Organization tab access"
+							description={
+								isIntendant
+									? "Who can view this Organization tab in Management. Only you can change this setting."
+									: "Who can view this Organization tab in Management. Only the recovery account can change this setting."
+							}
+							control={
+								<Select
+									value={organizationTabAccess}
+									disabled={!isIntendant || updateMutation.isPending}
+									onValueChange={(value) => {
+										setOrganizationTabAccess(value as OrganizationTabAccess);
+										markDirty();
+									}}
+								>
+									<SelectTrigger aria-label="Organization tab access">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{ORGANIZATION_TAB_ACCESS_OPTIONS.map((option) => (
+											<SelectItem key={option.value} value={option.value}>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							}
 						/>
 					</div>
-				</CardContent>
-			</Card>
-
-			<Card className="rounded-xl shadow-sm">
-				<CardHeader className="pb-4">
-					<CardTitle className="text-base">
-						Persist noreply outbound emails
-					</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-3">
-					<div className="flex items-start justify-between gap-4">
-						<div className="space-y-1">
-							<p className="text-sm font-medium">
-								Keep copies of system emails in noreply Sent
-							</p>
-							<p className="text-muted-foreground text-sm">
-								When enabled, transactional emails sent from{" "}
-								<code className="text-xs">noreply@</code> — such as password
-								resets, invite codes, and recovery verification — are stored in
-								each domain&apos;s noreply mailbox Sent folder.
-							</p>
-						</div>
-						<Switch
-							checked={persistNoreplyOutboundEmails}
-							disabled={updateMutation.isPending}
-							onCheckedChange={(checked) => {
-								setPersistNoreplyOutboundEmails(checked);
-								setSaved(false);
-							}}
-							aria-label="Persist noreply outbound emails"
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Require two-factor authentication"
+							description="Accounts in scope must enable 2FA during activation or on their next sign-in."
+							control={
+								<Select
+									value={requireMfaScope}
+									disabled={updateMutation.isPending}
+									onValueChange={(value) => {
+										setRequireMfaScope(value as RequireMfaScope);
+										markDirty();
+									}}
+								>
+									<SelectTrigger aria-label="Require two-factor authentication">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{REQUIRE_MFA_SCOPE_OPTIONS.map((option) => (
+											<SelectItem key={option.value} value={option.value}>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							}
+						/>
+					</div>
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Require recovery email"
+							description="Every account must verify a recovery email during activation or on their next sign-in."
+							control={
+								<div className="flex h-9 items-center justify-end">
+									<Switch
+										checked={requireRecoveryEmail}
+										disabled={updateMutation.isPending}
+										onCheckedChange={(checked) => {
+											setRequireRecoveryEmail(checked);
+											markDirty();
+										}}
+										aria-label="Require recovery email"
+									/>
+								</div>
+							}
+						/>
+					</div>
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Persist noreply outbound emails"
+							description={
+								<>
+									Keep copies of transactional emails from{" "}
+									<code className="text-[11px]">noreply@</code> in each
+									domain&apos;s noreply Sent folder.
+								</>
+							}
+							control={
+								<div className="flex h-9 items-center justify-end">
+									<Switch
+										checked={persistNoreplyOutboundEmails}
+										disabled={updateMutation.isPending}
+										onCheckedChange={(checked) => {
+											setPersistNoreplyOutboundEmails(checked);
+											markDirty();
+										}}
+										aria-label="Persist noreply outbound emails"
+									/>
+								</div>
+							}
 						/>
 					</div>
 				</CardContent>
 			</Card>
 
 			<Card className="rounded-xl shadow-sm">
-				<CardHeader className="pb-4">
+				<CardHeader className="pb-3">
 					<CardTitle className="text-base">Identities</CardTitle>
 				</CardHeader>
-				<CardContent className="space-y-6">
-					<div className="flex items-start justify-between gap-4">
-						<div className="space-y-1">
-							<p className="text-sm font-medium">Identity self-serve</p>
-							<p className="text-muted-foreground text-sm">
-								Allow accounts to create and edit identities on their primary
-								mailbox (the organization default identity stays locked).
-							</p>
-						</div>
-						<Switch
-							checked={identitySelfServe}
-							disabled={updateMutation.isPending}
-							onCheckedChange={(checked) => {
-								setIdentitySelfServe(checked);
-								setSaved(false);
-							}}
-							aria-label="Identity self-serve"
+				<CardContent className="divide-y p-0">
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Identity self-serve"
+							description="Allow accounts to create and edit identities on their primary mailbox. The organization default identity stays locked."
+							control={
+								<div className="flex h-9 items-center justify-end">
+									<Switch
+										checked={identitySelfServe}
+										disabled={updateMutation.isPending}
+										onCheckedChange={(checked) => {
+											setIdentitySelfServe(checked);
+											markDirty();
+										}}
+										aria-label="Identity self-serve"
+									/>
+								</div>
+							}
 						/>
 					</div>
-					<div className="flex items-start justify-between gap-4">
-						<div className="space-y-1">
-							<p className="text-sm font-medium">Allow custom names</p>
-							<p className="text-muted-foreground text-sm">
-								Let users and managers choose a free-form From name. Admins and
-								above can always use custom names.
-							</p>
-						</div>
-						<Switch
-							checked={customNameAllowance}
-							disabled={updateMutation.isPending}
-							onCheckedChange={(checked) => {
-								setCustomNameAllowance(checked);
-								setSaved(false);
-							}}
-							aria-label="Allow custom names"
+					<div className="px-6 py-4">
+						<SettingRow
+							label="Allow custom names"
+							description="Let users and managers choose a free-form From name. Admins and above can always use custom names."
+							control={
+								<div className="flex h-9 items-center justify-end">
+									<Switch
+										checked={customNameAllowance}
+										disabled={updateMutation.isPending}
+										onCheckedChange={(checked) => {
+											setCustomNameAllowance(checked);
+											markDirty();
+										}}
+										aria-label="Allow custom names"
+									/>
+								</div>
+							}
 						/>
 					</div>
-					<div className="space-y-3 border-t pt-4">
-						<p className="text-sm font-medium">Default identity</p>
-						<p className="text-muted-foreground text-sm">
-							Live-linked template offered on every primary mailbox. Changes
-							apply immediately for all accounts.
-						</p>
-						<div className="space-y-2">
-							<label
-								htmlFor="default-identity-pattern"
-								className="text-sm font-medium"
-							>
-								Name pattern
-							</label>
-							<select
-								id="default-identity-pattern"
-								className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-								value={defaultIdentityNamePattern}
-								disabled={updateMutation.isPending}
-								onChange={(event) => {
-									setDefaultIdentityNamePattern(event.target.value);
-									setSaved(false);
-								}}
-							>
-								<option value="none">No name (address only)</option>
-								<option value="first_name">First name</option>
-								<option value="last_name">Last name</option>
-								<option value="first_name_last_name">
-									First name Last name
-								</option>
-								<option value="last_name_first_name">
-									Last name First name
-								</option>
-								<option value="first_initial_last_name">F. Last name</option>
-								<option value="last_name_first_initial">Last name F.</option>
-								<option value="first_name_last_initial">First name L.</option>
-								<option value="last_initial_first_name">L. First name</option>
-								<option value="custom">Custom name</option>
-							</select>
+					<div id="default-identity" className="space-y-4 px-6 py-4 scroll-mt-4">
+						<div className="space-y-1">
+							<p className="text-sm font-medium">Default identity</p>
+							<p className="text-muted-foreground text-xs leading-relaxed">
+								Live-linked template offered on every primary mailbox. Changes
+								apply immediately for all accounts.
+							</p>
 						</div>
-						{defaultIdentityNamePattern === "custom" ? (
+						<div className="grid gap-4 sm:grid-cols-2">
 							<div className="space-y-2">
 								<label
-									htmlFor="default-identity-custom"
+									htmlFor="default-identity-pattern"
 									className="text-sm font-medium"
 								>
-									Custom name
+									Name pattern
 								</label>
-								<input
-									id="default-identity-custom"
-									className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-									value={defaultIdentityCustomName}
+								<Select
+									value={defaultIdentityNamePattern}
 									disabled={updateMutation.isPending}
-									onChange={(event) => {
-										setDefaultIdentityCustomName(event.target.value);
-										setSaved(false);
+									onValueChange={(value) => {
+										setDefaultIdentityNamePattern(value);
+										markDirty();
 									}}
-								/>
+								>
+									<SelectTrigger
+										id="default-identity-pattern"
+										aria-label="Name pattern"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none">No name (address only)</SelectItem>
+										<SelectItem value="first_name">First name</SelectItem>
+										<SelectItem value="last_name">Last name</SelectItem>
+										<SelectItem value="first_name_last_name">
+											First name Last name
+										</SelectItem>
+										<SelectItem value="last_name_first_name">
+											Last name First name
+										</SelectItem>
+										<SelectItem value="first_initial_last_name">
+											F. Last name
+										</SelectItem>
+										<SelectItem value="last_name_first_initial">
+											Last name F.
+										</SelectItem>
+										<SelectItem value="first_name_last_initial">
+											First name L.
+										</SelectItem>
+										<SelectItem value="last_initial_first_name">
+											L. First name
+										</SelectItem>
+										<SelectItem value="custom">Custom name</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
-						) : null}
+							{defaultIdentityNamePattern === "custom" ? (
+								<div className="space-y-2">
+									<label
+										htmlFor="default-identity-custom"
+										className="text-sm font-medium"
+									>
+										Custom name
+									</label>
+									<input
+										id="default-identity-custom"
+										className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+										value={defaultIdentityCustomName}
+										disabled={updateMutation.isPending}
+										onChange={(event) => {
+											setDefaultIdentityCustomName(event.target.value);
+											markDirty();
+										}}
+									/>
+								</div>
+							) : null}
+						</div>
 						<div className="space-y-2">
 							<label className="text-sm font-medium">Signature</label>
 							<ComposeEditor
@@ -423,10 +414,10 @@ export function OrganizationSection() {
 								}
 								placeholder="Optional default signature…"
 								disabled={updateMutation.isPending}
-								className="min-h-[140px]"
+								className="min-h-[120px]"
 								onChange={({ html }) => {
 									setDefaultIdentitySignatureHtml(html);
-									setSaved(false);
+									markDirty();
 								}}
 							/>
 						</div>
