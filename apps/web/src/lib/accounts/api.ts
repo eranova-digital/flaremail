@@ -25,6 +25,7 @@ export type AccountSummary = {
 	role: AccountRole | null;
 	status: string;
 	isIntendant: boolean;
+	primaryMailboxId: string | null;
 	domainId: string | null;
 	displayName: string;
 	profilePicture: ProfilePicture | null;

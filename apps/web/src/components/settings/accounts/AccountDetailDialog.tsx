@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Loader2, MoreHorizontal } from "lucide-react";
 
+import { AccountIdentitiesTab } from "@/components/settings/accounts/AccountIdentitiesTab";
 import { AccountSecurityTab } from "@/components/settings/accounts/AccountSecurityTab";
 import { ProfileFieldsGrid } from "@/components/settings/ProfileFieldsGrid";
 import { ProfileFieldLockToggle } from "@/components/settings/accounts/ProfileFieldLockToggle";
@@ -166,7 +167,8 @@ export function AccountDetailDialog({
 		(canManageUserMailboxGrants(actor) && !!target?.role);
 
 	const showSecurityTab = !!target && canManageTargetSecurity(actor, target);
-	const showTabs = showAccessTab || showSecurityTab;
+	const showIdentitiesTab = Boolean(target?.primaryMailboxId);
+	const showTabs = showAccessTab || showSecurityTab || showIdentitiesTab;
 
 	useEffect(() => {
 		if (!accountId) {
@@ -514,6 +516,11 @@ export function AccountDetailDialog({
 												Access
 											</TabsTrigger>
 										) : null}
+										{showIdentitiesTab ? (
+											<TabsTrigger className="h-7 px-4" value="identities">
+												Identities
+											</TabsTrigger>
+										) : null}
 										{showSecurityTab ? (
 											<TabsTrigger className="h-7 px-4" value="security">
 												Security
@@ -751,6 +758,17 @@ export function AccountDetailDialog({
 												</div>
 											</AccessSection>
 										) : null}
+									</TabsContent>
+								) : null}
+
+								{showIdentitiesTab && target.primaryMailboxId ? (
+									<TabsContent value="identities" className="mt-0 space-y-4">
+										<AccountIdentitiesTab
+											accountId={target.id}
+											mailboxId={target.primaryMailboxId}
+											mailboxAddress={target.loginIdentifier}
+											displayName={target.displayName}
+										/>
 									</TabsContent>
 								) : null}
 
