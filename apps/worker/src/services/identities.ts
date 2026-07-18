@@ -22,16 +22,12 @@ import { type InstanceSettings } from "./security-compliance";
 
 export const DEFAULT_IDENTITY_ID = "default";
 
-export type IdentityDto = {
-	id: string;
-	mailboxId: string | null;
-	isDefault: boolean;
-	namePattern: IdentityNamePattern;
-	customName: string | null;
-	signatureHtml: string | null;
-	fromNamePreview: string;
-	createdAt: string | null;
-	updatedAt: string | null;
+export type IdentityListResult = {
+	items: IdentityDto[];
+	capabilities: {
+		canManage: boolean;
+		customNameAllowed: boolean;
+	};
 };
 
 export class IdentityAccessDeniedError extends Error {
@@ -284,10 +280,11 @@ export async function listMailboxIdentities(
 	db: Database,
 	principal: Principal,
 	mailboxId: string,
-): Promise<IdentityDto[]> {
+): Promise<IdentityListResult> {
 	await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
 	const mailbox = await getMailboxRow(db, mailboxId);
 	const profile = await loadProfileForAccount(db, principal.accountId);
+	const settings = await getInstanceSettings(db);
 
 	const rows = await db
 		.select()
@@ -306,11 +303,25 @@ export async function listMailboxIdentities(
 	);
 
 	if (mailbox.type === "primary") {
-		const settings = await getInstanceSettings(db);
 		items.unshift(toDefaultIdentityDto(settings, profile));
 	}
 
-	return items;
+	let canManage = false;
+	try {
+		await assertCanManageMailboxIdentities(db, principal, mailboxId);
+		canManage = true;
+	} catch {
+		canManage = false;
+	}
+
+	return {
+		items,
+		capabilities: {
+			canManage,
+			customNameAllowed:
+				settings.customNameAllowance || roleBypassesCustomNameGate(principal),
+		},
+	};
 }
 
 /**
