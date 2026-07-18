@@ -12,19 +12,19 @@ import {
 } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
 import {
+	adminRevokeClientGrant,
 	decideConsent,
 	discoveryDocument,
 	exchangeAuthorizationCode,
 	exchangeClientCredentials,
-	getOidcClientByClientId,
-	getPendingAuthorization,
+	getPendingAuthorizationForAccount,
 	getUserInfo,
 	issuerUrl,
+	listClientGrantsByRecordId,
 	listConsentGrantsForAccount,
-	listConsentGrantsForClient,
 	OidcError,
 	refreshUserToken,
-	revokeConsentGrant,
+	revokeAccountClientGrant,
 	startAuthorization,
 	type OidcAuthorizationResult,
 } from "../services/oidc";
@@ -128,32 +128,13 @@ export async function handleGetOidcPending(context: RouteContext) {
 		return validationError(context.request, "Authentication required");
 	}
 	try {
-		const result = await withDb(context.env, async (db) => {
-			const pending = await getPendingAuthorization(db, pendingId);
-			if (!pending) {
-				return null;
-			}
-			if (pending.accountId && pending.accountId !== context.principal.accountId) {
-				return "forbidden" as const;
-			}
-			const client = await getOidcClientByClientId(db, pending.clientId);
-			if (!client) {
-				return null;
-			}
-			return {
-				id: pending.id,
-				clientId: client.clientId,
-				clientRecordId: client.id,
-				clientName: client.name,
-				scopes: pending.scopes,
-				redirectUri: pending.redirectUri,
-				requireConsent: client.requireConsent,
-				homescreenUrl: client.homescreenUrl,
-				logo: client.logoUpdatedAt
-					? { updatedAt: client.logoUpdatedAt.toISOString() }
-					: null,
-			};
-		});
+		const result = await withDb(context.env, (db) =>
+			getPendingAuthorizationForAccount(
+				db,
+				pendingId,
+				context.principal.accountId!,
+			),
+		);
 		if (result === "forbidden") {
 			return problemResponse(403, "Forbidden", {
 				code: "forbidden",
@@ -460,19 +441,16 @@ export async function handleRegenerateOidcClientSecret(context: RouteContext) {
 
 export async function handleListOidcClientGrants(context: RouteContext) {
 	try {
-		const client = await withDb(context.env, (db) =>
-			getOidcClientById(db, context.params.id),
+		const result = await withDb(context.env, (db) =>
+			listClientGrantsByRecordId(db, context.params.id),
 		);
-		if (!client) {
+		if (!result) {
 			return problemResponse(404, "OIDC client not found", {
 				code: "not_found",
 				instance: requestInstance(context.request),
 			});
 		}
-		const grants = await withDb(context.env, (db) =>
-			listConsentGrantsForClient(db, client.clientId),
-		);
-		return jsonResponse({ grants });
+		return jsonResponse({ grants: result.grants });
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
 	}
@@ -480,30 +458,19 @@ export async function handleListOidcClientGrants(context: RouteContext) {
 
 export async function handleAdminRevokeOidcClientGrant(context: RouteContext) {
 	try {
-		const revoked = await withDb(context.env, async (db) => {
-			const client = await getOidcClientById(db, context.params.id);
-			if (!client) {
-				return "missing-client" as const;
-			}
-			const actorId = context.principal.accountId;
-			const ok = await revokeConsentGrant(
+		const revoked = await withDb(context.env, (db) =>
+			adminRevokeClientGrant(
 				db,
+				context.params.id,
 				context.params.accountId,
-				client.clientId,
-				actorId
+				context.principal.accountId
 					? {
-							actorAccountId: actorId,
-							clientRecordId: client.id,
-							targetAccountId: context.params.accountId,
+							actorAccountId: context.principal.accountId,
 							context: logContext(context.request),
 						}
 					: undefined,
-			);
-			if (!ok) {
-				return "missing-grant" as const;
-			}
-			return "ok" as const;
-		});
+			),
+		);
 		if (revoked === "missing-client") {
 			return problemResponse(404, "OIDC client not found", {
 				code: "not_found",
@@ -542,22 +509,12 @@ export async function handleRevokeMyOidcGrant(context: RouteContext) {
 	}
 	const accountId = context.principal.accountId;
 	try {
-		const revoked = await withDb(context.env, async (db) => {
-			const client = await getOidcClientByClientId(db, context.params.clientId);
-			const ok = await revokeConsentGrant(
-				db,
-				accountId,
-				context.params.clientId,
-				client
-					? {
-							actorAccountId: accountId,
-							clientRecordId: client.id,
-							context: logContext(context.request),
-						}
-					: undefined,
-			);
-			return ok;
-		});
+		const revoked = await withDb(context.env, (db) =>
+			revokeAccountClientGrant(db, accountId, context.params.clientId, {
+				actorAccountId: accountId,
+				context: logContext(context.request),
+			}),
+		);
 		if (!revoked) {
 			return problemResponse(404, "Consent grant not found", {
 				code: "not_found",

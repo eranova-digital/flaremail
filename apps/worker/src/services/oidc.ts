@@ -180,6 +180,133 @@ export async function getPendingAuthorization(
 	return row ?? null;
 }
 
+export type OidcPendingAuthorizationDto = {
+	id: string;
+	clientId: string;
+	clientRecordId: string;
+	clientName: string;
+	scopes: string[];
+	redirectUri: string;
+	requireConsent: boolean;
+	homescreenUrl: string | null;
+	logo: { updatedAt: string } | null;
+};
+
+export type OidcPendingAuthorizationLookup =
+	| OidcPendingAuthorizationDto
+	| "forbidden"
+	| null;
+
+export async function getPendingAuthorizationForAccount(
+	db: Database,
+	pendingId: string,
+	accountId: string,
+): Promise<OidcPendingAuthorizationLookup> {
+	const pending = await getPendingAuthorization(db, pendingId);
+	if (!pending) {
+		return null;
+	}
+	if (pending.accountId && pending.accountId !== accountId) {
+		return "forbidden";
+	}
+	const client = await getOidcClientByClientId(db, pending.clientId);
+	if (!client) {
+		return null;
+	}
+	return {
+		id: pending.id,
+		clientId: client.clientId,
+		clientRecordId: client.id,
+		clientName: client.name,
+		scopes: pending.scopes,
+		redirectUri: pending.redirectUri,
+		requireConsent: client.requireConsent,
+		homescreenUrl: client.homescreenUrl,
+		logo: client.logoUpdatedAt
+			? { updatedAt: client.logoUpdatedAt.toISOString() }
+			: null,
+	};
+}
+
+export async function listClientGrantsByRecordId(
+	db: Database,
+	clientRecordId: string,
+) {
+	const client = await loadOidcClientRecord(db, clientRecordId);
+	if (!client) {
+		return null;
+	}
+	const grants = await listConsentGrantsForClient(db, client.clientId);
+	return { client, grants };
+}
+
+async function loadOidcClientRecord(
+	db: Database,
+	id: string,
+): Promise<OidcClient | null> {
+	const [client] = await db
+		.select()
+		.from(oidcClients)
+		.where(eq(oidcClients.id, id))
+		.limit(1);
+	return client ?? null;
+}
+
+export type OidcGrantRevokeResult = "ok" | "missing-client" | "missing-grant";
+
+export async function adminRevokeClientGrant(
+	db: Database,
+	clientRecordId: string,
+	targetAccountId: string,
+	logMeta?: {
+		actorAccountId: string;
+		context?: LogContext | null;
+	},
+): Promise<OidcGrantRevokeResult> {
+	const client = await loadOidcClientRecord(db, clientRecordId);
+	if (!client) {
+		return "missing-client";
+	}
+	const ok = await revokeConsentGrant(
+		db,
+		targetAccountId,
+		client.clientId,
+		logMeta
+			? {
+					actorAccountId: logMeta.actorAccountId,
+					clientRecordId: client.id,
+					targetAccountId,
+					context: logMeta.context,
+				}
+			: undefined,
+	);
+	return ok ? "ok" : "missing-grant";
+}
+
+export async function revokeAccountClientGrant(
+	db: Database,
+	accountId: string,
+	clientId: string,
+	logMeta?: {
+		actorAccountId: string;
+		context?: LogContext | null;
+	},
+): Promise<boolean> {
+	const client = await getOidcClientByClientId(db, clientId);
+	return revokeConsentGrant(
+		db,
+		accountId,
+		clientId,
+		client && logMeta
+			? {
+					actorAccountId: logMeta.actorAccountId,
+					clientRecordId: client.id,
+					context: logMeta.context,
+				}
+			: undefined,
+	);
+}
+
 export async function bindPendingAuthorizationAccount(
 	db: Database,
 	pendingId: string,
