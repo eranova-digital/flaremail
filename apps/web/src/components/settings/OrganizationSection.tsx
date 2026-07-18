@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { ComposeEditor } from "@/components/compose/ComposeEditor";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -414,20 +415,17 @@ export function OrganizationSection() {
 							</div>
 						) : null}
 						<div className="space-y-2">
-							<label
-								htmlFor="default-identity-signature"
-								className="text-sm font-medium"
-							>
-								Signature (HTML)
-							</label>
-							<textarea
-								id="default-identity-signature"
-								rows={4}
-								className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-								value={defaultIdentitySignatureHtml}
+							<label className="text-sm font-medium">Signature</label>
+							<ComposeEditor
+								key={baseline.updatedAt}
+								initialHtml={
+									baseline.defaultIdentitySignatureHtml || "<p></p>"
+								}
+								placeholder="Optional default signature…"
 								disabled={updateMutation.isPending}
-								onChange={(event) => {
-									setDefaultIdentitySignatureHtml(event.target.value);
+								className="min-h-[140px]"
+								onChange={({ html }) => {
+									setDefaultIdentitySignatureHtml(html);
 									setSaved(false);
 								}}
 							/>

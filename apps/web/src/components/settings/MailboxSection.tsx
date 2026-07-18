@@ -320,12 +320,21 @@ function MailboxRow({
 				{isSystemManaged ? null : (
 					<div className="flex shrink-0 items-center gap-2">
 						{mailbox.type === "shared" && mailbox.id ? (
-							<Button variant="outline" size="sm" asChild>
-								<Link to={`/management/mailboxes/${mailbox.id}/users`}>
-									<Users className="mr-1.5 size-3.5" />
-									Users
-								</Link>
-							</Button>
+							<>
+								<Button variant="outline" size="sm" asChild>
+									<Link to={`/management/mailboxes/${mailbox.id}/users`}>
+										<Users className="mr-1.5 size-3.5" />
+										Users
+									</Link>
+								</Button>
+								<Button variant="outline" size="sm" asChild>
+									<Link
+										to={`/management/mailboxes/${mailbox.id}/users?tab=identities`}
+									>
+										Identities
+									</Link>
+								</Button>
+							</>
 						) : null}
 						{canDelete ? (
 							<Button

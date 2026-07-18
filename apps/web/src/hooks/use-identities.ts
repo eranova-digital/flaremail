@@ -9,6 +9,7 @@ import {
 	updateMailboxIdentityPolicy,
 	type IdentityInput,
 } from "@/lib/identities/api";
+import { queryKeys } from "@/lib/query-keys";
 
 export const identityQueryKeys = {
 	mailbox: (mailboxId: string) => ["identities", mailboxId] as const,
@@ -93,7 +94,13 @@ export function useUpdateMailboxIdentityPolicy(mailboxId: string) {
 			identityExport?: boolean;
 		}) => updateMailboxIdentityPolicy(mailboxId, input),
 		onSuccess: () => {
-			void queryClient.invalidateQueries({ queryKey: ["mailboxes"] });
+			void queryClient.invalidateQueries({ queryKey: queryKeys.mailboxes });
+			void queryClient.invalidateQueries({
+				queryKey: identityQueryKeys.mailbox(mailboxId),
+			});
+			void queryClient.invalidateQueries({
+				queryKey: identityQueryKeys.available(mailboxId),
+			});
 		},
 	});
 }
