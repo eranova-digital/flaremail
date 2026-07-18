@@ -36,6 +36,7 @@ import type { EmailTemplate } from "@/lib/email-templates/api";
 import { useCanAccessOrganizationTab } from "@/hooks/use-instance-settings";
 import { SystemTemplatesSection } from "@/components/settings/SystemTemplatesSection";
 import { ComposeTemplatePreviewButton } from "@/components/email-templates/TemplatePreviewButton";
+import { ComposeTemplateDownloadButton } from "@/components/email-templates/TemplateDownloadButton";
 
 const GLOBAL_SCOPE = "__global__";
 
@@ -335,6 +336,10 @@ function TemplateRow({
 			</div>
 			<div className="flex shrink-0 items-center gap-1">
 				<ComposeTemplatePreviewButton templateId={template.id} />
+				<ComposeTemplateDownloadButton
+					templateId={template.id}
+					templateName={template.name}
+				/>
 				<Button
 					type="button"
 					variant="ghost"
