@@ -289,7 +289,7 @@ export function LogsSection() {
 						onChange={(event) => setSearchDraft(event.target.value)}
 					/>
 				</div>
-				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 					<div className="space-y-1">
 						<label
 							className="text-muted-foreground text-xs"
@@ -323,7 +323,7 @@ export function LogsSection() {
 							onChange={setTypes}
 						/>
 					</div>
-					<div className="space-y-1 sm:col-span-2">
+					<div className="space-y-1 sm:col-span-2 xl:col-span-1">
 						<label
 							className="text-muted-foreground text-xs"
 							htmlFor="logs-range"
@@ -335,29 +335,6 @@ export function LogsSection() {
 							value={dateRange}
 							onChange={setDateRange}
 						/>
-					</div>
-					<div className="space-y-1">
-						<label
-							className="text-muted-foreground text-xs"
-							htmlFor="logs-limit"
-						>
-							Page size
-						</label>
-						<Select
-							value={String(limit)}
-							onValueChange={(value) => setFilter("limit", value)}
-						>
-							<SelectTrigger id="logs-limit">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{PAGE_SIZES.map((size) => (
-									<SelectItem key={size} value={String(size)}>
-										{size} per page
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
 					</div>
 				</div>
 			</div>
@@ -408,10 +385,35 @@ export function LogsSection() {
 					</ul>
 
 					<div className="bg-muted/30 flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-						<p className="text-muted-foreground text-xs">
-							Page {pageNumber}
-							{hasNext ? " · more available" : " · end of results"}
-						</p>
+						<div className="flex flex-wrap items-center gap-3">
+							<p className="text-muted-foreground text-xs">
+								Page {pageNumber}
+								{hasNext ? " · more available" : " · end of results"}
+							</p>
+							<div className="flex items-center gap-2">
+								<label
+									className="text-muted-foreground text-xs"
+									htmlFor="logs-limit"
+								>
+									Page size
+								</label>
+								<Select
+									value={String(limit)}
+									onValueChange={(value) => setFilter("limit", value)}
+								>
+									<SelectTrigger id="logs-limit" className="h-8 w-[7.5rem]">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{PAGE_SIZES.map((size) => (
+											<SelectItem key={size} value={String(size)}>
+												{size} / page
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
 						<div className="flex items-center gap-2">
 							<Button
 								variant="outline"
