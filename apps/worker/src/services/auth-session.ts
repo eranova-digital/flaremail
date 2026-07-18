@@ -48,8 +48,16 @@ export async function createSession(
 
 export async function signOutSession(db: Database, sessionToken: string) {
 	const tokenHash = await hashSecret(sessionToken);
+	const [session] = await db
+		.select({ accountId: sessions.accountId })
+		.from(sessions)
+		.where(eq(sessions.tokenHash, tokenHash))
+		.limit(1);
 	await db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
-	return clearSessionCookieHeader();
+	return {
+		cookieHeader: clearSessionCookieHeader(),
+		accountId: session?.accountId ?? null,
+	};
 }
 
 export async function touchSession(db: Database, sessionId: string, lastSeenAt: Date) {

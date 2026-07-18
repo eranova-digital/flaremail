@@ -165,6 +165,18 @@ export async function emitLog(
 	return id;
 }
 
+/** Await emitLog without failing the main action if logging fails. */
+export async function safeEmitLog(
+	db: Database,
+	input: EmitLogInput,
+): Promise<void> {
+	try {
+		await emitLog(db, input);
+	} catch (error) {
+		console.error("Failed to emit log", error);
+	}
+}
+
 export async function purgeExpiredLogs(db: Database): Promise<number> {
 	const settings = await getInstanceSettings(db);
 	const days = Number(settings.logRetentionDays);

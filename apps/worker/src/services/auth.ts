@@ -73,12 +73,14 @@ export async function signIn(
 	if (await isMfaEnabled(db, account.id)) {
 		return {
 			requiresMfa: true as const,
+			accountId: account.id,
 			mfaToken: await createMfaChallengeToken(account.id, encryptionKey),
 		};
 	}
 
 	return {
 		requiresMfa: false as const,
+		accountId: account.id,
 		...(await createSession(db, account.id, sessionMetadata)),
 	};
 }
@@ -410,6 +412,7 @@ export async function resetPasswordWithCode(
 		.update(passwordResetCodes)
 		.set({ usedAt: now })
 		.where(eq(passwordResetCodes.id, row.id));
+	return { accountId: row.accountId };
 }
 
 export async function getMe(db: Database, accountId: string) {

@@ -264,7 +264,10 @@ export async function completeMfaSignIn(
 		throw new Error("Invalid authentication code");
 	}
 
-	return createSession(db, accountId, sessionMetadata);
+	return {
+		accountId,
+		...(await createSession(db, accountId, sessionMetadata)),
+	};
 }
 
 export async function verifyAccountTotpCode(
