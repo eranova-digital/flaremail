@@ -4,6 +4,8 @@ import type { Database } from "../db/client";
 import { instanceSettings } from "../db/schema";
 import type { AccountRole } from "../lib/auth/types";
 import type { Principal } from "../lib/auth/types";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
 import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
 
 export type OrganizationTabAccess =
@@ -226,6 +228,7 @@ export async function updateInstanceSettings(
 	db: Database,
 	principal: Principal,
 	input: Partial<InstanceSettings>,
+	logContext?: LogContext | null,
 ): Promise<InstanceSettingsRecord> {
 	if (!principal.accountId) {
 		throw new InstanceSettingsAccessDeniedError();
@@ -296,7 +299,37 @@ export async function updateInstanceSettings(
 		.set(patch)
 		.where(eq(instanceSettings.id, INSTANCE_SETTINGS_ID));
 
-	return getInstanceSettings(db);
+	const updated = await getInstanceSettings(db);
+	const accountId = principal.accountId;
+	if (accountId) {
+		await safeEmitLog(db, {
+			importance: 4,
+			type: "settings",
+			summary: "{actor} updated organization settings",
+			refs: { actor: { kind: "account", id: accountId } },
+			actorAccountId: accountId,
+			context: logContext ?? null,
+		});
+
+		const identitySettingsChanged =
+			input.identitySelfServe !== undefined ||
+			input.customNameAllowance !== undefined ||
+			input.defaultIdentityNamePattern !== undefined ||
+			input.defaultIdentityCustomName !== undefined ||
+			input.defaultIdentitySignatureHtml !== undefined;
+		if (identitySettingsChanged) {
+			await safeEmitLog(db, {
+				importance: 5,
+				type: "identities",
+				summary: "{actor} updated organization identity settings",
+				refs: { actor: { kind: "account", id: accountId } },
+				actorAccountId: accountId,
+				context: logContext ?? null,
+			});
+		}
+	}
+
+	return updated;
 }
 
 function rowToRecord(

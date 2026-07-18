@@ -10,6 +10,8 @@ import {
 } from "../../lib/auth/access";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
 import type { Principal } from "../../lib/auth/types";
+import type { LogContext } from "../../lib/logs/context";
+import { safeEmitLog } from "../../lib/logs/emit";
 import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
 import { loadAccountMailboxGrants } from "../accounts/shared";
 import { getInstanceSettings } from "../instance-settings";
@@ -344,6 +346,7 @@ export async function createMailboxIdentity(
 	principal: Principal,
 	mailboxId: string,
 	input: IdentityInput,
+	logContext?: LogContext | null,
 ): Promise<IdentityDto> {
 	await assertCanManageMailboxIdentities(db, principal, mailboxId);
 	const settings = await getInstanceSettings(db);
@@ -371,13 +374,31 @@ export async function createMailboxIdentity(
 		})
 		.returning();
 
-	return toIdentityDto(
+	const created = toIdentityDto(
 		{
 			...row,
 			namePattern: row.namePattern as IdentityNamePattern,
 		},
 		profile,
 	);
+
+	const accountId = principal.accountId;
+	if (accountId) {
+		await safeEmitLog(db, {
+			importance: 6,
+			type: "identities",
+			summary: "{actor} created {identity}",
+			refs: {
+				actor: { kind: "account", id: accountId },
+				identity: { kind: "identity", id: created.id },
+				mailbox: { kind: "mailbox", id: mailboxId },
+			},
+			actorAccountId: accountId,
+			context: logContext ?? null,
+		});
+	}
+
+	return created;
 }
 
 export async function updateMailboxIdentity(
@@ -385,6 +406,7 @@ export async function updateMailboxIdentity(
 	principal: Principal,
 	identityId: string,
 	input: Partial<IdentityInput>,
+	logContext?: LogContext | null,
 ): Promise<IdentityDto> {
 	if (identityId === DEFAULT_IDENTITY_ID) {
 		throw new IdentityAccessDeniedError("The default identity cannot be updated here");
@@ -444,19 +466,40 @@ export async function updateMailboxIdentity(
 		existing.mailboxId,
 		principal.accountId,
 	);
-	return toIdentityDto(
+	const updated = toIdentityDto(
 		{
 			...row,
 			namePattern: row.namePattern as IdentityNamePattern,
 		},
 		profile,
 	);
+
+	const accountId = principal.accountId;
+	if (accountId) {
+		await safeEmitLog(db, {
+			importance: 6,
+			type: "identities",
+			summary: "{actor} updated {identity}",
+			refs: {
+				actor: { kind: "account", id: accountId },
+				identity: { kind: "identity", id: updated.id },
+				...(updated.mailboxId
+					? { mailbox: { kind: "mailbox" as const, id: updated.mailboxId } }
+					: {}),
+			},
+			actorAccountId: accountId,
+			context: logContext ?? null,
+		});
+	}
+
+	return updated;
 }
 
 export async function deleteMailboxIdentity(
 	db: Database,
 	principal: Principal,
 	identityId: string,
+	logContext?: LogContext | null,
 ): Promise<void> {
 	if (identityId === DEFAULT_IDENTITY_ID) {
 		throw new IdentityAccessDeniedError("The default identity cannot be deleted");
@@ -473,4 +516,19 @@ export async function deleteMailboxIdentity(
 
 	await assertCanManageMailboxIdentities(db, principal, existing.mailboxId);
 	await db.delete(identities).where(eq(identities.id, identityId));
+
+	const accountId = principal.accountId;
+	if (accountId) {
+		await safeEmitLog(db, {
+			importance: 6,
+			type: "identities",
+			summary: "{actor} deleted {identity}",
+			refs: {
+				actor: { kind: "account", id: accountId },
+				identity: { kind: "identity", id: identityId },
+			},
+			actorAccountId: accountId,
+			context: logContext ?? null,
+		});
+	}
 }

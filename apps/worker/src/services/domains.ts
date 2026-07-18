@@ -12,6 +12,7 @@ import {
 	toDomainReadinessSummaryDto,
 } from "../lib/domain-validation";
 import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
 
 export function toDomainDto(
 	domain: {
@@ -107,6 +108,32 @@ export async function createDomain(
 			}
 		}
 
+		const actorAccountId = logMeta?.actorAccountId ?? null;
+		if (actorAccountId) {
+			await safeEmitLog(db, {
+				importance: 3,
+				type: "domains",
+				summary: "{actor} registered {domain}",
+				refs: {
+					actor: { kind: "account", id: actorAccountId },
+					domain: { kind: "domain", id: row.id },
+				},
+				actorAccountId,
+				context: logMeta?.context ?? null,
+			});
+		} else {
+			await safeEmitLog(db, {
+				importance: 3,
+				type: "domains",
+				summary: "Registered {domain}",
+				refs: {
+					domain: { kind: "domain", id: row.id },
+				},
+				actorAccountId: null,
+				context: logMeta?.context ?? null,
+			});
+		}
+
 		return getDomain(db, row.id);
 	} catch (error) {
 		if (isUniqueViolation(error)) {
@@ -157,9 +184,36 @@ export async function removeDomain(
 	db: Database,
 	bucket: R2Bucket,
 	id: string,
+	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ): Promise<void> {
 	await getDomain(db, id);
 	await deleteDomainCascade(db, bucket, id);
+
+	const actorAccountId = logMeta?.actorAccountId ?? null;
+	if (actorAccountId) {
+		await safeEmitLog(db, {
+			importance: 3,
+			type: "domains",
+			summary: "{actor} deleted {domain}",
+			refs: {
+				actor: { kind: "account", id: actorAccountId },
+				domain: { kind: "domain", id },
+			},
+			actorAccountId,
+			context: logMeta?.context ?? null,
+		});
+	} else {
+		await safeEmitLog(db, {
+			importance: 3,
+			type: "domains",
+			summary: "Deleted {domain}",
+			refs: {
+				domain: { kind: "domain", id },
+			},
+			actorAccountId: null,
+			context: logMeta?.context ?? null,
+		});
+	}
 }
 
 export async function getDomainRecord(db: Database, id: string) {

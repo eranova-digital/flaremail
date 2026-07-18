@@ -188,7 +188,6 @@ describe("OIDC authorization service", () => {
 				"Intendant cannot use OIDC",
 			);
 			expect(url.searchParams.get("state")).toBe("state-123");
-			expect(result.logs).toHaveLength(1);
 		});
 	}, 20_000);
 
@@ -237,7 +236,6 @@ describe("OIDC authorization service", () => {
 			expect(url.origin + url.pathname).toBe(REDIRECT_URI);
 			expect(url.searchParams.get("code")).toBeTruthy();
 			expect(url.searchParams.get("state")).toBe("state-123");
-			expect(result.logs).toHaveLength(1);
 		});
 	}, 20_000);
 
@@ -272,7 +270,6 @@ describe("OIDC authorization service", () => {
 			const redirectUrl = new URL(approveResult.redirectTo);
 			expect(redirectUrl.searchParams.get("code")).toBeTruthy();
 			expect(redirectUrl.searchParams.get("state")).toBe("state-123");
-			expect(approveResult.logs).toHaveLength(2);
 		});
 	}, 20_000);
 
@@ -305,7 +302,6 @@ describe("OIDC authorization service", () => {
 			const redirectUrl = new URL(denyResult.redirectTo);
 			expect(redirectUrl.searchParams.get("error")).toBe("access_denied");
 			expect(redirectUrl.searchParams.get("state")).toBe("state-123");
-			expect(denyResult.logs).toHaveLength(1);
 
 			const pendingRows = await db
 				.select()

@@ -11,6 +11,8 @@ import {
 } from "../lib/auth/totp";
 import { verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
 import { getInstanceSettings } from "./instance-settings";
 import { assertMfaCanBeDisabled } from "./instance-settings";
 import { createSession, type SessionMetadata } from "./auth-session";
@@ -242,6 +244,7 @@ export async function completeMfaSignIn(
 		encryptionKey: string;
 	},
 	sessionMetadata?: SessionMetadata,
+	logContext?: LogContext | null,
 ) {
 	const accountId = await verifyMfaChallengeToken(
 		input.mfaToken,
@@ -264,10 +267,57 @@ export async function completeMfaSignIn(
 		throw new Error("Invalid authentication code");
 	}
 
+	const session = await createSession(db, accountId, sessionMetadata);
+	await safeEmitLog(db, {
+		importance: 4,
+		type: "auth",
+		summary: "{actor} signed in",
+		refs: { actor: { kind: "account", id: accountId } },
+		actorAccountId: accountId,
+		context: logContext ?? null,
+	});
+
 	return {
 		accountId,
-		...(await createSession(db, accountId, sessionMetadata)),
+		...session,
 	};
+}
+
+export async function recordFailedMfaSignInAttempt(
+	db: Database,
+	input: {
+		mfaToken: string;
+		encryptionKey: string;
+		logContext?: LogContext | null;
+	},
+): Promise<void> {
+	let accountId: string | null = null;
+	try {
+		accountId = await verifyMfaChallengeToken(input.mfaToken, input.encryptionKey);
+	} catch {
+		await safeEmitLog(db, {
+			importance: 2,
+			type: "auth",
+			summary: "Failed sign-in attempt",
+			context: input.logContext ?? null,
+		});
+		return;
+	}
+
+	const [account] = await db
+		.select({ isIntendant: accounts.isIntendant })
+		.from(accounts)
+		.where(eq(accounts.id, accountId))
+		.limit(1);
+
+	await safeEmitLog(db, {
+		importance: account?.isIntendant ? 0 : 2,
+		type: "auth",
+		summary: "{actor} failed to sign in",
+		refs: { actor: { kind: "account", id: accountId } },
+		actorAccountId: accountId,
+		context: input.logContext ?? null,
+	});
 }
 
 export async function verifyAccountTotpCode(

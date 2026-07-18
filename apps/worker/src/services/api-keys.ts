@@ -11,6 +11,8 @@ import {
 import { buildSecret } from "../lib/auth/api-key";
 import { hashSecret } from "../lib/auth/password";
 import type { Principal } from "../lib/auth/types";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
 
 type CreateApiKeyInput = {
 	accountId: string;
@@ -34,7 +36,11 @@ function assertRequestedScopesAllowed(
 	}
 }
 
-export async function createApiKey(db: Database, input: CreateApiKeyInput) {
+export async function createApiKey(
+	db: Database,
+	input: CreateApiKeyInput,
+	logContext?: LogContext | null,
+) {
 	const scopes = normalizeApiKeyScopes(input.scopes);
 	if (scopes.length === 0) {
 		throw new Error("At least one API key scope is required");
@@ -52,6 +58,17 @@ export async function createApiKey(db: Database, input: CreateApiKeyInput) {
 		keyHash: await hashSecret(secret),
 		scopes,
 		createdAt: now,
+	});
+	await safeEmitLog(db, {
+		importance: 4,
+		type: "api-keys",
+		summary: "{actor} created API key {key}",
+		refs: {
+			actor: { kind: "account", id: input.accountId },
+			key: { kind: "api-key", id },
+		},
+		actorAccountId: input.accountId,
+		context: logContext ?? null,
 	});
 	return { id, secret, prefix: keyPrefix, scopes };
 }
@@ -76,6 +93,7 @@ export async function revokeApiKey(
 	db: Database,
 	accountId: string,
 	keyId: string,
+	logContext?: LogContext | null,
 ): Promise<boolean> {
 	const now = new Date();
 	const revoked = await db
@@ -89,5 +107,18 @@ export async function revokeApiKey(
 			),
 		)
 		.returning({ id: apiKeys.id });
+	if (revoked.length > 0) {
+		await safeEmitLog(db, {
+			importance: 4,
+			type: "api-keys",
+			summary: "{actor} revoked API key {key}",
+			refs: {
+				actor: { kind: "account", id: accountId },
+				key: { kind: "api-key", id: keyId },
+			},
+			actorAccountId: accountId,
+			context: logContext ?? null,
+		});
+	}
 	return revoked.length > 0;
 }

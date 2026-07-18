@@ -12,6 +12,7 @@ import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
 import type { MailboxType, UserCreatableMailboxType } from "../lib/mailbox-types";
 import { USER_CREATABLE_MAILBOX_TYPES } from "../lib/mailbox-types";
+import { parseLogContextFromRequest } from "../lib/logs/request-context";
 import {
 	createMailbox,
 	getMailbox,
@@ -23,10 +24,6 @@ import {
 	IdentityAccessDeniedError,
 	assertCanManageMailboxIdentities,
 } from "../services/identities";
-import {
-	parseLogContextFromRequest,
-	safeEmitLog,
-} from "../services/logs";
 
 function parseMailboxListScope(request: Request): MailboxListScope {
 	const scope = new URL(request.url).searchParams.get("scope");
@@ -76,35 +73,28 @@ export async function handleCreateMailbox({
 
 	try {
 		assertPrincipalCanManageDomain(principal, value.domainId as string);
-		const mailbox = await withDb(env, async (db) => {
-			const created = await createMailbox(db, {
-				address: value.address as string,
-				domainId: value.domainId as string,
-				type: value.type as MailboxType,
-				aliasTargetId:
-					typeof value.aliasTargetId === "string"
-						? value.aliasTargetId
-						: undefined,
-				aliasTargetAddress:
-					typeof value.aliasTargetAddress === "string"
-						? value.aliasTargetAddress
-						: undefined,
-			});
-			if (created.type === "shared" && principal.accountId) {
-				await safeEmitLog(db, {
-					importance: 4,
-					type: "mailboxes",
-					summary: "{actor} created {mailbox}",
-					refs: {
-						actor: { kind: "account", id: principal.accountId },
-						mailbox: { kind: "mailbox", id: created.id },
-					},
+		const mailbox = await withDb(env, async (db) =>
+			createMailbox(
+				db,
+				{
+					address: value.address as string,
+					domainId: value.domainId as string,
+					type: value.type as MailboxType,
+					aliasTargetId:
+						typeof value.aliasTargetId === "string"
+							? value.aliasTargetId
+							: undefined,
+					aliasTargetAddress:
+						typeof value.aliasTargetAddress === "string"
+							? value.aliasTargetAddress
+							: undefined,
+				},
+				{
 					actorAccountId: principal.accountId,
 					context: parseLogContextFromRequest(request),
-				});
-			}
-			return created;
-		});
+				},
+			),
+		);
 		return jsonResponse(mailbox, 201);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -205,21 +195,10 @@ export async function handleDeleteMailbox({
 	try {
 		await withDb(env, async (db) => {
 			await authorizeMailbox(db, principal, params.id, "manage");
-			const mailbox = await getMailbox(db, params.id);
-			await removeMailbox(db, env.BUCKET, params.id);
-			if (mailbox.type === "shared" && principal.accountId) {
-				await safeEmitLog(db, {
-					importance: 4,
-					type: "mailboxes",
-					summary: "{actor} deleted {mailbox}",
-					refs: {
-						actor: { kind: "account", id: principal.accountId },
-						mailbox: { kind: "mailbox", id: mailbox.id },
-					},
-					actorAccountId: principal.accountId,
-					context: parseLogContextFromRequest(request),
-				});
-			}
+			await removeMailbox(db, env.BUCKET, params.id, {
+				actorAccountId: principal.accountId,
+				context: parseLogContextFromRequest(request),
+			});
 		});
 		return new Response(null, { status: 204 });
 	} catch (error) {

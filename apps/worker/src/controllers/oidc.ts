@@ -1,9 +1,10 @@
-import { withDb, type Database } from "../db/client";
+import { withDb } from "../db/client";
 import { getOidcPublicJwks } from "../lib/auth/oidc-signing";
 import { tryResolveSessionPrincipal } from "../lib/auth/resolve-principal";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
+import { parseLogContextFromRequest } from "../lib/logs/request-context";
 import {
 	problemResponse,
 	requestInstance,
@@ -35,10 +36,6 @@ import {
 	regenerateOidcClientSecret,
 	updateOidcClient,
 } from "../services/oidc-clients";
-import {
-	parseLogContextFromRequest,
-	safeEmitLog,
-} from "../services/logs";
 
 function oidcErrorResponse(error: unknown, request: Request): Response {
 	if (error instanceof OidcError) {
@@ -73,21 +70,9 @@ function logContext(request: Request) {
 
 async function mapAuthorizationResult(
 	result: OidcAuthorizationResult,
-	request: Request,
-	db: Database,
 ): Promise<Response> {
 	if (result.kind === "html_error") {
 		return htmlErrorPage(result.title, result.message);
-	}
-	if (result.logs) {
-		const context = logContext(request);
-		for (const log of result.logs) {
-			await safeEmitLog(db, {
-				...log,
-				type: "oidc",
-				context,
-			});
-		}
 	}
 	return Response.redirect(result.url, 302);
 }
@@ -128,8 +113,9 @@ export async function handleOidcAuthorize(context: RouteContext) {
 				},
 				session,
 				webOrigin(context.request, context.env),
+				logContext(context.request),
 			);
-			return mapAuthorizationResult(result, context.request, db);
+			return mapAuthorizationResult(result);
 		});
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
@@ -207,23 +193,18 @@ export async function handleOidcConsentDecision(context: RouteContext) {
 	}
 
 	try {
-		const result = await withDb(context.env, async (db) => {
-			const decisionResult = await decideConsent(db, {
-				pendingId,
-				decision,
-				accountId: context.principal.accountId!,
-			});
-			const logContextValue = logContext(context.request);
-			for (const log of decisionResult.logs) {
-				await safeEmitLog(db, {
-					...log,
-					type: "oidc",
-					context: logContextValue,
-				});
-			}
-			return decisionResult.redirectTo;
-		});
-		return jsonResponse({ redirectTo: result });
+		const result = await withDb(context.env, (db) =>
+			decideConsent(
+				db,
+				{
+					pendingId,
+					decision,
+					accountId: context.principal.accountId!,
+				},
+				logContext(context.request),
+			),
+		);
+		return jsonResponse({ redirectTo: result.redirectTo });
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
 	}
@@ -321,42 +302,31 @@ export async function handleCreateOidcClient(context: RouteContext) {
 		return validationError(context.request, "name and redirectUris are required");
 	}
 	try {
-		const result = await withDb(context.env, async (db) => {
-			const created = await createOidcClientRecord(db, {
-				name: value.name as string,
-				redirectUris: (value.redirectUris as unknown[]).filter(
-					(uri): uri is string => typeof uri === "string",
-				),
-				allowedScopes: Array.isArray(value.allowedScopes)
-					? value.allowedScopes.filter((s): s is string => typeof s === "string")
-					: ["openid", "profile", "email"],
-				m2mPermissions: Array.isArray(value.m2mPermissions)
-					? value.m2mPermissions.filter((s): s is string => typeof s === "string")
-					: [],
-				isConfidential: value.isConfidential !== false,
-				requireConsent: value.requireConsent !== false,
-				homescreenUrl:
-					typeof value.homescreenUrl === "string" || value.homescreenUrl === null
-						? (value.homescreenUrl as string | null)
-						: undefined,
-				createdByAccountId: context.principal.accountId,
-			});
-			const actorId = context.principal.accountId;
-			if (actorId) {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "oidc",
-					summary: "{actor} created OIDC client {client}",
-					refs: {
-						actor: { kind: "account", id: actorId },
-						client: { kind: "oidc-client", id: created.id },
-					},
-					actorAccountId: actorId,
-					context: logContext(context.request),
-				});
-			}
-			return created;
-		});
+		const result = await withDb(context.env, (db) =>
+			createOidcClientRecord(
+				db,
+				{
+					name: value.name as string,
+					redirectUris: (value.redirectUris as unknown[]).filter(
+						(uri): uri is string => typeof uri === "string",
+					),
+					allowedScopes: Array.isArray(value.allowedScopes)
+						? value.allowedScopes.filter((s): s is string => typeof s === "string")
+						: ["openid", "profile", "email"],
+					m2mPermissions: Array.isArray(value.m2mPermissions)
+						? value.m2mPermissions.filter((s): s is string => typeof s === "string")
+						: [],
+					isConfidential: value.isConfidential !== false,
+					requireConsent: value.requireConsent !== false,
+					homescreenUrl:
+						typeof value.homescreenUrl === "string" || value.homescreenUrl === null
+							? (value.homescreenUrl as string | null)
+							: undefined,
+					createdByAccountId: context.principal.accountId,
+				},
+				logContext(context.request),
+			),
+		);
 		return jsonResponse(result, 201);
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
@@ -396,46 +366,42 @@ export async function handleUpdateOidcClient(context: RouteContext) {
 	}
 	const value = body as Record<string, unknown>;
 	try {
-		const client = await withDb(context.env, async (db) => {
-			const updated = await updateOidcClient(db, context.params.id, {
-				name: typeof value.name === "string" ? value.name : undefined,
-				redirectUris: Array.isArray(value.redirectUris)
-					? value.redirectUris.filter((s): s is string => typeof s === "string")
-					: undefined,
-				allowedScopes: Array.isArray(value.allowedScopes)
-					? value.allowedScopes.filter((s): s is string => typeof s === "string")
-					: undefined,
-				m2mPermissions: Array.isArray(value.m2mPermissions)
-					? value.m2mPermissions.filter((s): s is string => typeof s === "string")
-					: undefined,
-				isConfidential:
-					typeof value.isConfidential === "boolean"
-						? value.isConfidential
+		const client = await withDb(context.env, (db) =>
+			updateOidcClient(
+				db,
+				context.params.id,
+				{
+					name: typeof value.name === "string" ? value.name : undefined,
+					redirectUris: Array.isArray(value.redirectUris)
+						? value.redirectUris.filter((s): s is string => typeof s === "string")
 						: undefined,
-				requireConsent:
-					typeof value.requireConsent === "boolean"
-						? value.requireConsent
+					allowedScopes: Array.isArray(value.allowedScopes)
+						? value.allowedScopes.filter((s): s is string => typeof s === "string")
 						: undefined,
-				homescreenUrl:
-					typeof value.homescreenUrl === "string" || value.homescreenUrl === null
-						? (value.homescreenUrl as string | null)
+					m2mPermissions: Array.isArray(value.m2mPermissions)
+						? value.m2mPermissions.filter((s): s is string => typeof s === "string")
 						: undefined,
-			});
-			if (updated && context.principal.accountId) {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "oidc",
-					summary: "{actor} updated OIDC client {client}",
-					refs: {
-						actor: { kind: "account", id: context.principal.accountId },
-						client: { kind: "oidc-client", id: updated.id },
-					},
-					actorAccountId: context.principal.accountId,
-					context: logContext(context.request),
-				});
-			}
-			return updated;
-		});
+					isConfidential:
+						typeof value.isConfidential === "boolean"
+							? value.isConfidential
+							: undefined,
+					requireConsent:
+						typeof value.requireConsent === "boolean"
+							? value.requireConsent
+							: undefined,
+					homescreenUrl:
+						typeof value.homescreenUrl === "string" || value.homescreenUrl === null
+							? (value.homescreenUrl as string | null)
+							: undefined,
+				},
+				context.principal.accountId
+					? {
+							actorAccountId: context.principal.accountId,
+							context: logContext(context.request),
+						}
+					: undefined,
+			),
+		);
 		if (!client) {
 			return problemResponse(404, "OIDC client not found", {
 				code: "not_found",
@@ -450,27 +416,19 @@ export async function handleUpdateOidcClient(context: RouteContext) {
 
 export async function handleDeleteOidcClient(context: RouteContext) {
 	try {
-		const deleted = await withDb(context.env, async (db) => {
-			const ok = await deleteOidcClient(
+		const deleted = await withDb(context.env, (db) =>
+			deleteOidcClient(
 				db,
 				context.env.BUCKET,
 				context.params.id,
-			);
-			if (ok && context.principal.accountId) {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "oidc",
-					summary: "{actor} deleted OIDC client {client}",
-					refs: {
-						actor: { kind: "account", id: context.principal.accountId },
-						client: { kind: "oidc-client", id: context.params.id },
-					},
-					actorAccountId: context.principal.accountId,
-					context: logContext(context.request),
-				});
-			}
-			return ok;
-		});
+				context.principal.accountId
+					? {
+							actorAccountId: context.principal.accountId,
+							context: logContext(context.request),
+						}
+					: undefined,
+			),
+		);
 		if (!deleted) {
 			return problemResponse(404, "OIDC client not found", {
 				code: "not_found",
@@ -527,28 +485,22 @@ export async function handleAdminRevokeOidcClientGrant(context: RouteContext) {
 			if (!client) {
 				return "missing-client" as const;
 			}
+			const actorId = context.principal.accountId;
 			const ok = await revokeConsentGrant(
 				db,
 				context.params.accountId,
 				client.clientId,
+				actorId
+					? {
+							actorAccountId: actorId,
+							clientRecordId: client.id,
+							targetAccountId: context.params.accountId,
+							context: logContext(context.request),
+						}
+					: undefined,
 			);
 			if (!ok) {
 				return "missing-grant" as const;
-			}
-			const actorId = context.principal.accountId;
-			if (actorId) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "oidc",
-					summary: "{actor} revoked {account}'s consent for {client}",
-					refs: {
-						actor: { kind: "account", id: actorId },
-						account: { kind: "account", id: context.params.accountId },
-						client: { kind: "oidc-client", id: client.id },
-					},
-					actorAccountId: actorId,
-					context: logContext(context.request),
-				});
 			}
 			return "ok" as const;
 		});
@@ -596,20 +548,14 @@ export async function handleRevokeMyOidcGrant(context: RouteContext) {
 				db,
 				accountId,
 				context.params.clientId,
+				client
+					? {
+							actorAccountId: accountId,
+							clientRecordId: client.id,
+							context: logContext(context.request),
+						}
+					: undefined,
 			);
-			if (ok && client) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "oidc",
-					summary: "{actor} revoked consent for {client}",
-					refs: {
-						actor: { kind: "account", id: accountId },
-						client: { kind: "oidc-client", id: client.id },
-					},
-					actorAccountId: accountId,
-					context: logContext(context.request),
-				});
-			}
 			return ok;
 		});
 		if (!revoked) {
