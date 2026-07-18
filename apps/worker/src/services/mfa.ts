@@ -53,8 +53,17 @@ export async function isMfaEnabled(
 
 export async function setupMfa(
 	db: Database,
-	input: { accountId: string; loginIdentifier: string; encryptionKey: string },
+	input: { accountId: string; encryptionKey: string },
 ) {
+	const [account] = await db
+		.select({ loginIdentifier: accounts.loginIdentifier })
+		.from(accounts)
+		.where(eq(accounts.id, input.accountId))
+		.limit(1);
+	if (!account) {
+		throw new Error("Account not found");
+	}
+
 	const existing = await getMfaStatus(db, input.accountId);
 	if (existing.enabled) {
 		throw new Error("Two-factor authentication is already enabled");
@@ -86,7 +95,7 @@ export async function setupMfa(
 		secret,
 		otpauthUrl: buildOtpAuthUrl({
 			secret,
-			accountName: input.loginIdentifier,
+			accountName: account.loginIdentifier,
 		}),
 	};
 }
@@ -281,6 +290,30 @@ export async function completeMfaSignIn(
 		accountId,
 		...session,
 	};
+}
+
+export async function verifyMfaSignIn(
+	db: Database,
+	input: {
+		mfaToken: string;
+		code: string;
+		encryptionKey: string;
+	},
+	sessionMetadata?: SessionMetadata,
+	logContext?: LogContext | null,
+) {
+	try {
+		return await completeMfaSignIn(db, input, sessionMetadata, logContext);
+	} catch (error) {
+		await recordFailedMfaSignInAttempt(db, {
+			mfaToken: input.mfaToken,
+			encryptionKey: input.encryptionKey,
+			logContext,
+		}).catch((emitError) => {
+			console.error("Failed to emit auth log", emitError);
+		});
+		throw error;
+	}
 }
 
 export async function recordFailedMfaSignInAttempt(

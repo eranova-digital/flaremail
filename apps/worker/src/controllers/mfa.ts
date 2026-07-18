@@ -1,7 +1,4 @@
-import { eq } from "drizzle-orm";
-
 import { withDb } from "../db/client";
-import { accounts } from "../db/schema";
 import { extractSessionMetadata } from "../lib/auth/session-metadata";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
@@ -12,12 +9,11 @@ import { loadAccountProfile } from "../lib/auth/principal";
 import { parseLogContextFromRequest } from "../lib/logs/request-context";
 import { sessionSecretForEnv } from "../services/auth";
 import {
-	completeMfaSignIn,
 	confirmMfa,
 	disableMfa,
 	getMfaStatus,
-	recordFailedMfaSignInAttempt,
 	setupMfa,
+	verifyMfaSignIn,
 } from "../services/mfa";
 import { sendMfaDisableRecoveryCode } from "../services/recovery-email";
 import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
@@ -51,21 +47,12 @@ export async function handleSetupMfa(context: RouteContext) {
 		return validationError(context.request, "Authentication required");
 	}
 	try {
-		const setup = await withDb(context.env, async (db) => {
-			const [account] = await db
-				.select({ loginIdentifier: accounts.loginIdentifier })
-				.from(accounts)
-				.where(eq(accounts.id, context.principal.accountId!))
-				.limit(1);
-			if (!account) {
-				throw new Error("Account not found");
-			}
-			return setupMfa(db, {
+		const setup = await withDb(context.env, (db) =>
+			setupMfa(db, {
 				accountId: context.principal.accountId!,
-				loginIdentifier: account.loginIdentifier,
 				encryptionKey: sessionSecretForEnv(context.env),
-			});
-		});
+			}),
+		);
 		return jsonResponse(setup);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -161,31 +148,18 @@ export async function handleVerifyMfaSignIn(context: RouteContext) {
 	const encryptionKey = sessionSecretForEnv(context.env);
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
-		const result = await withDb(context.env, async (db) => {
-			const logContext = parseLogContextFromRequest(context.request);
-			try {
-				const signedIn = await completeMfaSignIn(
-					db,
-					{
-						mfaToken: value.mfaToken as string,
-						code: value.code as string,
-						encryptionKey,
-					},
-					sessionMetadata,
-					logContext,
-				);
-				return signedIn;
-			} catch (error) {
-				await recordFailedMfaSignInAttempt(db, {
+		const result = await withDb(context.env, (db) =>
+			verifyMfaSignIn(
+				db,
+				{
 					mfaToken: value.mfaToken as string,
+					code: value.code as string,
 					encryptionKey,
-					logContext,
-				}).catch((emitError) => {
-					console.error("Failed to emit auth log", emitError);
-				});
-				throw error;
-			}
-		});
+				},
+				sessionMetadata,
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
 		return handleRouteError(error, context.request);
