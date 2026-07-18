@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 
 import { ProfileSection } from "@/components/settings/ProfileSection";
+import { IdentitiesSection } from "@/components/settings/IdentitiesSection";
 import { SecuritySection } from "@/components/settings/SecuritySection";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsShell } from "@/components/layout/SettingsShell";
@@ -88,10 +89,7 @@ export function SettingsPage() {
 					</TabsContent>
 				) : null}
 				<TabsContent value="identities">
-					<SettingsStubSection
-						title="Identities"
-						description="Manage your email addresses and how you appear when sending mail."
-					/>
+					<IdentitiesSection />
 				</TabsContent>
 				<TabsContent value="preferences">
 					<SettingsStubSection

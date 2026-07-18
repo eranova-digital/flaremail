@@ -16,6 +16,11 @@ export type InstanceSettings = {
 	requireMfaScope: RequireMfaScope;
 	requireRecoveryEmail: boolean;
 	persistNoreplyOutboundEmails: boolean;
+	identitySelfServe: boolean;
+	customNameAllowance: boolean;
+	defaultIdentityNamePattern: string;
+	defaultIdentityCustomName: string | null;
+	defaultIdentitySignatureHtml: string | null;
 	updatedAt: string;
 	updatedByAccountId: string | null;
 };
@@ -25,6 +30,11 @@ export type UpdateInstanceSettingsInput = Partial<{
 	requireMfaScope: RequireMfaScope;
 	requireRecoveryEmail: boolean;
 	persistNoreplyOutboundEmails: boolean;
+	identitySelfServe: boolean;
+	customNameAllowance: boolean;
+	defaultIdentityNamePattern: string;
+	defaultIdentityCustomName: string | null;
+	defaultIdentitySignatureHtml: string | null;
 }>;
 
 export async function fetchInstanceSettings(): Promise<InstanceSettings> {
