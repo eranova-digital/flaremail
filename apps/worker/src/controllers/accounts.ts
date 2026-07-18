@@ -33,6 +33,10 @@ import {
 	updateAccountAssignments,
 	updateDomainLocalPartPolicy,
 } from "../services/accounts";
+import {
+	parseLogContextFromRequest,
+	safeEmitLog,
+} from "../services/logs";
 
 export async function handleListAccounts(context: RouteContext) {
 	try {
@@ -264,13 +268,14 @@ export async function handleUpdateDomainLocalPartPolicy(context: RouteContext) {
 		return body;
 	}
 	const value = body as Record<string, unknown>;
+	const domainId = context.params.domainId;
 
 	try {
-		const policy = await withDb(context.env, (db) =>
-			updateDomainLocalPartPolicy(
+		const policy = await withDb(context.env, async (db) => {
+			const updated = await updateDomainLocalPartPolicy(
 				db,
 				context.principal,
-				context.params.domainId,
+				domainId,
 				{
 					enforced:
 						typeof value.enforced === "boolean" ? value.enforced : undefined,
@@ -281,8 +286,34 @@ export async function handleUpdateDomainLocalPartPolicy(context: RouteContext) {
 								? value.pattern
 								: undefined,
 				},
-			),
-		);
+			);
+			const accountId = context.principal.accountId;
+			if (accountId) {
+				await safeEmitLog(db, {
+					importance: 5,
+					type: "domains",
+					summary: "{actor} updated local-part policy for {domain}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						domain: { kind: "domain", id: domainId },
+					},
+					actorAccountId: accountId,
+					context: parseLogContextFromRequest(context.request),
+				});
+			} else {
+				await safeEmitLog(db, {
+					importance: 5,
+					type: "domains",
+					summary: "Updated local-part policy for {domain}",
+					refs: {
+						domain: { kind: "domain", id: domainId },
+					},
+					actorAccountId: null,
+					context: parseLogContextFromRequest(context.request),
+				});
+			}
+			return updated;
+		});
 		return jsonResponse(policy);
 	} catch (error) {
 		return handleRouteError(error, context.request);

@@ -18,6 +18,8 @@ import {
 	toValidationRunDetailDto,
 	toValidationRunSummaryDto,
 } from "./dto";
+import type { LogContext } from "./logs";
+import { safeEmitLog } from "./logs";
 
 export async function getDomainReadinessSummary(db: Database, domainId: string) {
 	const run = await getLatestValidationRunForDomain(db, domainId);
@@ -76,11 +78,29 @@ export async function startDomainValidation(
 	email: SendEmail,
 	domainId: string,
 	domainName: string,
+	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ) {
 	const created = await DomainValidationRun.createRun(db, domainId);
 	if (!created) {
 		throw new Error("Failed to start validation run");
 	}
+
+	const actorAccountId = logMeta?.actorAccountId ?? null;
+	await safeEmitLog(db, {
+		importance: 6,
+		type: "domains",
+		summary: actorAccountId
+			? "{actor} started domain readiness validation for {domain}"
+			: "Domain readiness validation started for {domain}",
+		refs: {
+			domain: { kind: "domain", id: domainId },
+			...(actorAccountId
+				? { actor: { kind: "account" as const, id: actorAccountId } }
+				: {}),
+		},
+		actorAccountId,
+		context: logMeta?.context ?? null,
+	});
 
 	const activeBeforeExecute = await DomainValidationRun.getActiveRun(db, domainId);
 	const shouldExecute =
@@ -108,11 +128,12 @@ export async function startOrReturnValidationRun(
 	email: SendEmail,
 	domainId: string,
 	domainName: string,
+	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ) {
 	const active = await DomainValidationRun.getActiveRun(db, domainId);
 	if (active) {
 		return getValidationRunDetail(db, domainId, active.id);
 	}
 
-	return startDomainValidation(db, email, domainId, domainName);
+	return startDomainValidation(db, email, domainId, domainName, logMeta);
 }

@@ -8,6 +8,7 @@ import { provisionSystemMailboxes } from "../lib/system-mailboxes";
 import { deleteDomainCascade } from "./cascade-delete";
 import { getDomainReadinessSummary } from "./domain-validation";
 import { toDomainDto } from "./dto";
+import type { LogContext } from "./logs";
 
 async function toDomainDtoWithReadiness(
 	db: Database,
@@ -41,6 +42,7 @@ export async function createDomain(
 	db: Database,
 	name: string,
 	email?: SendEmail,
+	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ) {
 	const normalized = normalizeEmailAddress(name);
 	if (!normalized.includes(".")) {
@@ -77,7 +79,7 @@ export async function createDomain(
 		if (email) {
 			const { startDomainValidation } = await import("./domain-validation");
 			try {
-				await startDomainValidation(db, email, row.id, row.name);
+				await startDomainValidation(db, email, row.id, row.name, logMeta);
 			} catch (error) {
 				console.error("Initial domain validation failed to start:", error);
 			}

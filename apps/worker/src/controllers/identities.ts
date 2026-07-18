@@ -16,6 +16,10 @@ import {
 	parseIdentityNamePattern,
 	updateMailboxIdentity,
 } from "../services/identities";
+import {
+	parseLogContextFromRequest,
+	safeEmitLog,
+} from "../services/logs";
 
 function parseIdentityBody(value: Record<string, unknown>):
 	| { error: string }
@@ -127,13 +131,34 @@ export async function handleCreateMailboxIdentity(context: RouteContext) {
 	const namePattern = parsed.namePattern;
 
 	try {
-		const identity = await withDb(context.env, (db) =>
-			createMailboxIdentity(db, context.principal, mailboxId, {
-				namePattern,
-				customName: parsed.customName,
-				signatureHtml: parsed.signatureHtml,
-			}),
-		);
+		const identity = await withDb(context.env, async (db) => {
+			const created = await createMailboxIdentity(
+				db,
+				context.principal,
+				mailboxId,
+				{
+					namePattern,
+					customName: parsed.customName,
+					signatureHtml: parsed.signatureHtml,
+				},
+			);
+			const accountId = context.principal.accountId;
+			if (accountId) {
+				await safeEmitLog(db, {
+					importance: 6,
+					type: "identities",
+					summary: "{actor} created {identity}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						identity: { kind: "identity", id: created.id },
+						mailbox: { kind: "mailbox", id: mailboxId },
+					},
+					actorAccountId: accountId,
+					context: parseLogContextFromRequest(context.request),
+				});
+			}
+			return created;
+		});
 		return jsonResponse(identity, 201);
 	} catch (error) {
 		if (
@@ -171,13 +196,36 @@ export async function handleUpdateMailboxIdentity(context: RouteContext) {
 	}
 
 	try {
-		const identity = await withDb(context.env, (db) =>
-			updateMailboxIdentity(db, context.principal, identityId, {
-				namePattern: parsed.namePattern,
-				customName: parsed.customName,
-				signatureHtml: parsed.signatureHtml,
-			}),
-		);
+		const identity = await withDb(context.env, async (db) => {
+			const updated = await updateMailboxIdentity(
+				db,
+				context.principal,
+				identityId,
+				{
+					namePattern: parsed.namePattern,
+					customName: parsed.customName,
+					signatureHtml: parsed.signatureHtml,
+				},
+			);
+			const accountId = context.principal.accountId;
+			if (accountId) {
+				await safeEmitLog(db, {
+					importance: 6,
+					type: "identities",
+					summary: "{actor} updated {identity}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						identity: { kind: "identity", id: updated.id },
+						...(updated.mailboxId
+							? { mailbox: { kind: "mailbox" as const, id: updated.mailboxId } }
+							: {}),
+					},
+					actorAccountId: accountId,
+					context: parseLogContextFromRequest(context.request),
+				});
+			}
+			return updated;
+		});
 		return jsonResponse(identity);
 	} catch (error) {
 		if (
@@ -192,9 +240,24 @@ export async function handleUpdateMailboxIdentity(context: RouteContext) {
 
 export async function handleDeleteMailboxIdentity(context: RouteContext) {
 	try {
-		await withDb(context.env, (db) =>
-			deleteMailboxIdentity(db, context.principal, context.params.id),
-		);
+		await withDb(context.env, async (db) => {
+			const identityId = context.params.id;
+			await deleteMailboxIdentity(db, context.principal, identityId);
+			const accountId = context.principal.accountId;
+			if (accountId) {
+				await safeEmitLog(db, {
+					importance: 6,
+					type: "identities",
+					summary: "{actor} deleted {identity}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						identity: { kind: "identity", id: identityId },
+					},
+					actorAccountId: accountId,
+					context: parseLogContextFromRequest(context.request),
+				});
+			}
+		});
 		return new Response(null, { status: 204 });
 	} catch (error) {
 		if (error instanceof IdentityAccessDeniedError) {
