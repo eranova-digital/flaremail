@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Shield, UserRound } from "lucide-react";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import {
@@ -11,6 +11,7 @@ import { PageLoader } from "@/components/PageLoader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
 import {
@@ -19,6 +20,44 @@ import {
 	submitOidcConsent,
 	type OidcPending,
 } from "@/lib/oidc/api";
+
+const SCOPE_COPY: Record<string, { title: string; description: string; icon: typeof UserRound }> = {
+	openid: {
+		title: "Verify your identity",
+		description: "Confirm who you are when signing in.",
+		icon: Shield,
+	},
+	profile: {
+		title: "Profile",
+		description: "Name and profile picture.",
+		icon: UserRound,
+	},
+	email: {
+		title: "Email address",
+		description: "Your Flaremail login address.",
+		icon: Mail,
+	},
+	"mail:read": {
+		title: "Read mail",
+		description: "View messages and threads you can access.",
+		icon: Mail,
+	},
+	"mail:send": {
+		title: "Send mail",
+		description: "Send, reply, and forward on your behalf.",
+		icon: Mail,
+	},
+};
+
+function scopeMeta(scope: string) {
+	return (
+		SCOPE_COPY[scope] ?? {
+			title: scope,
+			description: "Additional permission requested by this app.",
+			icon: Shield,
+		}
+	);
+}
 
 export function ConsentPage() {
 	const { account, isAuthenticated, isLoading } = useAuth();
@@ -58,9 +97,7 @@ export function ConsentPage() {
 		const returnTo = pendingId
 			? `/oauth/consent?pending=${encodeURIComponent(pendingId)}`
 			: "/oauth/consent";
-		return (
-			<Navigate to="/login" replace state={{ from: returnTo }} />
-		);
+		return <Navigate to="/login" replace state={{ from: returnTo }} />;
 	}
 
 	if (account?.isIntendant) {
@@ -109,10 +146,10 @@ export function ConsentPage() {
 
 	return (
 		<AuthPageShell
-			title="Authorize application"
+			title={pending ? `Sign in to ${pending.clientName}` : "Authorize application"}
 			description={
 				pending
-					? `${pending.clientName} wants access to your Flaremail account.`
+					? "This app is requesting access to your Flaremail account."
 					: "Review the requested permissions."
 			}
 		>
@@ -124,77 +161,103 @@ export function ConsentPage() {
 				</p>
 			) : null}
 			{pending && account ? (
-				<Card>
-					<CardContent className="space-y-4 pt-6">
-						<div className="bg-muted/40 flex items-center gap-3 rounded-lg p-3">
+				<Card className="overflow-hidden shadow-sm">
+					<CardContent className="space-y-5 p-5">
+						<div className="flex flex-col items-center gap-3 text-center">
+							<ProfileAvatar
+								seed={pending.clientId}
+								label={pending.clientName}
+								imageUrl={logoUrl}
+								shape="rounded-square"
+								className="size-16 text-lg shadow-sm"
+							/>
+							<div className="min-w-0 space-y-0.5">
+								<p className="text-base font-semibold tracking-tight">
+									{pending.clientName}
+								</p>
+								<p className="text-muted-foreground text-xs">
+									wants to access your account
+								</p>
+							</div>
+						</div>
+
+						<div className="bg-muted/50 flex items-center gap-3 rounded-xl border px-3 py-2.5">
 							<ProfileAvatar
 								accountId={account.id}
 								seed={account.loginIdentifier}
 								label={displayName}
 								profilePicture={account.profilePicture}
-								className="size-12 text-sm"
+								className="size-10 text-xs"
 							/>
-							<div className="min-w-0">
+							<div className="min-w-0 flex-1 text-left">
+								<p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+									Signed in as
+								</p>
 								<p className="truncate text-sm font-medium">{displayName}</p>
 								<p className="text-muted-foreground truncate text-xs">
 									{account.loginIdentifier}
 								</p>
 							</div>
 						</div>
-						<div className="flex items-center gap-3">
-							<ProfileAvatar
-								seed={pending.clientId}
-								label={pending.clientName}
-								imageUrl={logoUrl}
-								shape="rounded-square"
-								className="size-12 text-sm"
-							/>
-							<div className="min-w-0">
-								<p className="truncate text-sm font-medium">
-									{pending.clientName}
-								</p>
-								<p className="text-muted-foreground font-mono truncate text-xs">
-									{pending.clientId}
-								</p>
-							</div>
-						</div>
-						<div>
-							<p className="mb-2 text-sm font-medium">Requested scopes</p>
-							<ul className="text-muted-foreground list-inside list-disc text-sm">
-								{pending.scopes.map((scope) => (
-									<li key={scope}>{scope}</li>
-								))}
+
+						<Separator />
+
+						<div className="space-y-3">
+							<p className="text-sm font-medium">This will allow {pending.clientName} to</p>
+							<ul className="space-y-3">
+								{pending.scopes.map((scope) => {
+									const meta = scopeMeta(scope);
+									const Icon = meta.icon;
+									return (
+										<li key={scope} className="flex gap-3">
+											<span className="bg-muted text-muted-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg">
+												<Icon className="size-4" aria-hidden />
+											</span>
+											<span className="min-w-0">
+												<span className="block text-sm font-medium">
+													{meta.title}
+												</span>
+												<span className="text-muted-foreground block text-xs text-pretty">
+													{meta.description}
+												</span>
+											</span>
+										</li>
+									);
+								})}
 							</ul>
 						</div>
-						<div className="flex gap-2">
+
+						<div className="space-y-2 pt-1">
 							<Button
 								type="button"
-								className="flex-1"
+								className="w-full"
 								disabled={submitting}
 								onClick={() => void decide("approve")}
 							>
-								{submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-								Allow
+								{submitting ? (
+									<Loader2 className="size-4 animate-spin" />
+								) : null}
+								Continue to {pending.clientName}
 							</Button>
 							<Button
 								type="button"
 								variant="outline"
-								className="flex-1"
+								className="w-full"
 								disabled={submitting}
 								onClick={() => void decide("deny")}
 							>
 								Deny
 							</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								className="text-muted-foreground w-full"
+								disabled={submitting}
+								onClick={cancel}
+							>
+								{pending.homescreenUrl ? "Cancel and go back" : "Cancel"}
+							</Button>
 						</div>
-						<Button
-							type="button"
-							variant="ghost"
-							className="w-full"
-							disabled={submitting}
-							onClick={cancel}
-						>
-							Cancel
-						</Button>
 					</CardContent>
 				</Card>
 			) : null}
