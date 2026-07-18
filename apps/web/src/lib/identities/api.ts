@@ -1,6 +1,6 @@
 import { apiRequest } from "@/lib/api/request";
-import type { IdentityNamePattern } from "./name-pattern";
-import { IDENTITY_NAME_PATTERNS } from "./name-pattern";
+import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
+import { IDENTITY_NAME_PATTERNS } from "@test-worker/identity-name-pattern";
 
 export type Identity = {
 	id: string;

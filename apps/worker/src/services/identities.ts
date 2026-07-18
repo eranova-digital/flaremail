@@ -19,7 +19,7 @@ import {
 	type IdentityNamePattern,
 	isIdentityNamePattern,
 	resolveFromName,
-} from "../lib/identities/name-pattern";
+} from "@test-worker/identity-name-pattern";
 import { loadAccountMailboxGrants } from "./accounts/shared";
 import { getInstanceSettings } from "./instance-settings";
 import { type InstanceSettings } from "./security-compliance";

@@ -5,7 +5,7 @@ import {
 	joinNameSegments,
 	resolveFromName,
 	resolveSignatureTags,
-} from "../src/lib/identities/name-pattern";
+} from "@test-worker/identity-name-pattern";
 
 describe("resolveFromName", () => {
 	const profile = { firstName: "Patrick", lastName: "Borcean" };

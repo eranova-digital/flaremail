@@ -1,5 +1,5 @@
 import type { AccountRole } from "../lib/auth/types";
-import type { IdentityNamePattern } from "../lib/identities/name-pattern";
+import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
 
 export type OrganizationTabAccess =
 	| "intendant_only"
