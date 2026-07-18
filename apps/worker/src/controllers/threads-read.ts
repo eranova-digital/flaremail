@@ -14,8 +14,15 @@ import {
 } from "../lib/mailbox-types";
 import { createMailboxMail } from "../services/mailbox-mail";
 
-function mailboxMail(env: Env, db: Database, principal: RouteContext["principal"]) {
-	return createMailboxMail(createMailboxReadContext(env, db, principal));
+function mailboxMail(
+	env: Env,
+	db: Database,
+	principal: RouteContext["principal"],
+	request: Request,
+) {
+	return createMailboxMail(
+		createMailboxReadContext(env, db, principal, request),
+	);
 }
 
 export async function handleListThreads({
@@ -41,7 +48,7 @@ export async function handleListThreads({
 
 	try {
 		const result = await withDb(env, (db) =>
-			mailboxMail(env, db, principal).listThreads(mailboxId, {
+			mailboxMail(env, db, principal, request).listThreads(mailboxId, {
 				folder,
 				labelId,
 				cursor: url.searchParams.get("cursor"),
@@ -67,7 +74,7 @@ export async function handleGetThread({
 
 	try {
 		const thread = await withDb(env, (db) =>
-			mailboxMail(env, db, principal).getThread(params.id, mailboxId),
+			mailboxMail(env, db, principal, request).getThread(params.id, mailboxId),
 		);
 		return jsonResponse(thread);
 	} catch (error) {
@@ -90,7 +97,7 @@ export async function handleListThreadMessages({
 		const url = new URL(request.url);
 		const includeBody = url.searchParams.get("includeBody") === "true";
 		const result = await withDb(env, (db) =>
-			mailboxMail(env, db, principal).listThreadMessages(params.id, mailboxId, {
+			mailboxMail(env, db, principal, request).listThreadMessages(params.id, mailboxId, {
 				includeBody,
 			}),
 		);
@@ -120,7 +127,7 @@ export async function handleThreadAction({
 
 	try {
 		const thread = await withDb(env, (db) =>
-			mailboxMail(env, db, principal).runThreadAction(
+			mailboxMail(env, db, principal, request).runThreadAction(
 				params.id,
 				mailboxId,
 				params.action as ThreadAction,
@@ -155,7 +162,7 @@ export async function handlePatchThread({
 
 	try {
 		const thread = await withDb(env, (db) =>
-			mailboxMail(env, db, principal).replaceThreadLabels(
+			mailboxMail(env, db, principal, request).replaceThreadLabels(
 				params.id,
 				mailboxId,
 				value.labelIds as string[],

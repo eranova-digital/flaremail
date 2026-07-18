@@ -42,9 +42,10 @@ export async function createApiKey(db: Database, input: CreateApiKeyInput) {
 	assertRequestedScopesAllowed(input.principal, scopes);
 
 	const { secret, keyPrefix } = buildSecret();
+	const id = crypto.randomUUID();
 	const now = new Date();
 	await db.insert(apiKeys).values({
-		id: crypto.randomUUID(),
+		id,
 		accountId: input.accountId,
 		name: normalizeName(input.name),
 		prefix: keyPrefix,
@@ -52,7 +53,7 @@ export async function createApiKey(db: Database, input: CreateApiKeyInput) {
 		scopes,
 		createdAt: now,
 	});
-	return { secret, prefix: keyPrefix, scopes };
+	return { id, secret, prefix: keyPrefix, scopes };
 }
 
 export async function listApiKeys(db: Database, accountId: string) {
@@ -75,10 +76,18 @@ export async function revokeApiKey(
 	db: Database,
 	accountId: string,
 	keyId: string,
-) {
+): Promise<boolean> {
 	const now = new Date();
-	await db
+	const revoked = await db
 		.update(apiKeys)
 		.set({ revokedAt: now })
-		.where(and(eq(apiKeys.id, keyId), eq(apiKeys.accountId, accountId)));
+		.where(
+			and(
+				eq(apiKeys.id, keyId),
+				eq(apiKeys.accountId, accountId),
+				isNull(apiKeys.revokedAt),
+			),
+		)
+		.returning({ id: apiKeys.id });
+	return revoked.length > 0;
 }

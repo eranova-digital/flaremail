@@ -1,5 +1,6 @@
 import { assertMailboxReadAccess } from "../../lib/messages/mailbox-read-auth";
 import type { MailboxReadContext } from "../../lib/messages/mailbox-read-context";
+import { emitLog } from "../logs";
 import { downloadRawMessage } from "../raw-message";
 import {
 	readMessageFull,
@@ -13,7 +14,35 @@ export async function readGetMessage(
 	mailboxId: string,
 ) {
 	await assertMailboxReadAccess(ctx, mailboxId);
-	return readMessageFull(ctx.db, ctx.bucket, messageId, mailboxId);
+	const message = await readMessageFull(
+		ctx.db,
+		ctx.bucket,
+		messageId,
+		mailboxId,
+	);
+
+	const accountId = ctx.principal.accountId;
+	if (accountId) {
+		try {
+			await emitLog(ctx.db, {
+				importance: 9,
+				type: "messages",
+				summary: "{actor} read {message}",
+				refs: {
+					actor: { kind: "account", id: accountId },
+					message: { kind: "message", id: message.id },
+					thread: { kind: "thread", id: message.threadId },
+					mailbox: { kind: "mailbox", id: mailboxId },
+				},
+				actorAccountId: accountId,
+				context: ctx.logContext ?? null,
+			});
+		} catch (error) {
+			console.error("Failed to emit message read log:", error);
+		}
+	}
+
+	return message;
 }
 
 export async function readGetMessagePreview(

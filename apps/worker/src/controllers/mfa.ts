@@ -11,11 +11,16 @@ import type { RouteContext } from "../lib/http/router";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { sessionSecretForEnv } from "../services/auth";
 import {
+	parseLogContextFromRequest,
+	safeEmitLog,
+} from "../services/logs";
+import {
 	completeMfaSignIn,
 	confirmMfa,
 	disableMfa,
 	getMfaStatus,
 	setupMfa,
+	verifyMfaChallengeToken,
 } from "../services/mfa";
 import { sendMfaDisableRecoveryCode } from "../services/recovery-email";
 
@@ -158,21 +163,66 @@ export async function handleVerifyMfaSignIn(context: RouteContext) {
 	if (typeof value.mfaToken !== "string" || typeof value.code !== "string") {
 		return validationError(context.request, "mfaToken and code are required");
 	}
+	const encryptionKey = sessionSecretForEnv(context.env);
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
-		const result = await withDb(context.env, (db) =>
-			completeMfaSignIn(
+		const result = await withDb(context.env, async (db) => {
+			const signedIn = await completeMfaSignIn(
 				db,
 				{
-					mfaToken: value.mfaToken,
-					code: value.code,
-					encryptionKey: sessionSecretForEnv(context.env),
+					mfaToken: value.mfaToken as string,
+					code: value.code as string,
+					encryptionKey,
 				},
 				sessionMetadata,
-			),
-		);
+			);
+			await safeEmitLog(db, {
+				importance: 4,
+				type: "auth",
+				summary: "{actor} signed in",
+				refs: { actor: { kind: "account", id: signedIn.accountId } },
+				actorAccountId: signedIn.accountId,
+				context: parseLogContextFromRequest(context.request),
+			});
+			return signedIn;
+		});
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
+		await withDb(context.env, async (db) => {
+			let accountId: string | null = null;
+			try {
+				accountId = await verifyMfaChallengeToken(
+					value.mfaToken as string,
+					encryptionKey,
+				);
+			} catch {
+				/* invalid challenge — no account to attribute */
+			}
+			if (!accountId) {
+				await safeEmitLog(db, {
+					importance: 2,
+					type: "auth",
+					summary: "Failed sign-in attempt",
+					context: parseLogContextFromRequest(context.request),
+				});
+				return;
+			}
+			const [account] = await db
+				.select({ isIntendant: accounts.isIntendant })
+				.from(accounts)
+				.where(eq(accounts.id, accountId))
+				.limit(1);
+			await safeEmitLog(db, {
+				importance: account?.isIntendant ? 0 : 2,
+				type: "auth",
+				summary: "{actor} failed to sign in",
+				refs: { actor: { kind: "account", id: accountId } },
+				actorAccountId: accountId,
+				context: parseLogContextFromRequest(context.request),
+			});
+		}).catch((emitError) => {
+			console.error("Failed to emit auth log", emitError);
+		});
 		return handleRouteError(error, context.request);
 	}
 }

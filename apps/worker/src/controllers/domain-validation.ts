@@ -8,6 +8,7 @@ import {
 	startOrReturnValidationRun,
 } from "../services/domain-validation";
 import { getDomainRecord } from "../services/domains";
+import { parseLogContextFromRequest } from "../services/logs";
 
 export async function handleListValidationRuns({
 	request,
@@ -44,6 +45,7 @@ export async function handleCreateValidationRun({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	try {
 		const run = await withDb(env, async (db) => {
@@ -53,6 +55,10 @@ export async function handleCreateValidationRun({
 				env.EMAIL,
 				domain.id,
 				domain.name,
+				{
+					actorAccountId: principal.accountId,
+					context: parseLogContextFromRequest(request),
+				},
 			);
 		});
 		return jsonResponse(run, 200);

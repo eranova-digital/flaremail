@@ -10,6 +10,7 @@ import {
 	getMessageIdFromHeaders,
 } from './lib/threading-headers';
 import { handleFetchRequest } from './routes';
+import { purgeExpiredLogs } from './services/logs';
 
 export default {
 	async email(message, env, ctx): Promise<void> {
@@ -98,6 +99,15 @@ export default {
 			}
 		} catch (error) {
 			console.error('Scheduled validation processor error:', error);
+		}
+
+		try {
+			const purged = await withDb(env, (db) => purgeExpiredLogs(db));
+			if (purged > 0) {
+				console.log(`Purged ${purged} expired log(s)`);
+			}
+		} catch (error) {
+			console.error('Scheduled log retention purge error:', error);
 		}
 	},
 } satisfies ExportedHandler<Env>;

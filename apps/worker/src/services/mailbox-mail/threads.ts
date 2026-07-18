@@ -2,6 +2,7 @@ import type { ThreadAction, ThreadFolder } from "../../lib/mailbox-types";
 import { assertMailboxReadAccess } from "../../lib/messages/mailbox-read-auth";
 import type { MailboxReadContext } from "../../lib/messages/mailbox-read-context";
 import { markThreadMessagesSeenBy } from "../../lib/message-seen-by";
+import { emitLog } from "../logs";
 import { runThreadAction } from "../thread-commands";
 import {
 	getThread,
@@ -31,6 +32,27 @@ export async function readGetThread(
 ) {
 	await assertMailboxReadAccess(ctx, mailboxId);
 	await markThreadMessagesSeenBy(ctx.db, ctx.principal, { threadId, mailboxId });
+
+	const accountId = ctx.principal.accountId;
+	if (accountId) {
+		try {
+			await emitLog(ctx.db, {
+				importance: 10,
+				type: "threads",
+				summary: "{actor} viewed {thread}",
+				refs: {
+					actor: { kind: "account", id: accountId },
+					thread: { kind: "thread", id: threadId },
+					mailbox: { kind: "mailbox", id: mailboxId },
+				},
+				actorAccountId: accountId,
+				context: ctx.logContext ?? null,
+			});
+		} catch (error) {
+			console.error("Failed to emit thread view log:", error);
+		}
+	}
+
 	return getThread(ctx.db, threadId, mailboxId);
 }
 
@@ -57,6 +79,29 @@ export async function readRunThreadAction(
 	await assertMailboxReadAccess(ctx, mailboxId);
 	await getThread(ctx.db, threadId, mailboxId);
 	await runThreadAction(ctx.db, threadId, mailboxId, action);
+
+	if (action === "mark-read") {
+		const accountId = ctx.principal.accountId;
+		if (accountId) {
+			try {
+				await emitLog(ctx.db, {
+					importance: 10,
+					type: "threads",
+					summary: "{actor} marked {thread} read",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						thread: { kind: "thread", id: threadId },
+						mailbox: { kind: "mailbox", id: mailboxId },
+					},
+					actorAccountId: accountId,
+					context: ctx.logContext ?? null,
+				});
+			} catch (error) {
+				console.error("Failed to emit thread mark-read log:", error);
+			}
+		}
+	}
+
 	return getThread(ctx.db, threadId, mailboxId);
 }
 

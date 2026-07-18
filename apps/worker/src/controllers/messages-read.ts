@@ -11,8 +11,15 @@ import { createMailboxMail } from "../services/mailbox-mail";
 import { downloadAttachment } from "../services/attachments";
 import { downloadMessageExternalImage } from "../services/email-images";
 
-function mailboxMail(env: Env, db: Database, principal: RouteContext["principal"]) {
-	return createMailboxMail(createMailboxReadContext(env, db, principal));
+function mailboxMail(
+	env: Env,
+	db: Database,
+	principal: RouteContext["principal"],
+	request: Request,
+) {
+	return createMailboxMail(
+		createMailboxReadContext(env, db, principal, request),
+	);
 }
 
 export async function handleGetMessage({
@@ -28,7 +35,7 @@ export async function handleGetMessage({
 
 	try {
 		const message = await withDb(env, (db) =>
-			mailboxMail(env, db, principal).getMessage(params.id, mailboxId),
+			mailboxMail(env, db, principal, request).getMessage(params.id, mailboxId),
 		);
 		return jsonResponse(message);
 	} catch (error) {
@@ -49,7 +56,7 @@ export async function handleGetMessagePreview({
 
 	try {
 		const message = await withDb(env, (db) =>
-			mailboxMail(env, db, principal).getMessagePreview(params.id, mailboxId),
+			mailboxMail(env, db, principal, request).getMessagePreview(params.id, mailboxId),
 		);
 		return jsonResponse(message);
 	} catch (error) {
@@ -78,7 +85,7 @@ export async function handleSearch({
 	try {
 		const mailboxId = value.mailboxId as string;
 		const result = await withDb(env, (db) =>
-			mailboxMail(env, db, principal).search(mailboxId, value.query as string, {
+			mailboxMail(env, db, principal, request).search(mailboxId, value.query as string, {
 				cursor: typeof value.cursor === "string" ? value.cursor : null,
 				limit:
 					typeof value.limit === "number"
@@ -105,7 +112,7 @@ export async function handleDownloadRawMessage({
 
 	try {
 		return await withDb(env, (db) =>
-			mailboxMail(env, db, principal).downloadRawMessage(params.id, mailboxId),
+			mailboxMail(env, db, principal, request).downloadRawMessage(params.id, mailboxId),
 		);
 	} catch (error) {
 		return handleRouteError(error, request);

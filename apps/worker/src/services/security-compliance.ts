@@ -12,6 +12,8 @@ export type RequireMfaScope =
 	| "admin_and_above"
 	| "superadmin_and_above";
 
+export type LogRetentionDays = 3 | 7 | 14 | 30 | 60 | 90;
+
 export type InstanceSettings = {
 	organizationTabAccess: OrganizationTabAccess;
 	requireMfaScope: RequireMfaScope;
@@ -22,6 +24,9 @@ export type InstanceSettings = {
 	defaultIdentityNamePattern: IdentityNamePattern;
 	defaultIdentityCustomName: string | null;
 	defaultIdentitySignatureHtml: string | null;
+	logsEnabled: boolean;
+	maxImportanceStored: number;
+	logRetentionDays: LogRetentionDays;
 };
 
 export type SecurityRequirements = {
@@ -44,7 +49,14 @@ export const DEFAULT_INSTANCE_SETTINGS: InstanceSettings = {
 	defaultIdentityNamePattern: "first_name_last_name",
 	defaultIdentityCustomName: null,
 	defaultIdentitySignatureHtml: null,
+	logsEnabled: true,
+	maxImportanceStored: 10,
+	logRetentionDays: 14,
 };
+
+export const LOG_RETENTION_DAY_OPTIONS: LogRetentionDays[] = [
+	3, 7, 14, 30, 60, 90,
+];
 
 const ROLE_RANK: Record<AccountRole, number> = {
 	user: 0,

@@ -10,6 +10,10 @@ import {
 	listApiKeys,
 	revokeApiKey,
 } from "../services/api-keys";
+import {
+	parseLogContextFromRequest,
+	safeEmitLog,
+} from "../services/logs";
 
 function requireSessionPrincipal(context: RouteContext): Response | null {
 	if (context.principal.kind !== "session" || !context.principal.accountId) {
@@ -53,15 +57,28 @@ export async function handleCreateApiKey(context: RouteContext) {
 	const scopes = Array.isArray(value.scopes)
 		? value.scopes.filter((scope): scope is string => typeof scope === "string")
 		: [];
+	const accountId = context.principal.accountId!;
 	try {
-		const result = await withDb(context.env, (db) =>
-			createApiKey(db, {
-				accountId: context.principal.accountId!,
+		const result = await withDb(context.env, async (db) => {
+			const created = await createApiKey(db, {
+				accountId,
 				name,
 				scopes,
 				principal: context.principal,
-			}),
-		);
+			});
+			await safeEmitLog(db, {
+				importance: 4,
+				type: "api-keys",
+				summary: "{actor} created API key {key}",
+				refs: {
+					actor: { kind: "account", id: accountId },
+					key: { kind: "api-key", id: created.id },
+				},
+				actorAccountId: accountId,
+				context: parseLogContextFromRequest(context.request),
+			});
+			return created;
+		});
 		return jsonResponse(result);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -73,10 +90,25 @@ export async function handleRevokeApiKey(context: RouteContext) {
 	if (sessionError) {
 		return sessionError;
 	}
+	const accountId = context.principal.accountId!;
+	const keyId = context.params.id;
 	try {
-		await withDb(context.env, (db) =>
-			revokeApiKey(db, context.principal.accountId!, context.params.id),
-		);
+		await withDb(context.env, async (db) => {
+			const revoked = await revokeApiKey(db, accountId, keyId);
+			if (revoked) {
+				await safeEmitLog(db, {
+					importance: 4,
+					type: "api-keys",
+					summary: "{actor} revoked API key {key}",
+					refs: {
+						actor: { kind: "account", id: accountId },
+						key: { kind: "api-key", id: keyId },
+					},
+					actorAccountId: accountId,
+					context: parseLogContextFromRequest(context.request),
+				});
+			}
+		});
 		return jsonResponse({ ok: true });
 	} catch (error) {
 		return handleRouteError(error, context.request);

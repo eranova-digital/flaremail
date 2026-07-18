@@ -243,6 +243,46 @@ _Avoid_: health check job, verify pass
 A single test within a **domain validation run** (e.g. MX exists, DMARC rua, loop send, loop receive).
 _Avoid_: probe, diagnostic step
 
+**Log**:
+An append-only record that something happened in the platform or mail path — from critical security events to everyday product activity. Distinct from **domain validation** run output (which is check diagnostics, not this concept). Each **log** has an **importance**, a **type**, a **summary**, **refs**, optional **actor**, and optional **context**.
+_Avoid_: audit entry, audit log, activity event, activity log, audit record
+
+**Importance**:
+An integer 0–10 on a **log** where lower values matter more to reviewers (0 = critical, e.g. failed intendant authentication; 10 = colloquial noise, e.g. an **account** opened a **thread**).
+_Avoid_: level, severity, priority, verbosity
+
+**Type** (of a **log**):
+The subject-area bucket a **log** belongs to. Closed set: `auth`, `accounts`, `invites`, `mailboxes`, `mailing`, `threads`, `messages`, `identities`, `domains` (includes **domain readiness** actions), `settings`, `oidc`, `api-keys`. Distinct from **role** and from MIME/content types elsewhere in the product.
+_Avoid_: category, facility, domain (for this axis), tag, domain-readiness (as its own type)
+
+**Summary**:
+The human-readable template string on a **log**, with placeholders for **refs** (e.g. `"{from} → {to}"`). Does not embed display names — those resolve at read time from **refs**. Distinct from an email **message**.
+_Avoid_: message (for this field), template, body, text
+
+**Refs**:
+Typed entity pointers on a **log** that the UI resolves into rich, clickable display data. Closed kinds: `account`, `mailbox`, `thread`, `message`, `domain`, `identity`, `invite`, `oidc-client`, `api-key`, `external-address` (literal email string, no platform entity). Placeholder keys in the **summary** map 1:1 to **refs** keys.
+_Avoid_: entities, links, mentions, payload
+
+**Actor**:
+The **account** that performed the action recorded by a **log**, when there is one. Absent for system, inbound, or external causes — those parties appear only in **refs**.
+_Avoid_: user, operator (for this field), subject, performer
+
+**Context**:
+Optional non-entity metadata on a **log** for HTTP-caused actions. Closed fields: `ip`, `userAgent`, `method`, `path`. Absent for non-HTTP causes (e.g. inbound SMTP). Does not store request bodies or arbitrary headers.
+_Avoid_: metadata, extras, payload, request info, requestId
+
+**Logs enabled**:
+Instance-wide Organization-tab setting: when off, the platform does not store new **logs**. Existing **logs** remain readable until **log retention** removes them. Default: on.
+_Avoid_: audit enabled, activity logging
+
+**Max importance stored**:
+Instance-wide Organization-tab setting: only **logs** with **importance** ≤ this value (0–10) are stored. Default: 10 (store all **importance** values).
+_Avoid_: importance floor, importance threshold, min severity
+
+**Log retention**:
+Instance-wide Organization-tab setting: how long **logs** are kept before deletion. Allowed values: 3, 7, 14, 30, 60, or 90 days. Default: 14.
+_Avoid_: log TTL, audit retention
+
 ## Example dialogue
 
 **Dev:** When a message arrives at `help@company.com` but that's an alias for `support@`, which mailbox owns it?
