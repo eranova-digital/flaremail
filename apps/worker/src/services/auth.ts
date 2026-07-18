@@ -32,6 +32,7 @@ import {
 	createMfaChallengeToken,
 	getMfaStatus,
 	isMfaEnabled,
+	verifyAccountTotpCode,
 } from "./mfa";
 import { getInstanceSettings } from "./instance-settings";
 import { computeAccountCapabilities } from "./account-capabilities";
@@ -212,15 +213,39 @@ export async function signOut(db: Database, sessionToken: string) {
 	return signOutSession(db, sessionToken);
 }
 
-export async function regenerateIntendantPassword(db: Database, accountId: string) {
+export async function regenerateIntendantPassword(
+	db: Database,
+	input: {
+		accountId: string;
+		code?: string;
+		encryptionKey: string;
+	},
+) {
 	const [account] = await db
 		.select()
 		.from(accounts)
-		.where(eq(accounts.id, accountId))
+		.where(eq(accounts.id, input.accountId))
 		.limit(1);
 	if (!account?.isIntendant) {
 		throw new Error("Only the intendant can regenerate this password");
 	}
+
+	const mfaEnabled = await isMfaEnabled(db, input.accountId);
+	if (mfaEnabled) {
+		const code = input.code?.trim() ?? "";
+		if (!code) {
+			throw new Error("Authenticator code is required");
+		}
+		const valid = await verifyAccountTotpCode(db, {
+			accountId: input.accountId,
+			code,
+			encryptionKey: input.encryptionKey,
+		});
+		if (!valid) {
+			throw new Error("Invalid authentication code");
+		}
+	}
+
 	const password = randomToken(32);
 	await db
 		.update(accounts)
@@ -228,7 +253,7 @@ export async function regenerateIntendantPassword(db: Database, accountId: strin
 			passwordHash: await hashPassword(password),
 			updatedAt: new Date(),
 		})
-		.where(eq(accounts.id, accountId));
+		.where(eq(accounts.id, input.accountId));
 	return password;
 }
 

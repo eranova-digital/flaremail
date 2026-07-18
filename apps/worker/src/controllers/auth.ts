@@ -376,9 +376,22 @@ export async function handleRegenerateIntendantPassword(context: RouteContext) {
 	if (!context.principal.isIntendant || !context.principal.accountId) {
 		return validationError(context.request, "Only the intendant can regenerate");
 	}
+
+	const body = await parseJsonBody(context.request);
+	if (body instanceof Response) {
+		return body;
+	}
+	const value = (body ?? {}) as Record<string, unknown>;
+	const code =
+		typeof value.code === "string" ? value.code.trim() : undefined;
+
 	try {
 		const password = await withDb(context.env, (db) =>
-			regenerateIntendantPassword(db, context.principal.accountId!),
+			regenerateIntendantPassword(db, {
+				accountId: context.principal.accountId!,
+				code,
+				encryptionKey: sessionSecretForEnv(context.env),
+			}),
 		);
 		return jsonResponse({ password });
 	} catch (error) {

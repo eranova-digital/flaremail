@@ -23,6 +23,18 @@ export function bootstrapInstance(): Promise<{
 	return apiRequest("/bootstrap", { method: "POST" });
 }
 
+export function regenerateIntendantPassword(input?: {
+	code?: string;
+}): Promise<{ password: string }> {
+	return apiRequest<{ password: string }>(
+		"/auth/intendant/regenerate-password",
+		{
+			method: "POST",
+			body: JSON.stringify(input ?? {}),
+		},
+	);
+}
+
 export function fetchMe(): Promise<Account> {
 	return apiRequest<Account>("/auth/me");
 }

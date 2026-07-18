@@ -9,6 +9,7 @@ import { ConnectedAppsSection } from "@/components/settings/ConnectedAppsSection
 import { TotpCodeInput, isTotpCodeComplete } from "@/components/auth/TotpCodeInput";
 import { SessionsSection } from "@/components/settings/SessionsSection";
 import { PasskeysSection } from "@/components/settings/PasskeysSection";
+import { IntendantPasswordSection } from "@/components/settings/IntendantPasswordSection";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -416,6 +417,10 @@ export function SecuritySection() {
 					)}
 				</CardContent>
 			</Card>
+
+			{account.isIntendant ? (
+				<IntendantPasswordSection mfaEnabled={enabled} />
+			) : null}
 
 			<PasskeysSection />
 
