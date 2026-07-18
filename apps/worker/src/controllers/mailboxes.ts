@@ -19,6 +19,10 @@ import {
 	removeMailbox,
 	updateMailbox,
 } from "../services/mailboxes";
+import {
+	IdentityAccessDeniedError,
+	assertCanManageMailboxIdentities,
+} from "../services/identities";
 
 function parseMailboxListScope(request: Request): MailboxListScope {
 	const scope = new URL(request.url).searchParams.get("scope");
@@ -118,17 +122,58 @@ export async function handleUpdateMailbox({
 	}
 
 	const value = body as Record<string, unknown>;
+	const isActive =
+		typeof value.isActive === "boolean" ? value.isActive : undefined;
+	const personalIdentityAllowance =
+		typeof value.personalIdentityAllowance === "boolean"
+			? value.personalIdentityAllowance
+			: undefined;
+	const identityExport =
+		typeof value.identityExport === "boolean"
+			? value.identityExport
+			: undefined;
+
+	if (
+		isActive === undefined &&
+		personalIdentityAllowance === undefined &&
+		identityExport === undefined
+	) {
+		return validationError(request, "No valid fields were provided");
+	}
 
 	try {
 		const mailbox = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, params.id, "manage");
+			if (isActive !== undefined) {
+				if (principal.role === "manager") {
+					return Promise.reject(
+						new Error("Managers cannot change mailbox active state"),
+					);
+				}
+				await authorizeMailbox(db, principal, params.id, "manage");
+			}
+			if (
+				personalIdentityAllowance !== undefined ||
+				identityExport !== undefined
+			) {
+				await assertCanManageMailboxIdentities(db, principal, params.id);
+			}
 			return updateMailbox(db, params.id, {
-				isActive:
-					typeof value.isActive === "boolean" ? value.isActive : undefined,
+				isActive,
+				personalIdentityAllowance,
+				identityExport,
 			});
 		});
 		return jsonResponse(mailbox);
 	} catch (error) {
+		if (error instanceof IdentityAccessDeniedError) {
+			return validationError(request, error.message);
+		}
+		if (
+			error instanceof Error &&
+			error.message === "Managers cannot change mailbox active state"
+		) {
+			return validationError(request, error.message);
+		}
 		return handleRouteError(error, request);
 	}
 }

@@ -92,6 +92,21 @@ export async function updateInstanceSettings(
 	if (input.persistNoreplyOutboundEmails !== undefined) {
 		patch.persistNoreplyOutboundEmails = input.persistNoreplyOutboundEmails;
 	}
+	if (input.identitySelfServe !== undefined) {
+		patch.identitySelfServe = input.identitySelfServe;
+	}
+	if (input.customNameAllowance !== undefined) {
+		patch.customNameAllowance = input.customNameAllowance;
+	}
+	if (input.defaultIdentityNamePattern !== undefined) {
+		patch.defaultIdentityNamePattern = input.defaultIdentityNamePattern;
+	}
+	if (input.defaultIdentityCustomName !== undefined) {
+		patch.defaultIdentityCustomName = input.defaultIdentityCustomName;
+	}
+	if (input.defaultIdentitySignatureHtml !== undefined) {
+		patch.defaultIdentitySignatureHtml = input.defaultIdentitySignatureHtml;
+	}
 
 	await db
 		.update(instanceSettings)
@@ -109,6 +124,11 @@ function rowToRecord(
 		requireMfaScope: row.requireMfaScope,
 		requireRecoveryEmail: row.requireRecoveryEmail,
 		persistNoreplyOutboundEmails: row.persistNoreplyOutboundEmails,
+		identitySelfServe: row.identitySelfServe,
+		customNameAllowance: row.customNameAllowance,
+		defaultIdentityNamePattern: row.defaultIdentityNamePattern,
+		defaultIdentityCustomName: row.defaultIdentityCustomName,
+		defaultIdentitySignatureHtml: row.defaultIdentitySignatureHtml,
 		updatedAt: row.updatedAt.toISOString(),
 		updatedByAccountId: row.updatedByAccountId,
 	};

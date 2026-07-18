@@ -4,6 +4,7 @@ import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
+import { parseIdentityNamePattern } from "../services/identities";
 import {
 	getInstanceSettings,
 	InstanceSettingsAccessDeniedError,
@@ -56,12 +57,40 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 		value.persistNoreplyOutboundEmails === undefined
 			? undefined
 			: Boolean(value.persistNoreplyOutboundEmails);
+	const identitySelfServe =
+		value.identitySelfServe === undefined
+			? undefined
+			: Boolean(value.identitySelfServe);
+	const customNameAllowance =
+		value.customNameAllowance === undefined
+			? undefined
+			: Boolean(value.customNameAllowance);
+	const defaultIdentityNamePattern = parseIdentityNamePattern(
+		value.defaultIdentityNamePattern,
+	);
+	const defaultIdentityCustomName =
+		value.defaultIdentityCustomName === undefined
+			? undefined
+			: value.defaultIdentityCustomName === null
+				? null
+				: String(value.defaultIdentityCustomName);
+	const defaultIdentitySignatureHtml =
+		value.defaultIdentitySignatureHtml === undefined
+			? undefined
+			: value.defaultIdentitySignatureHtml === null
+				? null
+				: String(value.defaultIdentitySignatureHtml);
 
 	if (
 		organizationTabAccess === undefined &&
 		requireMfaScope === undefined &&
 		requireRecoveryEmail === undefined &&
-		persistNoreplyOutboundEmails === undefined
+		persistNoreplyOutboundEmails === undefined &&
+		identitySelfServe === undefined &&
+		customNameAllowance === undefined &&
+		defaultIdentityNamePattern === undefined &&
+		defaultIdentityCustomName === undefined &&
+		defaultIdentitySignatureHtml === undefined
 	) {
 		return validationError(context.request, "No valid settings were provided");
 	}
@@ -83,20 +112,58 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 		);
 	}
 
+	if (
+		value.defaultIdentityNamePattern !== undefined &&
+		defaultIdentityNamePattern === undefined
+	) {
+		return validationError(
+			context.request,
+			"defaultIdentityNamePattern is invalid",
+		);
+	}
+
 	try {
-		const settings = await withDb(context.env, (db) =>
-			updateInstanceSettings(db, context.principal, {
+		const settings = await withDb(context.env, async (db) => {
+			const current = await getInstanceSettings(db);
+			const nextPattern =
+				defaultIdentityNamePattern ?? current.defaultIdentityNamePattern;
+			const nextCustom =
+				defaultIdentityCustomName !== undefined
+					? defaultIdentityCustomName?.trim() || null
+					: current.defaultIdentityCustomName;
+
+			if (nextPattern === "custom" && !nextCustom) {
+				throw new Error("defaultIdentityCustomName is required for custom pattern");
+			}
+
+			return updateInstanceSettings(db, context.principal, {
 				organizationTabAccess,
 				requireMfaScope,
 				requireRecoveryEmail,
 				persistNoreplyOutboundEmails,
-			}),
-		);
+				identitySelfServe,
+				customNameAllowance,
+				defaultIdentityNamePattern,
+				defaultIdentityCustomName:
+					nextPattern === "custom"
+						? nextCustom
+						: defaultIdentityNamePattern !== undefined
+							? null
+							: defaultIdentityCustomName,
+				defaultIdentitySignatureHtml,
+			});
+		});
 		return jsonResponse(settings);
 	} catch (error) {
 		if (
 			error instanceof InstanceSettingsAccessDeniedError ||
 			error instanceof OrganizationTabAccessDeniedError
+		) {
+			return validationError(context.request, error.message);
+		}
+		if (
+			error instanceof Error &&
+			error.message.includes("defaultIdentityCustomName")
 		) {
 			return validationError(context.request, error.message);
 		}

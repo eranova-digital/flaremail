@@ -43,6 +43,8 @@ import type {
 	ReplyBody,
 } from "../../lib/messages/outbound-payload";
 import { sendAndPersistNewMessage } from "../../lib/messages/outbound-persist";
+import { formatEmailAddress } from "../../lib/addresses";
+import { resolveIdentityForSend } from "../identities";
 import { resolveReplyPayload } from "../../lib/messages/outbound-threading";
 import { prepareOutboundMessageBody } from "../../lib/messages/prepare-email-html";
 import { resolveReplyRecipients } from "../../lib/messages/resolve-reply-recipients";
@@ -79,6 +81,16 @@ export async function sendDraftMessage(
 
 	const rawPayload = await loadDraftOutboundPayload(ctx.bucket, draft);
 	const payload = await prepareOutboundMessageBody(rawPayload);
+	const { fromName } = await resolveIdentityForSend(
+		ctx.db,
+		ctx.principal,
+		mailbox.id,
+		payload.identityId,
+	);
+	const fromHeader = formatEmailAddress({
+		email: mailbox.address,
+		name: fromName || undefined,
+	});
 	const storedAttachmentInputs = await loadStoredAttachmentInputs(
 		ctx.db,
 		ctx.bucket,
@@ -90,7 +102,7 @@ export async function sendDraftMessage(
 	];
 	const now = new Date();
 	const sendPayload = buildEmailSendPayload({
-		from: mailbox.address,
+		from: fromHeader,
 		payload,
 		inReplyTo: draft.inReplyTo,
 		references: draft.references,
@@ -107,7 +119,7 @@ export async function sendDraftMessage(
 		draft,
 		rfcMessageId,
 		mimeContent: buildOutboundMimeContent({
-			from: mailbox.address,
+			from: fromHeader,
 			payload,
 			rfcMessageId,
 			inReplyTo: draft.inReplyTo,
