@@ -711,6 +711,9 @@ export const oidcClients = pgTable("oidc_clients", {
 	m2mPermissions: text("m2m_permissions").array().notNull().default([]),
 	isConfidential: boolean("is_confidential").notNull().default(true),
 	requireConsent: boolean("require_consent").notNull().default(true),
+	/** Optional URL shown/used when the user cancels consent (not the OAuth redirect_uri). */
+	homescreenUrl: text("homescreen_url"),
+	logoUpdatedAt: timestamp("logo_updated_at", { withTimezone: true }),
 	createdByAccountId: uuid("created_by_account_id").references(() => accounts.id, {
 		onDelete: "set null",
 	}),

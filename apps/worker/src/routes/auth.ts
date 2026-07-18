@@ -64,7 +64,9 @@ import {
 	handleAdminRevokeOidcClientGrant,
 	handleCreateOidcClient,
 	handleDeleteOidcClient,
+	handleDeleteOidcClientLogo,
 	handleGetOidcClient,
+	handleGetOidcClientLogo,
 	handleGetOidcPending,
 	handleListMyOidcGrants,
 	handleListOidcClientGrants,
@@ -78,6 +80,7 @@ import {
 	handleRegenerateOidcClientSecret,
 	handleRevokeMyOidcGrant,
 	handleUpdateOidcClient,
+	handleUploadOidcClientLogo,
 } from "../controllers/oidc";
 import {
 	handleGetInstanceSettings,
@@ -202,11 +205,7 @@ export const authRoutes: RouteDefinition[] = [
 	{
 		method: "GET",
 		path: `${prefix}/accounts/:id/profile-picture`,
-		action: "authenticated",
-		scopes: ({ principal, params }) =>
-			principal.accountId && params.id === principal.accountId
-				? ["profile_picture:read"]
-				: ["account_profile_pictures:read"],
+		auth: false,
 		handler: handleGetProfilePicture,
 	},
 	{
@@ -464,6 +463,26 @@ export const authRoutes: RouteDefinition[] = [
 		action: "platform",
 		scopes: ["oidc_clients:delete"],
 		handler: handleDeleteOidcClient,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/oidc-clients/:id/logo`,
+		auth: false,
+		handler: handleGetOidcClientLogo,
+	},
+	{
+		method: "PUT",
+		path: `${prefix}/oidc-clients/:id/logo`,
+		action: "platform",
+		scopes: ["oidc_clients:update"],
+		handler: handleUploadOidcClientLogo,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/oidc-clients/:id/logo`,
+		action: "platform",
+		scopes: ["oidc_clients:update"],
+		handler: handleDeleteOidcClientLogo,
 	},
 	{
 		method: "POST",

@@ -115,7 +115,6 @@ export async function handleGetProfilePicture(context: RouteContext) {
 			downloadProfilePicture(
 				db,
 				context.env.BUCKET,
-				context.principal,
 				context.params.id,
 				size,
 			),

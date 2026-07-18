@@ -26,6 +26,7 @@ import {
 	getUserInfo,
 	intersectScopes,
 	isExactRedirectUri,
+	issuerUrl,
 	listConsentGrantsForAccount,
 	listConsentGrantsForClient,
 	needsConsent,
@@ -278,10 +279,15 @@ export async function handleGetOidcPending(context: RouteContext) {
 			return {
 				id: pending.id,
 				clientId: client.clientId,
+				clientRecordId: client.id,
 				clientName: client.name,
 				scopes: pending.scopes,
 				redirectUri: pending.redirectUri,
 				requireConsent: client.requireConsent,
+				homescreenUrl: client.homescreenUrl,
+				logo: client.logoUpdatedAt
+					? { updatedAt: client.logoUpdatedAt.toISOString() }
+					: null,
 			};
 		});
 		if (result === "forbidden") {
@@ -430,7 +436,10 @@ export async function handleOidcUserinfo(context: RouteContext) {
 	}
 	try {
 		const info = await withDb(context.env, (db) =>
-			getUserInfo(db, context.principal.accountId!),
+			getUserInfo(db, context.principal.accountId!, {
+				issuer: issuerUrl(context.request),
+				scopes: context.principal.oidcScopes,
+			}),
 		);
 		return jsonResponse(info);
 	} catch (error) {
@@ -462,6 +471,10 @@ export async function handleCreateOidcClient(context: RouteContext) {
 					: [],
 				isConfidential: value.isConfidential !== false,
 				requireConsent: value.requireConsent !== false,
+				homescreenUrl:
+					typeof value.homescreenUrl === "string" || value.homescreenUrl === null
+						? (value.homescreenUrl as string | null)
+						: undefined,
 				createdByAccountId: context.principal.accountId,
 			}),
 		);
@@ -524,6 +537,10 @@ export async function handleUpdateOidcClient(context: RouteContext) {
 					typeof value.requireConsent === "boolean"
 						? value.requireConsent
 						: undefined,
+				homescreenUrl:
+					typeof value.homescreenUrl === "string" || value.homescreenUrl === null
+						? (value.homescreenUrl as string | null)
+						: undefined,
 			}),
 		);
 		if (!client) {
@@ -541,7 +558,7 @@ export async function handleUpdateOidcClient(context: RouteContext) {
 export async function handleDeleteOidcClient(context: RouteContext) {
 	try {
 		const deleted = await withDb(context.env, (db) =>
-			deleteOidcClient(db, context.params.id),
+			deleteOidcClient(db, context.env.BUCKET, context.params.id),
 		);
 		if (!deleted) {
 			return problemResponse(404, "OIDC client not found", {
@@ -653,5 +670,64 @@ export async function handleRevokeMyOidcGrant(context: RouteContext) {
 		return new Response(null, { status: 204 });
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
+	}
+}
+
+async function readOidcClientLogoUpload(context: RouteContext) {
+	const contentType = context.request.headers.get("Content-Type") ?? "";
+	if (!contentType.toLowerCase().includes("multipart/form-data")) {
+		return validationError(context.request, "Expected multipart form data");
+	}
+	let formData: FormData;
+	try {
+		formData = await context.request.formData();
+	} catch {
+		return validationError(context.request, "Invalid form data");
+	}
+	const file = formData.get("file");
+	if (!(file instanceof File) || file.size === 0) {
+		return validationError(context.request, "file is required");
+	}
+	return file;
+}
+
+export async function handleUploadOidcClientLogo(context: RouteContext) {
+	const file = await readOidcClientLogoUpload(context);
+	if (file instanceof Response) {
+		return file;
+	}
+	try {
+		const { uploadOidcClientLogo } = await import("../services/oidc-client-logo");
+		const result = await withDb(context.env, (db) =>
+			uploadOidcClientLogo(db, context.env.BUCKET, context.params.id, file),
+		);
+		return jsonResponse(result);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleDeleteOidcClientLogo(context: RouteContext) {
+	try {
+		const { removeOidcClientLogo } = await import("../services/oidc-client-logo");
+		const result = await withDb(context.env, (db) =>
+			removeOidcClientLogo(db, context.env.BUCKET, context.params.id),
+		);
+		return jsonResponse(result);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleGetOidcClientLogo(context: RouteContext) {
+	const url = new URL(context.request.url);
+	const size = url.searchParams.get("size");
+	try {
+		const { downloadOidcClientLogo } = await import("../services/oidc-client-logo");
+		return await withDb(context.env, (db) =>
+			downloadOidcClientLogo(db, context.env.BUCKET, context.params.id, size),
+		);
+	} catch (error) {
+		return handleRouteError(error, context.request);
 	}
 }

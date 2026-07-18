@@ -57,24 +57,14 @@ describe("API key scopes", () => {
 		expect(assignments?.scopes).toEqual(["account_assignments:update"]);
 	});
 
-	it("uses self profile picture scope for own account picture reads", () => {
+	it("allows public profile picture reads without API key scopes", () => {
 		const route = authRoutes.find(
 			(entry) =>
 				entry.method === "GET" &&
 				entry.path === "/api/v1/accounts/:id/profile-picture",
 		);
-		expect(
-			resolveRouteScopes(route?.scopes, basePrincipal({ accountId: "acc-1" }), {
-				id: "acc-1",
-			}),
-		).toEqual(["profile_picture:read"]);
-		expect(
-			resolveRouteScopes(
-				route?.scopes,
-				basePrincipal({ accountId: "acc-1", role: "admin" }),
-				{ id: "acc-2" },
-			),
-		).toEqual(["account_profile_pictures:read"]);
+		expect(route?.auth).toBe(false);
+		expect(route?.scopes).toBeUndefined();
 	});
 
 	it("ignores removed scopes when reading stored keys", () => {

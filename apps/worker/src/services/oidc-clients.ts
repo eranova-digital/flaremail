@@ -18,6 +18,8 @@ export type OidcClientPublic = {
 	m2mPermissions: string[];
 	isConfidential: boolean;
 	requireConsent: boolean;
+	homescreenUrl: string | null;
+	logo: { updatedAt: string } | null;
 	createdAt: string;
 	updatedAt: string;
 };
@@ -32,6 +34,10 @@ function toPublic(client: OidcClient): OidcClientPublic {
 		m2mPermissions: client.m2mPermissions,
 		isConfidential: client.isConfidential,
 		requireConsent: client.requireConsent,
+		homescreenUrl: client.homescreenUrl,
+		logo: client.logoUpdatedAt
+			? { updatedAt: client.logoUpdatedAt.toISOString() }
+			: null,
 		createdAt: client.createdAt.toISOString(),
 		updatedAt: client.updatedAt.toISOString(),
 	};
@@ -46,6 +52,27 @@ function assertScopes(scopes: string[], field: string): void {
 	}
 }
 
+function normalizeHomescreenUrl(
+	value: string | null | undefined,
+): string | null | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+	if (value === null || value.trim() === "") {
+		return null;
+	}
+	let parsed: URL;
+	try {
+		parsed = new URL(value.trim());
+	} catch {
+		throw new Error("homescreenUrl must be a valid URL");
+	}
+	if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+		throw new Error("homescreenUrl must be http or https");
+	}
+	return parsed.toString();
+}
+
 export async function createOidcClientRecord(
 	db: Database,
 	input: {
@@ -55,6 +82,7 @@ export async function createOidcClientRecord(
 		m2mPermissions?: string[];
 		isConfidential?: boolean;
 		requireConsent?: boolean;
+		homescreenUrl?: string | null;
 		createdByAccountId?: string | null;
 	},
 ): Promise<OidcClientPublic & { clientSecret: string | null }> {
@@ -65,6 +93,7 @@ export async function createOidcClientRecord(
 		throw new Error("redirectUris must not be empty");
 	}
 	assertScopes(input.allowedScopes, "allowedScopes");
+	const homescreenUrl = normalizeHomescreenUrl(input.homescreenUrl) ?? null;
 
 	const isConfidential = input.isConfidential ?? true;
 	const clientId = `client_${randomToken(8)}`;
@@ -81,6 +110,7 @@ export async function createOidcClientRecord(
 		m2mPermissions: input.m2mPermissions ?? [],
 		isConfidential,
 		requireConsent: input.requireConsent ?? true,
+		homescreenUrl,
 		createdByAccountId: input.createdByAccountId ?? null,
 		createdAt: now,
 		updatedAt: now,
@@ -132,6 +162,7 @@ export async function updateOidcClient(
 		m2mPermissions?: string[];
 		isConfidential?: boolean;
 		requireConsent?: boolean;
+		homescreenUrl?: string | null;
 	},
 ): Promise<OidcClientPublic | null> {
 	const existing = await getOidcClientRowById(db, id);
@@ -148,6 +179,10 @@ export async function updateOidcClient(
 	const now = new Date();
 	const isConfidential = input.isConfidential ?? existing.isConfidential;
 	let clientSecretHash = existing.clientSecretHash;
+	const homescreenUrl =
+		input.homescreenUrl !== undefined
+			? (normalizeHomescreenUrl(input.homescreenUrl) ?? null)
+			: existing.homescreenUrl;
 
 	if (input.isConfidential === false) {
 		clientSecretHash = null;
@@ -165,6 +200,7 @@ export async function updateOidcClient(
 			m2mPermissions: input.m2mPermissions ?? existing.m2mPermissions,
 			isConfidential,
 			requireConsent: input.requireConsent ?? existing.requireConsent,
+			homescreenUrl,
 			clientSecretHash,
 			updatedAt: now,
 		})
@@ -197,12 +233,15 @@ export async function regenerateOidcClientSecret(
 
 export async function deleteOidcClient(
 	db: Database,
+	bucket: R2Bucket,
 	id: string,
 ): Promise<boolean> {
 	const existing = await getOidcClientRowById(db, id);
 	if (!existing) {
 		return false;
 	}
+	const { deleteOidcClientLogoFiles } = await import("./oidc-client-logo");
+	await deleteOidcClientLogoFiles(bucket, existing.id, existing.logoUpdatedAt);
 	await cascadeDeleteOidcClient(db, existing);
 	return true;
 }

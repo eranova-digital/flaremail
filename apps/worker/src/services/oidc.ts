@@ -16,6 +16,7 @@ import {
 import { randomToken } from "../lib/auth/crypto";
 import { signOidcJwt } from "../lib/auth/oidc-signing";
 import { hashSecret } from "../lib/auth/password";
+import { oidcProfilePictureClaimUrl } from "../lib/oidc/profile-picture-claim";
 
 export type { OidcPendingAuthorization };
 
@@ -527,31 +528,59 @@ async function issueUserTokens(
 
 	const issuer = issuerUrl(request);
 	const scope = input.scopes.join(" ");
+	const scopeSet = new Set(input.scopes);
 	const displayName = profile
 		? `${profile.firstName} ${profile.lastName}`.trim()
 		: undefined;
+	const picture = scopeSet.has("profile")
+		? oidcProfilePictureClaimUrl(
+				issuer,
+				account.id,
+				profile?.profilePictureUpdatedAt,
+			)
+		: undefined;
 
-	const accessToken = await signOidcJwt(
-		env,
-		{
-			sub: account.id,
-			client_id: input.clientId,
-			scope,
-			email: account.loginIdentifier,
-			name: displayName,
-		},
-		{ issuer, audience: input.clientId },
-	);
+	const accessClaims: Record<string, unknown> = {
+		sub: account.id,
+		client_id: input.clientId,
+		scope,
+	};
+	if (scopeSet.has("email")) {
+		accessClaims.email = account.loginIdentifier;
+	}
+	if (scopeSet.has("profile")) {
+		if (displayName) {
+			accessClaims.name = displayName;
+		}
+		if (picture) {
+			accessClaims.picture = picture;
+		}
+	}
 
-	const idToken = await signOidcJwt(
-		env,
-		{
-			sub: account.id,
-			email: account.loginIdentifier,
-			name: displayName,
-		},
-		{ issuer, audience: input.clientId },
-	);
+	const accessToken = await signOidcJwt(env, accessClaims, {
+		issuer,
+		audience: input.clientId,
+	});
+
+	const idClaims: Record<string, unknown> = {
+		sub: account.id,
+	};
+	if (scopeSet.has("email")) {
+		idClaims.email = account.loginIdentifier;
+	}
+	if (scopeSet.has("profile")) {
+		if (displayName) {
+			idClaims.name = displayName;
+		}
+		if (picture) {
+			idClaims.picture = picture;
+		}
+	}
+
+	const idToken = await signOidcJwt(env, idClaims, {
+		issuer,
+		audience: input.clientId,
+	});
 
 	const refreshToken = randomToken(32);
 	const now = new Date();
@@ -576,7 +605,11 @@ async function issueUserTokens(
 	};
 }
 
-export async function getUserInfo(db: Database, accountId: string) {
+export async function getUserInfo(
+	db: Database,
+	accountId: string,
+	options: { issuer: string; scopes?: string[] },
+) {
 	const [account] = await db
 		.select()
 		.from(accounts)
@@ -590,11 +623,31 @@ export async function getUserInfo(db: Database, accountId: string) {
 		.from(accountProfiles)
 		.where(eq(accountProfiles.accountId, accountId))
 		.limit(1);
-	return {
+
+	const scopeSet = new Set(options.scopes ?? ["openid", "profile", "email"]);
+	const info: Record<string, string> = {
 		sub: account.id,
-		email: account.loginIdentifier,
-		name: profile ? `${profile.firstName} ${profile.lastName}`.trim() : undefined,
 	};
+	if (scopeSet.has("email")) {
+		info.email = account.loginIdentifier;
+	}
+	if (scopeSet.has("profile")) {
+		const name = profile
+			? `${profile.firstName} ${profile.lastName}`.trim()
+			: "";
+		if (name) {
+			info.name = name;
+		}
+		const picture = oidcProfilePictureClaimUrl(
+			options.issuer,
+			account.id,
+			profile?.profilePictureUpdatedAt,
+		);
+		if (picture) {
+			info.picture = picture;
+		}
+	}
+	return info;
 }
 
 export async function revokeConsentGrant(

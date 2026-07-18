@@ -129,17 +129,12 @@ export async function removeProfilePicture(
 export async function downloadProfilePicture(
 	db: Database,
 	bucket: R2Bucket,
-	principal: Principal,
 	accountId: string,
 	sizeParam: string | null,
 ): Promise<Response> {
 	const size = parseProfilePictureSize(sizeParam);
 	if (!size) {
 		throw new Error("size must be small or large");
-	}
-
-	if (principal.accountId !== accountId) {
-		await authorizeAccount(db, principal, accountId, "view");
 	}
 
 	const [profile] = await db
