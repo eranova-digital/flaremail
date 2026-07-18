@@ -27,6 +27,7 @@
 		"@tanstack/react-query": "^5.83.0",
 		"@test-worker/email-html-prepare": "*",
 		"@test-worker/identity-name-pattern": "*",
+		"@test-worker/local-part-policy": "*",
 		"@test-worker/mail-quoting": "*",
 		"@tiptap/extension-emoji": "^3.27.1",
 		"@tiptap/extension-highlight": "^3.27.1",

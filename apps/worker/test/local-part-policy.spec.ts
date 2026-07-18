@@ -5,8 +5,8 @@ import {
 	generatePatternRandomValues,
 	getProfileFieldsUsedByPattern,
 	isValidMailboxLocalPart,
-	resolveLocalPartForInvite,
-} from "../src/lib/local-part-policy";
+} from "@test-worker/local-part-policy";
+import { resolveLocalPartForInvite } from "../src/lib/local-part-policy";
 
 describe("applyLocalPartPattern", () => {
 	it("renders first and last name tokens", () => {
