@@ -2,10 +2,13 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import { attachments, messages } from "../db/schema";
+import type { Principal } from "../lib/auth/types";
+import { assertPrincipalCanReadMessage } from "../lib/email-images/assert-message-readable";
 
 export async function downloadAttachment(
 	db: Database,
 	bucket: R2Bucket,
+	principal: Principal,
 	attachmentId: string,
 ): Promise<Response> {
 	const [row] = await db
@@ -23,6 +26,8 @@ export async function downloadAttachment(
 	if (!row) {
 		throw new Error("Attachment not found");
 	}
+
+	await assertPrincipalCanReadMessage(db, principal, row.messageId);
 
 	const [message] = await db
 		.select({
@@ -52,13 +57,21 @@ export async function downloadAttachment(
 	}
 
 	const headers = new Headers();
-	headers.set("Content-Type", row.mimeType);
-	if (row.filename) {
-		headers.set(
-			"Content-Disposition",
-			`attachment; filename="${row.filename.replace(/"/g, "")}"`,
-		);
-	}
+	const safeMime =
+		row.mimeType.startsWith("image/") ||
+		row.mimeType.startsWith("text/") ||
+		row.mimeType === "application/pdf"
+			? row.mimeType
+			: "application/octet-stream";
+	headers.set("Content-Type", safeMime);
+	headers.set("X-Content-Type-Options", "nosniff");
+	const safeName = (row.filename ?? "attachment")
+		.replace(/[\r\n"]/g, "")
+		.slice(0, 200);
+	headers.set(
+		"Content-Disposition",
+		`attachment; filename="${safeName || "attachment"}"`,
+	);
 
 	return new Response(object.body, { headers });
 }
