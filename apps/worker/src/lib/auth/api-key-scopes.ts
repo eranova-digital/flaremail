@@ -85,6 +85,7 @@ export const API_KEY_SCOPES = [
 	"oidc_clients:delete",
 	"instance_settings:read",
 	"instance_settings:update",
+	"logs:list",
 ] as const;
 
 export type ApiKeyScope = (typeof API_KEY_SCOPES)[number];
@@ -174,6 +175,7 @@ export const SCOPE_ACTION_REQUIREMENTS: Record<ApiKeyScope, AuthAction> = {
 	"oidc_clients:delete": "platform",
 	"instance_settings:read": "platform",
 	"instance_settings:update": "platform",
+	"logs:list": "platform",
 };
 
 export function isApiKeyScope(value: string): value is ApiKeyScope {

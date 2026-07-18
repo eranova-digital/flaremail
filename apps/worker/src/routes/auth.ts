@@ -87,6 +87,7 @@ import {
 	handleGetInstanceSettings,
 	handleUpdateInstanceSettings,
 } from "../controllers/instance-settings";
+import { handleListLogs } from "../controllers/logs";
 import {
 	handleDeleteProfilePicture,
 	handleDeleteAccountProfilePicture,
@@ -539,6 +540,13 @@ export const authRoutes: RouteDefinition[] = [
 		action: "platform",
 		scopes: ["instance_settings:update"],
 		handler: handleUpdateInstanceSettings,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/logs`,
+		action: "platform",
+		scopes: ["logs:list"],
+		handler: handleListLogs,
 	},
 
 	{

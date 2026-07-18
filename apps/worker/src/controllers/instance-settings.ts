@@ -9,6 +9,8 @@ import {
 	getInstanceSettings,
 	InstanceSettingsAccessDeniedError,
 	OrganizationTabAccessDeniedError,
+	parseLogRetentionDays,
+	parseMaxImportanceStored,
 	parseOrganizationTabAccess,
 	parseRequireMfaScope,
 	updateInstanceSettings,
@@ -80,6 +82,12 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 			: value.defaultIdentitySignatureHtml === null
 				? null
 				: String(value.defaultIdentitySignatureHtml);
+	const logsEnabled =
+		value.logsEnabled === undefined ? undefined : Boolean(value.logsEnabled);
+	const maxImportanceStored = parseMaxImportanceStored(
+		value.maxImportanceStored,
+	);
+	const logRetentionDays = parseLogRetentionDays(value.logRetentionDays);
 
 	if (
 		organizationTabAccess === undefined &&
@@ -90,7 +98,10 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 		customNameAllowance === undefined &&
 		defaultIdentityNamePattern === undefined &&
 		defaultIdentityCustomName === undefined &&
-		defaultIdentitySignatureHtml === undefined
+		defaultIdentitySignatureHtml === undefined &&
+		logsEnabled === undefined &&
+		maxImportanceStored === undefined &&
+		logRetentionDays === undefined
 	) {
 		return validationError(context.request, "No valid settings were provided");
 	}
@@ -119,6 +130,23 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 		return validationError(
 			context.request,
 			"defaultIdentityNamePattern is invalid",
+		);
+	}
+
+	if (
+		value.maxImportanceStored !== undefined &&
+		maxImportanceStored === undefined
+	) {
+		return validationError(
+			context.request,
+			"maxImportanceStored must be an integer from 0 to 10",
+		);
+	}
+
+	if (value.logRetentionDays !== undefined && logRetentionDays === undefined) {
+		return validationError(
+			context.request,
+			"logRetentionDays must be 3, 7, 14, 30, 60, or 90",
 		);
 	}
 
@@ -151,6 +179,9 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 							? null
 							: defaultIdentityCustomName,
 				defaultIdentitySignatureHtml,
+				logsEnabled,
+				maxImportanceStored,
+				logRetentionDays,
 			});
 		});
 		return jsonResponse(settings);

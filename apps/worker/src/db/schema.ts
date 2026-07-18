@@ -912,6 +912,30 @@ export const requireMfaScopeEnum = pgEnum("require_mfa_scope", [
 	"superadmin_and_above",
 ]);
 
+export const logTypeEnum = pgEnum("log_type", [
+	"auth",
+	"accounts",
+	"invites",
+	"mailboxes",
+	"mailing",
+	"threads",
+	"messages",
+	"identities",
+	"domains",
+	"settings",
+	"oidc",
+	"api-keys",
+]);
+
+export const logRetentionDaysEnum = pgEnum("log_retention_days", [
+	"3",
+	"7",
+	"14",
+	"30",
+	"60",
+	"90",
+]);
+
 export const instanceSettings = pgTable("instance_settings", {
 	id: text("id").primaryKey().default("default"),
 	organizationTabAccess: organizationTabAccessEnum("organization_tab_access")
@@ -937,6 +961,11 @@ export const instanceSettings = pgTable("instance_settings", {
 		.default("first_name_last_name"),
 	defaultIdentityCustomName: text("default_identity_custom_name"),
 	defaultIdentitySignatureHtml: text("default_identity_signature_html"),
+	logsEnabled: boolean("logs_enabled").notNull().default(true),
+	maxImportanceStored: integer("max_importance_stored").notNull().default(10),
+	logRetentionDays: logRetentionDaysEnum("log_retention_days")
+		.notNull()
+		.default("14"),
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
@@ -945,6 +974,33 @@ export const instanceSettings = pgTable("instance_settings", {
 		{ onDelete: "set null" },
 	),
 });
+
+export const logs = pgTable(
+	"logs",
+	{
+		id: uuid("id").primaryKey(),
+		importance: integer("importance").notNull(),
+		type: logTypeEnum("type").notNull(),
+		summary: text("summary").notNull(),
+		refs: text("refs").notNull().default("{}"),
+		actorAccountId: uuid("actor_account_id").references(() => accounts.id, {
+			onDelete: "set null",
+		}),
+		context: text("context"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("logs_created_at_idx").on(table.createdAt),
+		index("logs_importance_idx").on(table.importance),
+		index("logs_type_idx").on(table.type),
+		index("logs_importance_created_at_idx").on(
+			table.importance,
+			table.createdAt,
+		),
+	],
+);
 
 export const accountTotp = pgTable("account_totp", {
 	accountId: uuid("account_id")
@@ -994,6 +1050,8 @@ export type EmailTemplate = typeof emailTemplates.$inferSelect;
 export type NewEmailTemplate = typeof emailTemplates.$inferInsert;
 export type SystemEmailTemplate = typeof systemEmailTemplates.$inferSelect;
 export type NewSystemEmailTemplate = typeof systemEmailTemplates.$inferInsert;
+export type Log = typeof logs.$inferSelect;
+export type NewLog = typeof logs.$inferInsert;
 export type AccountTotp = typeof accountTotp.$inferSelect;
 export type AccountPasskey = typeof accountPasskeys.$inferSelect;
 export type Session = typeof sessions.$inferSelect;

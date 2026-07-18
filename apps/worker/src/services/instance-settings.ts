@@ -6,7 +6,9 @@ import type { Principal } from "../lib/auth/types";
 import {
 	canAccessOrganizationSettings,
 	DEFAULT_INSTANCE_SETTINGS,
+	LOG_RETENTION_DAY_OPTIONS,
 	type InstanceSettings,
+	type LogRetentionDays,
 	type OrganizationTabAccess,
 	type RequireMfaScope,
 } from "./security-compliance";
@@ -107,6 +109,21 @@ export async function updateInstanceSettings(
 	if (input.defaultIdentitySignatureHtml !== undefined) {
 		patch.defaultIdentitySignatureHtml = input.defaultIdentitySignatureHtml;
 	}
+	if (input.logsEnabled !== undefined) {
+		patch.logsEnabled = input.logsEnabled;
+	}
+	if (input.maxImportanceStored !== undefined) {
+		patch.maxImportanceStored = input.maxImportanceStored;
+	}
+	if (input.logRetentionDays !== undefined) {
+		patch.logRetentionDays = String(input.logRetentionDays) as
+			| "3"
+			| "7"
+			| "14"
+			| "30"
+			| "60"
+			| "90";
+	}
 
 	await db
 		.update(instanceSettings)
@@ -129,6 +146,9 @@ function rowToRecord(
 		defaultIdentityNamePattern: row.defaultIdentityNamePattern,
 		defaultIdentityCustomName: row.defaultIdentityCustomName,
 		defaultIdentitySignatureHtml: row.defaultIdentitySignatureHtml,
+		logsEnabled: row.logsEnabled,
+		maxImportanceStored: row.maxImportanceStored,
+		logRetentionDays: Number(row.logRetentionDays) as LogRetentionDays,
 		updatedAt: row.updatedAt.toISOString(),
 		updatedByAccountId: row.updatedByAccountId,
 	};
@@ -169,6 +189,27 @@ export function parseRequireMfaScope(value: unknown): RequireMfaScope | undefine
 		value === "superadmin_and_above"
 	) {
 		return value;
+	}
+	return undefined;
+}
+
+export function parseLogRetentionDays(
+	value: unknown,
+): LogRetentionDays | undefined {
+	const n = typeof value === "string" ? Number(value) : value;
+	if (
+		typeof n === "number" &&
+		LOG_RETENTION_DAY_OPTIONS.includes(n as LogRetentionDays)
+	) {
+		return n as LogRetentionDays;
+	}
+	return undefined;
+}
+
+export function parseMaxImportanceStored(value: unknown): number | undefined {
+	const n = typeof value === "string" ? Number(value) : value;
+	if (typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= 10) {
+		return n;
 	}
 	return undefined;
 }
