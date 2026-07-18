@@ -79,8 +79,8 @@ export function SystemTemplatesSection() {
 				<ul className="divide-border border-border divide-y rounded-lg border">
 					{items.map((template) => (
 						<li key={template.key} className="space-y-3 px-3 py-3">
-							<div className="flex flex-wrap items-start justify-between gap-3">
-								<div className="min-w-0 space-y-1">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+								<div className="min-w-0 flex-1 space-y-1">
 									<div className="flex flex-wrap items-center gap-2">
 										<p className="text-sm font-medium">{template.label}</p>
 										{template.configured ? (
@@ -96,7 +96,7 @@ export function SystemTemplatesSection() {
 										Subject: {template.subject}
 									</p>
 								</div>
-								<div className="flex shrink-0 items-center gap-2">
+								<div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
 									<input
 										ref={(node) => {
 											fileInputRefs.current[template.key] = node;
