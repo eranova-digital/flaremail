@@ -5,6 +5,7 @@ import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
+import { rejectIfAuthFailureLimited } from "../lib/http/rate-limit";
 import type { RouteContext } from "../lib/http/router";
 import { sessionSecretForEnv } from "../services/auth";
 
@@ -109,6 +110,14 @@ export async function handleBeginPasskeySignIn(context: RouteContext) {
 		);
 		return jsonResponse(result);
 	} catch (error) {
+		const limited = await rejectIfAuthFailureLimited(
+			context.env,
+			context.request,
+			loginIdentifier,
+		);
+		if (limited) {
+			return limited;
+		}
 		return handleRouteError(error, context.request);
 	}
 }
@@ -142,6 +151,16 @@ export async function handleCompletePasskeySignIn(context: RouteContext) {
 		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
+		const limited = await rejectIfAuthFailureLimited(
+			context.env,
+			context.request,
+			typeof value.email === "string"
+				? value.email
+				: (value.challengeToken as string),
+		);
+		if (limited) {
+			return limited;
+		}
 		return handleRouteError(error, context.request);
 	}
 }

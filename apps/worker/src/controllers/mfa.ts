@@ -4,6 +4,7 @@ import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
+import { rejectIfAuthFailureLimited } from "../lib/http/rate-limit";
 import type { RouteContext } from "../lib/http/router";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { parseLogContextFromRequest } from "../lib/logs/request-context";
@@ -162,6 +163,14 @@ export async function handleVerifyMfaSignIn(context: RouteContext) {
 		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
+		const limited = await rejectIfAuthFailureLimited(
+			context.env,
+			context.request,
+			value.mfaToken as string,
+		);
+		if (limited) {
+			return limited;
+		}
 		return handleRouteError(error, context.request);
 	}
 }
