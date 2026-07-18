@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 
 import { LogSummary } from "@/components/settings/logs/LogSummary";
+import { DateTimeRangePicker } from "@/components/settings/logs/DateTimeRangePicker";
+import { LogTypeMultiSelect } from "@/components/settings/logs/LogTypeMultiSelect";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -148,20 +150,33 @@ export function LogsSection() {
 	}, [filterKey]);
 
 	const types = useMemo(() => {
-		if (!typeParam || typeParam === "all") return undefined;
+		if (!typeParam || typeParam === "all") return [];
 		return typeParam.split(",").filter((t): t is LogType =>
 			(LOG_TYPES as readonly string[]).includes(t),
 		);
 	}, [typeParam]);
 
+	const dateRange = useMemo(() => {
+		const fromDate = from ? new Date(from) : undefined;
+		const toDate = to ? new Date(to) : undefined;
+		if (
+			(fromDate && Number.isNaN(fromDate.getTime())) ||
+			(toDate && Number.isNaN(toDate.getTime()))
+		) {
+			return undefined;
+		}
+		if (!fromDate && !toDate) return undefined;
+		return { from: fromDate, to: toDate };
+	}, [from, to]);
+
 	const before = cursorStack[pageIndex];
 
 	const query = useLogs({
 		q: qParam.trim() || undefined,
-		types,
+		types: types.length > 0 ? types : undefined,
 		maxImportance: Number.isInteger(maxImportance) ? maxImportance : 5,
-		from: from ? new Date(from).toISOString() : undefined,
-		to: to ? new Date(to).toISOString() : undefined,
+		from: dateRange?.from?.toISOString(),
+		to: dateRange?.to?.toISOString(),
 		limit,
 		before,
 	});
@@ -181,6 +196,33 @@ export function LogsSection() {
 					next.delete(key);
 				} else {
 					next.set(key, value);
+				}
+				return next;
+			},
+			{ replace: true },
+		);
+	};
+
+	const setTypes = (nextTypes: LogType[]) => {
+		setFilter("type", nextTypes.length > 0 ? nextTypes.join(",") : null);
+	};
+
+	const setDateRange = (
+		range: { from?: Date; to?: Date } | undefined,
+	) => {
+		setSearchParams(
+			(current) => {
+				const next = new URLSearchParams(current);
+				next.set("tab", "logs");
+				if (range?.from) {
+					next.set("from", range.from.toISOString());
+				} else {
+					next.delete("from");
+				}
+				if (range?.to) {
+					next.set("to", range.to.toISOString());
+				} else {
+					next.delete("to");
 				}
 				return next;
 			},
@@ -247,7 +289,7 @@ export function LogsSection() {
 						onChange={(event) => setSearchDraft(event.target.value)}
 					/>
 				</div>
-				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 					<div className="space-y-1">
 						<label
 							className="text-muted-foreground text-xs"
@@ -275,47 +317,23 @@ export function LogsSection() {
 						<label className="text-muted-foreground text-xs" htmlFor="logs-type">
 							Type
 						</label>
-						<Select
-							value={typeParam || "all"}
-							onValueChange={(value) =>
-								setFilter("type", value === "all" ? null : value)
-							}
-						>
-							<SelectTrigger id="logs-type">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">All types</SelectItem>
-								{LOG_TYPES.map((type) => (
-									<SelectItem key={type} value={type}>
-										{type}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-					<div className="space-y-1">
-						<label className="text-muted-foreground text-xs" htmlFor="logs-from">
-							From
-						</label>
-						<Input
-							id="logs-from"
-							type="datetime-local"
-							value={from}
-							onChange={(event) =>
-								setFilter("from", event.target.value || null)
-							}
+						<LogTypeMultiSelect
+							id="logs-type"
+							value={types}
+							onChange={setTypes}
 						/>
 					</div>
-					<div className="space-y-1">
-						<label className="text-muted-foreground text-xs" htmlFor="logs-to">
-							To
+					<div className="space-y-1 sm:col-span-2">
+						<label
+							className="text-muted-foreground text-xs"
+							htmlFor="logs-range"
+						>
+							Date & time range
 						</label>
-						<Input
-							id="logs-to"
-							type="datetime-local"
-							value={to}
-							onChange={(event) => setFilter("to", event.target.value || null)}
+						<DateTimeRangePicker
+							id="logs-range"
+							value={dateRange}
+							onChange={setDateRange}
 						/>
 					</div>
 					<div className="space-y-1">
