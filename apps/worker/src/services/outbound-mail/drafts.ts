@@ -18,7 +18,7 @@ import {
 	type CreateDraftBody,
 	type OutboundMessageBody,
 } from "../../lib/messages/outbound-payload";
-import { persistDraftMessage } from "../../lib/messages/outbound-persist";
+import { persistDraftMessage } from "../../lib/messages/outbound-pipeline";
 import { resolveThreadingForCompose } from "../../lib/messages/outbound-threading";
 import { resolveReplyRecipients } from "../../lib/messages/resolve-reply-recipients";
 import { replaceStoredMessageContent } from "../../lib/messages/update-stored-message";
