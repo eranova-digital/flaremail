@@ -11,6 +11,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyleKit } from "@tiptap/extension-text-style";
 import StarterKit from "@tiptap/starter-kit";
 
+import { ComposeHtml } from "@/components/compose/editor/compose-html";
 import { ComposeImage } from "@/components/compose/editor/compose-image";
 import { ComposeReplyQuote } from "@/components/compose/editor/compose-reply-quote";
 import { ComposeSignature } from "@/components/compose/editor/compose-signature";
@@ -41,6 +42,7 @@ export function getComposeEditorExtensions(placeholder: string) {
 			inline: false,
 			allowBase64: true,
 		}),
+		ComposeHtml,
 		ComposeSignature,
 		ComposeReplyQuote,
 		Table.configure({

@@ -7,6 +7,7 @@ import {
 	AlignRight,
 	Bold,
 	Code,
+	CodeXml,
 	Highlighter,
 	ImageIcon,
 	Italic,
@@ -552,6 +553,14 @@ export function BlockControls({ editor, disabled = false }: ControlProps) {
 				onClick={() => editor.chain().focus().setHorizontalRule().run()}
 			>
 				<Minus className="size-4" />
+			</ToolbarButton>
+			<ToolbarButton
+				label="HTML block"
+				isActive={editor.isActive("composeHtml")}
+				disabled={disabled}
+				onClick={() => editor.chain().focus().insertComposeHtml().run()}
+			>
+				<CodeXml className="size-4" />
 			</ToolbarButton>
 			<input
 				ref={imageInputRef}

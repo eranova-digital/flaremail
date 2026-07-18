@@ -262,6 +262,124 @@
 	background: var(--muted);
 }
 
+.compose-editor .compose-html-block {
+	position: relative;
+	margin: 0.75rem 0;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	background: var(--muted);
+	overflow: hidden;
+}
+
+.compose-editor .compose-html-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	border-bottom: 1px solid var(--border);
+	padding: 0.25rem 0.35rem 0.25rem 0.25rem;
+	background: color-mix(in oklab, var(--background) 70%, var(--muted));
+}
+
+.compose-editor .compose-html-mode-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.125rem;
+}
+
+.compose-editor .compose-html-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 1.5rem;
+	width: 1.5rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	color: var(--muted-foreground);
+	background: var(--background);
+	opacity: 0;
+	cursor: pointer;
+	transition:
+		opacity 0.15s ease,
+		color 0.15s ease,
+		background-color 0.15s ease;
+}
+
+.compose-editor .compose-html-block:hover .compose-html-remove,
+.compose-editor .compose-html-remove:focus-visible {
+	opacity: 1;
+}
+
+.compose-editor .compose-html-remove:hover {
+	color: var(--foreground);
+	background: var(--background);
+}
+
+.compose-editor .compose-html-editor {
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	background: var(--background);
+}
+
+.compose-editor .compose-html-editor:focus-visible {
+	outline: none;
+	box-shadow: none;
+}
+
+.compose-editor .compose-html-preview {
+	padding: 0.75rem;
+	background: var(--background);
+	min-height: 4rem;
+}
+
+.compose-editor .compose-html-preview-content > *:first-child {
+	margin-top: 0;
+}
+
+.compose-editor .compose-html-preview-content > *:last-child {
+	margin-bottom: 0;
+}
+
+.compose-editor .compose-html-vars {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 0.5rem;
+	border-bottom: 1px solid var(--border);
+	padding: 0.5rem;
+	background: color-mix(in oklab, var(--background) 85%, var(--muted));
+}
+
+.compose-editor .compose-html-vars-error {
+	border-radius: 0;
+	border-width: 0 0 1px;
+	padding: 0.5rem 0.75rem;
+}
+
+.compose-editor .compose-html-vars-fields {
+	display: flex;
+	flex: 1 1 auto;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: flex-end;
+}
+
+.compose-editor .compose-html-var-field {
+	display: flex;
+	min-width: 8rem;
+	flex: 1 1 8rem;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.compose-editor .compose-html-var-label {
+	color: var(--muted-foreground);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 0.7rem;
+	line-height: 1;
+}
+
 .compose-editor .tiptap a {
 	color: var(--primary);
 	text-decoration: underline;
@@ -321,6 +439,26 @@
 	right: -2px;
 	top: 0;
 	width: 4px;
+}
+
+/* Author HTML must not inherit TipTap table chrome. */
+.compose-editor .tiptap .compose-html-preview-content :is(table, thead, tbody, tfoot, tr, th, td) {
+	border: unset;
+	border-collapse: unset;
+	border-spacing: unset;
+	background: unset;
+	margin: unset;
+	padding: unset;
+	width: unset;
+	max-width: unset;
+	table-layout: unset;
+	vertical-align: unset;
+	font-weight: unset;
+}
+
+.compose-editor .tiptap .compose-html-preview-content .selectedCell::after,
+.compose-editor .tiptap .compose-html-preview-content .column-resize-handle {
+	display: none;
 }
 
 .compose-editor .tiptap hr {

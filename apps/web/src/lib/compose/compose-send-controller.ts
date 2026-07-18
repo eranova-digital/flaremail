@@ -1,4 +1,6 @@
 import type { OutboundMessageBody, CreateDraftRequest } from "@/lib/api/generated/types.gen";
+import { COMPOSE_HTML_ATTR } from "@/components/compose/editor/compose-html";
+import { resolveComposeHtmlDocument } from "@/components/compose/editor/html-placeholders";
 import type { ComposeAttachment } from "@/lib/compose-attachments";
 import { composeAttachmentsToOutbound } from "@/lib/compose-attachments";
 import { isEmptyEditorHtml } from "@/lib/compose-body";
@@ -12,6 +14,17 @@ import {
 	type ComposeForwardContext,
 	type ComposeReplyContext,
 } from "@/hooks/compose/types";
+
+function fieldsForSend(fields: ComposeFields): ComposeFields {
+	if (isEmptyEditorHtml(fields.bodyHtml)) {
+		return fields;
+	}
+
+	return {
+		...fields,
+		bodyHtml: resolveComposeHtmlDocument(fields.bodyHtml, COMPOSE_HTML_ATTR),
+	};
+}
 
 export type ComposeSendPhase = "idle" | "saving" | "sending";
 
@@ -100,7 +113,7 @@ export class ComposeSendController {
 			throw new Error("Forward context is required");
 		}
 
-		const current = this.deps.getFields();
+		const current = fieldsForSend(this.deps.getFields());
 		if (!hasComposeSubject(current)) {
 			throw new Error("Subject is required");
 		}
@@ -134,7 +147,7 @@ export class ComposeSendController {
 	}
 
 	private async sendDraftPath(): Promise<SendResult> {
-		const current = this.deps.getFields();
+		const current = fieldsForSend(this.deps.getFields());
 		if (!hasComposeSubject(current)) {
 			throw new Error("Subject is required");
 		}
