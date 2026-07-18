@@ -29,6 +29,7 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { TableInsertButton } from "@/components/compose/editor/TableControls";
+import { TemplateInsertControl } from "@/components/compose/editor/TemplateInsertControl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -517,7 +518,11 @@ export function AlignControls({ editor, disabled = false }: ControlProps) {
 	);
 }
 
-export function BlockControls({ editor, disabled = false }: ControlProps) {
+export function BlockControls({
+	editor,
+	disabled = false,
+	mailboxId,
+}: ControlProps & { mailboxId?: string }) {
 	const [emojiOpen, setEmojiOpen] = useState(false);
 	const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -562,6 +567,13 @@ export function BlockControls({ editor, disabled = false }: ControlProps) {
 			>
 				<CodeXml className="size-4" />
 			</ToolbarButton>
+			{mailboxId ? (
+				<TemplateInsertControl
+					editor={editor}
+					mailboxId={mailboxId}
+					disabled={disabled}
+				/>
+			) : null}
 			<input
 				ref={imageInputRef}
 				type="file"
@@ -691,12 +703,14 @@ function useStuckToTop() {
 
 type ToolbarProps = ControlProps & {
 	onHeightChange?: (height: number) => void;
+	mailboxId?: string;
 };
 
 export function ComposeEditorToolbar({
 	editor,
 	disabled = false,
 	onHeightChange,
+	mailboxId,
 }: ToolbarProps) {
 	const { sentinelRef, stuck } = useStuckToTop();
 	const toolbarRef = useRef<HTMLDivElement>(null);
@@ -733,7 +747,11 @@ export function ComposeEditorToolbar({
 				<ToolbarDivider />
 				<AlignControls editor={editor} disabled={disabled} />
 				<ToolbarDivider />
-				<BlockControls editor={editor} disabled={disabled} />
+				<BlockControls
+					editor={editor}
+					disabled={disabled}
+					mailboxId={mailboxId}
+				/>
 				<ToolbarDivider />
 				<HistoryControls editor={editor} disabled={disabled} />
 			</div>

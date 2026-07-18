@@ -498,6 +498,7 @@ export function ComposePane({
 				<ComposeEditor
 					key={`${compose.draftId ?? "new"}-${compose.initialized}`}
 					id="compose-body"
+					mailboxId={mailboxId}
 					className={cn(isInline ? "min-h-[160px]" : "min-h-[280px]")}
 					initialHtml={compose.fields.bodyHtml}
 					signatureHtml={signatureHtml}

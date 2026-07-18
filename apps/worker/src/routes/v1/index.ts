@@ -53,6 +53,14 @@ import {
 	handleThreadAction,
 	handleUpdateLabel,
 } from "../../controllers/reads";
+import {
+	handleCreateEmailTemplate,
+	handleDeleteEmailTemplate,
+	handleGetEmailTemplate,
+	handleGetEmailTemplateContent,
+	handleListEmailTemplates,
+	handleUpdateEmailTemplate,
+} from "../../controllers/email-templates";
 
 const prefix = "/api/v1";
 
@@ -227,6 +235,49 @@ export const v1Routes: RouteDefinition[] = [
 		action: "domain_admin",
 		scopes: ["labels:delete"],
 		handler: handleDeleteLabel,
+	},
+
+	{
+		method: "GET",
+		path: `${prefix}/templates`,
+		action: "authenticated",
+		scopes: ["templates:list"],
+		handler: handleListEmailTemplates,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/templates`,
+		action: "authenticated",
+		scopes: ["templates:create"],
+		handler: handleCreateEmailTemplate,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/templates/:id`,
+		action: "authenticated",
+		scopes: ["templates:read"],
+		handler: handleGetEmailTemplate,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/templates/:id/content`,
+		action: "authenticated",
+		scopes: ["templates:read"],
+		handler: handleGetEmailTemplateContent,
+	},
+	{
+		method: "PATCH",
+		path: `${prefix}/templates/:id`,
+		action: "authenticated",
+		scopes: ["templates:update"],
+		handler: handleUpdateEmailTemplate,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/templates/:id`,
+		action: "authenticated",
+		scopes: ["templates:delete"],
+		handler: handleDeleteEmailTemplate,
 	},
 
 	{

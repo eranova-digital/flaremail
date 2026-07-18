@@ -46,6 +46,11 @@ function deriveCapabilities(account: Account): AccountCapabilities {
 		manageAssignments: assignRoles,
 		manageManagerMailboxAssignments: assignRoles,
 		showsManagerMailboxGrantsTab: account.role === "manager",
+		accessTemplatesTab: accessAccountsTab,
+		canCreateGlobalTemplates:
+			account.isIntendant ||
+			account.role === "superadmin" ||
+			account.role === "admin",
 		inviteableRoles,
 	};
 }
@@ -183,6 +188,35 @@ export function canAccessMailboxesTab(account: Account | null): boolean {
 
 export function showsManagerMailboxGrantsTab(account: Account | null): boolean {
 	return effectiveCapabilities(account)?.showsManagerMailboxGrantsTab ?? false;
+}
+
+export function canAccessTemplatesTab(account: Account | null): boolean {
+	const caps = effectiveCapabilities(account);
+	if (!caps) {
+		return false;
+	}
+	if (typeof caps.accessTemplatesTab === "boolean") {
+		return caps.accessTemplatesTab;
+	}
+	return caps.accessAccountsTab;
+}
+
+export function canCreateGlobalTemplates(account: Account | null): boolean {
+	const caps = effectiveCapabilities(account);
+	if (!caps) {
+		return false;
+	}
+	if (typeof caps.canCreateGlobalTemplates === "boolean") {
+		return caps.canCreateGlobalTemplates;
+	}
+	if (!account) {
+		return false;
+	}
+	return (
+		account.isIntendant ||
+		account.role === "superadmin" ||
+		account.role === "admin"
+	);
 }
 
 export function canManageMailboxGrants(account: Account | null): boolean {

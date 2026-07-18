@@ -271,6 +271,24 @@ Mail endpoints require `mailboxId` (query param or body). Requests for a mailbox
 
 ---
 
+## Email templates
+
+Reusable HTML templates stored in R2 under `templates/{id}.html`. Global templates (`mailboxId` null) are available on every mailbox; mailbox templates only for that mailbox.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/templates?mailboxId=` | Templates available when composing from that mailbox (global + mailbox) |
+| GET | `/templates?manage=1` | Templates the principal can manage |
+| POST | `/templates` | Multipart create (`name`, `file`, optional `mailboxId`) |
+| GET | `/templates/:id` | Template metadata |
+| GET | `/templates/:id/content?mailboxId=` | Raw HTML body |
+| PATCH | `/templates/:id` | Rename (`{ name }`) |
+| DELETE | `/templates/:id` | Delete metadata + R2 object |
+
+**Permissions:** Superadmins/admins create global and mailbox templates. Managers create mailbox templates on mailboxes they manage. Compose listing requires read access to the mailbox.
+
+---
+
 ## Messages
 
 ### Read

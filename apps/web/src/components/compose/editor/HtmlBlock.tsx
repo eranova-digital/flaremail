@@ -40,13 +40,21 @@ export function HtmlBlock({
 }: NodeViewProps) {
 	const html = (node.attrs.html as string) || "";
 	const values = readValues(node.attrs.values);
-	const [mode, setMode] = useState<ViewMode>(html.trim() ? "preview" : "edit");
+	const locked = Boolean(node.attrs.locked);
+	const templateName =
+		typeof node.attrs.templateName === "string" && node.attrs.templateName.trim()
+			? node.attrs.templateName.trim()
+			: null;
+	const [mode, setMode] = useState<ViewMode>(
+		html.trim() || locked ? "preview" : "edit",
+	);
 	const [draft, setDraft] = useState(html);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 	const focusedRef = useRef(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const sourceHtml = mode === "edit" ? draft : html;
+	const effectiveMode = locked ? "preview" : mode;
+	const sourceHtml = effectiveMode === "edit" ? draft : html;
 	const placeholders = findHtmlPlaceholders(sourceHtml);
 	const blank = blankHtmlPlaceholders(sourceHtml, values);
 	const previewHtml = applyHtmlPlaceholders(html, values);
@@ -112,68 +120,78 @@ export function HtmlBlock({
 		>
 			<div className="compose-html-toolbar">
 				<div className="compose-html-mode-toggle" role="group" aria-label="HTML block mode">
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						className={cn(
-							"h-7 gap-1.5 px-2 text-xs",
-							mode === "edit" && "bg-accent text-accent-foreground",
-						)}
-						aria-pressed={mode === "edit"}
-						disabled={!editor.isEditable}
-						onClick={() => setMode("edit")}
-					>
-						<CodeXml className="size-3.5" />
-						Edit
-					</Button>
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						className={cn(
-							"h-7 gap-1.5 px-2 text-xs",
-							mode === "preview" && "bg-accent text-accent-foreground",
-						)}
-						aria-pressed={mode === "preview"}
-						onClick={() => setMode("preview")}
-					>
-						<Eye className="size-3.5" />
-						Preview
-					</Button>
-					{editor.isEditable ? (
+					{locked ? (
+						<span className="text-muted-foreground flex items-center gap-1.5 px-2 text-xs font-medium">
+							<Eye className="size-3.5" aria-hidden />
+							{templateName ? `Template: ${templateName}` : "Template"}
+						</span>
+					) : (
 						<>
-							<input
-								ref={fileInputRef}
-								type="file"
-								accept=".html,.htm,text/html"
-								className="hidden"
-								onChange={(event) => {
-									const file = event.target.files?.[0];
-									if (file) {
-										uploadHtmlFile(file);
-									}
-									event.target.value = "";
-								}}
-							/>
 							<Button
 								type="button"
 								variant="ghost"
 								size="sm"
-								className="h-7 gap-1.5 px-2 text-xs"
-								onClick={() => fileInputRef.current?.click()}
+								className={cn(
+									"h-7 gap-1.5 px-2 text-xs",
+									effectiveMode === "edit" && "bg-accent text-accent-foreground",
+								)}
+								aria-pressed={effectiveMode === "edit"}
+								disabled={!editor.isEditable}
+								onClick={() => setMode("edit")}
 							>
-								<Upload className="size-3.5" />
-								Upload
+								<CodeXml className="size-3.5" />
+								Edit
 							</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className={cn(
+									"h-7 gap-1.5 px-2 text-xs",
+									effectiveMode === "preview" &&
+										"bg-accent text-accent-foreground",
+								)}
+								aria-pressed={effectiveMode === "preview"}
+								onClick={() => setMode("preview")}
+							>
+								<Eye className="size-3.5" />
+								Preview
+							</Button>
+							{editor.isEditable ? (
+								<>
+									<input
+										ref={fileInputRef}
+										type="file"
+										accept=".html,.htm,text/html"
+										className="hidden"
+										onChange={(event) => {
+											const file = event.target.files?.[0];
+											if (file) {
+												uploadHtmlFile(file);
+											}
+											event.target.value = "";
+										}}
+									/>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="h-7 gap-1.5 px-2 text-xs"
+										onClick={() => fileInputRef.current?.click()}
+									>
+										<Upload className="size-3.5" />
+										Upload
+									</Button>
+								</>
+							) : null}
 						</>
-					) : null}
+					)}
 				</div>
 				{editor.isEditable ? (
 					<button
 						type="button"
-						aria-label="Remove HTML block"
-						title="Remove HTML block"
+						aria-label={locked ? "Remove template" : "Remove HTML block"}
+						title={locked ? "Remove template" : "Remove HTML block"}
 						className="compose-html-remove"
 						onClick={() => deleteNode()}
 					>
@@ -227,7 +245,7 @@ export function HtmlBlock({
 					</div>
 				</div>
 			) : null}
-			{mode === "edit" ? (
+			{effectiveMode === "edit" ? (
 				<Textarea
 					value={draft}
 					placeholder="Paste or write HTML, or upload a file…"

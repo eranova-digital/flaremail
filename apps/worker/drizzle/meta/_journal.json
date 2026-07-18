@@ -232,6 +232,13 @@
       "when": 1782792000000,
       "tag": "0032_identities",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1782793000000,
+      "tag": "0033_email_templates",
+      "breakpoints": true
     }
   ]
 }

@@ -26,4 +26,7 @@ export const queryKeys = {
 		["draft", mailboxId, draftId] as const,
 	rawMessage: (mailboxId: string, messageId: string) =>
 		["raw-message", mailboxId, messageId] as const,
+	composeTemplates: (mailboxId: string) =>
+		["templates", "compose", mailboxId] as const,
+	manageableTemplates: ["templates", "manage"] as const,
 };

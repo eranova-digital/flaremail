@@ -855,6 +855,30 @@ export const identities = pgTable(
 	],
 );
 
+/** Reusable compose HTML templates. `mailboxId` null = instance-wide (global). */
+export const emailTemplates = pgTable(
+	"email_templates",
+	{
+		id: uuid("id").primaryKey(),
+		name: text("name").notNull(),
+		mailboxId: uuid("mailbox_id").references(() => mailboxes.id, {
+			onDelete: "cascade",
+		}),
+		storageKey: text("storage_key").notNull(),
+		createdByAccountId: uuid("created_by_account_id").references(
+			() => accounts.id,
+			{ onDelete: "set null" },
+		),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [index("email_templates_mailbox_id_idx").on(table.mailboxId)],
+);
+
 export const organizationTabAccessEnum = pgEnum("organization_tab_access", [
 	"intendant_only",
 	"intendant_and_superadmins",
@@ -946,6 +970,8 @@ export type AccountProfile = typeof accountProfiles.$inferSelect;
 export type InstanceSettings = typeof instanceSettings.$inferSelect;
 export type Identity = typeof identities.$inferSelect;
 export type NewIdentity = typeof identities.$inferInsert;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type NewEmailTemplate = typeof emailTemplates.$inferInsert;
 export type AccountTotp = typeof accountTotp.$inferSelect;
 export type AccountPasskey = typeof accountPasskeys.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
