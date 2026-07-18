@@ -1,14 +1,13 @@
 import {
-	CELL_STYLE,
+	COMPOSE_ELEMENT_STYLES,
 	COMPOSE_HTML_ATTR,
-	extensionForMime,
-	HEADER_CELL_STYLE,
-	imageStyle,
-	LINK_STYLE,
-	PARAGRAPH_STYLE,
+	createInlineImageContentId,
+	inlineImageAttachmentFilename,
+	isVisuallyEmptyParagraph,
 	parseDataUrl,
 	setStyleIfMissing,
-	TABLE_STYLE,
+	WEB_COMPOSE_HTML_PREPARE_RULES,
+	imageStyle,
 } from "@test-worker/email-html-prepare";
 import type { OutboundAttachmentInput } from "@/lib/api/client";
 import { fetchAttachmentBlob } from "@/lib/attachments";
@@ -43,62 +42,72 @@ export function prepareEmailHtml(html: string): {
 } {
 	const doc = new DOMParser().parseFromString(html, "text/html");
 	const inlineAttachments: InlineEmailAttachment[] = [];
+	let imageIndex = 0;
 
-	doc.querySelectorAll("img").forEach((img, index) => {
-		const src = img.getAttribute("src") ?? "";
-		let contentId = img.getAttribute("data-cid");
+	for (const rule of WEB_COMPOSE_HTML_PREPARE_RULES) {
+		switch (rule.kind) {
+			case "inline-data-url-images":
+				doc.querySelectorAll("img").forEach((img) => {
+					const src = img.getAttribute("src") ?? "";
+					let contentId = img.getAttribute("data-cid");
 
-		if (src.startsWith("data:")) {
-			const parsed = parseDataUrl(src);
-			if (!parsed) {
-				return;
-			}
+					if (src.startsWith("data:")) {
+						const parsed = parseDataUrl(src);
+						if (!parsed) {
+							return;
+						}
 
-			contentId = contentId ?? `img-${crypto.randomUUID()}@flaremail`;
-			inlineAttachments.push({
-				filename: `inline-image-${index + 1}.${extensionForMime(parsed.mimeType)}`,
-				mimeType: parsed.mimeType,
-				content: parsed.content,
-				disposition: "inline",
-				contentId,
-			});
-			img.setAttribute("src", `cid:${contentId}`);
-			img.setAttribute("data-cid", contentId);
+						contentId = contentId ?? createInlineImageContentId();
+						inlineAttachments.push({
+							filename: inlineImageAttachmentFilename(
+								imageIndex + 1,
+								parsed.mimeType,
+							),
+							mimeType: parsed.mimeType,
+							content: parsed.content,
+							disposition: "inline",
+							contentId,
+						});
+						imageIndex += 1;
+						img.setAttribute("src", `cid:${contentId}`);
+						img.setAttribute("data-cid", contentId);
+					}
+
+					const width = img.getAttribute("width");
+					const align = img.getAttribute("data-align");
+					setStyleIfMissing(img, imageStyle(width, align));
+					img.removeAttribute("data-align");
+				});
+				break;
+			case "default-style":
+				if (rule.target === "p") {
+					doc.querySelectorAll("p").forEach((paragraph) => {
+						setStyleIfMissing(paragraph, COMPOSE_ELEMENT_STYLES.p);
+						if (
+							isVisuallyEmptyParagraph(
+								paragraph.textContent,
+								Boolean(
+									paragraph.querySelector("img, br, table"),
+								),
+							)
+						) {
+							paragraph.innerHTML = "&nbsp;";
+						}
+					});
+				} else {
+					doc.querySelectorAll(rule.target).forEach((element) => {
+						setStyleIfMissing(
+							element,
+							COMPOSE_ELEMENT_STYLES[rule.target],
+						);
+					});
+				}
+				break;
+			case "unwrap-compose-html":
+				unwrapComposeHtmlBlocks(doc);
+				break;
 		}
-
-		const width = img.getAttribute("width");
-		const align = img.getAttribute("data-align");
-		setStyleIfMissing(img, imageStyle(width, align));
-		img.removeAttribute("data-align");
-	});
-
-	doc.querySelectorAll("table").forEach((table) => {
-		setStyleIfMissing(table, TABLE_STYLE);
-	});
-
-	doc.querySelectorAll("td").forEach((cell) => {
-		setStyleIfMissing(cell, CELL_STYLE);
-	});
-
-	doc.querySelectorAll("th").forEach((cell) => {
-		setStyleIfMissing(cell, HEADER_CELL_STYLE);
-	});
-
-	doc.querySelectorAll("a").forEach((anchor) => {
-		setStyleIfMissing(anchor, LINK_STYLE);
-	});
-
-	doc.querySelectorAll("p").forEach((paragraph) => {
-		setStyleIfMissing(paragraph, PARAGRAPH_STYLE);
-		if (
-			!paragraph.textContent?.replace(/\u00a0/g, " ").trim() &&
-			!paragraph.querySelector("img, br, table")
-		) {
-			paragraph.innerHTML = "&nbsp;";
-		}
-	});
-
-	unwrapComposeHtmlBlocks(doc);
+	}
 
 	return {
 		html: doc.body.innerHTML,
