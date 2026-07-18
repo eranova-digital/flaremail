@@ -1,4 +1,4 @@
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, ne, sql } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import { accountProfiles, emailVerificationCodes } from "../db/schema";
@@ -32,6 +32,27 @@ function assertValidExternalEmail(email: string): string {
 		throw new Error("Invalid recovery email address");
 	}
 	return normalized;
+}
+
+async function assertRecoveryEmailAvailable(
+	db: Database,
+	accountId: string,
+	recoveryAddress: string,
+): Promise<void> {
+	const [existing] = await db
+		.select({ accountId: accountProfiles.accountId })
+		.from(accountProfiles)
+		.where(
+			and(
+				sql`lower(${accountProfiles.recoveryAddress}) = ${recoveryAddress}`,
+				ne(accountProfiles.accountId, accountId),
+			),
+		)
+		.limit(1);
+
+	if (existing) {
+		throw new Error("This recovery email is already in use by another account");
+	}
 }
 
 async function createVerificationCode(
@@ -124,6 +145,8 @@ export async function sendRecoveryEmailSetupCode(
 	input: { accountId: string; recoveryAddress: string },
 ): Promise<void> {
 	const targetEmail = assertValidExternalEmail(input.recoveryAddress);
+	await assertRecoveryEmailAvailable(db, input.accountId, targetEmail);
+
 	const code = await createVerificationCode(db, {
 		accountId: input.accountId,
 		targetEmail,
@@ -143,6 +166,7 @@ export async function verifyAndSetRecoveryEmail(
 	input: { accountId: string; recoveryAddress: string; code: string },
 ): Promise<void> {
 	const targetEmail = assertValidExternalEmail(input.recoveryAddress);
+	await assertRecoveryEmailAvailable(db, input.accountId, targetEmail);
 	await verifyCode(db, {
 		accountId: input.accountId,
 		code: input.code,

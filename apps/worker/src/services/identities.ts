@@ -26,6 +26,9 @@ import { type InstanceSettings } from "./security-compliance";
 
 export const DEFAULT_IDENTITY_ID = "default";
 
+/** Synthetic identity for system/blackhole mailboxes with no stored identities. */
+export const SYSTEM_MAILBOX_FALLBACK_IDENTITY_ID = "system-fallback";
+
 export type IdentityDto = {
 	id: string;
 	mailboxId: string | null;
@@ -237,6 +240,20 @@ function toDefaultIdentityDto(
 		fromNamePreview: resolveFromName(namePattern, profile, customName),
 		createdAt: null,
 		updatedAt: settings.updatedAt,
+	};
+}
+
+function toSystemMailboxFallbackIdentityDto(mailboxId: string): IdentityDto {
+	return {
+		id: SYSTEM_MAILBOX_FALLBACK_IDENTITY_ID,
+		mailboxId,
+		isDefault: true,
+		namePattern: "none",
+		customName: null,
+		signatureHtml: null,
+		fromNamePreview: "",
+		createdAt: null,
+		updatedAt: null,
 	};
 }
 
@@ -661,6 +678,15 @@ export async function listAvailableIdentitiesForSend(
 				);
 			}
 		}
+	}
+
+	// System/blackhole mailboxes are not provisioned with identities, but still
+	// send (e.g. noreply transactional mail). Offer a nameless fallback.
+	if (
+		result.length === 0 &&
+		(active.type === "system" || active.type === "blackhole")
+	) {
+		pushAll([toSystemMailboxFallbackIdentityDto(activeMailboxId)]);
 	}
 
 	return result;
