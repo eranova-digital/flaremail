@@ -6,11 +6,11 @@ import {
 	domainValidationLogEvents,
 	domainValidationRuns,
 } from "../db/schema";
+import { DomainValidationRun } from "../lib/domain-validation";
 import {
-	DomainValidationRun,
 	getLatestValidationRunForDomain,
 	loadRunChecks,
-} from "../lib/domain-validation";
+} from "../lib/domain-validation/run-engine";
 import {
 	toDomainReadinessSummaryDto,
 	toValidationCheckDto,

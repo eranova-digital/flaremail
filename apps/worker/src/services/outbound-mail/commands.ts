@@ -17,7 +17,7 @@ import {
 	buildForwardQuotedHtml,
 	buildForwardQuotedText,
 	forwardSubject,
-} from "../../lib/messages/build-forward-content";
+} from "@test-worker/mail-quoting";
 import {
 	buildEmailSendPayload,
 	buildOutboundMimeContent,
