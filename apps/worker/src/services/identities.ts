@@ -9,6 +9,7 @@ import {
 import {
 	assertPrincipalCanAccessMailbox,
 	collectManageableMailboxIds,
+	collectReadableMailboxIds,
 } from "../lib/auth/mailbox-access";
 import { isPlatformPrincipal } from "../lib/auth/principal";
 import type { Principal } from "../lib/auth/types";
@@ -22,11 +23,39 @@ import { type InstanceSettings } from "./security-compliance";
 
 export const DEFAULT_IDENTITY_ID = "default";
 
+export type IdentityDto = {
+	id: string;
+	mailboxId: string | null;
+	isDefault: boolean;
+	namePattern: IdentityNamePattern;
+	customName: string | null;
+	signatureHtml: string | null;
+	fromNamePreview: string;
+	createdAt: string | null;
+	updatedAt: string | null;
+};
+
 export type IdentityListResult = {
 	items: IdentityDto[];
 	capabilities: {
 		canManage: boolean;
 		customNameAllowed: boolean;
+	};
+};
+
+export type AccountIdentitiesOverview = {
+	own: IdentityDto[];
+	default: IdentityDto | null;
+	shared: Array<{
+		mailboxId: string;
+		mailboxAddress: string;
+		identityExport: boolean;
+		identities: IdentityDto[];
+	}>;
+	capabilities: {
+		canManageOwn: boolean;
+		customNameAllowed: boolean;
+		primaryMailboxId: string | null;
 	};
 };
 
@@ -320,6 +349,119 @@ export async function listMailboxIdentities(
 			canManage,
 			customNameAllowed:
 				settings.customNameAllowance || roleBypassesCustomNameGate(principal),
+		},
+	};
+}
+
+/**
+ * Settings overview: own (primary) identities, default identity, then shared.
+ */
+export async function listAccountIdentitiesOverview(
+	db: Database,
+	principal: Principal,
+): Promise<AccountIdentitiesOverview> {
+	const profile = await loadProfileForAccount(db, principal.accountId);
+	const settings = await getInstanceSettings(db);
+	const primaryMailboxId = principal.primaryMailboxId;
+
+	let own: IdentityDto[] = [];
+	let defaultIdentity: IdentityDto | null = null;
+	let canManageOwn = false;
+
+	if (primaryMailboxId) {
+		await assertPrincipalCanAccessMailbox(db, principal, primaryMailboxId);
+		const rows = await db
+			.select()
+			.from(identities)
+			.where(eq(identities.mailboxId, primaryMailboxId))
+			.orderBy(asc(identities.createdAt));
+		own = rows.map((row) =>
+			toIdentityDto(
+				{
+					...row,
+					namePattern: row.namePattern as IdentityNamePattern,
+				},
+				profile,
+			),
+		);
+		defaultIdentity = toDefaultIdentityDto(settings, profile);
+		try {
+			await assertCanManageMailboxIdentities(db, principal, primaryMailboxId);
+			canManageOwn = true;
+		} catch {
+			canManageOwn = false;
+		}
+	}
+
+	const readableIds = await collectReadableMailboxIds(db, principal);
+	const readableList = [...readableIds].filter((id) => id !== primaryMailboxId);
+
+	const sharedGroups: AccountIdentitiesOverview["shared"] = [];
+
+	if (readableList.length > 0) {
+		const sharedMailboxes = await db
+			.select({
+				id: mailboxes.id,
+				address: mailboxes.address,
+				identityExport: mailboxes.identityExport,
+			})
+			.from(mailboxes)
+			.where(
+				and(
+					inArray(mailboxes.id, readableList),
+					eq(mailboxes.type, "shared"),
+				),
+			)
+			.orderBy(asc(mailboxes.address));
+
+		const sharedIds = sharedMailboxes.map((row) => row.id);
+		const identityRows =
+			sharedIds.length > 0
+				? await db
+						.select()
+						.from(identities)
+						.where(inArray(identities.mailboxId, sharedIds))
+						.orderBy(asc(identities.createdAt))
+				: [];
+
+		const byMailbox = new Map<string, IdentityDto[]>();
+		for (const row of identityRows) {
+			const list = byMailbox.get(row.mailboxId) ?? [];
+			list.push(
+				toIdentityDto(
+					{
+						...row,
+						namePattern: row.namePattern as IdentityNamePattern,
+					},
+					profile,
+				),
+			);
+			byMailbox.set(row.mailboxId, list);
+		}
+
+		for (const mailbox of sharedMailboxes) {
+			const mailboxIdentities = byMailbox.get(mailbox.id) ?? [];
+			if (mailboxIdentities.length === 0) {
+				continue;
+			}
+			sharedGroups.push({
+				mailboxId: mailbox.id,
+				mailboxAddress: mailbox.address,
+				identityExport: mailbox.identityExport,
+				identities: mailboxIdentities,
+			});
+		}
+	}
+
+	return {
+		own,
+		default: defaultIdentity,
+		shared: sharedGroups,
+		capabilities: {
+			canManageOwn,
+			customNameAllowed:
+				settings.customNameAllowance || roleBypassesCustomNameGate(principal),
+			primaryMailboxId,
 		},
 	};
 }

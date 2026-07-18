@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createMailboxIdentity,
 	deleteMailboxIdentity,
+	listAccountIdentities,
 	listAvailableIdentities,
 	listMailboxIdentities,
 	updateMailboxIdentity,
@@ -12,10 +13,33 @@ import {
 import { queryKeys } from "@/lib/query-keys";
 
 export const identityQueryKeys = {
+	account: ["identities", "account"] as const,
 	mailbox: (mailboxId: string) => ["identities", mailboxId] as const,
 	available: (mailboxId: string) =>
 		["identities", mailboxId, "available"] as const,
 };
+
+function invalidateIdentityQueries(
+	queryClient: ReturnType<typeof useQueryClient>,
+	mailboxId: string,
+) {
+	void queryClient.invalidateQueries({
+		queryKey: identityQueryKeys.mailbox(mailboxId),
+	});
+	void queryClient.invalidateQueries({
+		queryKey: identityQueryKeys.available(mailboxId),
+	});
+	void queryClient.invalidateQueries({
+		queryKey: identityQueryKeys.account,
+	});
+}
+
+export function useAccountIdentities() {
+	return useQuery({
+		queryKey: identityQueryKeys.account,
+		queryFn: () => listAccountIdentities(),
+	});
+}
 
 export function useMailboxIdentities(mailboxId: string | null | undefined) {
 	return useQuery({
@@ -39,12 +63,7 @@ export function useCreateMailboxIdentity(mailboxId: string) {
 		mutationFn: (input: IdentityInput) =>
 			createMailboxIdentity(mailboxId, input),
 		onSuccess: () => {
-			void queryClient.invalidateQueries({
-				queryKey: identityQueryKeys.mailbox(mailboxId),
-			});
-			void queryClient.invalidateQueries({
-				queryKey: identityQueryKeys.available(mailboxId),
-			});
+			invalidateIdentityQueries(queryClient, mailboxId);
 		},
 	});
 }
@@ -60,12 +79,7 @@ export function useUpdateMailboxIdentity(mailboxId: string) {
 			input: Partial<IdentityInput>;
 		}) => updateMailboxIdentity(mailboxId, identityId, input),
 		onSuccess: () => {
-			void queryClient.invalidateQueries({
-				queryKey: identityQueryKeys.mailbox(mailboxId),
-			});
-			void queryClient.invalidateQueries({
-				queryKey: identityQueryKeys.available(mailboxId),
-			});
+			invalidateIdentityQueries(queryClient, mailboxId);
 		},
 	});
 }
@@ -76,12 +90,7 @@ export function useDeleteMailboxIdentity(mailboxId: string) {
 		mutationFn: (identityId: string) =>
 			deleteMailboxIdentity(mailboxId, identityId),
 		onSuccess: () => {
-			void queryClient.invalidateQueries({
-				queryKey: identityQueryKeys.mailbox(mailboxId),
-			});
-			void queryClient.invalidateQueries({
-				queryKey: identityQueryKeys.available(mailboxId),
-			});
+			invalidateIdentityQueries(queryClient, mailboxId);
 		},
 	});
 }
@@ -95,12 +104,7 @@ export function useUpdateMailboxIdentityPolicy(mailboxId: string) {
 		}) => updateMailboxIdentityPolicy(mailboxId, input),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: queryKeys.mailboxes });
-			void queryClient.invalidateQueries({
-				queryKey: identityQueryKeys.mailbox(mailboxId),
-			});
-			void queryClient.invalidateQueries({
-				queryKey: identityQueryKeys.available(mailboxId),
-			});
+			invalidateIdentityQueries(queryClient, mailboxId);
 		},
 	});
 }

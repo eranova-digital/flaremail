@@ -137,6 +137,28 @@ export type IdentityListResponse = {
     };
 };
 
+export type AccountIdentitiesOverview = {
+    own: Array<Identity>;
+    default: Identity | null;
+    shared: Array<SharedMailboxIdentitiesGroup>;
+    capabilities: {
+        canManageOwn: boolean;
+        customNameAllowed: boolean;
+        primaryMailboxId: string | null;
+    };
+};
+
+export type SharedMailboxIdentitiesGroup = {
+    mailboxId: string;
+    mailboxAddress: string;
+    /**
+     * When true, these identities may be selected when sending from other mailboxes.
+     *
+     */
+    identityExport: boolean;
+    identities: Array<Identity>;
+};
+
 export type EmailAddress = string | {
     email: string;
     name?: string;
@@ -751,6 +773,31 @@ export type UpdateMailboxResponses = {
 };
 
 export type UpdateMailboxResponse = UpdateMailboxResponses[keyof UpdateMailboxResponses];
+
+export type ListAccountIdentitiesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/identities';
+};
+
+export type ListAccountIdentitiesErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListAccountIdentitiesError = ListAccountIdentitiesErrors[keyof ListAccountIdentitiesErrors];
+
+export type ListAccountIdentitiesResponses = {
+    /**
+     * Grouped identities overview
+     */
+    200: AccountIdentitiesOverview;
+};
+
+export type ListAccountIdentitiesResponse = ListAccountIdentitiesResponses[keyof ListAccountIdentitiesResponses];
 
 export type ListMailboxIdentitiesData = {
     body?: never;

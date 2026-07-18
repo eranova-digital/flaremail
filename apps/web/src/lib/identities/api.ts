@@ -54,6 +54,24 @@ export type IdentityListResult = {
 	capabilities: { canManage: boolean; customNameAllowed: boolean };
 };
 
+export type SharedMailboxIdentitiesGroup = {
+	mailboxId: string;
+	mailboxAddress: string;
+	identityExport: boolean;
+	identities: Identity[];
+};
+
+export type AccountIdentitiesOverview = {
+	own: Identity[];
+	default: Identity | null;
+	shared: SharedMailboxIdentitiesGroup[];
+	capabilities: {
+		canManageOwn: boolean;
+		customNameAllowed: boolean;
+		primaryMailboxId: string | null;
+	};
+};
+
 function normalizeIdentityList(data: unknown): IdentityListResult {
 	const root =
 		data && typeof data === "object" ? (data as Record<string, unknown>) : {};
@@ -93,6 +111,10 @@ export async function listMailboxIdentities(
 ): Promise<IdentityListResult> {
 	const data = await apiRequest<unknown>(`/mailboxes/${mailboxId}/identities`);
 	return normalizeIdentityList(data);
+}
+
+export async function listAccountIdentities(): Promise<AccountIdentitiesOverview> {
+	return apiRequest<AccountIdentitiesOverview>("/identities");
 }
 
 export async function listAvailableIdentities(

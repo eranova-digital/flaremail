@@ -21,6 +21,7 @@ import {
 import {
 	handleCreateMailboxIdentity,
 	handleDeleteMailboxIdentity,
+	handleListAccountIdentities,
 	handleListAvailableIdentities,
 	handleListMailboxIdentities,
 	handleUpdateMailboxIdentity,
@@ -149,6 +150,13 @@ export const v1Routes: RouteDefinition[] = [
 		handler: handleDeleteMailbox,
 	},
 
+	{
+		method: "GET",
+		path: `${prefix}/identities`,
+		action: "authenticated",
+		scopes: ["identities:list"],
+		handler: handleListAccountIdentities,
+	},
 	{
 		method: "GET",
 		path: `${prefix}/mailboxes/:mailboxId/identities`,

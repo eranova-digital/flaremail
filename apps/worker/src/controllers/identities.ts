@@ -9,6 +9,7 @@ import {
 	deleteMailboxIdentity,
 	IdentityAccessDeniedError,
 	IdentityValidationError,
+	listAccountIdentitiesOverview,
 	listAvailableIdentitiesForSend,
 	listMailboxIdentities,
 	parseIdentityNamePattern,
@@ -41,6 +42,17 @@ function parseIdentityBody(value: Record<string, unknown>):
 					? null
 					: String(value.signatureHtml),
 	};
+}
+
+export async function handleListAccountIdentities(context: RouteContext) {
+	try {
+		const result = await withDb(context.env, (db) =>
+			listAccountIdentitiesOverview(db, context.principal),
+		);
+		return jsonResponse(result);
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
 }
 
 export async function handleListMailboxIdentities(context: RouteContext) {
