@@ -4,6 +4,7 @@ import {
 	createMailboxIdentity,
 	deleteMailboxIdentity,
 	listAccountIdentities,
+	listAccountIdentitiesForAccount,
 	listAvailableIdentities,
 	listMailboxIdentities,
 	updateMailboxIdentity,
@@ -14,6 +15,8 @@ import { queryKeys } from "@/lib/query-keys";
 
 export const identityQueryKeys = {
 	account: ["identities", "account"] as const,
+	forAccount: (accountId: string) =>
+		["identities", "account", accountId] as const,
 	mailbox: (mailboxId: string) => ["identities", mailboxId] as const,
 	available: (mailboxId: string) =>
 		["identities", mailboxId, "available"] as const,
@@ -38,6 +41,14 @@ export function useAccountIdentities() {
 	return useQuery({
 		queryKey: identityQueryKeys.account,
 		queryFn: () => listAccountIdentities(),
+	});
+}
+
+export function useAccountIdentitiesForAccount(accountId: string | null) {
+	return useQuery({
+		queryKey: identityQueryKeys.forAccount(accountId ?? ""),
+		queryFn: () => listAccountIdentitiesForAccount(accountId!),
+		enabled: Boolean(accountId),
 	});
 }
 

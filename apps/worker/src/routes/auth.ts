@@ -55,6 +55,7 @@ import {
 	handleUpdateAccountAssignments,
 	handleUpdateDomainLocalPartPolicy,
 } from "../controllers/accounts";
+import { handleListAccountIdentitiesForAccount } from "../controllers/identities";
 import {
 	handleCreateApiKey,
 	handleListApiKeys,
@@ -267,6 +268,13 @@ export const authRoutes: RouteDefinition[] = [
 		action: "domain_manage_users",
 		scopes: ["accounts:read"],
 		handler: handleGetAccount,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/accounts/:id/identities`,
+		action: "domain_manage_users",
+		scopes: ["accounts:read", "identities:list"],
+		handler: handleListAccountIdentitiesForAccount,
 	},
 	{
 		method: "PATCH",

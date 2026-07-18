@@ -3,9 +3,11 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { Database } from "../db/client";
 import {
 	accountProfiles,
+	accounts,
 	identities,
 	mailboxes,
 } from "../db/schema";
+import { authorizeAccount } from "../lib/auth/access";
 import {
 	assertPrincipalCanAccessMailbox,
 	collectManageableMailboxIds,
@@ -18,6 +20,7 @@ import {
 	isIdentityNamePattern,
 	resolveFromName,
 } from "../lib/identities/name-pattern";
+import { loadAccountMailboxGrants } from "./accounts/shared";
 import { getInstanceSettings } from "./instance-settings";
 import { type InstanceSettings } from "./security-compliance";
 
@@ -168,6 +171,27 @@ async function loadProfileForAccount(
 	};
 }
 
+/**
+ * Resolve the profile used for From-name previews on a mailbox.
+ * Primary mailboxes preview against the mailbox owner's profile so admins
+ * managing another account see that person's name, not their own.
+ */
+async function loadProfileForMailboxPreview(
+	db: Database,
+	mailboxId: string,
+	fallbackAccountId: string | null,
+): Promise<{ firstName: string; lastName: string }> {
+	const [owner] = await db
+		.select({ id: accounts.id })
+		.from(accounts)
+		.where(eq(accounts.primaryMailboxId, mailboxId))
+		.limit(1);
+	if (owner) {
+		return loadProfileForAccount(db, owner.id);
+	}
+	return loadProfileForAccount(db, fallbackAccountId);
+}
+
 function toIdentityDto(
 	row: {
 		id: string;
@@ -305,14 +329,42 @@ export async function assertCanManageMailboxIdentities(
 	throw new IdentityAccessDeniedError();
 }
 
+/**
+ * Listing identities is allowed when the principal can manage them, or when
+ * they have mail access to the mailbox (e.g. selecting From personas).
+ * Elevated roles may manage identities on primary mailboxes they cannot read.
+ */
+async function assertCanListMailboxIdentities(
+	db: Database,
+	principal: Principal,
+	mailboxId: string,
+): Promise<void> {
+	try {
+		await assertCanManageMailboxIdentities(db, principal, mailboxId);
+		return;
+	} catch (error) {
+		if (error instanceof IdentityValidationError) {
+			throw error;
+		}
+		if (!(error instanceof IdentityAccessDeniedError)) {
+			throw error;
+		}
+	}
+	await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+}
+
 export async function listMailboxIdentities(
 	db: Database,
 	principal: Principal,
 	mailboxId: string,
 ): Promise<IdentityListResult> {
-	await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
+	await assertCanListMailboxIdentities(db, principal, mailboxId);
 	const mailbox = await getMailboxRow(db, mailboxId);
-	const profile = await loadProfileForAccount(db, principal.accountId);
+	const profile = await loadProfileForMailboxPreview(
+		db,
+		mailboxId,
+		principal.accountId,
+	);
 	const settings = await getInstanceSettings(db);
 
 	const rows = await db
@@ -360,16 +412,54 @@ export async function listAccountIdentitiesOverview(
 	db: Database,
 	principal: Principal,
 ): Promise<AccountIdentitiesOverview> {
-	const profile = await loadProfileForAccount(db, principal.accountId);
+	if (!principal.accountId) {
+		throw new IdentityAccessDeniedError();
+	}
+	return buildAccountIdentitiesOverview(db, principal, principal.accountId);
+}
+
+/**
+ * Same overview shape as settings, for a target account (admin user edit dialog).
+ */
+export async function listAccountIdentitiesOverviewForAccount(
+	db: Database,
+	principal: Principal,
+	accountId: string,
+): Promise<AccountIdentitiesOverview> {
+	await authorizeAccount(db, principal, accountId, "view");
+	return buildAccountIdentitiesOverview(db, principal, accountId);
+}
+
+async function buildAccountIdentitiesOverview(
+	db: Database,
+	viewer: Principal,
+	targetAccountId: string,
+): Promise<AccountIdentitiesOverview> {
+	const [target] = await db
+		.select({
+			id: accounts.id,
+			primaryMailboxId: accounts.primaryMailboxId,
+		})
+		.from(accounts)
+		.where(eq(accounts.id, targetAccountId))
+		.limit(1);
+	if (!target) {
+		throw new Error("Account not found");
+	}
+
+	const profile = await loadProfileForAccount(db, targetAccountId);
 	const settings = await getInstanceSettings(db);
-	const primaryMailboxId = principal.primaryMailboxId;
+	const primaryMailboxId = target.primaryMailboxId;
+	const viewingSelf = viewer.accountId === targetAccountId;
 
 	let own: IdentityDto[] = [];
 	let defaultIdentity: IdentityDto | null = null;
 	let canManageOwn = false;
 
 	if (primaryMailboxId) {
-		await assertPrincipalCanAccessMailbox(db, principal, primaryMailboxId);
+		if (viewingSelf) {
+			await assertPrincipalCanAccessMailbox(db, viewer, primaryMailboxId);
+		}
 		const rows = await db
 			.select()
 			.from(identities)
@@ -386,19 +476,22 @@ export async function listAccountIdentitiesOverview(
 		);
 		defaultIdentity = toDefaultIdentityDto(settings, profile);
 		try {
-			await assertCanManageMailboxIdentities(db, principal, primaryMailboxId);
+			await assertCanManageMailboxIdentities(db, viewer, primaryMailboxId);
 			canManageOwn = true;
 		} catch {
 			canManageOwn = false;
 		}
 	}
 
-	const readableIds = await collectReadableMailboxIds(db, principal);
-	const readableList = [...readableIds].filter((id) => id !== primaryMailboxId);
+	const sharedCandidateIds = viewingSelf
+		? [...(await collectReadableMailboxIds(db, viewer))].filter(
+				(id) => id !== primaryMailboxId,
+			)
+		: await loadAccountMailboxGrants(db, targetAccountId);
 
 	const sharedGroups: AccountIdentitiesOverview["shared"] = [];
 
-	if (readableList.length > 0) {
+	if (sharedCandidateIds.length > 0) {
 		const sharedMailboxes = await db
 			.select({
 				id: mailboxes.id,
@@ -408,7 +501,7 @@ export async function listAccountIdentitiesOverview(
 			.from(mailboxes)
 			.where(
 				and(
-					inArray(mailboxes.id, readableList),
+					inArray(mailboxes.id, sharedCandidateIds),
 					eq(mailboxes.type, "shared"),
 				),
 			)
@@ -460,7 +553,7 @@ export async function listAccountIdentitiesOverview(
 		capabilities: {
 			canManageOwn,
 			customNameAllowed:
-				settings.customNameAllowance || roleBypassesCustomNameGate(principal),
+				settings.customNameAllowance || roleBypassesCustomNameGate(viewer),
 			primaryMailboxId,
 		},
 	};
@@ -584,7 +677,11 @@ export async function createMailboxIdentity(
 	assertCustomNameAllowed(principal, settings, input.namePattern);
 
 	const normalized = normalizeCreateInput(input);
-	const profile = await loadProfileForAccount(db, principal.accountId);
+	const profile = await loadProfileForMailboxPreview(
+		db,
+		mailboxId,
+		principal.accountId,
+	);
 	const now = new Date();
 	const id = crypto.randomUUID();
 
@@ -669,7 +766,11 @@ export async function updateMailboxIdentity(
 		.where(eq(identities.id, identityId))
 		.returning();
 
-	const profile = await loadProfileForAccount(db, principal.accountId);
+	const profile = await loadProfileForMailboxPreview(
+		db,
+		existing.mailboxId,
+		principal.accountId,
+	);
 	return toIdentityDto(
 		{
 			...row,

@@ -117,6 +117,14 @@ export async function listAccountIdentities(): Promise<AccountIdentitiesOverview
 	return apiRequest<AccountIdentitiesOverview>("/identities");
 }
 
+export async function listAccountIdentitiesForAccount(
+	accountId: string,
+): Promise<AccountIdentitiesOverview> {
+	return apiRequest<AccountIdentitiesOverview>(
+		`/accounts/${accountId}/identities`,
+	);
+}
+
 export async function listAvailableIdentities(
 	mailboxId: string,
 ): Promise<Identity[]> {

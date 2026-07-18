@@ -10,6 +10,7 @@ import {
 	IdentityAccessDeniedError,
 	IdentityValidationError,
 	listAccountIdentitiesOverview,
+	listAccountIdentitiesOverviewForAccount,
 	listAvailableIdentitiesForSend,
 	listMailboxIdentities,
 	parseIdentityNamePattern,
@@ -51,6 +52,26 @@ export async function handleListAccountIdentities(context: RouteContext) {
 		);
 		return jsonResponse(result);
 	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleListAccountIdentitiesForAccount(
+	context: RouteContext,
+) {
+	try {
+		const result = await withDb(context.env, (db) =>
+			listAccountIdentitiesOverviewForAccount(
+				db,
+				context.principal,
+				context.params.id,
+			),
+		);
+		return jsonResponse(result);
+	} catch (error) {
+		if (error instanceof IdentityAccessDeniedError) {
+			return validationError(context.request, error.message);
+		}
 		return handleRouteError(error, context.request);
 	}
 }
