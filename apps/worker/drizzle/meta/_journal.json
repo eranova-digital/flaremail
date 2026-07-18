@@ -225,6 +225,13 @@
       "when": 1782791000000,
       "tag": "0031_oidc_client_branding",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1782792000000,
+      "tag": "0032_identities",
+      "breakpoints": true
     }
   ]
 }

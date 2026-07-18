@@ -111,6 +111,10 @@ export const mailboxes = pgTable(
 		aliasTargetId: uuid("alias_target_id"),
 		aliasTargetAddress: text("alias_target_address"),
 		isActive: boolean("is_active").notNull().default(true),
+		personalIdentityAllowance: boolean("personal_identity_allowance")
+			.notNull()
+			.default(false),
+		identityExport: boolean("identity_export").notNull().default(false),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -816,6 +820,41 @@ export const oidcPendingAuthorizations = pgTable(
 	],
 );
 
+export const identityNamePatternEnum = pgEnum("identity_name_pattern", [
+	"none",
+	"first_name",
+	"last_name",
+	"first_name_last_name",
+	"last_name_first_name",
+	"first_initial_last_name",
+	"last_name_first_initial",
+	"first_name_last_initial",
+	"last_initial_first_name",
+	"custom",
+]);
+
+export const identities = pgTable(
+	"identities",
+	{
+		id: uuid("id").primaryKey(),
+		mailboxId: uuid("mailbox_id")
+			.notNull()
+			.references(() => mailboxes.id, { onDelete: "cascade" }),
+		namePattern: identityNamePatternEnum("name_pattern").notNull(),
+		customName: text("custom_name"),
+		signatureHtml: text("signature_html"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		index("identities_mailbox_id_idx").on(table.mailboxId),
+	],
+);
+
 export const organizationTabAccessEnum = pgEnum("organization_tab_access", [
 	"intendant_only",
 	"intendant_and_superadmins",
@@ -843,6 +882,17 @@ export const instanceSettings = pgTable("instance_settings", {
 	persistNoreplyOutboundEmails: boolean("persist_noreply_outbound_emails")
 		.notNull()
 		.default(false),
+	identitySelfServe: boolean("identity_self_serve").notNull().default(true),
+	customNameAllowance: boolean("custom_name_allowance")
+		.notNull()
+		.default(false),
+	defaultIdentityNamePattern: identityNamePatternEnum(
+		"default_identity_name_pattern",
+	)
+		.notNull()
+		.default("first_name_last_name"),
+	defaultIdentityCustomName: text("default_identity_custom_name"),
+	defaultIdentitySignatureHtml: text("default_identity_signature_html"),
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
@@ -894,6 +944,8 @@ export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type AccountProfile = typeof accountProfiles.$inferSelect;
 export type InstanceSettings = typeof instanceSettings.$inferSelect;
+export type Identity = typeof identities.$inferSelect;
+export type NewIdentity = typeof identities.$inferInsert;
 export type AccountTotp = typeof accountTotp.$inferSelect;
 export type AccountPasskey = typeof accountPasskeys.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
