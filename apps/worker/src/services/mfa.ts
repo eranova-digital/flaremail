@@ -12,7 +12,7 @@ import {
 import { verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { getInstanceSettings } from "./instance-settings";
-import { assertMfaCanBeDisabled } from "./security-compliance";
+import { assertMfaCanBeDisabled } from "./instance-settings";
 import { createSession, type SessionMetadata } from "./auth-session";
 import { verifyMfaDisableRecoveryCode } from "./recovery-email";
 

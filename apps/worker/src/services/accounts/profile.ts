@@ -12,8 +12,10 @@ import {
 } from "../../db/schema";
 import { authorizeAccount } from "../../lib/auth/access";
 import { isPlatformPrincipal } from "../../lib/auth/principal";
-import { getInstanceSettings } from "../instance-settings";
-import { assertRecoveryEmailCanBeRemoved } from "../security-compliance";
+import type { Principal } from "../../lib/auth/types";
+import { getInstanceSettings, assertRecoveryEmailCanBeRemoved } from "../instance-settings";
+import type { LogContext } from "../../lib/logs/context";
+import { safeEmitLog } from "../../lib/logs/emit";
 import {
 	PROFILE_LOCKABLE_FIELDS,
 	type AccountProfileInput,
@@ -25,7 +27,41 @@ import {
 	toAccountListItem,
 } from "./shared";
 import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
-import type { Principal } from "../../lib/auth/types";
+
+export async function listAccountsForPrincipal(
+	db: Database,
+	principal: Principal,
+) {
+	const rows = await db
+		.select({
+			account: accounts,
+			profile: accountProfiles,
+			domainId: mailboxes.domainId,
+		})
+		.from(accounts)
+		.leftJoin(accountProfiles, eq(accountProfiles.accountId, accounts.id))
+		.leftJoin(mailboxes, eq(mailboxes.id, accounts.primaryMailboxId))
+		.where(eq(accounts.isIntendant, false))
+		.orderBy(accounts.loginIdentifier);
+
+	if (!isPlatformPrincipal(principal)) {
+		const domainIds = principal.domainIds;
+		if (domainIds.length === 0) {
+			return [];
+		}
+		return rows
+			.filter(
+				(row) => row.domainId && domainIds.includes(row.domainId),
+			)
+			.map((row) =>
+				toAccountListItem(row.account, row.profile, row.domainId),
+			);
+	}
+
+	return rows.map((row) =>
+		toAccountListItem(row.account, row.profile, row.domainId),
+	);
+}
 
 export async function loadProfileLocks(db: Database, accountId: string) {
 	const rows = await db
@@ -99,6 +135,7 @@ export async function updateAccountProfile(
 		profile?: AccountProfileInput;
 		lockedFields?: string[];
 	},
+	logContext?: LogContext | null,
 ) {
 	const isSelf = principal.accountId === accountId;
 	if (!isSelf) {
@@ -175,6 +212,21 @@ export async function updateAccountProfile(
 				})),
 			);
 		}
+	}
+
+	const actorAccountId = principal.accountId;
+	if (!isSelf && actorAccountId) {
+		await safeEmitLog(db, {
+			importance: 7,
+			type: "accounts",
+			summary: "{actor} updated {account}'s profile",
+			refs: {
+				actor: { kind: "account", id: actorAccountId },
+				account: { kind: "account", id: accountId },
+			},
+			actorAccountId,
+			context: logContext,
+		});
 	}
 
 	return getAccountDetail(db, principal, accountId);

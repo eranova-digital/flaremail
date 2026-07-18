@@ -9,8 +9,7 @@ import {
 	isIdentityNamePattern,
 	resolveFromName,
 } from "@test-worker/identity-name-pattern";
-import { getInstanceSettings } from "../instance-settings";
-import { type InstanceSettings } from "../security-compliance";
+import { getInstanceSettings, type InstanceSettings } from "../instance-settings";
 
 export const DEFAULT_IDENTITY_ID = "default";
 

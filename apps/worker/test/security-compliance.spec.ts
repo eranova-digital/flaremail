@@ -5,7 +5,7 @@ import {
 	getOrganizationPolicies,
 	getSecurityRequirements,
 	roleRequiresMfa,
-} from "../src/services/security-compliance";
+} from "../src/services/instance-settings";
 
 describe("roleRequiresMfa", () => {
 	it("returns false when scope is none", () => {

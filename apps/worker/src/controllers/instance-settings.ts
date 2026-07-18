@@ -19,7 +19,7 @@ import {
 	parseLogContextFromRequest,
 	safeEmitLog,
 } from "../services/logs";
-import { canAccessOrganizationSettings } from "../services/security-compliance";
+import { canAccessOrganizationSettings } from "../services/instance-settings";
 
 export async function handleGetInstanceSettings(context: RouteContext) {
 	if (!context.principal.accountId) {

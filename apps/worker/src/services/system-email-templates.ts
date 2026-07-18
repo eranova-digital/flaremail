@@ -14,7 +14,7 @@ import {
 	type SystemEmailTemplateKey,
 } from "../lib/email-templates/system-catalog";
 import { getInstanceSettings } from "./instance-settings";
-import { canAccessOrganizationSettings } from "./security-compliance";
+import { canAccessOrganizationSettings } from "./instance-settings";
 
 const MAX_TEMPLATE_BYTES = 1_048_576; // 1 MiB
 

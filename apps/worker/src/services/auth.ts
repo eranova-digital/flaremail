@@ -33,20 +33,49 @@ import {
 	isMfaEnabled,
 	verifyAccountTotpCode,
 } from "./mfa";
-import { getInstanceSettings } from "./instance-settings";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
+import { getInstanceSettings, getOrganizationPolicies, getSecurityRequirements } from "./instance-settings";
 import { computeAccountCapabilities } from "./account-capabilities";
-import { getSecurityRequirements, getOrganizationPolicies } from "./security-compliance";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 24 * 60 * 60 * 1000;
 
 export { NoRecoveryEmailError } from "../lib/auth/errors";
 
+function accountLogRef(accountId: string) {
+	return { actor: { kind: "account" as const, id: accountId } };
+}
+
+export async function recordFailedSignInAttempt(
+	db: Database,
+	loginIdentifier: string,
+	logContext?: LogContext | null,
+) {
+	const identifier = loginIdentifier.trim().toLowerCase();
+	const [account] = await db
+		.select({ id: accounts.id, isIntendant: accounts.isIntendant })
+		.from(accounts)
+		.where(eq(accounts.loginIdentifier, identifier))
+		.limit(1);
+	const accountId = account?.id ?? null;
+	const importance = account?.isIntendant ? 0 : 2;
+	await safeEmitLog(db, {
+		importance,
+		type: "auth",
+		summary: accountId ? "{actor} failed to sign in" : "Failed sign-in attempt",
+		refs: accountId ? accountLogRef(accountId) : undefined,
+		actorAccountId: accountId,
+		context: logContext,
+	});
+}
+
 export async function signIn(
 	db: Database,
 	input: { loginIdentifier: string; password: string },
 	encryptionKey: string,
 	sessionMetadata?: SessionMetadata,
+	logContext?: LogContext | null,
 ) {
 	const identifier = input.loginIdentifier.trim().toLowerCase();
 	const [account] = await db
@@ -78,10 +107,20 @@ export async function signIn(
 		};
 	}
 
+	const session = await createSession(db, account.id, sessionMetadata);
+	await safeEmitLog(db, {
+		importance: 4,
+		type: "auth",
+		summary: "{actor} signed in",
+		refs: accountLogRef(account.id),
+		actorAccountId: account.id,
+		context: logContext,
+	});
+
 	return {
 		requiresMfa: false as const,
 		accountId: account.id,
-		...(await createSession(db, account.id, sessionMetadata)),
+		...session,
 	};
 }
 
@@ -153,6 +192,7 @@ export async function activateInvite(
 		profile?: AccountProfileInput;
 	},
 	sessionMetadata?: SessionMetadata,
+	logContext?: LogContext | null,
 ) {
 	const codeHash = await hashSecret(normalizeCode(input.code));
 	const now = new Date();
@@ -207,15 +247,43 @@ export async function activateInvite(
 		.set({ usedAt: now })
 		.where(eq(invites.id, invite.id));
 
+	const session = await createSession(db, account.id, sessionMetadata);
+	await safeEmitLog(db, {
+		importance: 4,
+		type: "invites",
+		summary: "{actor} activated {invite}",
+		refs: {
+			actor: { kind: "account", id: account.id },
+			invite: { kind: "invite", id: invite.id },
+		},
+		actorAccountId: account.id,
+		context: logContext,
+	});
+
 	return {
 		accountId: account.id,
 		inviteId: invite.id,
-		...(await createSession(db, account.id, sessionMetadata)),
+		...session,
 	};
 }
 
-export async function signOut(db: Database, sessionToken: string) {
-	return signOutSession(db, sessionToken);
+export async function signOut(
+	db: Database,
+	sessionToken: string,
+	logContext?: LogContext | null,
+) {
+	const result = await signOutSession(db, sessionToken);
+	if (result.accountId) {
+		await safeEmitLog(db, {
+			importance: 6,
+			type: "auth",
+			summary: "{actor} signed out",
+			refs: accountLogRef(result.accountId),
+			actorAccountId: result.accountId,
+			context: logContext,
+		});
+	}
+	return result;
 }
 
 export async function regenerateIntendantPassword(
@@ -225,6 +293,7 @@ export async function regenerateIntendantPassword(
 		code?: string;
 		encryptionKey: string;
 	},
+	logContext?: LogContext | null,
 ) {
 	const [account] = await db
 		.select()
@@ -259,6 +328,14 @@ export async function regenerateIntendantPassword(
 			updatedAt: new Date(),
 		})
 		.where(eq(accounts.id, input.accountId));
+	await safeEmitLog(db, {
+		importance: 1,
+		type: "auth",
+		summary: "{actor} regenerated intendant password",
+		refs: accountLogRef(input.accountId),
+		actorAccountId: input.accountId,
+		context: logContext,
+	});
 	return password;
 }
 
@@ -389,6 +466,7 @@ export async function previewPasswordReset(db: Database, code: string) {
 export async function resetPasswordWithCode(
 	db: Database,
 	input: { code: string; password: string },
+	logContext?: LogContext | null,
 ) {
 	const codeHash = await hashSecret(normalizeCode(input.code));
 	const now = new Date();
@@ -416,6 +494,14 @@ export async function resetPasswordWithCode(
 		.update(passwordResetCodes)
 		.set({ usedAt: now })
 		.where(eq(passwordResetCodes.id, row.id));
+	await safeEmitLog(db, {
+		importance: 3,
+		type: "auth",
+		summary: "{actor} reset their password",
+		refs: accountLogRef(row.accountId),
+		actorAccountId: row.accountId,
+		context: logContext,
+	});
 	return { accountId: row.accountId };
 }
 

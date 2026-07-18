@@ -2,7 +2,7 @@ import type { AccountRole } from "../lib/auth/types";
 import {
 	canAccessOrganizationSettings,
 	type InstanceSettings,
-} from "./security-compliance";
+} from "./instance-settings";
 
 export type AccountCapabilities = {
 	accessManagementPage: boolean;
