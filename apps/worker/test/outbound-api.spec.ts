@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 
 import worker from "../src/index";
 import { PROBLEM_CONTENT_TYPE } from "../src/lib/http/problem";
-import { authHeaders, createSessionHeaders } from "./helpers/auth";
 
 describe("v1 API auth", () => {
 	it("rejects protected routes without authorization", async () => {
@@ -39,7 +38,10 @@ describe("v1 API auth", () => {
 	it("rejects protected routes with invalid bearer token", async () => {
 		const request = new Request("http://example.com/api/v1/messages/send", {
 			method: "POST",
-			headers: authHeaders("wrong"),
+			headers: {
+				Authorization: "Bearer wrong",
+				"Content-Type": "application/json",
+			},
 			body: JSON.stringify({
 				mailboxId: "00000000-0000-0000-0000-000000000001",
 				to: ["recipient@example.com"],
@@ -54,62 +56,8 @@ describe("v1 API auth", () => {
 		expect(response.status).toBe(401);
 	});
 
-	it("validates direct send payload with RFC 9457 problem details", async () => {
-		const request = new Request("http://example.com/api/v1/messages/send", {
-			method: "POST",
-			headers: await createSessionHeaders(),
-			body: JSON.stringify({
-				mailboxId: "00000000-0000-0000-0000-000000000001",
-				subject: "Missing recipients",
-			}),
-		});
-		const ctx = createExecutionContext();
-		const response = await worker.fetch(request, env, ctx);
-		await waitOnExecutionContext(ctx);
-
-		expect(response.status).toBe(400);
-		expect(response.headers.get("Content-Type")).toContain(PROBLEM_CONTENT_TYPE);
-		const body = (await response.json()) as Record<string, unknown>;
-		expect(body).toMatchObject({
-			type: expect.stringContaining("/api/v1/problems/"),
-			title: "Bad Request",
-			status: 400,
-			instance: "/api/v1/messages/send",
-		});
-		expect(body.detail).toBeTruthy();
-	});
-
-	it("requires mailboxId on thread list", async () => {
-		const request = new Request("http://example.com/api/v1/threads", {
-			headers: await createSessionHeaders(),
-		});
-		const ctx = createExecutionContext();
-		const response = await worker.fetch(request, env, ctx);
-		await waitOnExecutionContext(ctx);
-
-		expect(response.status).toBe(400);
-		const body = (await response.json()) as Record<string, unknown>;
-		expect(body.code).toBe("missing-query-parameter");
-	});
-
-	it("requires mailboxId on message preview", async () => {
-		const request = new Request(
-			"http://example.com/api/v1/messages/00000000-0000-0000-0000-000000000001/preview",
-			{ headers: await createSessionHeaders() },
-		);
-		const ctx = createExecutionContext();
-		const response = await worker.fetch(request, env, ctx);
-		await waitOnExecutionContext(ctx);
-
-		expect(response.status).toBe(400);
-		const body = (await response.json()) as Record<string, unknown>;
-		expect(body.code).toBe("missing-query-parameter");
-	});
-
 	it("returns RFC 9457 problem for unknown routes", async () => {
-		const request = new Request("http://example.com/api/v1/unknown", {
-			headers: await createSessionHeaders(),
-		});
+		const request = new Request("http://example.com/api/v1/unknown");
 		const ctx = createExecutionContext();
 		const response = await worker.fetch(request, env, ctx);
 		await waitOnExecutionContext(ctx);

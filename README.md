@@ -140,7 +140,7 @@ npx wrangler hyperdrive update <HYPERDRIVE_ID> --caching-disabled true
 
 #### Local database access
 
-Hyperdrive does not run during `wrangler dev`. Wrangler still exposes the `HYPERDRIVE` binding, but routes it to your direct Neon URL via `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`. `npm run worker:dev` and tests run `scripts/sync-local-db-env.mjs`, which sets that from `DATABASE_URL`. Maintain only the direct URL in `.env`.
+Hyperdrive does not run during `wrangler dev`. Wrangler still exposes the `HYPERDRIVE` binding, but routes it to your direct Neon URL via `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`. `npm run worker:dev` runs `scripts/sync-local-db-env.mjs`, which sets that from `DATABASE_URL`. Maintain only the direct URL in `.env`. Worker Vitest must not write to Postgres.
 
 ### 4. R2 and Email Sending
 
