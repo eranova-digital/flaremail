@@ -49,13 +49,50 @@ export function isKnownIdentityNamePattern(
 	return (IDENTITY_NAME_PATTERNS as readonly string[]).includes(value);
 }
 
-export async function listMailboxIdentities(
-	mailboxId: string,
-): Promise<{
+export type IdentityListResult = {
 	items: Identity[];
 	capabilities: { canManage: boolean; customNameAllowed: boolean };
-}> {
-	return apiRequest(`/mailboxes/${mailboxId}/identities`);
+};
+
+function normalizeIdentityList(data: unknown): IdentityListResult {
+	const root =
+		data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+
+	// Correct shape: { items: Identity[], capabilities }
+	// Legacy bug: { items: { items, capabilities } }
+	const nested =
+		root.items &&
+		typeof root.items === "object" &&
+		!Array.isArray(root.items)
+			? (root.items as Record<string, unknown>)
+			: null;
+
+	const itemsSource = nested ?? root;
+	const items = Array.isArray(itemsSource.items)
+		? (itemsSource.items as Identity[])
+		: Array.isArray(root.items)
+			? (root.items as Identity[])
+			: [];
+
+	const capabilitiesSource =
+		(itemsSource.capabilities as Record<string, unknown> | undefined) ??
+		(root.capabilities as Record<string, unknown> | undefined) ??
+		{};
+
+	return {
+		items,
+		capabilities: {
+			canManage: Boolean(capabilitiesSource.canManage),
+			customNameAllowed: Boolean(capabilitiesSource.customNameAllowed),
+		},
+	};
+}
+
+export async function listMailboxIdentities(
+	mailboxId: string,
+): Promise<IdentityListResult> {
+	const data = await apiRequest<unknown>(`/mailboxes/${mailboxId}/identities`);
+	return normalizeIdentityList(data);
 }
 
 export async function listAvailableIdentities(
