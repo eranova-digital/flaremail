@@ -74,6 +74,7 @@ export function SharedMailboxIdentitiesEditor({
 
 			<MailboxIdentitiesManager
 				mailboxId={mailboxId}
+				mailboxAddress={mailbox.address}
 				title="Mailbox identities"
 				description="Name patterns and signatures owned by this shared mailbox."
 				hideDefault

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { IdentityCard } from "@/components/settings/IdentityCard";
 import { IdentityForm } from "@/components/settings/IdentityForm";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	useAccountIdentities,
 	useCreateMailboxIdentity,
@@ -14,36 +14,7 @@ import {
 } from "@/hooks/use-identities";
 import { getErrorMessage } from "@/lib/api/errors";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import {
-	IDENTITY_NAME_PATTERN_OPTIONS,
-	type Identity,
-	type IdentityInput,
-} from "@/lib/identities/api";
-
-function IdentityPreview({ identity }: { identity: Identity }) {
-	return (
-		<>
-			{identity.signatureHtml ? (
-				<div
-					className="text-muted-foreground prose prose-sm max-w-none text-xs"
-					dangerouslySetInnerHTML={{ __html: identity.signatureHtml }}
-				/>
-			) : (
-				<p className="text-muted-foreground text-xs">No signature</p>
-			)}
-		</>
-	);
-}
-
-function IdentityMeta({ identity }: { identity: Identity }) {
-	return (
-		<p className="text-muted-foreground text-xs">
-			{IDENTITY_NAME_PATTERN_OPTIONS.find(
-				(option) => option.value === identity.namePattern,
-			)?.label ?? identity.namePattern}
-		</p>
-	);
-}
+import type { IdentityInput } from "@/lib/identities/api";
 
 export function IdentitiesSection() {
 	const { account } = useAuth();
@@ -52,6 +23,7 @@ export function IdentitiesSection() {
 		overviewQuery.data?.capabilities.primaryMailboxId ??
 		account?.primaryMailboxId ??
 		null;
+	const primaryAddress = account?.loginIdentifier ?? null;
 
 	const createMutation = useCreateMailboxIdentity(primaryMailboxId ?? "");
 	const updateMutation = useUpdateMailboxIdentity(primaryMailboxId ?? "");
@@ -135,16 +107,13 @@ export function IdentitiesSection() {
 					</p>
 				) : (
 					own.map((identity) => (
-						<Card key={identity.id} className="rounded-xl shadow-sm">
-							<CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
-								<div>
-									<CardTitle className="text-base">
-										{identity.fromNamePreview || "(no name)"}
-									</CardTitle>
-									<IdentityMeta identity={identity} />
-								</div>
-								{canManage ? (
-									<div className="flex gap-1">
+						<IdentityCard
+							key={identity.id}
+							identity={identity}
+							mailboxAddress={primaryAddress}
+							actions={
+								canManage ? (
+									<>
 										<Button
 											size="icon"
 											variant="ghost"
@@ -171,12 +140,11 @@ export function IdentitiesSection() {
 										>
 											<Trash2 className="size-4" />
 										</Button>
-									</div>
-								) : null}
-							</CardHeader>
-							<CardContent className="space-y-3">
-								<IdentityPreview identity={identity} />
-								{editingId === identity.id ? (
+									</>
+								) : undefined
+							}
+							footer={
+								editingId === identity.id ? (
 									<IdentityForm
 										initial={identity}
 										allowCustom={allowCustom}
@@ -193,9 +161,9 @@ export function IdentitiesSection() {
 											);
 										}}
 									/>
-								) : null}
-							</CardContent>
-						</Card>
+								) : undefined
+							}
+						/>
 					))
 				)}
 				{creating ? (
@@ -229,20 +197,11 @@ export function IdentitiesSection() {
 							mailbox. Managed in Organization settings.
 						</p>
 					</div>
-					<Card className="rounded-xl shadow-sm">
-						<CardHeader className="pb-2">
-							<CardTitle className="text-base">
-								{defaultIdentity.fromNamePreview || "(no name)"}
-								<span className="text-muted-foreground ml-2 text-xs font-normal">
-									Default
-								</span>
-							</CardTitle>
-							<IdentityMeta identity={defaultIdentity} />
-						</CardHeader>
-						<CardContent>
-							<IdentityPreview identity={defaultIdentity} />
-						</CardContent>
-					</Card>
+					<IdentityCard
+						identity={defaultIdentity}
+						mailboxAddress={primaryAddress}
+						description="Managed in Organization settings. Not editable here."
+					/>
 				</div>
 			) : null}
 
@@ -263,29 +222,23 @@ export function IdentitiesSection() {
 						<div key={group.mailboxId} className="space-y-2">
 							<p className="text-sm font-medium">{group.mailboxAddress}</p>
 							{group.identities.map((identity) => (
-								<Card key={identity.id} className="rounded-xl shadow-sm">
-									<CardHeader className="pb-2">
-										<div className="flex flex-wrap items-center gap-2">
-											<CardTitle className="text-base">
-												{identity.fromNamePreview || "(no name)"}
-											</CardTitle>
-											{group.identityExport ? (
-												<Badge variant="secondary">
-													Usable outside this mailbox
-												</Badge>
-											) : null}
-										</div>
-										<IdentityMeta identity={identity} />
-										{!group.identityExport ? (
-											<p className="text-muted-foreground text-xs">
-												Only when sending from {group.mailboxAddress}
-											</p>
-										) : null}
-									</CardHeader>
-									<CardContent>
-										<IdentityPreview identity={identity} />
-									</CardContent>
-								</Card>
+								<IdentityCard
+									key={identity.id}
+									identity={identity}
+									mailboxAddress={group.mailboxAddress}
+									badges={
+										group.identityExport ? (
+											<Badge variant="outline">
+												Usable outside this mailbox
+											</Badge>
+										) : undefined
+									}
+									description={
+										group.identityExport
+											? undefined
+											: `Only when sending from ${group.mailboxAddress}`
+									}
+								/>
 							))}
 						</div>
 					))
