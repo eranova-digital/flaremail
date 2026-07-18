@@ -19,16 +19,16 @@ export function sessionCookieHeader(
 	token: string,
 	maxAgeSeconds: number,
 ): string {
-	const parts = [
+	return [
 		`${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}`,
 		"Path=/",
 		"HttpOnly",
+		"Secure",
 		"SameSite=Lax",
 		`Max-Age=${maxAgeSeconds}`,
-	];
-	return parts.join("; ");
+	].join("; ");
 }
 
 export function clearSessionCookieHeader(): string {
-	return `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+	return `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
