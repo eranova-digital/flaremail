@@ -6,7 +6,7 @@ import {
 } from "@tiptap/pm/model";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
-import { SIGNATURE_ATTR } from "@/lib/identities/apply-signature";
+import { SIGNATURE_ATTR, isBlankSignatureHtml } from "@/lib/identities/apply-signature";
 
 import { SignatureBlock } from "./SignatureBlock";
 
@@ -113,7 +113,8 @@ export const ComposeSignature = Node.create({
 				(html: string | null) =>
 				({ tr, state, dispatch }) => {
 					const typeName = this.name;
-					const trimmed = html?.trim() ? html.trim() : null;
+					const trimmed =
+						html && !isBlankSignatureHtml(html) ? html.trim() : null;
 
 					if (trimmed) {
 						const existing = serializeSignatureInnerHtml(

@@ -5,8 +5,25 @@ import {
 } from "@/lib/identities/name-pattern";
 import type { Identity } from "@/lib/identities/api";
 import type { IdentityNamePattern } from "@/lib/identities/name-pattern";
+import { isEmptyEditorHtml } from "@/lib/compose-body";
 
 export const SIGNATURE_ATTR = "data-flaremail-signature";
+
+/** True when signature HTML has no visible content (blank editor / whitespace-only). */
+export function isBlankSignatureHtml(html: string | null | undefined): boolean {
+	if (!html?.trim()) {
+		return true;
+	}
+	if (isEmptyEditorHtml(html)) {
+		return true;
+	}
+	const text = html
+		.replace(/<[^>]*>/g, " ")
+		.replace(/&nbsp;/gi, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+	return text.length === 0;
+}
 
 /** Resolve identity signature HTML with tags substituted. Empty → null. */
 export function resolveIdentitySignatureHtml(input: {
@@ -15,25 +32,26 @@ export function resolveIdentitySignatureHtml(input: {
 	mailboxAddress: string;
 	primaryAddress: string;
 }): string | null {
-	if (!input.identity?.signatureHtml?.trim()) {
+	const signatureHtml = input.identity?.signatureHtml;
+	if (isBlankSignatureHtml(signatureHtml)) {
 		return null;
 	}
 
 	const fromName = resolveFromName(
-		input.identity.namePattern as IdentityNamePattern,
+		input.identity!.namePattern as IdentityNamePattern,
 		input.profile,
-		input.identity.customName,
+		input.identity!.customName,
 	);
 
 	const resolved = resolveSignatureTags(
-		input.identity.signatureHtml,
+		signatureHtml!,
 		buildSignatureTagContext({
 			fromName,
 			profile: input.profile,
 			mailboxAddress: input.mailboxAddress,
 			primaryAddress: input.primaryAddress,
 		}),
-	).trim();
+	);
 
-	return resolved || null;
+	return isBlankSignatureHtml(resolved) ? null : resolved.trim();
 }

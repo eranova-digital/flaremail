@@ -38,4 +38,23 @@ describe("compose signature serialization", () => {
 
 		editor.destroy();
 	});
+
+	it("does not insert a signature block for blank signature html", () => {
+		const editor = new Editor({
+			extensions: [StarterKit, ComposeSignature],
+			content: "<p>Hi</p>",
+		});
+
+		expect(editor.commands.setComposeSignature("<p></p>")).toBe(true);
+		expect(editor.getHTML()).not.toContain(SIGNATURE_ATTR);
+		expect(editor.getHTML()).toContain("Hi");
+
+		editor.commands.setComposeSignature("<p>Best</p>");
+		expect(editor.getHTML()).toContain(SIGNATURE_ATTR);
+
+		expect(editor.commands.setComposeSignature(null)).toBe(true);
+		expect(editor.getHTML()).not.toContain(SIGNATURE_ATTR);
+
+		editor.destroy();
+	});
 });
