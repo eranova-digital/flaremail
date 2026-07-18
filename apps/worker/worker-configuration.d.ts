@@ -7,6 +7,7 @@ interface __BaseEnv_Env {
 	EMAIL: SendEmail;
 	SESSION_SECRET: string;
 	OIDC_SIGNING_JWK: string;
+	WEB_ORIGIN?: string;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {

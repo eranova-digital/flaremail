@@ -63,7 +63,12 @@ function htmlErrorPage(title: string, message: string): Response {
 	});
 }
 
-function webOrigin(request: Request): string {
+/** SPA origin for login/consent redirects (may differ from the API/issuer host). */
+function webOrigin(request: Request, env: Env): string {
+	const configured = env.WEB_ORIGIN?.trim();
+	if (configured) {
+		return configured.replace(/\/$/, "");
+	}
 	return new URL(request.url).origin;
 }
 
@@ -104,6 +109,7 @@ export async function handleOidcAuthorize(context: RouteContext) {
 				}
 				return continuePendingAuthorization(
 					context.request,
+					context.env,
 					db,
 					pending,
 					client,
@@ -179,6 +185,7 @@ export async function handleOidcAuthorize(context: RouteContext) {
 
 			return continuePendingAuthorization(
 				context.request,
+				context.env,
 				db,
 				pending,
 				client,
@@ -192,6 +199,7 @@ export async function handleOidcAuthorize(context: RouteContext) {
 
 async function continuePendingAuthorization(
 	request: Request,
+	env: Env,
 	db: Database,
 	pending: OidcPendingAuthorization,
 	client: OidcClient,
@@ -199,7 +207,7 @@ async function continuePendingAuthorization(
 ): Promise<Response> {
 	if (!session?.accountId) {
 		const resume = `/api/v1/oauth/authorize?pending=${encodeURIComponent(pending.id)}`;
-		const login = new URL("/login", webOrigin(request));
+		const login = new URL("/login", webOrigin(request, env));
 		login.searchParams.set("return_to", resume);
 		return Response.redirect(login.toString(), 302);
 	}
@@ -240,7 +248,7 @@ async function continuePendingAuthorization(
 	}
 
 	if (await needsConsent(db, client, session.accountId, activePending.scopes)) {
-		const consent = new URL("/oauth/consent", webOrigin(request));
+		const consent = new URL("/oauth/consent", webOrigin(request, env));
 		consent.searchParams.set("pending", activePending.id);
 		return Response.redirect(consent.toString(), 302);
 	}

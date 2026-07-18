@@ -8,7 +8,7 @@ import * as schema from "@/db/auth-schema";
 const flaremailWebUrl =
 	process.env.FLAREMAIL_WEB_URL ?? "http://localhost:5173";
 const flaremailApiUrl =
-	process.env.FLAREMAIL_API_URL ?? "http://localhost:8787";
+	process.env.FLAREMAIL_API_URL ?? "https://your-worker.workers.dev";
 const userInfoUrl = `${flaremailApiUrl}/api/v1/oauth/userinfo`;
 
 export const auth = betterAuth({
@@ -26,9 +26,9 @@ export const auth = betterAuth({
 					providerId: "flaremail",
 					clientId: process.env.FLAREMAIL_CLIENT_ID ?? "",
 					clientSecret: process.env.FLAREMAIL_CLIENT_SECRET ?? "",
-					// Browser hits Flaremail web (Vite proxies /api) so the session cookie applies.
+					// Browser authorize via Flaremail web (:5173); Vite proxies /api to the Worker.
 					authorizationUrl: `${flaremailWebUrl}/api/v1/oauth/authorize`,
-					// Token + userinfo are server-to-server against the Worker.
+					// Token + userinfo + issuer against the deployed Worker.
 					tokenUrl: `${flaremailApiUrl}/api/v1/oauth/token`,
 					userInfoUrl,
 					issuer: flaremailApiUrl,

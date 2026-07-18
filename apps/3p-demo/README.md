@@ -2,10 +2,30 @@
 
 Third-party Next.js app that signs in with **Flaremail as an OIDC provider** (better-auth + Drizzle + SQLite).
 
+## Topology
+
+| App | URL |
+|-----|-----|
+| 3p-demo | http://localhost:3000 |
+| Flaremail web | http://localhost:5173 |
+| Flaremail Worker | your deployed Worker URL (e.g. `https://your-worker.workers.dev`) |
+
 ## Prerequisites
 
-1. Flaremail worker + web running (`npm run worker:dev`, `npm run web:dev`).
-2. An OIDC client in Flaremail Management (intendant/superadmin):
+1. Deployed Worker reachable at your Worker URL, with `WEB_ORIGIN=http://localhost:5173` (so login/consent redirect to the local SPA, not the Worker host).
+2. Flaremail web running locally with proxy to that Worker:
+
+```bash
+# apps/web/.env
+API_URL=/api/v1
+API_PROXY_TARGET=https://your-worker.workers.dev
+```
+
+```bash
+npm run web:dev
+```
+
+3. An OIDC client in Flaremail Management (intendant/superadmin):
    - **Redirect URI:** `http://localhost:3000/api/auth/oauth2/callback/flaremail`
    - **Allowed scopes:** `openid`, `profile`, `email`
    - **Confidential:** yes
@@ -16,7 +36,7 @@ Third-party Next.js app that signs in with **Flaremail as an OIDC provider** (be
 
 ```bash
 cp apps/3p-demo/.env.example apps/3p-demo/.env
-# fill FLAREMAIL_CLIENT_ID / FLAREMAIL_CLIENT_SECRET / BETTER_AUTH_SECRET
+# set FLAREMAIL_API_URL to your Worker, plus CLIENT_ID / SECRET / BETTER_AUTH_SECRET
 
 npm install
 npm run 3p-demo:db:push
@@ -25,15 +45,13 @@ npm run 3p-demo:dev
 
 Open http://localhost:3000 and click **Sign in with Flaremail**.
 
-## Local URL split
+## Env
 
 | Env | Default | Why |
 |-----|---------|-----|
-| `FLAREMAIL_WEB_URL` | `http://localhost:5173` | Browser authorize (session cookie via Vite `/api` proxy) |
-| `FLAREMAIL_API_URL` | `http://localhost:8787` | Server-side token + userinfo against the Worker |
+| `FLAREMAIL_WEB_URL` | `http://localhost:5173` | Browser authorize (session cookie on the web origin; Vite proxies `/api` to the Worker) |
+| `FLAREMAIL_API_URL` | *(required)* your Worker origin | Server-side token + userinfo + issuer |
 | `BETTER_AUTH_URL` | `http://localhost:3000` | This app |
-
-Authorize must go through the web origin so the Flaremail session cookie is sent. Token exchange is server-to-server and does not need that cookie.
 
 ## Scripts
 
