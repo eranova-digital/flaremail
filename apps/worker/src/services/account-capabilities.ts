@@ -21,6 +21,8 @@ export type AccountCapabilities = {
 	manageAssignments: boolean;
 	manageManagerMailboxAssignments: boolean;
 	showsManagerMailboxGrantsTab: boolean;
+	accessTemplatesTab: boolean;
+	canCreateGlobalTemplates: boolean;
 	inviteableRoles: AccountRole[];
 };
 
@@ -105,6 +107,11 @@ export function computeAccountCapabilities(
 		manageAssignments: assignRoles,
 		manageManagerMailboxAssignments: assignRoles,
 		showsManagerMailboxGrantsTab: account.role === "manager",
+		accessTemplatesTab: accessAccountsTab,
+		canCreateGlobalTemplates:
+			account.isIntendant ||
+			account.role === "superadmin" ||
+			account.role === "admin",
 		inviteableRoles: inviteableRoles(account),
 	};
 }

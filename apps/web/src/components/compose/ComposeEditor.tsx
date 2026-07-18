@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 type ComposeEditorProps = {
 	id?: string;
+	mailboxId?: string;
 	initialHtml: string;
 	/** Resolved signature HTML (tags already substituted). `null` clears; `undefined` leaves editor alone. */
 	signatureHtml?: string | null;
@@ -21,6 +22,7 @@ type ComposeEditorProps = {
 
 export function ComposeEditor({
 	id,
+	mailboxId,
 	initialHtml,
 	signatureHtml,
 	placeholder = "Write your message…",
@@ -101,6 +103,7 @@ export function ComposeEditor({
 			<ComposeEditorToolbar
 				editor={editor}
 				disabled={disabled}
+				mailboxId={mailboxId}
 				onHeightChange={setToolbarHeight}
 			/>
 			{isTableActive ? (

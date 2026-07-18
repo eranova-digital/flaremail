@@ -855,6 +855,50 @@ export const identities = pgTable(
 	],
 );
 
+/** Reusable compose HTML templates. `mailboxId` null = instance-wide (global). */
+export const emailTemplates = pgTable(
+	"email_templates",
+	{
+		id: uuid("id").primaryKey(),
+		name: text("name").notNull(),
+		mailboxId: uuid("mailbox_id").references(() => mailboxes.id, {
+			onDelete: "cascade",
+		}),
+		storageKey: text("storage_key").notNull(),
+		createdByAccountId: uuid("created_by_account_id").references(
+			() => accounts.id,
+			{ onDelete: "set null" },
+		),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [index("email_templates_mailbox_id_idx").on(table.mailboxId)],
+);
+
+export const systemEmailTemplateKeyEnum = pgEnum("system_email_template_key", [
+	"invite",
+	"password_reset",
+	"recovery_verify",
+	"mfa_disable",
+]);
+
+/** Custom HTML for instance system/transactional emails. One row per key when uploaded. */
+export const systemEmailTemplates = pgTable("system_email_templates", {
+	key: systemEmailTemplateKeyEnum("key").primaryKey(),
+	storageKey: text("storage_key").notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	updatedByAccountId: uuid("updated_by_account_id").references(
+		() => accounts.id,
+		{ onDelete: "set null" },
+	),
+});
+
 export const organizationTabAccessEnum = pgEnum("organization_tab_access", [
 	"intendant_only",
 	"intendant_and_superadmins",
@@ -946,6 +990,10 @@ export type AccountProfile = typeof accountProfiles.$inferSelect;
 export type InstanceSettings = typeof instanceSettings.$inferSelect;
 export type Identity = typeof identities.$inferSelect;
 export type NewIdentity = typeof identities.$inferInsert;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type NewEmailTemplate = typeof emailTemplates.$inferInsert;
+export type SystemEmailTemplate = typeof systemEmailTemplates.$inferSelect;
+export type NewSystemEmailTemplate = typeof systemEmailTemplates.$inferInsert;
 export type AccountTotp = typeof accountTotp.$inferSelect;
 export type AccountPasskey = typeof accountPasskeys.$inferSelect;
 export type Session = typeof sessions.$inferSelect;

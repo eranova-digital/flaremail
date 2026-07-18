@@ -17,9 +17,8 @@ import { loadAccountProfile } from "../lib/auth/principal";
 import { toProfilePicturePayload } from "../lib/profile-picture/payload";
 import { requireSessionSecret } from "../lib/auth/resolve-principal";
 import {
-	passwordResetCodeEmailText,
 	resolveAccountSenderDomain,
-	sendTransactionalEmail,
+	sendPasswordResetTransactionalEmail,
 	type TransactionalEmailDeps,
 } from "../lib/auth/transactional-email";
 import { loadProfileLocks } from "./accounts/profile";
@@ -331,11 +330,10 @@ export async function requestPasswordReset(
 		throw new Error("Could not determine sender domain for this account");
 	}
 
-	await sendTransactionalEmail(db, deps, {
+	await sendPasswordResetTransactionalEmail(db, deps, {
 		domainName,
 		to: recoveryAddress,
-		subject: "Reset your Flaremail password",
-		text: passwordResetCodeEmailText(code),
+		code,
 	});
 
 	return { ok: true as const };

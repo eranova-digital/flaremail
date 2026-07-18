@@ -11,11 +11,21 @@ import {
 import { HtmlBlock } from "./HtmlBlock";
 
 export const COMPOSE_HTML_ATTR = "data-compose-html";
+export const COMPOSE_HTML_LOCKED_ATTR = "data-compose-html-locked";
+export const COMPOSE_HTML_TEMPLATE_NAME_ATTR = "data-compose-html-template-name";
+
+export type InsertComposeHtmlOptions = {
+	locked?: boolean;
+	templateName?: string | null;
+};
 
 declare module "@tiptap/core" {
 	interface Commands<ReturnType> {
 		composeHtml: {
-			insertComposeHtml: (html?: string) => ReturnType;
+			insertComposeHtml: (
+				html?: string,
+				options?: InsertComposeHtmlOptions,
+			) => ReturnType;
 		};
 	}
 }
@@ -42,6 +52,14 @@ function readValuesAttr(value: unknown): Record<string, string> {
 		}
 	}
 	return values;
+}
+
+function readLockedAttr(value: unknown): boolean {
+	return value === true || value === "true" || value === "1";
+}
+
+function readTemplateNameAttr(value: unknown): string | null {
+	return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 export const ComposeHtml = Node.create({
@@ -72,6 +90,26 @@ export const ComposeHtml = Node.create({
 						: {};
 				},
 			},
+			locked: {
+				default: false,
+				parseHTML: (element) =>
+					element.hasAttribute(COMPOSE_HTML_LOCKED_ATTR),
+				renderHTML: (attributes) =>
+					readLockedAttr(attributes.locked)
+						? { [COMPOSE_HTML_LOCKED_ATTR]: "1" }
+						: {},
+			},
+			templateName: {
+				default: null,
+				parseHTML: (element) =>
+					element.getAttribute(COMPOSE_HTML_TEMPLATE_NAME_ATTR),
+				renderHTML: (attributes) => {
+					const name = readTemplateNameAttr(attributes.templateName);
+					return name
+						? { [COMPOSE_HTML_TEMPLATE_NAME_ATTR]: name }
+						: {};
+				},
+			},
 		};
 	},
 
@@ -90,6 +128,10 @@ export const ComposeHtml = Node.create({
 						values: parseHtmlPlaceholderValues(
 							element.getAttribute(COMPOSE_HTML_VALUES_ATTR),
 						),
+						locked: element.hasAttribute(COMPOSE_HTML_LOCKED_ATTR),
+						templateName: element.getAttribute(
+							COMPOSE_HTML_TEMPLATE_NAME_ATTR,
+						),
 					};
 				},
 			},
@@ -105,6 +147,15 @@ export const ComposeHtml = Node.create({
 		);
 		if (serialized) {
 			dom.setAttribute(COMPOSE_HTML_VALUES_ATTR, serialized);
+		}
+
+		if (readLockedAttr(node.attrs.locked)) {
+			dom.setAttribute(COMPOSE_HTML_LOCKED_ATTR, "1");
+		}
+
+		const templateName = readTemplateNameAttr(node.attrs.templateName);
+		if (templateName) {
+			dom.setAttribute(COMPOSE_HTML_TEMPLATE_NAME_ATTR, templateName);
 		}
 
 		// Keep `{tags}` in stored HTML; values live in the data attr until send.
@@ -127,11 +178,16 @@ export const ComposeHtml = Node.create({
 	addCommands() {
 		return {
 			insertComposeHtml:
-				(html = "") =>
+				(html = "", options = {}) =>
 				({ commands }) =>
 					commands.insertContent({
 						type: this.name,
-						attrs: { html, values: {} },
+						attrs: {
+							html,
+							values: {},
+							locked: Boolean(options.locked),
+							templateName: options.templateName ?? null,
+						},
 					}),
 		};
 	},

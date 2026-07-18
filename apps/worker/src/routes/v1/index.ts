@@ -53,6 +53,20 @@ import {
 	handleThreadAction,
 	handleUpdateLabel,
 } from "../../controllers/reads";
+import {
+	handleCreateEmailTemplate,
+	handleDeleteEmailTemplate,
+	handleGetEmailTemplate,
+	handleGetEmailTemplateContent,
+	handleListEmailTemplates,
+	handleUpdateEmailTemplate,
+} from "../../controllers/email-templates";
+import {
+	handleDeleteSystemEmailTemplate,
+	handleGetSystemEmailTemplateContent,
+	handleListSystemEmailTemplates,
+	handleUploadSystemEmailTemplate,
+} from "../../controllers/system-email-templates";
 
 const prefix = "/api/v1";
 
@@ -227,6 +241,78 @@ export const v1Routes: RouteDefinition[] = [
 		action: "domain_admin",
 		scopes: ["labels:delete"],
 		handler: handleDeleteLabel,
+	},
+
+	{
+		method: "GET",
+		path: `${prefix}/templates`,
+		action: "authenticated",
+		scopes: ["templates:list"],
+		handler: handleListEmailTemplates,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/templates`,
+		action: "authenticated",
+		scopes: ["templates:create"],
+		handler: handleCreateEmailTemplate,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/templates/:id`,
+		action: "authenticated",
+		scopes: ["templates:read"],
+		handler: handleGetEmailTemplate,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/templates/:id/content`,
+		action: "authenticated",
+		scopes: ["templates:read"],
+		handler: handleGetEmailTemplateContent,
+	},
+	{
+		method: "PATCH",
+		path: `${prefix}/templates/:id`,
+		action: "authenticated",
+		scopes: ["templates:update"],
+		handler: handleUpdateEmailTemplate,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/templates/:id`,
+		action: "authenticated",
+		scopes: ["templates:delete"],
+		handler: handleDeleteEmailTemplate,
+	},
+
+	{
+		method: "GET",
+		path: `${prefix}/system-templates`,
+		action: "authenticated",
+		scopes: ["system_templates:list"],
+		handler: handleListSystemEmailTemplates,
+	},
+	{
+		method: "PUT",
+		path: `${prefix}/system-templates/:key`,
+		action: "authenticated",
+		scopes: ["system_templates:update"],
+		handler: handleUploadSystemEmailTemplate,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/system-templates/:key/content`,
+		action: "authenticated",
+		scopes: ["system_templates:read"],
+		handler: handleGetSystemEmailTemplateContent,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/system-templates/:key`,
+		action: "authenticated",
+		scopes: ["system_templates:delete"],
+		handler: handleDeleteSystemEmailTemplate,
 	},
 
 	{

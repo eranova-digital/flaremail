@@ -441,9 +441,9 @@
 	width: 4px;
 }
 
-/* Author HTML must not inherit TipTap table chrome. */
+/* Author HTML must not inherit TipTap table chrome. Inline borders still win. */
 .compose-editor .tiptap .compose-html-preview-content :is(table, thead, tbody, tfoot, tr, th, td) {
-	border: unset;
+	border: none;
 	border-collapse: unset;
 	border-spacing: unset;
 	background: unset;

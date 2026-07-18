@@ -31,6 +31,8 @@ export type AccountCapabilities = {
 	manageAssignments: boolean;
 	manageManagerMailboxAssignments: boolean;
 	showsManagerMailboxGrantsTab: boolean;
+	accessTemplatesTab?: boolean;
+	canCreateGlobalTemplates?: boolean;
 	inviteableRoles: string[];
 };
 

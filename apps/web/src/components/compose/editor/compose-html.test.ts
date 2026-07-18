@@ -100,4 +100,45 @@ describe("compose html block", () => {
 
 		editor.destroy();
 	});
+
+	it("serializes locked template blocks without edit chrome attrs lost on round-trip", () => {
+		const editor = new Editor({
+			extensions: [StarterKit, ComposeHtml],
+			content: "<p></p>",
+		});
+
+		expect(
+			editor.commands.insertComposeHtml("<p>Hello {name}</p>", {
+				locked: true,
+				templateName: "Welcome",
+			}),
+		).toBe(true);
+
+		const html = editor.getHTML();
+		expect(html).toContain(COMPOSE_HTML_ATTR);
+		expect(html).toContain('data-compose-html-locked="1"');
+		expect(html).toContain('data-compose-html-template-name="Welcome"');
+		expect(html).toContain("{name}");
+
+		editor.destroy();
+
+		const restored = new Editor({
+			extensions: [StarterKit, ComposeHtml],
+			content: html,
+		});
+
+		let locked: boolean | null = null;
+		let templateName: string | null = null;
+		restored.state.doc.descendants((node) => {
+			if (node.type.name === "composeHtml") {
+				locked = Boolean(node.attrs.locked);
+				templateName = node.attrs.templateName as string | null;
+				return false;
+			}
+		});
+
+		expect(locked).toBe(true);
+		expect(templateName).toBe("Welcome");
+		restored.destroy();
+	});
 });
