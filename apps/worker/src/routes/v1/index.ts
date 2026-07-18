@@ -61,6 +61,12 @@ import {
 	handleListEmailTemplates,
 	handleUpdateEmailTemplate,
 } from "../../controllers/email-templates";
+import {
+	handleDeleteSystemEmailTemplate,
+	handleGetSystemEmailTemplateContent,
+	handleListSystemEmailTemplates,
+	handleUploadSystemEmailTemplate,
+} from "../../controllers/system-email-templates";
 
 const prefix = "/api/v1";
 
@@ -278,6 +284,35 @@ export const v1Routes: RouteDefinition[] = [
 		action: "authenticated",
 		scopes: ["templates:delete"],
 		handler: handleDeleteEmailTemplate,
+	},
+
+	{
+		method: "GET",
+		path: `${prefix}/system-templates`,
+		action: "authenticated",
+		scopes: ["system_templates:list"],
+		handler: handleListSystemEmailTemplates,
+	},
+	{
+		method: "PUT",
+		path: `${prefix}/system-templates/:key`,
+		action: "authenticated",
+		scopes: ["system_templates:update"],
+		handler: handleUploadSystemEmailTemplate,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/system-templates/:key/content`,
+		action: "authenticated",
+		scopes: ["system_templates:read"],
+		handler: handleGetSystemEmailTemplateContent,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/system-templates/:key`,
+		action: "authenticated",
+		scopes: ["system_templates:delete"],
+		handler: handleDeleteSystemEmailTemplate,
 	},
 
 	{

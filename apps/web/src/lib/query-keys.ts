@@ -29,4 +29,5 @@ export const queryKeys = {
 	composeTemplates: (mailboxId: string) =>
 		["templates", "compose", mailboxId] as const,
 	manageableTemplates: ["templates", "manage"] as const,
+	systemTemplates: ["templates", "system"] as const,
 };

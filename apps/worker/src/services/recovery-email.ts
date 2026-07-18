@@ -5,10 +5,9 @@ import { accountProfiles, emailVerificationCodes } from "../db/schema";
 import { formatCode } from "../lib/auth/crypto";
 import { hashSecret } from "../lib/auth/password";
 import {
-	mfaDisableRecoveryCodeText,
-	recoveryEmailVerificationText,
 	resolveAccountSenderDomain,
-	sendTransactionalEmail,
+	sendMfaDisableTransactionalEmail,
+	sendRecoveryVerifyTransactionalEmail,
 	type TransactionalEmailDeps,
 } from "../lib/auth/transactional-email";
 import { parseEmailAddress } from "../lib/normalize-email-address";
@@ -95,29 +94,6 @@ async function verifyCode(
 		.where(eq(emailVerificationCodes.id, row.id));
 }
 
-async function sendVerificationEmail(
-	db: Database,
-	deps: TransactionalEmailDeps,
-	input: {
-		accountId: string;
-		to: string;
-		subject: string;
-		text: string;
-	},
-): Promise<void> {
-	const domainName = await resolveAccountSenderDomain(db, input.accountId);
-	if (!domainName) {
-		throw new Error("Could not determine sender domain for this account");
-	}
-
-	await sendTransactionalEmail(db, deps, {
-		domainName,
-		to: input.to,
-		subject: input.subject,
-		text: input.text,
-	});
-}
-
 export async function sendRecoveryEmailSetupCode(
 	db: Database,
 	deps: TransactionalEmailDeps,
@@ -130,11 +106,15 @@ export async function sendRecoveryEmailSetupCode(
 		purpose: "recovery_setup",
 	});
 
-	await sendVerificationEmail(db, deps, {
-		accountId: input.accountId,
+	const domainName = await resolveAccountSenderDomain(db, input.accountId);
+	if (!domainName) {
+		throw new Error("Could not determine sender domain for this account");
+	}
+
+	await sendRecoveryVerifyTransactionalEmail(db, deps, {
+		domainName,
 		to: targetEmail,
-		subject: "Verify your Flaremail recovery email",
-		text: recoveryEmailVerificationText(code),
+		code,
 	});
 }
 
@@ -170,11 +150,15 @@ export async function sendMfaDisableRecoveryCode(
 		purpose: "mfa_disable",
 	});
 
-	await sendVerificationEmail(db, deps, {
-		accountId,
+	const domainName = await resolveAccountSenderDomain(db, accountId);
+	if (!domainName) {
+		throw new Error("Could not determine sender domain for this account");
+	}
+
+	await sendMfaDisableTransactionalEmail(db, deps, {
+		domainName,
 		to: targetEmail,
-		subject: "Disable two-factor authentication on your Flaremail account",
-		text: mfaDisableRecoveryCodeText(code),
+		code,
 	});
 }
 

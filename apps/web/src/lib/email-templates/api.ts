@@ -113,3 +113,62 @@ export async function deleteEmailTemplate(templateId: string): Promise<void> {
 		method: "DELETE",
 	});
 }
+
+export type SystemEmailTemplateKey =
+	| "invite"
+	| "password_reset"
+	| "recovery_verify"
+	| "mfa_disable";
+
+export type SystemEmailTemplate = {
+	key: SystemEmailTemplateKey;
+	label: string;
+	description: string;
+	subject: string;
+	tags: { name: string; description: string }[];
+	configured: boolean;
+	updatedAt: string | null;
+};
+
+export async function listSystemEmailTemplates(): Promise<SystemEmailTemplate[]> {
+	const data = await apiRequest<{ items: SystemEmailTemplate[] }>(
+		"/system-templates",
+	);
+	return data.items ?? [];
+}
+
+export async function uploadSystemEmailTemplate(
+	key: SystemEmailTemplateKey,
+	file: File,
+): Promise<SystemEmailTemplate> {
+	const formData = new FormData();
+	formData.set("file", file);
+
+	const response = await fetch(
+		apiUrl(`/system-templates/${encodeURIComponent(key)}`),
+		{
+			method: "PUT",
+			credentials: "include",
+			body: formData,
+		},
+	);
+
+	if (!response.ok) {
+		const problem = await parseProblem(response);
+		throw new ApiError(
+			problem?.detail ?? `Request failed with status ${response.status}`,
+			problem,
+			response.status,
+		);
+	}
+
+	return (await response.json()) as SystemEmailTemplate;
+}
+
+export async function deleteSystemEmailTemplate(
+	key: SystemEmailTemplateKey,
+): Promise<void> {
+	await apiRequest<void>(`/system-templates/${encodeURIComponent(key)}`, {
+		method: "DELETE",
+	});
+}

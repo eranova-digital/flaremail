@@ -3,9 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createEmailTemplate,
 	deleteEmailTemplate,
+	deleteSystemEmailTemplate,
 	listComposeTemplates,
 	listManageableTemplates,
+	listSystemEmailTemplates,
 	renameEmailTemplate,
+	uploadSystemEmailTemplate,
+	type SystemEmailTemplateKey,
 } from "@/lib/email-templates/api";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { queryKeys } from "@/lib/query-keys";
@@ -26,6 +30,16 @@ export function useManageableTemplates(enabled = true) {
 	return useQuery({
 		queryKey: queryKeys.manageableTemplates,
 		queryFn: () => listManageableTemplates(),
+		enabled: Boolean(account) && enabled,
+	});
+}
+
+export function useSystemEmailTemplates(enabled = true) {
+	const { account } = useAuth();
+
+	return useQuery({
+		queryKey: queryKeys.systemTemplates,
+		queryFn: () => listSystemEmailTemplates(),
 		enabled: Boolean(account) && enabled,
 	});
 }
@@ -60,6 +74,39 @@ export function useDeleteEmailTemplate() {
 		mutationFn: deleteEmailTemplate,
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["templates"] });
+		},
+	});
+}
+
+export function useUploadSystemEmailTemplate() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			key,
+			file,
+		}: {
+			key: SystemEmailTemplateKey;
+			file: File;
+		}) => uploadSystemEmailTemplate(key, file),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.systemTemplates,
+			});
+		},
+	});
+}
+
+export function useDeleteSystemEmailTemplate() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (key: SystemEmailTemplateKey) =>
+			deleteSystemEmailTemplate(key),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.systemTemplates,
+			});
 		},
 	});
 }

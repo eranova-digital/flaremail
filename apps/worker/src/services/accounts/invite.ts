@@ -22,8 +22,7 @@ import {
 import { createInviteRecord } from "../auth";
 import { normalizeEmailAddress, parseEmailAddress } from "../../lib/normalize-email-address";
 import {
-	inviteCodeEmailText,
-	sendTransactionalEmail,
+	sendInviteTransactionalEmail,
 	type TransactionalEmailDeps,
 } from "../../lib/auth/transactional-email";
 import {
@@ -223,11 +222,10 @@ export async function inviteAccount(
 	});
 
 	if (input.sendInviteEmail && input.recoveryAddress && deps) {
-		await sendTransactionalEmail(db, deps, {
+		await sendInviteTransactionalEmail(db, deps, {
 			domainName: domain.name,
 			to: input.recoveryAddress.trim(),
-			subject: "Your Flaremail invite code",
-			text: inviteCodeEmailText(inviteCode),
+			code: inviteCode,
 		});
 	}
 

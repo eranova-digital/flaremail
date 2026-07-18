@@ -287,6 +287,19 @@ Reusable HTML templates stored in R2 under `templates/{id}.html`. Global templat
 
 **Permissions:** Superadmins/admins create global and mailbox templates. Managers create mailbox templates on mailboxes they manage. Compose listing requires read access to the mailbox.
 
+### System templates
+
+Custom HTML for instance transactional emails. Available to the intendant (and superadmins when organization tab access allows). Unconfigured keys fall back to built-in plain text.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/system-templates` | Catalog of system email types + configured status + tags |
+| PUT | `/system-templates/:key` | Multipart upload (`file`) for `invite`, `password_reset`, `recovery_verify`, or `mfa_disable` |
+| GET | `/system-templates/:key/content` | Raw HTML body |
+| DELETE | `/system-templates/:key` | Revert to built-in plain text |
+
+**Tags** (replaced at send time): `{invite_code}` / `{reset_code}` / `{verification_code}`, `{code}` (alias), `{expires_in}`.
+
 ---
 
 ## Messages

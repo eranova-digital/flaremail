@@ -10,6 +10,14 @@ import { sendEmail } from "../messages/send-email";
 import { buildEmailAddress } from "../normalize-email-address";
 import { SYSTEM_BLACKHOLE_LOCAL_PART } from "../system-mailboxes";
 import { getInstanceSettings } from "../../services/instance-settings";
+import {
+	inviteTemplateValues,
+	loadSystemEmailHtml,
+	mfaDisableTemplateValues,
+	passwordResetTemplateValues,
+	recoveryVerifyTemplateValues,
+} from "../../services/system-email-templates";
+import type { SystemEmailTemplateKey } from "../email-templates/system-catalog";
 
 export type TransactionalEmailDeps = {
 	email: SendEmail;
@@ -60,7 +68,13 @@ export async function resolveDomainName(
 export async function sendTransactionalEmail(
 	db: Database,
 	deps: TransactionalEmailDeps,
-	input: { domainName: string; to: string; subject: string; text: string },
+	input: {
+		domainName: string;
+		to: string;
+		subject: string;
+		text: string;
+		html?: string;
+	},
 ): Promise<void> {
 	const settings = await getInstanceSettings(db);
 
@@ -81,6 +95,7 @@ export async function sendTransactionalEmail(
 					to: [input.to],
 					subject: input.subject,
 					text: input.text,
+					html: input.html,
 				},
 				{
 					threadId: crypto.randomUUID(),
@@ -100,6 +115,7 @@ export async function sendTransactionalEmail(
 		to: input.to,
 		subject: input.subject,
 		text: input.text,
+		html: input.html,
 	});
 }
 
@@ -141,4 +157,77 @@ export function mfaDisableRecoveryCodeText(code: string): string {
 		"",
 		"This code expires in 15 minutes.",
 	].join("\n");
+}
+
+async function resolveHtml(
+	db: Database,
+	bucket: R2Bucket,
+	key: SystemEmailTemplateKey,
+	values: Record<string, string>,
+): Promise<string | undefined> {
+	return loadSystemEmailHtml(db, bucket, key, values);
+}
+
+export async function sendInviteTransactionalEmail(
+	db: Database,
+	deps: TransactionalEmailDeps,
+	input: { domainName: string; to: string; code: string },
+): Promise<void> {
+	const values = inviteTemplateValues(input.code);
+	const html = await resolveHtml(db, deps.bucket, "invite", values);
+	await sendTransactionalEmail(db, deps, {
+		domainName: input.domainName,
+		to: input.to,
+		subject: "Your Flaremail invite code",
+		text: inviteCodeEmailText(input.code),
+		html,
+	});
+}
+
+export async function sendPasswordResetTransactionalEmail(
+	db: Database,
+	deps: TransactionalEmailDeps,
+	input: { domainName: string; to: string; code: string },
+): Promise<void> {
+	const values = passwordResetTemplateValues(input.code);
+	const html = await resolveHtml(db, deps.bucket, "password_reset", values);
+	await sendTransactionalEmail(db, deps, {
+		domainName: input.domainName,
+		to: input.to,
+		subject: "Reset your Flaremail password",
+		text: passwordResetCodeEmailText(input.code),
+		html,
+	});
+}
+
+export async function sendRecoveryVerifyTransactionalEmail(
+	db: Database,
+	deps: TransactionalEmailDeps,
+	input: { domainName: string; to: string; code: string },
+): Promise<void> {
+	const values = recoveryVerifyTemplateValues(input.code);
+	const html = await resolveHtml(db, deps.bucket, "recovery_verify", values);
+	await sendTransactionalEmail(db, deps, {
+		domainName: input.domainName,
+		to: input.to,
+		subject: "Verify your Flaremail recovery email",
+		text: recoveryEmailVerificationText(input.code),
+		html,
+	});
+}
+
+export async function sendMfaDisableTransactionalEmail(
+	db: Database,
+	deps: TransactionalEmailDeps,
+	input: { domainName: string; to: string; code: string },
+): Promise<void> {
+	const values = mfaDisableTemplateValues(input.code);
+	const html = await resolveHtml(db, deps.bucket, "mfa_disable", values);
+	await sendTransactionalEmail(db, deps, {
+		domainName: input.domainName,
+		to: input.to,
+		subject: "Disable two-factor authentication on your Flaremail account",
+		text: mfaDisableRecoveryCodeText(input.code),
+		html,
+	});
 }

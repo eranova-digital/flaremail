@@ -37,12 +37,15 @@ describe("sendTransactionalEmail", () => {
 
 		await sendTransactionalEmail(db, deps, input);
 
-		expect(sendEmail).toHaveBeenCalledWith(deps.email, {
-			from: "noreply@example.com",
-			to: input.to,
-			subject: input.subject,
-			text: input.text,
-		});
+		expect(sendEmail).toHaveBeenCalledWith(
+			deps.email,
+			expect.objectContaining({
+				from: "noreply@example.com",
+				to: input.to,
+				subject: input.subject,
+				text: input.text,
+			}),
+		);
 		expect(loadBlackholeMailboxForDomain).not.toHaveBeenCalled();
 		expect(sendAndPersistNewMessage).not.toHaveBeenCalled();
 	});
@@ -67,11 +70,11 @@ describe("sendTransactionalEmail", () => {
 				email: deps.email,
 			}),
 			"noreply-mailbox-id",
-			{
+			expect.objectContaining({
 				to: [input.to],
 				subject: input.subject,
 				text: input.text,
-			},
+			}),
 			expect.objectContaining({
 				inReplyTo: null,
 				references: null,
@@ -90,12 +93,33 @@ describe("sendTransactionalEmail", () => {
 
 		await sendTransactionalEmail(db, deps, input);
 
-		expect(sendEmail).toHaveBeenCalledWith(deps.email, {
-			from: "noreply@example.com",
-			to: input.to,
-			subject: input.subject,
-			text: input.text,
-		});
+		expect(sendEmail).toHaveBeenCalledWith(
+			deps.email,
+			expect.objectContaining({
+				from: "noreply@example.com",
+				to: input.to,
+				subject: input.subject,
+				text: input.text,
+			}),
+		);
 		expect(sendAndPersistNewMessage).not.toHaveBeenCalled();
+	});
+
+	it("forwards html when provided", async () => {
+		vi.mocked(getInstanceSettings).mockResolvedValue({
+			persistNoreplyOutboundEmails: false,
+		});
+
+		await sendTransactionalEmail(db, deps, {
+			...input,
+			html: "<p>Hello {code}</p>",
+		});
+
+		expect(sendEmail).toHaveBeenCalledWith(
+			deps.email,
+			expect.objectContaining({
+				html: "<p>Hello {code}</p>",
+			}),
+		);
 	});
 });

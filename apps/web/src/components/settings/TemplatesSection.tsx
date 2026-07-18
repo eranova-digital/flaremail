@@ -33,12 +33,16 @@ import {
 import { getErrorMessage } from "@/lib/api/errors";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import type { EmailTemplate } from "@/lib/email-templates/api";
+import { useCanAccessOrganizationTab } from "@/hooks/use-instance-settings";
+import { SystemTemplatesSection } from "@/components/settings/SystemTemplatesSection";
 
 const GLOBAL_SCOPE = "__global__";
 
 export function TemplatesSection() {
 	const { account } = useAuth();
 	const canCreateGlobal = canCreateGlobalTemplates(account);
+	const organizationAccess = useCanAccessOrganizationTab(account);
+	const showSystemTemplates = organizationAccess.canAccess;
 	const templatesQuery = useManageableTemplates();
 	const mailboxesQuery = useMailboxes("manage");
 	const createMutation = useCreateEmailTemplate();
@@ -289,6 +293,8 @@ export function TemplatesSection() {
 					});
 				}}
 			/>
+
+			{showSystemTemplates ? <SystemTemplatesSection /> : null}
 		</section>
 	);
 }
