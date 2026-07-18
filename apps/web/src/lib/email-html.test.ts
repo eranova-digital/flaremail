@@ -32,4 +32,20 @@ describe("prepareEmailHtml", () => {
 		expect(html).toMatch(/src="cid:[^"]+"/);
 		expect(html).toContain("margin-left:auto;margin-right:auto");
 	});
+
+	it("preserves existing author styles and unwraps compose html wrappers", () => {
+		const { html } = prepareEmailHtml(
+			`<div data-compose-html="1"><table style="background:#fff;border:0" border="0"><tr><td style="padding:24px"><a href="https://example.com" style="color:#ffffff;background-color:#0867ec;text-decoration:none">CTA</a></td></tr></table></div><p>Outside</p><table><tr><td>TipTap</td></tr></table>`,
+		);
+
+		expect(html).not.toContain("data-compose-html");
+		expect(html).toContain('style="background:#fff;border:0"');
+		expect(html).toContain("color:#ffffff");
+		expect(html).toContain("background-color:#0867ec");
+		expect(html).toContain("padding:24px");
+		expect(html).toContain("border:1px solid #d1d5db");
+		expect(html).toContain("TipTap");
+		expect(html).toContain('style="margin:0 0 1em 0;"');
+		expect(html).toContain("Outside");
+	});
 });

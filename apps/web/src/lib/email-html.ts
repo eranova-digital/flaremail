@@ -1,6 +1,8 @@
 import type { OutboundAttachmentInput } from "@/lib/api/client";
 import { fetchAttachmentBlob } from "@/lib/attachments";
 
+const COMPOSE_HTML_ATTR = "data-compose-html";
+
 const TABLE_STYLE =
 	"border-collapse:collapse;width:100%;margin:12px 0;table-layout:fixed;";
 const CELL_STYLE =
@@ -57,6 +59,28 @@ function extensionForMime(mimeType: string): string {
 	return subtype === "jpeg" ? "jpg" : subtype;
 }
 
+function setStyleIfMissing(element: Element, style: string) {
+	if (element.getAttribute("style")?.trim()) {
+		return;
+	}
+	element.setAttribute("style", style);
+}
+
+function unwrapComposeHtmlBlocks(doc: Document) {
+	for (const block of [
+		...doc.querySelectorAll(`div[${COMPOSE_HTML_ATTR}]`),
+	]) {
+		const parent = block.parentNode;
+		if (!parent) {
+			continue;
+		}
+		while (block.firstChild) {
+			parent.insertBefore(block.firstChild, block);
+		}
+		parent.removeChild(block);
+	}
+}
+
 export function prepareEmailHtml(html: string): {
 	html: string;
 	inlineAttachments: InlineEmailAttachment[];
@@ -88,26 +112,28 @@ export function prepareEmailHtml(html: string): {
 
 		const width = img.getAttribute("width");
 		const align = img.getAttribute("data-align");
-		img.setAttribute("style", imageStyle(width, align));
+		setStyleIfMissing(img, imageStyle(width, align));
 		img.removeAttribute("data-align");
 	});
 
 	doc.querySelectorAll("table").forEach((table) => {
-		table.setAttribute("style", TABLE_STYLE);
-		table.querySelectorAll("td").forEach((cell) => {
-			cell.setAttribute("style", CELL_STYLE);
-		});
-		table.querySelectorAll("th").forEach((cell) => {
-			cell.setAttribute("style", HEADER_CELL_STYLE);
-		});
+		setStyleIfMissing(table, TABLE_STYLE);
+	});
+
+	doc.querySelectorAll("td").forEach((cell) => {
+		setStyleIfMissing(cell, CELL_STYLE);
+	});
+
+	doc.querySelectorAll("th").forEach((cell) => {
+		setStyleIfMissing(cell, HEADER_CELL_STYLE);
 	});
 
 	doc.querySelectorAll("a").forEach((anchor) => {
-		anchor.setAttribute("style", LINK_STYLE);
+		setStyleIfMissing(anchor, LINK_STYLE);
 	});
 
 	doc.querySelectorAll("p").forEach((paragraph) => {
-		paragraph.setAttribute("style", PARAGRAPH_STYLE);
+		setStyleIfMissing(paragraph, PARAGRAPH_STYLE);
 		if (
 			!paragraph.textContent?.replace(/\u00a0/g, " ").trim() &&
 			!paragraph.querySelector("img, br, table")
@@ -115,6 +141,8 @@ export function prepareEmailHtml(html: string): {
 			paragraph.innerHTML = "&nbsp;";
 		}
 	});
+
+	unwrapComposeHtmlBlocks(doc);
 
 	return {
 		html: doc.body.innerHTML,

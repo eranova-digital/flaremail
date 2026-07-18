@@ -1,6 +1,8 @@
 import type { OutboundAttachmentInput } from "./outbound-attachments";
 import type { OutboundMessageBody } from "./outbound-payload";
 
+const COMPOSE_HTML_ATTR = "data-compose-html";
+
 const TABLE_STYLE =
 	"border-collapse:collapse;width:100%;margin:12px 0;table-layout:fixed;";
 const CELL_STYLE =
@@ -65,6 +67,16 @@ function normalizeEmptyParagraphs(html: string): string {
 	);
 }
 
+function setStyleIfMissing(
+	element: { getAttribute(name: string): string | null; setAttribute(name: string, value: string): void },
+	style: string,
+) {
+	if (element.getAttribute("style")?.trim()) {
+		return;
+	}
+	element.setAttribute("style", style);
+}
+
 export async function prepareEmailHtml(html: string): Promise<{
 	html: string;
 	inlineAttachments: InlineEmailAttachment[];
@@ -73,6 +85,12 @@ export async function prepareEmailHtml(html: string): Promise<{
 	let imageIndex = 0;
 
 	const rewriter = new HTMLRewriter()
+		.on(`div[${COMPOSE_HTML_ATTR}]`, {
+			element(element) {
+				// Unwrap editor chrome; author markup (and its styles) stay intact.
+				element.removeAndKeepContent();
+			},
+		})
 		.on("img", {
 			element(element) {
 				const src = element.getAttribute("src") ?? "";
@@ -99,33 +117,33 @@ export async function prepareEmailHtml(html: string): Promise<{
 
 				const width = element.getAttribute("width");
 				const align = element.getAttribute("data-align");
-				element.setAttribute("style", imageStyle(width, align));
+				setStyleIfMissing(element, imageStyle(width, align));
 				element.removeAttribute("data-align");
 			},
 		})
 		.on("table", {
 			element(element) {
-				element.setAttribute("style", TABLE_STYLE);
+				setStyleIfMissing(element, TABLE_STYLE);
 			},
 		})
 		.on("td", {
 			element(element) {
-				element.setAttribute("style", CELL_STYLE);
+				setStyleIfMissing(element, CELL_STYLE);
 			},
 		})
 		.on("th", {
 			element(element) {
-				element.setAttribute("style", HEADER_CELL_STYLE);
+				setStyleIfMissing(element, HEADER_CELL_STYLE);
 			},
 		})
 		.on("a", {
 			element(element) {
-				element.setAttribute("style", LINK_STYLE);
+				setStyleIfMissing(element, LINK_STYLE);
 			},
 		})
 		.on("blockquote", {
 			element(element) {
-				element.setAttribute("style", BLOCKQUOTE_STYLE);
+				setStyleIfMissing(element, BLOCKQUOTE_STYLE);
 
 				// Tag reply quotes with Gmail's class so Gmail-family clients
 				// recognize and collapse the quoted history under the "..." toggle.
@@ -141,7 +159,7 @@ export async function prepareEmailHtml(html: string): Promise<{
 		})
 		.on("p", {
 			element(element) {
-				element.setAttribute("style", PARAGRAPH_STYLE);
+				setStyleIfMissing(element, PARAGRAPH_STYLE);
 			},
 		});
 
