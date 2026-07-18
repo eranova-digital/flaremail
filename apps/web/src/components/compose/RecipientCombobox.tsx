@@ -63,34 +63,50 @@ export function RecipientCombobox({
 	}, [isEmpty, onEmptyBlur]);
 
 	// Commits whatever the user has typed but not yet turned into a chip. Without
-	// this, clicking "Send" (which blurs the input) discards the pending
-	// recipient, leaving `to` empty and failing send validation silently.
-	const commitPendingQuery = React.useCallback(() => {
-		const pending = queryRef.current.trim();
-		if (!pending) {
-			return;
-		}
-
-		const current = parseRecipients(valueRef.current) as string[];
-		const additions = parseRecipients(pending) as string[];
-		const merged = [...current];
-		for (const addition of additions) {
-			if (!merged.includes(addition)) {
-				merged.push(addition);
+	// this, leaving the field (Tab, click away, or Send) discards the pending
+	// recipient. Tab is handled on keydown (reading the live input value) because
+	// the combobox often clears controlled input state before blur.
+	const commitPendingQuery = React.useCallback(
+		(pendingOverride?: string) => {
+			const pending = (pendingOverride ?? queryRef.current).trim();
+			if (!pending) {
+				return;
 			}
-		}
 
-		const formatted = formatRecipients(merged);
-		valueRef.current = formatted;
-		queryRef.current = "";
-		onValueChange(formatted);
-		setQuery("");
-	}, [onValueChange]);
+			const current = parseRecipients(valueRef.current) as string[];
+			const additions = parseRecipients(pending) as string[];
+			const merged = [...current];
+			for (const addition of additions) {
+				if (!merged.includes(addition)) {
+					merged.push(addition);
+				}
+			}
 
-	const handleInputBlur = React.useCallback(() => {
-		commitPendingQuery();
-		notifyEmptyBlur();
-	}, [commitPendingQuery, notifyEmptyBlur]);
+			const formatted = formatRecipients(merged);
+			valueRef.current = formatted;
+			queryRef.current = "";
+			onValueChange(formatted);
+			setQuery("");
+		},
+		[onValueChange],
+	);
+
+	const handleInputBlur = React.useCallback(
+		(event: React.FocusEvent<HTMLInputElement>) => {
+			commitPendingQuery(event.currentTarget.value);
+			notifyEmptyBlur();
+		},
+		[commitPendingQuery, notifyEmptyBlur],
+	);
+
+	const handleInputKeyDown = React.useCallback(
+		(event: React.KeyboardEvent<HTMLInputElement>) => {
+			if (event.key === "Tab") {
+				commitPendingQuery(event.currentTarget.value);
+			}
+		},
+		[commitPendingQuery],
+	);
 
 	const items = React.useMemo(() => {
 		const known = new Set([...selected, ...suggestions]);
@@ -131,6 +147,7 @@ export function RecipientCombobox({
 			disabled={disabled}
 			onOpenChange={(open) => {
 				if (!open) {
+					commitPendingQuery();
 					notifyEmptyBlur();
 				}
 			}}
@@ -145,6 +162,7 @@ export function RecipientCombobox({
 							<ComboboxChipsInput
 								placeholder={values.length === 0 ? placeholder : undefined}
 								onBlur={handleInputBlur}
+								onKeyDown={handleInputKeyDown}
 							/>
 						</>
 					)}
