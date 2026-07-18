@@ -17,7 +17,7 @@ import { ComposeAttachments } from "@/components/compose/ComposeAttachments";
 import { ComposeForwardSource } from "@/components/compose/ComposeForwardSource";
 import { getErrorMessage } from "@/lib/api/errors";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { applyIdentitySignatureHtml } from "@/lib/identities/apply-signature";
+import { resolveIdentitySignatureHtml } from "@/lib/identities/apply-signature";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +68,19 @@ export function ComposePane({
 			(mailbox) => mailbox.id === account?.primaryMailboxId,
 		)?.address ?? mailboxAddress;
 
+	const profile = {
+		firstName: account?.profile?.firstName ?? "",
+		lastName: account?.profile?.lastName ?? "",
+	};
+
+	const [showCc, setShowCc] = useState(false);
+	const [showBcc, setShowBcc] = useState(false);
+	const [showSubjectEditor, setShowSubjectEditor] = useState(false);
+	/** `undefined` = don't sync (e.g. resumed draft already has signature in HTML). */
+	const [signatureHtml, setSignatureHtml] = useState<string | null | undefined>(
+		undefined,
+	);
+
 	useEffect(() => {
 		const items = identitiesQuery.data;
 		if (!items?.length || compose.fields.identityId) {
@@ -77,37 +90,29 @@ export function ComposePane({
 		if (!first) {
 			return;
 		}
-		compose.updateFields({
-			identityId: first.id,
-			bodyHtml: applyIdentitySignatureHtml({
-				bodyHtml: compose.fields.bodyHtml,
+		compose.updateFields({ identityId: first.id });
+		setSignatureHtml(
+			resolveIdentitySignatureHtml({
 				identity: first,
-				profile: {
-					firstName: account?.profile?.firstName ?? "",
-					lastName: account?.profile?.lastName ?? "",
-				},
+				profile,
 				mailboxAddress,
 				primaryAddress,
 			}),
-		});
+		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- seed once when identities arrive
 	}, [identitiesQuery.data]);
 
 	const handleIdentityChange = (identityId: string) => {
 		const identity = identitiesQuery.data?.find((item) => item.id === identityId);
-		compose.updateFields({
-			identityId,
-			bodyHtml: applyIdentitySignatureHtml({
-				bodyHtml: compose.fields.bodyHtml,
+		compose.updateFields({ identityId });
+		setSignatureHtml(
+			resolveIdentitySignatureHtml({
 				identity,
-				profile: {
-					firstName: account?.profile?.firstName ?? "",
-					lastName: account?.profile?.lastName ?? "",
-				},
+				profile,
 				mailboxAddress,
 				primaryAddress,
 			}),
-		});
+		);
 	};
 
 	// Let the surrounding view know which draft this composer owns so it can
@@ -122,9 +127,6 @@ export function ComposePane({
 	const isReplyAll = Boolean(reply?.replyAll);
 	const hasCc = Boolean(compose.fields.cc.trim());
 	const hasBcc = Boolean(compose.fields.bcc.trim());
-	const [showCc, setShowCc] = useState(false);
-	const [showBcc, setShowBcc] = useState(false);
-	const [showSubjectEditor, setShowSubjectEditor] = useState(false);
 
 	useEffect(() => {
 		if (hasCc) {
@@ -486,6 +488,7 @@ export function ComposePane({
 					id="compose-body"
 					className={cn(isInline ? "min-h-[160px]" : "min-h-[280px]")}
 					initialHtml={compose.fields.bodyHtml}
+					signatureHtml={signatureHtml}
 					placeholder="Write your message…"
 					disabled={compose.isSending}
 					onChange={({ html, text }) =>

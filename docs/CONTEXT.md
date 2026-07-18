@@ -73,7 +73,7 @@ The resolved phrase in the SMTP From header when an **identity** is applied (e.g
 _Avoid_: display name, sender name
 
 **Signature**:
-Optional rich text on an **identity**. When an **identity** is applied in compose, the **signature** is inserted into the message body by default after new text and before any quoted thread (the sender may edit or move it as part of the body). Tags: `{from_name}`, `{first_name}`, `{last_name}`, `{first_initial}`, `{last_initial}`, `{mailbox_address}`, `{primary_address}`; unknown tags left literal. No `{display_name}`.
+Optional rich text on an **identity**. When an **identity** is applied in compose, the **signature** is inserted as a dedicated non-editable composer block (tags already resolved) after new text and before any quoted thread. The sender may drag or remove that block. Tags: `{from_name}`, `{first_name}`, `{last_name}`, `{first_initial}`, `{last_initial}`, `{mailbox_address}`, `{primary_address}`; unknown tags left literal. No `{display_name}`.
 _Avoid_: footer, disclaimer (unless that is all it contains)
 
 **Personal identity allowance**:

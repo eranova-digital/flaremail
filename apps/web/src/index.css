@@ -150,6 +150,70 @@
 	color: var(--muted-foreground);
 }
 
+.compose-editor .compose-signature-block {
+	position: relative;
+	margin-top: 0.75rem;
+	border-radius: var(--radius-sm);
+	padding: 0.35rem 1.75rem 0.35rem 0.35rem;
+	cursor: grab;
+	transition: background-color 0.15s ease;
+}
+
+.compose-editor .compose-signature-block:active {
+	cursor: grabbing;
+}
+
+.compose-editor .compose-signature-block:hover,
+.compose-editor .compose-signature-block.ProseMirror-selectednode {
+	background: var(--muted);
+}
+
+.compose-editor .compose-signature-remove {
+	position: absolute;
+	top: 0.25rem;
+	right: 0.25rem;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 1.5rem;
+	width: 1.5rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	color: var(--muted-foreground);
+	background: var(--background);
+	opacity: 0;
+	cursor: pointer;
+	transition:
+		opacity 0.15s ease,
+		color 0.15s ease,
+		background-color 0.15s ease;
+}
+
+.compose-editor .compose-signature-block:hover .compose-signature-remove,
+.compose-editor .compose-signature-remove:focus-visible {
+	opacity: 1;
+}
+
+.compose-editor .compose-signature-remove:hover {
+	color: var(--foreground);
+	background: var(--background);
+}
+
+.compose-editor .compose-signature-content {
+	font-size: 0.875rem;
+	line-height: 1.5;
+	pointer-events: none;
+}
+
+.compose-editor .compose-signature-content > *:first-child {
+	margin-top: 0;
+}
+
+.compose-editor .compose-signature-content > *:last-child {
+	margin-bottom: 0;
+}
+
 .compose-editor .reply-quote-block {
 	position: relative;
 	margin-top: 0.75rem;

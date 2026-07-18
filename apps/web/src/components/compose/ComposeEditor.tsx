@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 type ComposeEditorProps = {
 	id?: string;
 	initialHtml: string;
+	/** Resolved signature HTML (tags already substituted). `null` clears; `undefined` leaves editor alone. */
+	signatureHtml?: string | null;
 	placeholder?: string;
 	disabled?: boolean;
 	className?: string;
@@ -20,6 +22,7 @@ type ComposeEditorProps = {
 export function ComposeEditor({
 	id,
 	initialHtml,
+	signatureHtml,
 	placeholder = "Write your message…",
 	disabled = false,
 	className,
@@ -62,6 +65,18 @@ export function ComposeEditor({
 
 		editor.setEditable(!disabled);
 	}, [disabled, editor]);
+
+	useEffect(() => {
+		if (!editor || signatureHtml === undefined) {
+			return;
+		}
+
+		editor.commands.setComposeSignature(signatureHtml);
+		onChangeRef.current({
+			html: editor.getHTML(),
+			text: editor.getText({ blockSeparator: "\n\n" }),
+		});
+	}, [editor, signatureHtml]);
 
 	if (!editor) {
 		return (
