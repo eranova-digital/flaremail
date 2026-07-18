@@ -8,6 +8,7 @@ import {
 	sendRecoveryEmailSetupCode,
 	verifyAndSetRecoveryEmail,
 } from "../services/recovery-email";
+import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
 
 export async function handleSendRecoveryEmailCode(context: RouteContext) {
 	if (!context.principal.accountId) {
@@ -25,10 +26,7 @@ export async function handleSendRecoveryEmailCode(context: RouteContext) {
 		await withDb(context.env, (db) =>
 			sendRecoveryEmailSetupCode(
 				db,
-				{
-					email: context.env.EMAIL,
-					bucket: context.env.BUCKET,
-				},
+				createTransactionalEmailDeps(context.env),
 				{
 					accountId: context.principal.accountId!,
 					recoveryAddress: value.email as string,

@@ -2,7 +2,10 @@ import type { AuthAction } from "../auth/actions";
 import type { ApiKeyScope } from "../auth/api-key-scopes";
 import type { Principal } from "../auth/types";
 import { authorizeRoute } from "../auth/authorize";
-import { resolvePrincipal } from "../auth/resolve-principal";
+import {
+	resolvePrincipal as defaultResolvePrincipal,
+	type ResolvePrincipalDeps,
+} from "../auth/resolve-principal";
 import { handleRouteError } from "./handle-route-error";
 
 export type RouteContext = {
@@ -32,6 +35,14 @@ export type RouteDefinition = {
 	action?: AuthAction;
 	scopes?: readonly ApiKeyScope[] | null | RouteScopeResolver;
 	handler: RouteHandler;
+};
+
+export type CreateRouterOptions = {
+	resolvePrincipal?: (
+		request: Request,
+		env: Env,
+		deps?: ResolvePrincipalDeps,
+	) => Promise<Principal | Response>;
 };
 
 export function resolveRouteScopes(
@@ -68,7 +79,11 @@ function pathToPattern(path: string): {
 	};
 }
 
-export function createRouter(routes: RouteDefinition[]) {
+export function createRouter(
+	routes: RouteDefinition[],
+	options: CreateRouterOptions = {},
+) {
+	const resolvePrincipal = options.resolvePrincipal ?? defaultResolvePrincipal;
 	const compiled = routes.map((route) => ({
 		...route,
 		...pathToPattern(route.path),

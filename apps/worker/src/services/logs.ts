@@ -85,20 +85,7 @@ export function isLogType(value: unknown): value is LogType {
 	return typeof value === "string" && (LOG_TYPES as readonly string[]).includes(value);
 }
 
-export function parseLogContextFromRequest(request: Request): LogContext {
-	const headers = request.headers;
-	const forwarded =
-		headers.get("cf-connecting-ip") ??
-		headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-		null;
-	const url = new URL(request.url);
-	return {
-		ip: forwarded ?? undefined,
-		userAgent: headers.get("user-agent") ?? undefined,
-		method: request.method,
-		path: url.pathname,
-	};
-}
+export { parseLogContextFromRequest } from "../lib/logs/request-context";
 
 export async function purgeExpiredLogs(db: Database): Promise<number> {
 	const settings = await getInstanceSettings(db);

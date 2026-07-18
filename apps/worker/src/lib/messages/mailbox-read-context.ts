@@ -1,9 +1,7 @@
 import type { Database } from "../../db/client";
-import {
-	parseLogContextFromRequest,
-	type LogContext,
-} from "../../services/logs";
 import type { Principal } from "../auth/types";
+import type { LogContext } from "../logs/context";
+import { parseLogContextFromRequest } from "../logs/request-context";
 
 export type MailboxReadContext = {
 	db: Database;

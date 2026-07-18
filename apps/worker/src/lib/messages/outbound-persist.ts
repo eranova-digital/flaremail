@@ -25,8 +25,7 @@ import { storeMessage, rollbackNewThread } from "./message-store";
 import { prepareOutboundMessageBody } from "./prepare-email-html";
 import type { ThreadingContext } from "./outbound-threading";
 import { sendEmail } from "./send-email";
-import { resolveIdentityForSend } from "../../services/identities";
-import { emitLog } from "../../services/logs";
+import { emitLog } from "../logs/emit";
 import { extractEmailsFromHeaderValue } from "../extract-emails-from-header";
 
 async function resolveOutboundFrom(
@@ -35,7 +34,7 @@ async function resolveOutboundFrom(
 	mailboxAddress: string,
 	identityId: string | undefined,
 ): Promise<string> {
-	const { fromName } = await resolveIdentityForSend(
+	const { fromName } = await ctx.resolveIdentityForSend(
 		ctx.db,
 		ctx.principal,
 		mailboxId,

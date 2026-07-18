@@ -2,7 +2,6 @@ import { withDb, type Database } from "../db/client";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
-import { outboundContext } from "../lib/http/route-helpers";
 import type { RouteContext } from "../lib/http/router";
 import {
 	parseCreateDraftBody,
@@ -11,8 +10,7 @@ import {
 	parseReplyBody,
 	parseSendMessageBody,
 } from "../lib/messages/outbound-payload";
-import { parseLogContextFromRequest } from "../services/logs";
-import { createOutboundMail } from "../services/outbound-mail";
+import { createOutboundMail, createOutboundContextWithIdentity } from "../services/outbound-mail";
 import { toSendResponse } from "../services/outbound-mail/response";
 
 function outboundMail(
@@ -21,12 +19,9 @@ function outboundMail(
 	principal: RouteContext["principal"],
 	request: Request,
 ) {
-	return createOutboundMail({
-		...outboundContext(env),
-		db,
-		principal,
-		logContext: parseLogContextFromRequest(request),
-	});
+	return createOutboundMail(
+		createOutboundContextWithIdentity(env, db, principal, request),
+	);
 }
 
 export async function handleSendMessage({

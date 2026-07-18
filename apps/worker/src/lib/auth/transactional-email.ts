@@ -2,26 +2,30 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { accounts, domains, mailboxes } from "../../db/schema";
-import type { Principal } from "../auth/types";
-import { loadBlackholeMailboxForDomain } from "../mailbox-queries";
-import type { OutboundContext } from "../messages/outbound-context";
-import { sendAndPersistNewMessage } from "../messages/outbound-persist";
-import { sendEmail } from "../messages/send-email";
-import { buildEmailAddress } from "../normalize-email-address";
-import { SYSTEM_BLACKHOLE_LOCAL_PART } from "../system-mailboxes";
-import { getInstanceSettings } from "../../services/instance-settings";
 import {
 	inviteTemplateValues,
 	loadSystemEmailHtml,
 	mfaDisableTemplateValues,
 	passwordResetTemplateValues,
 	recoveryVerifyTemplateValues,
-} from "../../services/system-email-templates";
+} from "../email-templates/system-html";
+import { getPersistNoreplyOutboundEmails } from "../instance-settings/read";
+import type { Principal } from "../auth/types";
+import { loadBlackholeMailboxForDomain } from "../mailbox-queries";
+import type {
+	OutboundContext,
+	ResolveIdentityForSend,
+} from "../messages/outbound-context";
+import { sendAndPersistNewMessage } from "../messages/outbound-persist";
+import { sendEmail } from "../messages/send-email";
+import { buildEmailAddress } from "../normalize-email-address";
+import { SYSTEM_BLACKHOLE_LOCAL_PART } from "../system-mailboxes";
 import type { SystemEmailTemplateKey } from "../email-templates/system-catalog";
 
 export type TransactionalEmailDeps = {
 	email: SendEmail;
 	bucket: R2Bucket;
+	resolveIdentityForSend: ResolveIdentityForSend;
 };
 
 const SYSTEM_OUTBOUND_PRINCIPAL: Principal = {
@@ -76,9 +80,9 @@ export async function sendTransactionalEmail(
 		html?: string;
 	},
 ): Promise<void> {
-	const settings = await getInstanceSettings(db);
+	const persistNoreplyOutboundEmails = await getPersistNoreplyOutboundEmails(db);
 
-	if (settings.persistNoreplyOutboundEmails) {
+	if (persistNoreplyOutboundEmails) {
 		const mailbox = await loadBlackholeMailboxForDomain(db, input.domainName);
 		if (mailbox) {
 			const ctx: OutboundContext = {
@@ -86,6 +90,7 @@ export async function sendTransactionalEmail(
 				bucket: deps.bucket,
 				email: deps.email,
 				principal: SYSTEM_OUTBOUND_PRINCIPAL,
+				resolveIdentityForSend: deps.resolveIdentityForSend,
 			};
 
 			await sendAndPersistNewMessage(

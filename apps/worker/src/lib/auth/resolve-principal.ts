@@ -7,14 +7,27 @@ import { parseCookies, SESSION_COOKIE_NAME } from "./cookies";
 import { verifyOidcJwt } from "./oidc-signing";
 import { hashSecret } from "./password";
 import { loadPrincipalForAccount } from "./principal";
-import { touchSession } from "../../services/auth-session";
 import type { Principal } from "./types";
 import { problemResponse, requestInstance } from "../http/problem";
+
+export type TouchSession = (
+	db: import("../../db/client").Database,
+	sessionId: string,
+	lastSeenAt: Date,
+) => Promise<void>;
+
+export type ResolvePrincipalDeps = {
+	touchSession?: TouchSession;
+};
+
+const noopTouchSession: TouchSession = async () => {};
 
 export async function resolvePrincipal(
 	request: Request,
 	env: Env,
+	deps: ResolvePrincipalDeps = {},
 ): Promise<Principal | Response> {
+	const touchSessionFn = deps.touchSession ?? noopTouchSession;
 	const apiKeyPrincipal = await tryApiKey(request, env);
 	if (apiKeyPrincipal) {
 		if (apiKeyPrincipal instanceof Response) {
@@ -31,7 +44,7 @@ export async function resolvePrincipal(
 		return oidcPrincipal;
 	}
 
-	const sessionPrincipal = await trySession(request, env);
+	const sessionPrincipal = await trySession(request, env, touchSessionFn);
 	if (sessionPrincipal) {
 		if (sessionPrincipal instanceof Response) {
 			return sessionPrincipal;
@@ -49,8 +62,10 @@ export async function resolvePrincipal(
 export async function tryResolveSessionPrincipal(
 	request: Request,
 	env: Env,
+	deps: ResolvePrincipalDeps = {},
 ): Promise<Principal | null> {
-	const result = await trySession(request, env);
+	const touchSessionFn = deps.touchSession ?? noopTouchSession;
+	const result = await trySession(request, env, touchSessionFn);
 	if (!result || result instanceof Response) {
 		return null;
 	}
@@ -154,6 +169,7 @@ async function tryOidcBearer(
 async function trySession(
 	request: Request,
 	env: Env,
+	touchSessionFn: TouchSession,
 ): Promise<Principal | Response | null> {
 	const cookies = parseCookies(request.headers.get("Cookie"));
 	const token = cookies[SESSION_COOKIE_NAME];
@@ -181,7 +197,7 @@ async function trySession(
 				instance: requestInstance(request),
 			});
 		}
-		await touchSession(db, row.id, row.lastSeenAt);
+		await touchSessionFn(db, row.id, row.lastSeenAt);
 		const principal = await loadPrincipalForAccount(db, row.accountId, "session", {
 			sessionId: row.id,
 		});

@@ -34,6 +34,7 @@ import {
 	updateDomainLocalPartPolicy,
 } from "../services/accounts";
 import { parseLogContextFromRequest } from "../services/logs";
+import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
 
 export async function handleListAccounts(context: RouteContext) {
 	try {
@@ -135,10 +136,7 @@ export async function handleInviteAccount(context: RouteContext) {
 						: undefined,
 					allSharedMailboxes: value.allSharedMailboxes === true,
 				},
-				{
-					email: context.env.EMAIL,
-					bucket: context.env.BUCKET,
-				},
+				createTransactionalEmailDeps(context.env),
 				parseLogContextFromRequest(context.request),
 			),
 		);

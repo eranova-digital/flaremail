@@ -1,6 +1,6 @@
 import type { Database } from "../../db/client";
 import { logs } from "../../db/schema";
-import { getInstanceSettings } from "../../services/instance-settings";
+import { getLogEmitSettings } from "../instance-settings/read";
 import type { EmitLogInput } from "./types";
 
 export async function emitLog(
@@ -15,7 +15,7 @@ export async function emitLog(
 		throw new Error("importance must be an integer from 0 to 10");
 	}
 
-	const settings = await getInstanceSettings(db);
+	const settings = await getLogEmitSettings(db);
 	if (!settings.logsEnabled) {
 		return null;
 	}

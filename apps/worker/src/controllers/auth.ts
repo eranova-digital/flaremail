@@ -21,6 +21,7 @@ import {
 	signOut,
 } from "../services/auth";
 import { parseLogContextFromRequest } from "../services/logs";
+import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -241,10 +242,7 @@ export async function handleForgotPassword(context: RouteContext) {
 		const result = await withDb(context.env, (db) =>
 			requestPasswordReset(
 				db,
-				{
-					email: context.env.EMAIL,
-					bucket: context.env.BUCKET,
-				},
+				createTransactionalEmailDeps(context.env),
 				{
 					address: value.address as string,
 				},
