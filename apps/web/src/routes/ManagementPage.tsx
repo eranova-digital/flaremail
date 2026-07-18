@@ -177,6 +177,7 @@ export function ManagementPage() {
 					next.delete("type");
 					next.delete("from");
 					next.delete("to");
+					next.delete("limit");
 				} else if (!next.has("maxImportance")) {
 					next.set("maxImportance", "5");
 				}

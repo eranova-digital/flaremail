@@ -1,9 +1,16 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import {
+	ChevronLeft,
+	ChevronRight,
+	Loader2,
+	RefreshCw,
+	ScrollText,
+} from "lucide-react";
 
 import { LogSummary } from "@/components/settings/logs/LogSummary";
 import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,10 +20,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useLogs } from "@/hooks/use-logs";
 import { getErrorMessage } from "@/lib/api/errors";
-import { LOG_TYPES, type LogType } from "@/lib/logs/api";
+import { LOG_TYPES, type LogListItem, type LogType } from "@/lib/logs/api";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZES = [25, 50, 100] as const;
 
 function formatWhen(iso: string): string {
 	try {
@@ -29,14 +39,113 @@ function formatWhen(iso: string): string {
 	}
 }
 
+function importanceVariant(
+	importance: number,
+): "destructive" | "warning" | "secondary" {
+	if (importance <= 2) return "destructive";
+	if (importance <= 5) return "warning";
+	return "secondary";
+}
+
+function LogRow({ item }: { item: LogListItem }) {
+	return (
+		<li className="hover:bg-muted/40 px-4 py-3.5 transition-colors sm:px-5">
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+				<div className="min-w-0 flex-1 space-y-2">
+					<div className="flex flex-wrap items-center gap-2">
+						<Badge
+							variant={importanceVariant(item.importance)}
+							className="font-mono tabular-nums"
+							title={`Importance ${item.importance} (0 = most important)`}
+						>
+							{item.importance}
+						</Badge>
+						<Badge variant="outline" className="font-medium">
+							{item.type}
+						</Badge>
+						{item.context?.method && item.context?.path ? (
+							<span
+								className="text-muted-foreground hidden max-w-[14rem] truncate font-mono text-[11px] lg:inline"
+								title={`${item.context.method} ${item.context.path}`}
+							>
+								{item.context.method} {item.context.path}
+							</span>
+						) : null}
+					</div>
+					<LogSummary summary={item.summary} refs={item.refs} />
+				</div>
+				<div className="text-muted-foreground flex shrink-0 flex-col gap-0.5 text-xs sm:items-end sm:text-right">
+					<time dateTime={item.createdAt}>{formatWhen(item.createdAt)}</time>
+					{item.context?.ip ? (
+						<span className="font-mono tabular-nums">{item.context.ip}</span>
+					) : null}
+				</div>
+			</div>
+		</li>
+	);
+}
+
 export function LogsSection() {
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	const q = searchParams.get("q") ?? "";
+	const qParam = searchParams.get("q") ?? "";
+	const [searchDraft, setSearchDraft] = useState(qParam);
 	const maxImportance = Number(searchParams.get("maxImportance") ?? "5");
 	const typeParam = searchParams.get("type");
 	const from = searchParams.get("from") ?? "";
 	const to = searchParams.get("to") ?? "";
+	const limitRaw = Number(searchParams.get("limit") ?? "25");
+	const limit = (PAGE_SIZES as readonly number[]).includes(limitRaw)
+		? limitRaw
+		: 25;
+
+	const [cursorStack, setCursorStack] = useState<(string | undefined)[]>([
+		undefined,
+	]);
+	const [pageIndex, setPageIndex] = useState(0);
+
+	useEffect(() => {
+		setSearchDraft(qParam);
+	}, [qParam]);
+
+	useEffect(() => {
+		const handle = window.setTimeout(() => {
+			if (searchDraft === qParam) return;
+			setSearchParams(
+				(current) => {
+					const next = new URLSearchParams(current);
+					next.set("tab", "logs");
+					const trimmed = searchDraft.trim();
+					if (!trimmed) {
+						next.delete("q");
+					} else {
+						next.set("q", trimmed);
+					}
+					return next;
+				},
+				{ replace: true },
+			);
+		}, 300);
+		return () => window.clearTimeout(handle);
+	}, [searchDraft, qParam, setSearchParams]);
+
+	const filterKey = useMemo(
+		() =>
+			JSON.stringify({
+				q: qParam.trim(),
+				maxImportance,
+				type: typeParam,
+				from,
+				to,
+				limit,
+			}),
+		[qParam, maxImportance, typeParam, from, to, limit],
+	);
+
+	useEffect(() => {
+		setCursorStack([undefined]);
+		setPageIndex(0);
+	}, [filterKey]);
 
 	const types = useMemo(() => {
 		if (!typeParam || typeParam === "all") return undefined;
@@ -45,15 +154,23 @@ export function LogsSection() {
 		);
 	}, [typeParam]);
 
+	const before = cursorStack[pageIndex];
+
 	const query = useLogs({
-		q: q.trim() || undefined,
+		q: qParam.trim() || undefined,
 		types,
 		maxImportance: Number.isInteger(maxImportance) ? maxImportance : 5,
 		from: from ? new Date(from).toISOString() : undefined,
 		to: to ? new Date(to).toISOString() : undefined,
+		limit,
+		before,
 	});
 
-	const items = query.data?.pages.flatMap((page) => page.items) ?? [];
+	const items = query.data?.items ?? [];
+	const nextBefore = query.data?.nextBefore ?? null;
+	const hasNext = Boolean(nextBefore);
+	const hasPrev = pageIndex > 0;
+	const pageNumber = pageIndex + 1;
 
 	const setFilter = (key: string, value: string | null) => {
 		setSearchParams(
@@ -71,101 +188,161 @@ export function LogsSection() {
 		);
 	};
 
+	const goNext = () => {
+		if (!nextBefore) return;
+		setCursorStack((stack) => {
+			const trimmed = stack.slice(0, pageIndex + 1);
+			return [...trimmed, nextBefore];
+		});
+		setPageIndex((index) => index + 1);
+	};
+
+	const goPrev = () => {
+		if (pageIndex <= 0) return;
+		setPageIndex((index) => index - 1);
+	};
+
 	return (
-		<section className="space-y-6">
-			<div>
-				<h2 className="text-lg font-medium">Logs</h2>
-				<p className="text-muted-foreground text-sm">
-					Instance activity for the intendant and superadmins. Default filter
-					shows importance 0–5.
-				</p>
+		<section className="space-y-5">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div className="min-w-0 space-y-1">
+					<h2 className="text-lg font-medium">Logs</h2>
+					<p className="text-muted-foreground text-sm">
+						Instance activity for the intendant and superadmins. Lower
+						importance is more critical.
+					</p>
+				</div>
+				<div className="flex items-center gap-2">
+					{query.data ? (
+						<Badge variant="secondary">
+							{items.length}
+							{hasNext ? "+" : ""} on this page
+						</Badge>
+					) : null}
+					<Button
+						variant="outline"
+						size="sm"
+						className="gap-2"
+						aria-label="Refresh logs"
+						disabled={query.isFetching}
+						onClick={() => void query.refetch()}
+					>
+						<RefreshCw
+							className={cn("size-3.5", query.isFetching && "animate-spin")}
+						/>
+						Refresh
+					</Button>
+				</div>
 			</div>
 
-			<div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
-				<div className="min-w-[12rem] flex-1 space-y-1">
+			<div className="bg-card space-y-3 rounded-xl border p-4 shadow-sm">
+				<div className="space-y-1">
 					<label className="text-muted-foreground text-xs" htmlFor="logs-q">
 						Search
 					</label>
 					<Input
 						id="logs-q"
-						value={q}
+						value={searchDraft}
 						placeholder="Search summary, refs, context…"
-						onChange={(event) => setFilter("q", event.target.value)}
+						onChange={(event) => setSearchDraft(event.target.value)}
 					/>
 				</div>
-				<div className="w-full space-y-1 sm:w-40">
-					<label className="text-muted-foreground text-xs" htmlFor="logs-importance">
-						Max importance
-					</label>
-					<Select
-						value={String(Number.isInteger(maxImportance) ? maxImportance : 5)}
-						onValueChange={(value) => setFilter("maxImportance", value)}
-					>
-						<SelectTrigger id="logs-importance">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{Array.from({ length: 11 }, (_, i) => (
-								<SelectItem key={i} value={String(i)}>
-									≤ {i}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<div className="w-full space-y-1 sm:w-44">
-					<label className="text-muted-foreground text-xs" htmlFor="logs-type">
-						Type
-					</label>
-					<Select
-						value={typeParam || "all"}
-						onValueChange={(value) =>
-							setFilter("type", value === "all" ? null : value)
-						}
-					>
-						<SelectTrigger id="logs-type">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All types</SelectItem>
-							{LOG_TYPES.map((type) => (
-								<SelectItem key={type} value={type}>
-									{type}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<div className="w-full space-y-1 sm:w-52">
-					<label className="text-muted-foreground text-xs" htmlFor="logs-from">
-						From
-					</label>
-					<Input
-						id="logs-from"
-						type="datetime-local"
-						value={from}
-						onChange={(event) => setFilter("from", event.target.value || null)}
-					/>
-				</div>
-				<div className="w-full space-y-1 sm:w-52">
-					<label className="text-muted-foreground text-xs" htmlFor="logs-to">
-						To
-					</label>
-					<Input
-						id="logs-to"
-						type="datetime-local"
-						value={to}
-						onChange={(event) => setFilter("to", event.target.value || null)}
-					/>
+				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+					<div className="space-y-1">
+						<label
+							className="text-muted-foreground text-xs"
+							htmlFor="logs-importance"
+						>
+							Max importance
+						</label>
+						<Select
+							value={String(Number.isInteger(maxImportance) ? maxImportance : 5)}
+							onValueChange={(value) => setFilter("maxImportance", value)}
+						>
+							<SelectTrigger id="logs-importance">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{Array.from({ length: 11 }, (_, i) => (
+									<SelectItem key={i} value={String(i)}>
+										≤ {i}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="space-y-1">
+						<label className="text-muted-foreground text-xs" htmlFor="logs-type">
+							Type
+						</label>
+						<Select
+							value={typeParam || "all"}
+							onValueChange={(value) =>
+								setFilter("type", value === "all" ? null : value)
+							}
+						>
+							<SelectTrigger id="logs-type">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All types</SelectItem>
+								{LOG_TYPES.map((type) => (
+									<SelectItem key={type} value={type}>
+										{type}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="space-y-1">
+						<label className="text-muted-foreground text-xs" htmlFor="logs-from">
+							From
+						</label>
+						<Input
+							id="logs-from"
+							type="datetime-local"
+							value={from}
+							onChange={(event) =>
+								setFilter("from", event.target.value || null)
+							}
+						/>
+					</div>
+					<div className="space-y-1">
+						<label className="text-muted-foreground text-xs" htmlFor="logs-to">
+							To
+						</label>
+						<Input
+							id="logs-to"
+							type="datetime-local"
+							value={to}
+							onChange={(event) => setFilter("to", event.target.value || null)}
+						/>
+					</div>
+					<div className="space-y-1">
+						<label
+							className="text-muted-foreground text-xs"
+							htmlFor="logs-limit"
+						>
+							Page size
+						</label>
+						<Select
+							value={String(limit)}
+							onValueChange={(value) => setFilter("limit", value)}
+						>
+							<SelectTrigger id="logs-limit">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{PAGE_SIZES.map((size) => (
+									<SelectItem key={size} value={String(size)}>
+										{size} per page
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				</div>
 			</div>
-
-			{query.isLoading ? (
-				<div className="text-muted-foreground flex items-center gap-2 text-sm">
-					<Loader2 className="size-4 animate-spin" aria-hidden />
-					Loading logs…
-				</div>
-			) : null}
 
 			{query.isError ? (
 				<Alert tone="destructive">
@@ -173,52 +350,79 @@ export function LogsSection() {
 				</Alert>
 			) : null}
 
-			{!query.isLoading && !query.isError && items.length === 0 ? (
-				<p className="text-muted-foreground text-sm">No logs match these filters.</p>
+			{query.isLoading ? (
+				<div className="space-y-2 rounded-xl border p-4">
+					{Array.from({ length: 5 }, (_, i) => (
+						<div key={i} className="space-y-2 py-2">
+							<div className="flex gap-2">
+								<Skeleton className="h-5 w-8" />
+								<Skeleton className="h-5 w-16" />
+								<Skeleton className="ml-auto h-4 w-36" />
+							</div>
+							<Skeleton className="h-4 w-3/4 max-w-md" />
+						</div>
+					))}
+				</div>
 			) : null}
 
-			<ul className="divide-border divide-y rounded-xl border">
-				{items.map((item) => (
-					<li key={item.id} className="space-y-2 px-4 py-3">
-						<div className="flex flex-wrap items-center gap-2 text-xs">
-							<span
-								className={cn(
-									"rounded-md px-1.5 py-0.5 font-mono font-medium",
-									item.importance <= 2
-										? "bg-destructive/15 text-destructive"
-										: item.importance <= 5
-											? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
-											: "bg-muted text-muted-foreground",
-								)}
-							>
-								{item.importance}
-							</span>
-							<span className="bg-muted rounded-md px-1.5 py-0.5 font-medium">
-								{item.type}
-							</span>
-							<span className="text-muted-foreground">
-								{formatWhen(item.createdAt)}
-							</span>
-							{item.context?.ip ? (
-								<span className="text-muted-foreground font-mono">
-									{item.context.ip}
-								</span>
-							) : null}
-						</div>
-						<LogSummary summary={item.summary} refs={item.refs} />
-					</li>
-				))}
-			</ul>
+			{!query.isLoading && !query.isError && items.length === 0 ? (
+				<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-16 text-center">
+					<ScrollText className="size-8 opacity-40" aria-hidden />
+					<p className="text-sm font-medium text-foreground">No logs found</p>
+					<p className="max-w-sm text-xs">
+						Try widening max importance, clearing the date range, or choosing
+						another type.
+					</p>
+				</div>
+			) : null}
 
-			{query.hasNextPage ? (
-				<div className="flex justify-center">
-					<Button
-						variant="outline"
-						disabled={query.isFetchingNextPage}
-						onClick={() => void query.fetchNextPage()}
-					>
-						{query.isFetchingNextPage ? "Loading…" : "Load more"}
-					</Button>
+			{items.length > 0 ? (
+				<div
+					className={cn(
+						"overflow-hidden rounded-xl border bg-card shadow-sm",
+						query.isFetching && !query.isLoading && "opacity-80",
+					)}
+				>
+					<ul className="divide-border divide-y">
+						{items.map((item) => (
+							<LogRow key={item.id} item={item} />
+						))}
+					</ul>
+
+					<div className="bg-muted/30 flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-muted-foreground text-xs">
+							Page {pageNumber}
+							{hasNext ? " · more available" : " · end of results"}
+						</p>
+						<div className="flex items-center gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!hasPrev || query.isFetching}
+								onClick={goPrev}
+								className="gap-1"
+							>
+								<ChevronLeft className="size-4" />
+								Previous
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!hasNext || query.isFetching}
+								onClick={goNext}
+								className="gap-1"
+							>
+								{query.isFetching && !query.isLoading ? (
+									<Loader2 className="size-4 animate-spin" />
+								) : (
+									<>
+										Next
+										<ChevronRight className="size-4" />
+									</>
+								)}
+							</Button>
+						</div>
+					</div>
 				</div>
 			) : null}
 		</section>
