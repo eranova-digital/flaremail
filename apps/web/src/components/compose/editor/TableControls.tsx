@@ -45,6 +45,7 @@ export function TableInsertButton({ editor, disabled = false }: TableControlProp
 					className="size-8"
 					disabled={disabled}
 					aria-label="Insert table"
+					tabIndex={-1}
 				>
 					<TableProperties className="size-4" />
 				</Button>
@@ -152,6 +153,7 @@ export function TableEditBar({
 				size="sm"
 				className="text-destructive h-8 px-2 text-xs"
 				disabled={disabled}
+				tabIndex={-1}
 				onClick={() => editor.chain().focus().deleteTable().run()}
 			>
 				Delete table

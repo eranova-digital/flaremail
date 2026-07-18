@@ -1,5 +1,5 @@
 const STRUCTURAL_SELECTOR =
-	"table, img, hr, style, button, video, audio, iframe, svg, picture, figure, ul, ol";
+	"table, img, style, button, video, audio, iframe, svg, picture, figure, ul, ol";
 
 const LAYOUT_STYLE_PATTERN =
 	/(?:^|[;{\s])(?:background(?:-color|-image)?|width|max-width|min-width|height|max-height|min-height)\s*:/;
@@ -8,12 +8,18 @@ const LAYOUT_DISPLAY_PATTERN = /display\s*:\s*(?:flex|grid|table|inline-block)/;
 
 const LAYOUT_POSITION_PATTERN = /position\s*:\s*(?:absolute|fixed|sticky)/;
 
+const SIGNATURE_SELECTOR =
+	"div[data-flaremail-signature], div[data-compose-signature]";
+
 /**
  * Determines whether an HTML email body has real visual structure (tables,
  * images, layout styling) as opposed to plain text that a mail client merely
  * wrapped in cosmetic tags (e.g. Gmail's `<div dir="ltr">`, `<blockquote>`,
- * `<br>`, mailto `<a>`). Structural messages should render full-width; the rest
- * are treated like plain text.
+ * `<br>`, mailto `<a>`, signature `<hr>`). Structural messages should render
+ * full-width; the rest are treated like plain text.
+ *
+ * Signature blocks are ignored — dividers or lists there must not force
+ * full-width thread layout.
  */
 export function isStructuralHtml(html?: string | null): boolean {
 	if (!html) {
@@ -21,6 +27,10 @@ export function isStructuralHtml(html?: string | null): boolean {
 	}
 
 	const doc = new DOMParser().parseFromString(html, "text/html");
+
+	for (const signature of doc.querySelectorAll(SIGNATURE_SELECTOR)) {
+		signature.remove();
+	}
 
 	if (doc.querySelector(STRUCTURAL_SELECTOR)) {
 		return true;
