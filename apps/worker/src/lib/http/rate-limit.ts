@@ -79,6 +79,14 @@ export async function peekAuthRateLimitIdentifier(
 		return peekBasicAuthClientId(request);
 	}
 
+	const url = new URL(request.url);
+	for (const field of keyFields) {
+		const queryValue = url.searchParams.get(field);
+		if (queryValue?.trim()) {
+			return normalizeRateLimitIdentifier(queryValue);
+		}
+	}
+
 	const clone = request.clone();
 	const params = await readBodyParams(clone);
 	for (const field of keyFields) {

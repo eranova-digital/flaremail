@@ -49,7 +49,7 @@ export async function handleBeginPasskeyRegistration(context: RouteContext) {
 			beginPasskeyRegistration(db, {
 				accountId: context.principal.accountId!,
 				encryptionKey: sessionSecretForEnv(context.env),
-				config: resolveWebAuthnConfig(context.request),
+				config: resolveWebAuthnConfig(context.request, context.env),
 			}),
 		);
 		return jsonResponse(result);
@@ -82,7 +82,7 @@ export async function handleCompletePasskeyRegistration(context: RouteContext) {
 				response: value.response,
 				name: typeof value.name === "string" ? value.name : undefined,
 				encryptionKey: sessionSecretForEnv(context.env),
-				config: resolveWebAuthnConfig(context.request),
+				config: resolveWebAuthnConfig(context.request, context.env),
 			}),
 		);
 		return jsonResponse({ items });
@@ -105,7 +105,7 @@ export async function handleBeginPasskeySignIn(context: RouteContext) {
 			beginPasskeySignIn(db, {
 				loginIdentifier,
 				encryptionKey: sessionSecretForEnv(context.env),
-				config: resolveWebAuthnConfig(context.request),
+				config: resolveWebAuthnConfig(context.request, context.env),
 			}),
 		);
 		return jsonResponse(result);
@@ -144,7 +144,7 @@ export async function handleCompletePasskeySignIn(context: RouteContext) {
 					challengeToken: value.challengeToken,
 					response: value.response,
 					encryptionKey: sessionSecretForEnv(context.env),
-					config: resolveWebAuthnConfig(context.request),
+					config: resolveWebAuthnConfig(context.request, context.env),
 				},
 				sessionMetadata,
 			),

@@ -176,12 +176,14 @@ export const authRoutes: RouteDefinition[] = [
 		method: "GET",
 		path: `${prefix}/auth/invite-preview`,
 		auth: false,
+		authRateLimit: { keyFields: ["code"] },
 		handler: handlePreviewInvite,
 	},
 	{
 		method: "GET",
 		path: `${prefix}/auth/reset-preview`,
 		auth: false,
+		authRateLimit: { keyFields: ["code"] },
 		handler: handlePreviewPasswordReset,
 	},
 	{
