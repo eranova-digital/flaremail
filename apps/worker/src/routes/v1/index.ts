@@ -19,6 +19,14 @@ import {
 	handleUpdateMailbox,
 } from "../../controllers/mailboxes";
 import {
+	handleCreateMailboxIdentity,
+	handleDeleteMailboxIdentity,
+	handleListAccountIdentities,
+	handleListAvailableIdentities,
+	handleListMailboxIdentities,
+	handleUpdateMailboxIdentity,
+} from "../../controllers/identities";
+import {
 	handleCreateDraft,
 	handleDeleteDraft,
 	handleForwardToMessage,
@@ -130,7 +138,7 @@ export const v1Routes: RouteDefinition[] = [
 	{
 		method: "PATCH",
 		path: `${prefix}/mailboxes/:id`,
-		action: "domain_admin",
+		action: "authenticated",
 		scopes: ["mailboxes:update"],
 		handler: handleUpdateMailbox,
 	},
@@ -140,6 +148,49 @@ export const v1Routes: RouteDefinition[] = [
 		action: "domain_admin",
 		scopes: ["mailboxes:delete"],
 		handler: handleDeleteMailbox,
+	},
+
+	{
+		method: "GET",
+		path: `${prefix}/identities`,
+		action: "authenticated",
+		scopes: ["identities:list"],
+		handler: handleListAccountIdentities,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/mailboxes/:mailboxId/identities`,
+		action: "mail_read",
+		scopes: ["identities:list"],
+		handler: handleListMailboxIdentities,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/mailboxes/:mailboxId/identities/available`,
+		action: "mail_read",
+		scopes: ["identities:list"],
+		handler: handleListAvailableIdentities,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/mailboxes/:mailboxId/identities`,
+		action: "authenticated",
+		scopes: ["identities:create"],
+		handler: handleCreateMailboxIdentity,
+	},
+	{
+		method: "PATCH",
+		path: `${prefix}/mailboxes/:mailboxId/identities/:id`,
+		action: "authenticated",
+		scopes: ["identities:update"],
+		handler: handleUpdateMailboxIdentity,
+	},
+	{
+		method: "DELETE",
+		path: `${prefix}/mailboxes/:mailboxId/identities/:id`,
+		action: "authenticated",
+		scopes: ["identities:delete"],
+		handler: handleDeleteMailboxIdentity,
 	},
 
 	{

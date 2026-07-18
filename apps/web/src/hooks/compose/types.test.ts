@@ -15,6 +15,7 @@ const emptyFields = {
 	subject: "",
 	body: "",
 	bodyHtml: "<p></p>",
+	identityId: null,
 };
 
 describe("hasComposeSubject", () => {

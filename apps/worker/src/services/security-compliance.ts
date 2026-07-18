@@ -1,4 +1,5 @@
 import type { AccountRole } from "../lib/auth/types";
+import type { IdentityNamePattern } from "../lib/identities/name-pattern";
 
 export type OrganizationTabAccess =
 	| "intendant_only"
@@ -16,6 +17,11 @@ export type InstanceSettings = {
 	requireMfaScope: RequireMfaScope;
 	requireRecoveryEmail: boolean;
 	persistNoreplyOutboundEmails: boolean;
+	identitySelfServe: boolean;
+	customNameAllowance: boolean;
+	defaultIdentityNamePattern: IdentityNamePattern;
+	defaultIdentityCustomName: string | null;
+	defaultIdentitySignatureHtml: string | null;
 };
 
 export type SecurityRequirements = {
@@ -33,6 +39,11 @@ export const DEFAULT_INSTANCE_SETTINGS: InstanceSettings = {
 	requireMfaScope: "none",
 	requireRecoveryEmail: false,
 	persistNoreplyOutboundEmails: false,
+	identitySelfServe: true,
+	customNameAllowance: false,
+	defaultIdentityNamePattern: "first_name_last_name",
+	defaultIdentityCustomName: null,
+	defaultIdentitySignatureHtml: null,
 };
 
 const ROLE_RANK: Record<AccountRole, number> = {

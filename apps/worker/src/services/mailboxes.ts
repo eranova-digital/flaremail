@@ -149,16 +149,41 @@ export async function createMailbox(
 export async function updateMailbox(
 	db: Database,
 	id: string,
-	patch: { isActive?: boolean },
+	patch: {
+		isActive?: boolean;
+		personalIdentityAllowance?: boolean;
+		identityExport?: boolean;
+	},
 ) {
 	const existing = await getMailboxRow(db, id);
-	assertMailboxMutable(existing);
+
+	if (patch.isActive !== undefined) {
+		assertMailboxMutable(existing);
+	}
+
+	if (
+		patch.personalIdentityAllowance !== undefined ||
+		patch.identityExport !== undefined
+	) {
+		if (existing.type !== "shared") {
+			throw new Error(
+				"Identity policy settings are only valid for shared mailboxes",
+			);
+		}
+	}
+
 	const now = new Date();
 
 	const [row] = await db
 		.update(mailboxes)
 		.set({
 			...(patch.isActive !== undefined ? { isActive: patch.isActive } : {}),
+			...(patch.personalIdentityAllowance !== undefined
+				? { personalIdentityAllowance: patch.personalIdentityAllowance }
+				: {}),
+			...(patch.identityExport !== undefined
+				? { identityExport: patch.identityExport }
+				: {}),
 			updatedAt: now,
 		})
 		.where(eq(mailboxes.id, id))

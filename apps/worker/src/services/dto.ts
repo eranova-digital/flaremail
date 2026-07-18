@@ -170,6 +170,8 @@ export function toMailboxDto(mailbox: {
 	aliasTargetId: string | null;
 	aliasTargetAddress: string | null;
 	isActive: boolean;
+	personalIdentityAllowance?: boolean;
+	identityExport?: boolean;
 }) {
 	return {
 		id: mailbox.id,
@@ -180,6 +182,8 @@ export function toMailboxDto(mailbox: {
 		aliasTargetId: mailbox.aliasTargetId,
 		aliasTargetAddress: mailbox.aliasTargetAddress,
 		isActive: mailbox.isActive,
+		personalIdentityAllowance: mailbox.personalIdentityAllowance ?? false,
+		identityExport: mailbox.identityExport ?? false,
 		isSystemManaged: isSystemManagedMailbox(mailbox),
 	};
 }

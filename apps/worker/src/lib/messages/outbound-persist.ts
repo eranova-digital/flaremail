@@ -1,4 +1,5 @@
 import { assertCanSendFrom } from "../authorize-mailbox";
+import { formatEmailAddress } from "../addresses";
 import { findMessageRowByRfcMessageId } from "../find-message";
 import {
 	onOutboundSent,
@@ -24,6 +25,25 @@ import { storeMessage, rollbackNewThread } from "./message-store";
 import { prepareOutboundMessageBody } from "./prepare-email-html";
 import type { ThreadingContext } from "./outbound-threading";
 import { sendEmail } from "./send-email";
+import { resolveIdentityForSend } from "../../services/identities";
+
+async function resolveOutboundFrom(
+	ctx: OutboundContext,
+	mailboxId: string,
+	mailboxAddress: string,
+	identityId: string | undefined,
+): Promise<string> {
+	const { fromName } = await resolveIdentityForSend(
+		ctx.db,
+		ctx.principal,
+		mailboxId,
+		identityId,
+	);
+	return formatEmailAddress({
+		email: mailboxAddress,
+		name: fromName || undefined,
+	});
+}
 
 export async function sendAndPersistNewMessage(
 	ctx: OutboundContext,
@@ -63,8 +83,15 @@ export async function sendAndPersistNewMessage(
 		threadTouch,
 	);
 
+	const fromHeader = await resolveOutboundFrom(
+		ctx,
+		mailbox.id,
+		mailbox.address,
+		preparedPayload.identityId,
+	);
+
 	const sendPayload = buildEmailSendPayload({
-		from: mailbox.address,
+		from: fromHeader,
 		payload: preparedPayload,
 		inReplyTo: threading.inReplyTo,
 		references: threading.references,
@@ -95,7 +122,7 @@ export async function sendAndPersistNewMessage(
 				sendStatus: "sent",
 				inReplyTo: threading.inReplyTo,
 				references: threading.references,
-				from: mailbox.address,
+				from: fromHeader,
 				to: recipients.to,
 				envelopeTo: recipients.envelopeTo,
 				actualMailboxId: mailbox.id,
@@ -115,7 +142,7 @@ export async function sendAndPersistNewMessage(
 				sentByAccountId: ctx.principal.accountId,
 			},
 			mimeContent: buildOutboundMimeContent({
-				from: mailbox.address,
+				from: fromHeader,
 				payload: preparedPayload,
 				rfcMessageId,
 				inReplyTo: threading.inReplyTo,
@@ -177,6 +204,12 @@ export async function persistDraftMessage(
 
 	await assertCanSendFrom(ctx.db, mailbox.id);
 
+	const fromHeader = await resolveOutboundFrom(
+		ctx,
+		mailbox.id,
+		mailbox.address,
+		payload.identityId,
+	);
 	const recipients = formatRecipients(payload);
 	const rfcMessageId = generateMessageId(mailbox.domain);
 	const id = crypto.randomUUID();
@@ -219,7 +252,7 @@ export async function persistDraftMessage(
 				sendStatus: "draft",
 				inReplyTo: threading.inReplyTo,
 				references: threading.references,
-				from: mailbox.address,
+				from: fromHeader,
 				to: recipients.to,
 				envelopeTo: recipients.envelopeTo,
 				actualMailboxId: mailbox.id,
@@ -239,7 +272,7 @@ export async function persistDraftMessage(
 				sentByAccountId: null,
 			},
 			mimeContent: buildOutboundMimeContent({
-				from: mailbox.address,
+				from: fromHeader,
 				payload,
 				rfcMessageId,
 				inReplyTo: threading.inReplyTo,

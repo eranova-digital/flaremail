@@ -111,6 +111,7 @@ export function ToolbarButton({
 			disabled={disabled}
 			aria-label={label}
 			aria-pressed={isActive}
+			tabIndex={-1}
 		>
 			{children}
 		</Button>
@@ -177,6 +178,7 @@ function ColorSwatches({
 					className="size-7 rounded-md border shadow-sm"
 					style={{ backgroundColor: color }}
 					aria-label={`Color ${color}`}
+					tabIndex={-1}
 					onClick={() => onPick(color)}
 				/>
 			))}
@@ -184,6 +186,7 @@ function ColorSwatches({
 				<button
 					type="button"
 					className="text-muted-foreground col-span-4 rounded-md border px-2 py-1 text-xs"
+					tabIndex={-1}
 					onClick={onClear}
 				>
 					{clearLabel ?? "Clear"}
@@ -249,6 +252,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 						)}
 						disabled={disabled}
 						aria-label="Highlight"
+						tabIndex={-1}
 					>
 						<Highlighter className="size-4" />
 					</Button>
@@ -321,6 +325,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 						className="size-8"
 						disabled={disabled}
 						aria-label="Text color"
+						tabIndex={-1}
 					>
 						<Palette className="size-4" style={{ color: currentColor || undefined }} />
 					</Button>
@@ -346,6 +351,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 						className="h-8 px-2"
 						disabled={disabled}
 						aria-label="Background color"
+						tabIndex={-1}
 					>
 						<span
 							className="size-4 rounded-sm border"
@@ -379,7 +385,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 				}}
 				disabled={disabled}
 			>
-				<SelectTrigger className="h-8 w-[5.5rem] px-2 text-xs">
+				<SelectTrigger className="h-8 w-[5.5rem] px-2 text-xs" tabIndex={-1}>
 					<SelectValue placeholder="Size" />
 				</SelectTrigger>
 				<SelectContent>
@@ -501,6 +507,7 @@ export function BlockControls({ editor, disabled = false }: ControlProps) {
 						className="size-8"
 						disabled={disabled}
 						aria-label="Insert emoji"
+						tabIndex={-1}
 					>
 						<Smile className="size-4" />
 					</Button>
@@ -513,6 +520,7 @@ export function BlockControls({ editor, disabled = false }: ControlProps) {
 								type="button"
 								className="hover:bg-accent rounded-md p-1 text-lg leading-none"
 								aria-label={item.name}
+								tabIndex={-1}
 								onClick={() => {
 									editor.chain().focus().setEmoji(item.name).run();
 									setEmojiOpen(false);

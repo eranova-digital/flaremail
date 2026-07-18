@@ -12,6 +12,8 @@ export type OutboundMessageBody = {
 	text?: string;
 	html?: string;
 	attachments?: OutboundAttachmentInput[];
+	/** Identity to use for From name (signature is already in the body). */
+	identityId?: string;
 };
 
 export type MailboxScopedBody = {
@@ -36,6 +38,7 @@ export type ReplyBody = MailboxScopedBody & {
 	html?: string;
 	attachments?: OutboundAttachmentInput[];
 	replyAll?: boolean;
+	identityId?: string;
 };
 
 export type ForwardBody = MailboxScopedBody & {
@@ -48,6 +51,7 @@ export type ForwardBody = MailboxScopedBody & {
 	attachments?: OutboundAttachmentInput[];
 	includeAttachments?: boolean;
 	includeQuotedBody?: boolean;
+	identityId?: string;
 };
 
 function requireMailboxId(value: Record<string, unknown>): string {
@@ -152,6 +156,10 @@ export function parseOutboundMessageBody(body: unknown): OutboundMessageBody {
 		text: typeof value.text === "string" ? value.text : undefined,
 		html: typeof value.html === "string" ? value.html : undefined,
 		attachments: parseOutboundAttachments(value.attachments),
+		identityId:
+			typeof value.identityId === "string" && value.identityId.trim()
+				? value.identityId.trim()
+				: undefined,
 	};
 }
 
@@ -213,6 +221,10 @@ export function parseCreateDraftBody(body: unknown): CreateDraftBody {
 				? value.inReplyToMessageId
 				: undefined,
 		replyAll: value.replyAll === true,
+		identityId:
+			typeof value.identityId === "string" && value.identityId.trim()
+				? value.identityId.trim()
+				: undefined,
 	};
 }
 
@@ -238,6 +250,10 @@ export function parseReplyBody(body: unknown): ReplyBody {
 		html: typeof value.html === "string" ? value.html : undefined,
 		attachments: parseOutboundAttachments(value.attachments),
 		replyAll: value.replyAll === true,
+		identityId:
+			typeof value.identityId === "string" && value.identityId.trim()
+				? value.identityId.trim()
+				: undefined,
 	};
 }
 
@@ -267,6 +283,10 @@ export function parseForwardBody(body: unknown): ForwardBody {
 		attachments: parseOutboundAttachments(value.attachments),
 		includeAttachments: value.includeAttachments !== false,
 		includeQuotedBody: value.includeQuotedBody !== false,
+		identityId:
+			typeof value.identityId === "string" && value.identityId.trim()
+				? value.identityId.trim()
+				: undefined,
 	};
 }
 

@@ -4,6 +4,7 @@ import {
 	getPlainTextSource,
 	htmlToPlainText,
 	parseReplyBody,
+	splitQuotedHtml,
 } from "./parse-reply-body";
 
 describe("parseReplyBody", () => {
@@ -49,5 +50,40 @@ describe("htmlToPlainText", () => {
 		expect(htmlToPlainText("<div>Line one<br>Line two</div>")).toBe(
 			"Line oneLine two",
 		);
+	});
+});
+
+describe("splitQuotedHtml", () => {
+	it("keeps signature html in the visible part of a Flaremail reply", () => {
+		const html = [
+			"<p>Thanks for the update.</p>",
+			'<div data-flaremail-signature="1"><hr><p><strong>Sales</strong></p></div>',
+			'<blockquote type="cite" class="quote gmail_quote"><p>On Mon, someone wrote:</p><p>Hello</p></blockquote>',
+		].join("");
+
+		const result = splitQuotedHtml(html);
+		expect(result.visibleHtml).toContain("Thanks for the update");
+		expect(result.visibleHtml).toContain("data-flaremail-signature");
+		expect(result.visibleHtml).toContain("<hr>");
+		expect(result.visibleHtml).toContain("<strong>Sales</strong>");
+		expect(result.visibleHtml).not.toContain("blockquote");
+		expect(result.quotedHtml).toContain("Hello");
+	});
+
+	it("splits Gmail-style quote wrappers", () => {
+		const html =
+			'<div>Got it</div><div class="gmail_quote"><div class="gmail_attr">On Mon wrote:</div><blockquote>Prior</blockquote></div>';
+		const result = splitQuotedHtml(html);
+		expect(result.visibleHtml).toContain("Got it");
+		expect(result.visibleHtml).not.toContain("gmail_quote");
+		expect(result.quotedHtml).toContain("Prior");
+	});
+
+	it("returns the full html when there is no quote marker", () => {
+		const html = "<p>Just a note</p><hr><p>Pat</p>";
+		expect(splitQuotedHtml(html)).toEqual({
+			visibleHtml: html,
+			quotedHtml: null,
+		});
 	});
 });

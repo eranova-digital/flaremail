@@ -16,6 +16,7 @@ function createController(
 			subject: "Hi",
 			body: "Hello",
 			bodyHtml: "<p>Hello</p>",
+			identityId: null,
 		}),
 		getAttachments: () => [],
 		getAttachmentsDirty: () => false,

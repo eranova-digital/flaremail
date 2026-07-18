@@ -3,7 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { EmailHtmlBody } from "@/components/message/EmailHtmlBody";
 import { MessageAttachments } from "@/components/message/MessageAttachments";
 import { hydrateInlineImagesForDisplay } from "@/lib/email-html";
-import { getPlainTextSource, parseReplyBody } from "@/lib/parse-reply-body";
+import {
+	getPlainTextSource,
+	parseReplyBody,
+	splitQuotedHtml,
+} from "@/lib/parse-reply-body";
 import { cn } from "@/lib/utils";
 
 type MessageBodyProps = {
@@ -49,6 +53,11 @@ export function MessageBody({
 		};
 	}, [attachments, html]);
 
+	const htmlQuote = useMemo(() => {
+		const source = displayHtml || html;
+		return source?.trim() ? splitQuotedHtml(source) : null;
+	}, [displayHtml, html]);
+
 	const plainSource = useMemo(
 		() => getPlainTextSource(text, html, preview),
 		[text, html, preview],
@@ -59,8 +68,15 @@ export function MessageBody({
 		[plainSource],
 	);
 
-	const hasQuotedReply = parsedReply?.hasQuotedReply ?? false;
+	const hasHtml = Boolean(html?.trim());
+	const hasQuotedReply = hasHtml
+		? Boolean(htmlQuote?.quotedHtml)
+		: (parsedReply?.hasQuotedReply ?? false);
 	const quotedText = parsedReply?.quotedText.trim() ?? "";
+	const quotedHtml = htmlQuote?.quotedHtml ?? null;
+	const visibleHtml =
+		htmlQuote?.visibleHtml ??
+		(displayHtml.trim() ? displayHtml : html?.trim() ? html : "");
 
 	if (!text && !html && !preview) {
 		return (
@@ -70,23 +86,24 @@ export function MessageBody({
 		);
 	}
 
-	const bodyContent =
-		hasQuotedReply && parsedReply ? (
-			<pre className="text-sm whitespace-pre-wrap">
-				{parsedReply.visibleText.trim() || "(empty message)"}
-			</pre>
-		) : html ? (
-			<EmailHtmlBody html={displayHtml || html} />
-		) : (
-			<pre className="text-sm whitespace-pre-wrap">
-				{text || preview || "(empty message)"}
-			</pre>
-		);
+	const bodyContent = hasHtml ? (
+		<EmailHtmlBody html={visibleHtml} />
+	) : hasQuotedReply && parsedReply ? (
+		<pre className="text-sm whitespace-pre-wrap">
+			{parsedReply.visibleText.trim() || "(empty message)"}
+		</pre>
+	) : (
+		<pre className="text-sm whitespace-pre-wrap">
+			{text || preview || "(empty message)"}
+		</pre>
+	);
+
+	const showQuoteToggle = hasQuotedReply && (hasHtml ? Boolean(quotedHtml) : Boolean(quotedText));
 
 	return (
 		<>
 			{bodyContent}
-			{hasQuotedReply && quotedText ? (
+			{showQuoteToggle ? (
 				<div className="mt-1">
 					<button
 						type="button"
@@ -101,9 +118,15 @@ export function MessageBody({
 						…
 					</button>
 					{showQuote ? (
-						<pre className="text-muted-foreground mt-2 border-l-2 pl-3 text-sm whitespace-pre-wrap">
-							{quotedText}
-						</pre>
+						hasHtml && quotedHtml ? (
+							<div className="text-muted-foreground mt-2 border-l-2 pl-3">
+								<EmailHtmlBody html={quotedHtml} />
+							</div>
+						) : (
+							<pre className="text-muted-foreground mt-2 border-l-2 pl-3 text-sm whitespace-pre-wrap">
+								{quotedText}
+							</pre>
+						)
 					) : null}
 				</div>
 			) : null}

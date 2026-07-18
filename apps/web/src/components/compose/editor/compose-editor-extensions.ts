@@ -13,6 +13,7 @@ import StarterKit from "@tiptap/starter-kit";
 
 import { ComposeImage } from "@/components/compose/editor/compose-image";
 import { ComposeReplyQuote } from "@/components/compose/editor/compose-reply-quote";
+import { ComposeSignature } from "@/components/compose/editor/compose-signature";
 
 export function getComposeEditorExtensions(placeholder: string) {
 	return [
@@ -40,6 +41,7 @@ export function getComposeEditorExtensions(placeholder: string) {
 			inline: false,
 			allowBase64: true,
 		}),
+		ComposeSignature,
 		ComposeReplyQuote,
 		Table.configure({
 			resizable: true,
