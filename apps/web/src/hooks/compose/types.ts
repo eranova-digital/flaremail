@@ -96,13 +96,13 @@ export function fieldsToPayload(
 			threadId: reply.threadId,
 			replyAll: reply.replyAll === true ? true : undefined,
 			...(fields.identityId ? { identityId: fields.identityId } : {}),
-		} as CreateDraftRequest;
+		};
 	}
 
 	return {
 		...base,
 		...(fields.identityId ? { identityId: fields.identityId } : {}),
-	} as CreateDraftRequest;
+	};
 }
 
 export function outboundFromFields(
@@ -125,10 +125,11 @@ export function outboundFromFields(
 		body.attachments = attachments;
 	}
 
-	return {
-		...body,
-		...(fields.identityId ? { identityId: fields.identityId } : {}),
-	} as OutboundMessageBody;
+	if (fields.identityId) {
+		body.identityId = fields.identityId;
+	}
+
+	return body;
 }
 
 export function hasComposeSubject(fields: ComposeFields): boolean {

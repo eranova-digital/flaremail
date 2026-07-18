@@ -22,6 +22,9 @@
       "name": "Mailboxes"
     },
     {
+      "name": "Identities"
+    },
+    {
       "name": "Labels"
     },
     {
@@ -416,6 +419,12 @@
                 "properties": {
                   "isActive": {
                     "type": "boolean"
+                  },
+                  "personalIdentityAllowance": {
+                    "type": "boolean"
+                  },
+                  "identityExport": {
+                    "type": "boolean"
                   }
                 }
               }
@@ -445,6 +454,182 @@
         "summary": "Delete mailbox",
         "description": "Hard-deletes the mailbox, its messages, and R2 objects.",
         "operationId": "deleteMailbox",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/mailboxes/{mailboxId}/identities": {
+      "parameters": [
+        {
+          "name": "mailboxId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Identities"
+        ],
+        "summary": "List mailbox identities",
+        "operationId": "listMailboxIdentities",
+        "responses": {
+          "200": {
+            "description": "Identities and manage capabilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityListResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Identities"
+        ],
+        "summary": "Create mailbox identity",
+        "operationId": "createMailboxIdentity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created identity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Identity"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/mailboxes/{mailboxId}/identities/available": {
+      "parameters": [
+        {
+          "name": "mailboxId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Identities"
+        ],
+        "summary": "List identities available when composing from a mailbox",
+        "operationId": "listAvailableIdentities",
+        "responses": {
+          "200": {
+            "description": "Selectable identities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Identity"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/mailboxes/{mailboxId}/identities/{id}": {
+      "parameters": [
+        {
+          "name": "mailboxId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "patch": {
+        "tags": [
+          "Identities"
+        ],
+        "summary": "Update mailbox identity",
+        "operationId": "updateMailboxIdentity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated identity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Identity"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Identities"
+        ],
+        "summary": "Delete mailbox identity",
+        "operationId": "deleteMailboxIdentity",
         "responses": {
           "204": {
             "description": "Deleted"
@@ -1959,6 +2144,14 @@
           "isActive": {
             "type": "boolean"
           },
+          "personalIdentityAllowance": {
+            "type": "boolean",
+            "description": "Shared mailboxes only. When true, senders may select identities owned by their primary mailbox while composing from this mailbox.\n"
+          },
+          "identityExport": {
+            "type": "boolean",
+            "description": "Shared mailboxes only. When true, this mailbox's identities may be selected when sending from other mailboxes the account can access.\n"
+          },
           "isSystemManaged": {
             "type": "boolean",
             "description": "True for platform-provisioned addresses that cannot be edited or deleted."
@@ -2017,6 +2210,150 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "IdentityNamePattern": {
+        "type": "string",
+        "enum": [
+          "none",
+          "first_name",
+          "last_name",
+          "first_name_last_name",
+          "last_name_first_name",
+          "first_initial_last_name",
+          "last_name_first_initial",
+          "first_name_last_initial",
+          "last_initial_first_name",
+          "custom"
+        ]
+      },
+      "Identity": {
+        "type": "object",
+        "required": [
+          "id",
+          "isDefault",
+          "namePattern",
+          "fromNamePreview"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "mailboxId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "namePattern": {
+            "$ref": "#/components/schemas/IdentityNamePattern"
+          },
+          "customName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signatureHtml": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromNamePreview": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "IdentityInput": {
+        "type": "object",
+        "required": [
+          "namePattern"
+        ],
+        "properties": {
+          "namePattern": {
+            "$ref": "#/components/schemas/IdentityNamePattern"
+          },
+          "customName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signatureHtml": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "IdentityPatch": {
+        "type": "object",
+        "properties": {
+          "namePattern": {
+            "$ref": "#/components/schemas/IdentityNamePattern"
+          },
+          "customName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signatureHtml": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "IdentityListResponse": {
+        "type": "object",
+        "required": [
+          "items",
+          "capabilities"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Identity"
+            }
+          },
+          "capabilities": {
+            "type": "object",
+            "required": [
+              "canManage",
+              "customNameAllowed"
+            ],
+            "properties": {
+              "canManage": {
+                "type": "boolean"
+              },
+              "customNameAllowed": {
+                "type": "boolean"
+              }
+            }
           }
         }
       },
@@ -2110,6 +2447,10 @@
             "items": {
               "$ref": "#/components/schemas/OutboundAttachmentInput"
             }
+          },
+          "identityId": {
+            "type": "string",
+            "description": "Identity used for the From name. Signature should already be in the body; the server does not re-append it.\n"
           }
         }
       },
@@ -2204,6 +2545,9 @@
           "replyAll": {
             "type": "boolean",
             "default": false
+          },
+          "identityId": {
+            "type": "string"
           }
         }
       },
@@ -2261,6 +2605,9 @@
             "type": "boolean",
             "default": true,
             "description": "When true, appends a quoted copy of the parent message below the optional intro text. Set false when the client already included the quote in `text`/`html`.\n"
+          },
+          "identityId": {
+            "type": "string"
           }
         }
       },

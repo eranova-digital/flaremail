@@ -73,6 +73,16 @@ export type Mailbox = {
     aliasTargetAddress?: string | null;
     isActive?: boolean;
     /**
+     * Shared mailboxes only. When true, senders may select identities owned by their primary mailbox while composing from this mailbox.
+     *
+     */
+    personalIdentityAllowance?: boolean;
+    /**
+     * Shared mailboxes only. When true, this mailbox's identities may be selected when sending from other mailboxes the account can access.
+     *
+     */
+    identityExport?: boolean;
+    /**
      * True for platform-provisioned addresses that cannot be edited or deleted.
      */
     isSystemManaged?: boolean;
@@ -91,6 +101,40 @@ export type Label = {
     mailboxId?: string;
     name?: string;
     color?: string | null;
+};
+
+export type IdentityNamePattern = 'none' | 'first_name' | 'last_name' | 'first_name_last_name' | 'last_name_first_name' | 'first_initial_last_name' | 'last_name_first_initial' | 'first_name_last_initial' | 'last_initial_first_name' | 'custom';
+
+export type Identity = {
+    id: string;
+    mailboxId?: string | null;
+    isDefault: boolean;
+    namePattern: IdentityNamePattern;
+    customName?: string | null;
+    signatureHtml?: string | null;
+    fromNamePreview: string;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+};
+
+export type IdentityInput = {
+    namePattern: IdentityNamePattern;
+    customName?: string | null;
+    signatureHtml?: string | null;
+};
+
+export type IdentityPatch = {
+    namePattern?: IdentityNamePattern;
+    customName?: string | null;
+    signatureHtml?: string | null;
+};
+
+export type IdentityListResponse = {
+    items: Array<Identity>;
+    capabilities: {
+        canManage: boolean;
+        customNameAllowed: boolean;
+    };
 };
 
 export type EmailAddress = string | {
@@ -117,6 +161,11 @@ export type OutboundMessageBody = {
     text?: string;
     html?: string;
     attachments?: Array<OutboundAttachmentInput>;
+    /**
+     * Identity used for the From name. Signature should already be in the body; the server does not re-append it.
+     *
+     */
+    identityId?: string;
 };
 
 export type SendMessageRequest = OutboundMessageBody & {
@@ -147,6 +196,7 @@ export type ReplyRequest = {
     html?: string;
     attachments?: Array<OutboundAttachmentInput>;
     replyAll?: boolean;
+    identityId?: string;
 };
 
 export type ForwardRequest = {
@@ -171,6 +221,7 @@ export type ForwardRequest = {
      *
      */
     includeQuotedBody?: boolean;
+    identityId?: string;
 };
 
 export type ThreadMessagePreview = {
@@ -673,6 +724,8 @@ export type GetMailboxResponse = GetMailboxResponses[keyof GetMailboxResponses];
 export type UpdateMailboxData = {
     body?: {
         isActive?: boolean;
+        personalIdentityAllowance?: boolean;
+        identityExport?: boolean;
     };
     path: {
         id: string;
@@ -698,6 +751,145 @@ export type UpdateMailboxResponses = {
 };
 
 export type UpdateMailboxResponse = UpdateMailboxResponses[keyof UpdateMailboxResponses];
+
+export type ListMailboxIdentitiesData = {
+    body?: never;
+    path: {
+        mailboxId: string;
+    };
+    query?: never;
+    url: '/mailboxes/{mailboxId}/identities';
+};
+
+export type ListMailboxIdentitiesErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListMailboxIdentitiesError = ListMailboxIdentitiesErrors[keyof ListMailboxIdentitiesErrors];
+
+export type ListMailboxIdentitiesResponses = {
+    /**
+     * Identities and manage capabilities
+     */
+    200: IdentityListResponse;
+};
+
+export type ListMailboxIdentitiesResponse = ListMailboxIdentitiesResponses[keyof ListMailboxIdentitiesResponses];
+
+export type CreateMailboxIdentityData = {
+    body: IdentityInput;
+    path: {
+        mailboxId: string;
+    };
+    query?: never;
+    url: '/mailboxes/{mailboxId}/identities';
+};
+
+export type CreateMailboxIdentityErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CreateMailboxIdentityError = CreateMailboxIdentityErrors[keyof CreateMailboxIdentityErrors];
+
+export type CreateMailboxIdentityResponses = {
+    /**
+     * Created identity
+     */
+    201: Identity;
+};
+
+export type CreateMailboxIdentityResponse = CreateMailboxIdentityResponses[keyof CreateMailboxIdentityResponses];
+
+export type ListAvailableIdentitiesData = {
+    body?: never;
+    path: {
+        mailboxId: string;
+    };
+    query?: never;
+    url: '/mailboxes/{mailboxId}/identities/available';
+};
+
+export type ListAvailableIdentitiesErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListAvailableIdentitiesError = ListAvailableIdentitiesErrors[keyof ListAvailableIdentitiesErrors];
+
+export type ListAvailableIdentitiesResponses = {
+    /**
+     * Selectable identities
+     */
+    200: {
+        items: Array<Identity>;
+    };
+};
+
+export type ListAvailableIdentitiesResponse = ListAvailableIdentitiesResponses[keyof ListAvailableIdentitiesResponses];
+
+export type DeleteMailboxIdentityData = {
+    body?: never;
+    path: {
+        mailboxId: string;
+        id: string;
+    };
+    query?: never;
+    url: '/mailboxes/{mailboxId}/identities/{id}';
+};
+
+export type DeleteMailboxIdentityErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteMailboxIdentityError = DeleteMailboxIdentityErrors[keyof DeleteMailboxIdentityErrors];
+
+export type DeleteMailboxIdentityResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteMailboxIdentityResponse = DeleteMailboxIdentityResponses[keyof DeleteMailboxIdentityResponses];
+
+export type UpdateMailboxIdentityData = {
+    body: IdentityPatch;
+    path: {
+        mailboxId: string;
+        id: string;
+    };
+    query?: never;
+    url: '/mailboxes/{mailboxId}/identities/{id}';
+};
+
+export type UpdateMailboxIdentityErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateMailboxIdentityError = UpdateMailboxIdentityErrors[keyof UpdateMailboxIdentityErrors];
+
+export type UpdateMailboxIdentityResponses = {
+    /**
+     * Updated identity
+     */
+    200: Identity;
+};
+
+export type UpdateMailboxIdentityResponse = UpdateMailboxIdentityResponses[keyof UpdateMailboxIdentityResponses];
 
 export type ListLabelsData = {
     body?: never;
@@ -1325,6 +1517,390 @@ export type DownloadAttachmentResponses = {
 };
 
 export type DownloadAttachmentResponse = DownloadAttachmentResponses[keyof DownloadAttachmentResponses];
+
+export type ListOidcClientsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/oidc-clients';
+};
+
+export type ListOidcClientsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListOidcClientsError = ListOidcClientsErrors[keyof ListOidcClientsErrors];
+
+export type ListOidcClientsResponses = {
+    /**
+     * OIDC client list
+     */
+    200: unknown;
+};
+
+export type CreateOidcClientData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/oidc-clients';
+};
+
+export type CreateOidcClientErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CreateOidcClientError = CreateOidcClientErrors[keyof CreateOidcClientErrors];
+
+export type CreateOidcClientResponses = {
+    /**
+     * Created client (clientSecret returned once when confidential)
+     */
+    201: unknown;
+};
+
+export type DeleteOidcClientData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/oidc-clients/{id}';
+};
+
+export type DeleteOidcClientErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteOidcClientError = DeleteOidcClientErrors[keyof DeleteOidcClientErrors];
+
+export type DeleteOidcClientResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteOidcClientResponse = DeleteOidcClientResponses[keyof DeleteOidcClientResponses];
+
+export type GetOidcClientData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/oidc-clients/{id}';
+};
+
+export type GetOidcClientErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetOidcClientError = GetOidcClientErrors[keyof GetOidcClientErrors];
+
+export type GetOidcClientResponses = {
+    /**
+     * OIDC client
+     */
+    200: unknown;
+};
+
+export type UpdateOidcClientData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/oidc-clients/{id}';
+};
+
+export type UpdateOidcClientErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateOidcClientError = UpdateOidcClientErrors[keyof UpdateOidcClientErrors];
+
+export type UpdateOidcClientResponses = {
+    /**
+     * Updated client
+     */
+    200: unknown;
+};
+
+export type RegenerateOidcClientSecretData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/oidc-clients/{id}/regenerate-secret';
+};
+
+export type RegenerateOidcClientSecretErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RegenerateOidcClientSecretError = RegenerateOidcClientSecretErrors[keyof RegenerateOidcClientSecretErrors];
+
+export type RegenerateOidcClientSecretResponses = {
+    /**
+     * New secret (once)
+     */
+    200: unknown;
+};
+
+export type ListOidcClientGrantsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/oidc-clients/{id}/grants';
+};
+
+export type ListOidcClientGrantsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListOidcClientGrantsError = ListOidcClientGrantsErrors[keyof ListOidcClientGrantsErrors];
+
+export type ListOidcClientGrantsResponses = {
+    /**
+     * Consent grants
+     */
+    200: unknown;
+};
+
+export type AdminRevokeOidcClientGrantData = {
+    body?: never;
+    path: {
+        id: string;
+        accountId: string;
+    };
+    query?: never;
+    url: '/oidc-clients/{id}/grants/{accountId}';
+};
+
+export type AdminRevokeOidcClientGrantErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type AdminRevokeOidcClientGrantError = AdminRevokeOidcClientGrantErrors[keyof AdminRevokeOidcClientGrantErrors];
+
+export type AdminRevokeOidcClientGrantResponses = {
+    /**
+     * Revoked
+     */
+    204: void;
+};
+
+export type AdminRevokeOidcClientGrantResponse = AdminRevokeOidcClientGrantResponses[keyof AdminRevokeOidcClientGrantResponses];
+
+export type ListMyOidcGrantsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/me/oidc-grants';
+};
+
+export type ListMyOidcGrantsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListMyOidcGrantsError = ListMyOidcGrantsErrors[keyof ListMyOidcGrantsErrors];
+
+export type ListMyOidcGrantsResponses = {
+    /**
+     * Connected apps
+     */
+    200: unknown;
+};
+
+export type RevokeMyOidcGrantData = {
+    body?: never;
+    path: {
+        clientId: string;
+    };
+    query?: never;
+    url: '/me/oidc-grants/{clientId}';
+};
+
+export type RevokeMyOidcGrantErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RevokeMyOidcGrantError = RevokeMyOidcGrantErrors[keyof RevokeMyOidcGrantErrors];
+
+export type RevokeMyOidcGrantResponses = {
+    /**
+     * Revoked
+     */
+    204: void;
+};
+
+export type RevokeMyOidcGrantResponse = RevokeMyOidcGrantResponses[keyof RevokeMyOidcGrantResponses];
+
+export type OauthAuthorizeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/oauth/authorize';
+};
+
+export type OauthAuthorizeErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type OauthAuthorizeError = OauthAuthorizeErrors[keyof OauthAuthorizeErrors];
+
+export type OauthAuthorizeResponses = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type OauthAuthorizeResponse = OauthAuthorizeResponses[keyof OauthAuthorizeResponses];
+
+export type OauthTokenData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/oauth/token';
+};
+
+export type OauthTokenErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type OauthTokenError = OauthTokenErrors[keyof OauthTokenErrors];
+
+export type OauthTokenResponses = {
+    /**
+     * Token response
+     */
+    200: unknown;
+};
+
+export type OauthJwksData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/oauth/jwks';
+};
+
+export type OauthJwksResponses = {
+    /**
+     * Public ES256 JWKS
+     */
+    200: unknown;
+};
+
+export type OauthUserinfoData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/oauth/userinfo';
+};
+
+export type OauthUserinfoErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type OauthUserinfoError = OauthUserinfoErrors[keyof OauthUserinfoErrors];
+
+export type OauthUserinfoResponses = {
+    /**
+     * User claims
+     */
+    200: unknown;
+};
+
+export type GetOidcPendingData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/oauth/pending/{id}';
+};
+
+export type GetOidcPendingErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetOidcPendingError = GetOidcPendingErrors[keyof GetOidcPendingErrors];
+
+export type GetOidcPendingResponses = {
+    /**
+     * Pending details
+     */
+    200: unknown;
+};
+
+export type OauthConsentData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/oauth/consent';
+};
+
+export type OauthConsentErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type OauthConsentError = OauthConsentErrors[keyof OauthConsentErrors];
+
+export type OauthConsentResponses = {
+    /**
+     * Relaying-party redirect URL
+     */
+    200: unknown;
+};
 
 export type ClientOptions = {
     baseUrl: `${string}://${string}/api/v1` | (string & {});
