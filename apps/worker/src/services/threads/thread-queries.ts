@@ -19,7 +19,7 @@ import {
 import type { ThreadFolder } from "../../lib/mailbox-types";
 import { assertThreadInMailbox } from "../../lib/thread-mailbox";
 import { listLatestMessageSeenByForThreads } from "../../lib/message-seen-by";
-import { toThreadDto } from "../dto";
+import { toThreadDto } from "./dto";
 import {
 	getLabelIdsForThreads,
 	getThreadPartiesForMailbox,

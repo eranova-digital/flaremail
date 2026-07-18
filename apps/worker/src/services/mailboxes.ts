@@ -14,8 +14,35 @@ import {
 	assertMailboxNotPrimaryAccount,
 	isSystemManagedLocalPart,
 } from "../lib/system-mailboxes";
+import { isSystemManagedMailbox } from "../lib/system-mailboxes";
 import { deleteMailboxCascade } from "./cascade-delete";
-import { toMailboxDto } from "./dto";
+
+export function toMailboxDto(mailbox: {
+	id: string;
+	domainId: string;
+	address: string;
+	localPart: string;
+	type: string;
+	aliasTargetId: string | null;
+	aliasTargetAddress: string | null;
+	isActive: boolean;
+	personalIdentityAllowance?: boolean;
+	identityExport?: boolean;
+}) {
+	return {
+		id: mailbox.id,
+		domainId: mailbox.domainId,
+		address: mailbox.address,
+		localPart: mailbox.localPart,
+		type: mailbox.type,
+		aliasTargetId: mailbox.aliasTargetId,
+		aliasTargetAddress: mailbox.aliasTargetAddress,
+		isActive: mailbox.isActive,
+		personalIdentityAllowance: mailbox.personalIdentityAllowance ?? false,
+		identityExport: mailbox.identityExport ?? false,
+		isSystemManaged: isSystemManagedMailbox(mailbox),
+	};
+}
 
 async function getMailboxRow(db: Database, id: string) {
 	const [row] = await db.select().from(mailboxes).where(eq(mailboxes.id, id)).limit(1);

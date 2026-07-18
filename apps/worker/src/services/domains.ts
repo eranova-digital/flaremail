@@ -6,9 +6,32 @@ import { isSchemaMismatchError, isUniqueViolation, schemaMismatchMessage } from 
 import { normalizeEmailAddress } from "../lib/normalize-email-address";
 import { provisionSystemMailboxes } from "../lib/system-mailboxes";
 import { deleteDomainCascade } from "./cascade-delete";
-import { getDomainReadinessSummary, startDomainValidation } from "../lib/domain-validation";
-import { toDomainDto } from "./dto";
-import type { LogContext } from "./logs";
+import {
+	getDomainReadinessSummary,
+	startDomainValidation,
+	toDomainReadinessSummaryDto,
+} from "../lib/domain-validation";
+import type { LogContext } from "../lib/logs/context";
+
+export function toDomainDto(
+	domain: {
+		id: string;
+		name: string;
+		isActive: boolean;
+		catchAllEnabled: boolean;
+		catchAllMailboxId: string | null;
+	},
+	readiness?: ReturnType<typeof toDomainReadinessSummaryDto>,
+) {
+	return {
+		id: domain.id,
+		domain: domain.name,
+		isActive: domain.isActive,
+		catchAllEnabled: domain.catchAllEnabled,
+		catchAllMailboxId: domain.catchAllMailboxId,
+		readiness: readiness ?? toDomainReadinessSummaryDto(null),
+	};
+}
 
 async function toDomainDtoWithReadiness(
 	db: Database,

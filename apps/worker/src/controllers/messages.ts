@@ -13,7 +13,7 @@ import {
 } from "../lib/messages/outbound-payload";
 import { parseLogContextFromRequest } from "../services/logs";
 import { createOutboundMail } from "../services/outbound-mail";
-import { toSendResponse } from "../services/dto";
+import { toSendResponse } from "../services/outbound-mail/response";
 
 function outboundMail(
 	env: Env,

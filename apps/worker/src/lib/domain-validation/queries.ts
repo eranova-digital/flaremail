@@ -6,15 +6,15 @@ import {
 	domainValidationLogEvents,
 	domainValidationRuns,
 } from "../../db/schema";
+import type { LogContext } from "../logs/context";
+import { safeEmitLog } from "../logs/emit";
 import {
 	toDomainReadinessSummaryDto,
 	toValidationCheckDto,
 	toValidationLogEventDto,
 	toValidationRunDetailDto,
 	toValidationRunSummaryDto,
-} from "../../services/dto";
-import type { LogContext } from "../../services/logs";
-import { safeEmitLog } from "../../services/logs";
+} from "./dto";
 import {
 	createValidationRun,
 	executeValidationRun,

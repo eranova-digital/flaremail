@@ -2,7 +2,20 @@ import { and, eq } from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import { labels } from "../db/schema";
-import { toLabelDto } from "./dto";
+
+export function toLabelDto(label: {
+	id: string;
+	mailboxId: string;
+	name: string;
+	color: string | null;
+}) {
+	return {
+		id: label.id,
+		mailboxId: label.mailboxId,
+		name: label.name,
+		color: label.color,
+	};
+}
 
 export async function listLabels(db: Database, mailboxId: string) {
 	const rows = await db
