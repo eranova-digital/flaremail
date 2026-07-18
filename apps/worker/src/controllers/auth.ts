@@ -1,7 +1,4 @@
-import { eq } from "drizzle-orm";
-
-import { withDb, type Database } from "../db/client";
-import { accounts } from "../db/schema";
+import { withDb } from "../db/client";
 import { parseCookies, SESSION_COOKIE_NAME } from "../lib/auth/cookies";
 import { extractSessionMetadata } from "../lib/auth/session-metadata";
 import { handleRouteError } from "../lib/http/handle-route-error";
@@ -15,6 +12,7 @@ import {
 	getMe,
 	previewInvite,
 	previewPasswordReset,
+	recordFailedSignInAttempt,
 	regenerateIntendantPassword,
 	requestPasswordReset,
 	resetPasswordWithCode,
@@ -22,10 +20,8 @@ import {
 	signIn,
 	signOut,
 } from "../services/auth";
-import {
-	parseLogContextFromRequest,
-	safeEmitLog,
-} from "../services/logs";
+import { parseLogContextFromRequest } from "../services/logs";
+import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -34,27 +30,6 @@ function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 			"Cache-Control": "no-store",
 			"Set-Cookie": cookieHeader,
 		},
-	});
-}
-
-function accountRef(accountId: string) {
-	return { actor: { kind: "account" as const, id: accountId } };
-}
-
-async function emitFailedSignIn(
-	db: Database,
-	request: Request,
-	input: { accountId?: string | null; isIntendant?: boolean },
-) {
-	const accountId = input.accountId ?? null;
-	const importance = input.isIntendant ? 0 : 2;
-	await safeEmitLog(db, {
-		importance,
-		type: "auth",
-		summary: accountId ? "{actor} failed to sign in" : "Failed sign-in attempt",
-		refs: accountId ? accountRef(accountId) : undefined,
-		actorAccountId: accountId,
-		context: parseLogContextFromRequest(request),
 	});
 }
 
@@ -68,10 +43,11 @@ export async function handleSignIn(context: RouteContext) {
 		return validationError(context.request, "email and password are required");
 	}
 	const identifier = value.email.trim().toLowerCase();
+	const logContext = parseLogContextFromRequest(context.request);
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
-		const result = await withDb(context.env, async (db) => {
-			const signedIn = await signIn(
+		const result = await withDb(context.env, (db) =>
+			signIn(
 				db,
 				{
 					loginIdentifier: value.email as string,
@@ -79,19 +55,9 @@ export async function handleSignIn(context: RouteContext) {
 				},
 				sessionSecretForEnv(context.env),
 				sessionMetadata,
-			);
-			if (!signedIn.requiresMfa) {
-				await safeEmitLog(db, {
-					importance: 4,
-					type: "auth",
-					summary: "{actor} signed in",
-					refs: accountRef(signedIn.accountId),
-					actorAccountId: signedIn.accountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-			return signedIn;
-		});
+				logContext,
+			),
+		);
 		if (result.requiresMfa) {
 			return jsonResponse({
 				requiresMfa: true,
@@ -100,17 +66,9 @@ export async function handleSignIn(context: RouteContext) {
 		}
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
-		await withDb(context.env, async (db) => {
-			const [account] = await db
-				.select({ id: accounts.id, isIntendant: accounts.isIntendant })
-				.from(accounts)
-				.where(eq(accounts.loginIdentifier, identifier))
-				.limit(1);
-			await emitFailedSignIn(db, context.request, {
-				accountId: account?.id,
-				isIntendant: account?.isIntendant ?? identifier === "intendant",
-			});
-		}).catch((emitError) => {
+		await withDb(context.env, (db) =>
+			recordFailedSignInAttempt(db, identifier, logContext),
+		).catch((emitError) => {
 			console.error("Failed to emit auth log", emitError);
 		});
 		return handleRouteError(error, context.request);
@@ -121,20 +79,9 @@ export async function handleSignOut(context: RouteContext) {
 	const cookies = parseCookies(context.request.headers.get("Cookie"));
 	const token = cookies[SESSION_COOKIE_NAME];
 	if (token) {
-		const result = await withDb(context.env, async (db) => {
-			const signedOut = await signOut(db, token);
-			if (signedOut.accountId) {
-				await safeEmitLog(db, {
-					importance: 6,
-					type: "auth",
-					summary: "{actor} signed out",
-					refs: accountRef(signedOut.accountId),
-					actorAccountId: signedOut.accountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-			return signedOut;
-		});
+		const result = await withDb(context.env, (db) =>
+			signOut(db, token, parseLogContextFromRequest(context.request)),
+		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	}
 	return jsonResponse({ ok: true });
@@ -187,8 +134,8 @@ export async function handleActivateInvite(context: RouteContext) {
 
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
-		const result = await withDb(context.env, async (db) => {
-			const activated = await activateInvite(
+		const result = await withDb(context.env, (db) =>
+			activateInvite(
 				db,
 				{
 					code: value.code as string,
@@ -271,20 +218,11 @@ export async function handleActivateInvite(context: RouteContext) {
 								? profile.addressLine2
 								: undefined,
 				},
-			}, sessionMetadata);
-			await safeEmitLog(db, {
-				importance: 4,
-				type: "invites",
-				summary: "{actor} activated {invite}",
-				refs: {
-					actor: { kind: "account", id: activated.accountId },
-					invite: { kind: "invite", id: activated.inviteId },
-				},
-				actorAccountId: activated.accountId,
-				context: parseLogContextFromRequest(context.request),
-			});
-			return activated;
-		});
+			},
+				sessionMetadata,
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -304,10 +242,7 @@ export async function handleForgotPassword(context: RouteContext) {
 		const result = await withDb(context.env, (db) =>
 			requestPasswordReset(
 				db,
-				{
-					email: context.env.EMAIL,
-					bucket: context.env.BUCKET,
-				},
+				createTransactionalEmailDeps(context.env),
 				{
 					address: value.address as string,
 				},
@@ -329,20 +264,16 @@ export async function handleResetPassword(context: RouteContext) {
 		return validationError(context.request, "code and password are required");
 	}
 	try {
-		await withDb(context.env, async (db) => {
-			const result = await resetPasswordWithCode(db, {
-				code: value.code as string,
-				password: value.password as string,
-			});
-			await safeEmitLog(db, {
-				importance: 3,
-				type: "auth",
-				summary: "{actor} reset their password",
-				refs: accountRef(result.accountId),
-				actorAccountId: result.accountId,
-				context: parseLogContextFromRequest(context.request),
-			});
-		});
+		await withDb(context.env, (db) =>
+			resetPasswordWithCode(
+				db,
+				{
+					code: value.code as string,
+					password: value.password as string,
+				},
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonResponse({ ok: true });
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -471,22 +402,17 @@ export async function handleRegenerateIntendantPassword(context: RouteContext) {
 
 	const accountId = context.principal.accountId;
 	try {
-		const password = await withDb(context.env, async (db) => {
-			const nextPassword = await regenerateIntendantPassword(db, {
-				accountId,
-				code,
-				encryptionKey: sessionSecretForEnv(context.env),
-			});
-			await safeEmitLog(db, {
-				importance: 1,
-				type: "auth",
-				summary: "{actor} regenerated intendant password",
-				refs: accountRef(accountId),
-				actorAccountId: accountId,
-				context: parseLogContextFromRequest(context.request),
-			});
-			return nextPassword;
-		});
+		const password = await withDb(context.env, (db) =>
+			regenerateIntendantPassword(
+				db,
+				{
+					accountId,
+					code,
+					encryptionKey: sessionSecretForEnv(context.env),
+				},
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonResponse({ password });
 	} catch (error) {
 		return handleRouteError(error, context.request);

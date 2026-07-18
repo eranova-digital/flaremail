@@ -1,5 +1,10 @@
-import type { OutboundContext } from "../../lib/messages/outbound-context";
-import { createOutboundContext } from "../../lib/messages/outbound-context";
+import type { Database } from "../db/client";
+import {
+	createOutboundContext,
+	type OutboundContext,
+	type OutboundContext as OutboundContextType,
+} from "../../lib/messages/outbound-context";
+import { createResolveIdentityForSend } from "../transactional-email-deps";
 import type {
 	CreateDraftBody,
 	ForwardBody,
@@ -22,6 +27,21 @@ import {
 
 export type OutboundMailContext = OutboundContext;
 export { createOutboundContext };
+
+export function createOutboundContextWithIdentity(
+	env: Env,
+	db: Database,
+	principal: import("../../lib/auth/types").Principal,
+	request?: Request,
+): OutboundContextType {
+	return createOutboundContext(
+		env,
+		db,
+		principal,
+		createResolveIdentityForSend(),
+		request,
+	);
+}
 
 /**
  * Deep outbound module: send, reply, forward, and draft lifecycle behind one

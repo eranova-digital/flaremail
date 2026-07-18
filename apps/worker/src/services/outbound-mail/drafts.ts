@@ -1,8 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import { attachments, messages } from "../../db/schema";
-import { assertOutboundMailboxAccess } from "../../lib/messages/outbound-auth";
-import { assertCanSendFrom } from "../../lib/authorize-mailbox";
+import { authorizeMailbox } from "../../lib/auth/access";
 import { loadMailboxForSend } from "../../lib/mailbox-queries";
 import { isBlackholeMailboxType } from "../../lib/mailbox-types";
 import { buildOutboundMimeContent } from "../../lib/messages/build-outbound-mime";
@@ -19,7 +18,7 @@ import {
 	type CreateDraftBody,
 	type OutboundMessageBody,
 } from "../../lib/messages/outbound-payload";
-import { persistDraftMessage } from "../../lib/messages/outbound-persist";
+import { persistDraftMessage } from "../../lib/messages/outbound-pipeline";
 import { resolveThreadingForCompose } from "../../lib/messages/outbound-threading";
 import { resolveReplyRecipients } from "../../lib/messages/resolve-reply-recipients";
 import { replaceStoredMessageContent } from "../../lib/messages/update-stored-message";
@@ -30,8 +29,7 @@ export async function createDraft(
 	ctx: OutboundContext,
 	body: CreateDraftBody,
 ) {
-	await assertOutboundMailboxAccess(ctx, body.mailboxId);
-	await assertCanSendFrom(ctx.db, body.mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "send");
 
 	const { parent, threading } = await resolveThreadingForCompose(ctx.db, body);
 
@@ -76,7 +74,7 @@ export async function getDraft(ctx: OutboundContext, messageId: string) {
 		throw new Error("Draft not found");
 	}
 
-	await assertOutboundMailboxAccess(ctx, draft.actualMailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, draft.actualMailboxId, "read");
 	return draft;
 }
 
@@ -91,13 +89,11 @@ export async function updateDraft(
 	}
 
 	const mailboxId = draft.actualMailboxId;
-	await assertOutboundMailboxAccess(ctx, mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "send");
 	const mailbox = await loadMailboxForSend(ctx.db, mailboxId);
 	if (!mailbox) {
 		throw new Error("Mailbox not found or cannot send");
 	}
-
-	await assertCanSendFrom(ctx.db, mailbox.id);
 
 	const recipients = formatRecipients(body);
 	const preview = buildPreview(body.text ?? null);
@@ -160,7 +156,7 @@ export async function deleteDraft(
 		throw new Error("Draft not found");
 	}
 
-	await assertOutboundMailboxAccess(ctx, draft.actualMailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, draft.actualMailboxId, "read");
 
 	const storedAttachments = await ctx.db
 		.select({ storageKey: attachments.storageKey })

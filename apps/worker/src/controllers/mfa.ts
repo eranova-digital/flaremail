@@ -1,7 +1,4 @@
-import { eq } from "drizzle-orm";
-
 import { withDb } from "../db/client";
-import { accounts } from "../db/schema";
 import { extractSessionMetadata } from "../lib/auth/session-metadata";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
@@ -9,20 +6,17 @@ import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
 import { loadAccountProfile } from "../lib/auth/principal";
+import { parseLogContextFromRequest } from "../lib/logs/request-context";
 import { sessionSecretForEnv } from "../services/auth";
 import {
-	parseLogContextFromRequest,
-	safeEmitLog,
-} from "../services/logs";
-import {
-	completeMfaSignIn,
 	confirmMfa,
 	disableMfa,
 	getMfaStatus,
 	setupMfa,
-	verifyMfaChallengeToken,
+	verifyMfaSignIn,
 } from "../services/mfa";
 import { sendMfaDisableRecoveryCode } from "../services/recovery-email";
+import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -53,21 +47,12 @@ export async function handleSetupMfa(context: RouteContext) {
 		return validationError(context.request, "Authentication required");
 	}
 	try {
-		const setup = await withDb(context.env, async (db) => {
-			const [account] = await db
-				.select({ loginIdentifier: accounts.loginIdentifier })
-				.from(accounts)
-				.where(eq(accounts.id, context.principal.accountId!))
-				.limit(1);
-			if (!account) {
-				throw new Error("Account not found");
-			}
-			return setupMfa(db, {
+		const setup = await withDb(context.env, (db) =>
+			setupMfa(db, {
 				accountId: context.principal.accountId!,
-				loginIdentifier: account.loginIdentifier,
 				encryptionKey: sessionSecretForEnv(context.env),
-			});
-		});
+			}),
+		);
 		return jsonResponse(setup);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -140,10 +125,7 @@ export async function handleSendMfaDisableRecoveryCode(context: RouteContext) {
 			}
 			await sendMfaDisableRecoveryCode(
 				db,
-				{
-					email: context.env.EMAIL,
-					bucket: context.env.BUCKET,
-				},
+				createTransactionalEmailDeps(context.env),
 				context.principal.accountId!,
 				recoveryAddress,
 			);
@@ -166,8 +148,8 @@ export async function handleVerifyMfaSignIn(context: RouteContext) {
 	const encryptionKey = sessionSecretForEnv(context.env);
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
-		const result = await withDb(context.env, async (db) => {
-			const signedIn = await completeMfaSignIn(
+		const result = await withDb(context.env, (db) =>
+			verifyMfaSignIn(
 				db,
 				{
 					mfaToken: value.mfaToken as string,
@@ -175,54 +157,11 @@ export async function handleVerifyMfaSignIn(context: RouteContext) {
 					encryptionKey,
 				},
 				sessionMetadata,
-			);
-			await safeEmitLog(db, {
-				importance: 4,
-				type: "auth",
-				summary: "{actor} signed in",
-				refs: { actor: { kind: "account", id: signedIn.accountId } },
-				actorAccountId: signedIn.accountId,
-				context: parseLogContextFromRequest(context.request),
-			});
-			return signedIn;
-		});
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
-		await withDb(context.env, async (db) => {
-			let accountId: string | null = null;
-			try {
-				accountId = await verifyMfaChallengeToken(
-					value.mfaToken as string,
-					encryptionKey,
-				);
-			} catch {
-				/* invalid challenge — no account to attribute */
-			}
-			if (!accountId) {
-				await safeEmitLog(db, {
-					importance: 2,
-					type: "auth",
-					summary: "Failed sign-in attempt",
-					context: parseLogContextFromRequest(context.request),
-				});
-				return;
-			}
-			const [account] = await db
-				.select({ isIntendant: accounts.isIntendant })
-				.from(accounts)
-				.where(eq(accounts.id, accountId))
-				.limit(1);
-			await safeEmitLog(db, {
-				importance: account?.isIntendant ? 0 : 2,
-				type: "auth",
-				summary: "{actor} failed to sign in",
-				refs: { actor: { kind: "account", id: accountId } },
-				actorAccountId: accountId,
-				context: parseLogContextFromRequest(context.request),
-			});
-		}).catch((emitError) => {
-			console.error("Failed to emit auth log", emitError);
-		});
 		return handleRouteError(error, context.request);
 	}
 }

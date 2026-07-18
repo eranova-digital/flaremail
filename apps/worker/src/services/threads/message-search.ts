@@ -8,14 +8,14 @@ import {
 	type PaginatedResult,
 	parseLimit,
 } from "../../lib/http/cursor-pagination";
-import { toMessagePreview } from "../dto";
+import { toSearchHit } from "./dto";
 
 export async function searchMessages(
 	db: Database,
 	mailboxId: string,
 	query: string,
 	options: { cursor?: string | null; limit?: number },
-): Promise<PaginatedResult<ReturnType<typeof toMessagePreview> & { threadId: string }>> {
+): Promise<PaginatedResult<ReturnType<typeof toSearchHit>>> {
 	const trimmed = query.trim();
 	if (!trimmed) {
 		throw new Error("Search query is required");
@@ -69,10 +69,7 @@ export async function searchMessages(
 				.limit(limit);
 
 	const messageRows = rows.map((row) => row.message);
-	const items = messageRows.map((message) => ({
-		...toMessagePreview(message),
-		threadId: message.threadId,
-	}));
+	const items = messageRows.map(toSearchHit);
 
 	const nextCursor = buildNextCursor(
 		messageRows.map((message) => ({

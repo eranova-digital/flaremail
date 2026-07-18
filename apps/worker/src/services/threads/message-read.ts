@@ -4,7 +4,7 @@ import type { Database } from "../../db/client";
 import { assertMessageVisibleInMailbox } from "../../lib/thread-mailbox";
 import { loadMessageBody } from "../../lib/messages/message-body";
 import { findMessageById } from "../../lib/messages/message-queries";
-import { resolveViewerDirection, toMessagePreview } from "../dto";
+import { resolveViewerDirection, toMessagePreview } from "./dto";
 
 export async function readMessagePreview(
 	db: Database,

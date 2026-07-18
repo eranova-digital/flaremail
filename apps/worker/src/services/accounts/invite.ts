@@ -25,6 +25,8 @@ import {
 	sendInviteTransactionalEmail,
 	type TransactionalEmailDeps,
 } from "../../lib/auth/transactional-email";
+import type { LogContext } from "../../lib/logs/context";
+import { safeEmitLog } from "../../lib/logs/emit";
 import {
 	PROFILE_LOCKABLE_FIELDS,
 	type ProfileLockableField,
@@ -53,6 +55,7 @@ export async function inviteAccount(
 		allSharedMailboxes?: boolean;
 	},
 	deps?: TransactionalEmailDeps,
+	logContext?: LogContext | null,
 ) {
 	if (!isPlatformPrincipal(principal) && !hasDomainAccess(principal, input.domainId)) {
 		throw new Error("Forbidden");
@@ -229,6 +232,21 @@ export async function inviteAccount(
 		});
 	}
 
+	if (principal.accountId) {
+		await safeEmitLog(db, {
+			importance: 4,
+			type: "invites",
+			summary: "{actor} created invite for {account}",
+			refs: {
+				actor: { kind: "account", id: principal.accountId },
+				account: { kind: "account", id: accountId },
+				invite: { kind: "invite", id: inviteId },
+			},
+			actorAccountId: principal.accountId,
+			context: logContext,
+		});
+	}
+
 	return { accountId, mailboxId, address, inviteCode, inviteId };
 }
 
@@ -236,6 +254,7 @@ export async function regenerateInviteCode(
 	db: Database,
 	principal: Principal,
 	accountId: string,
+	logContext?: LogContext | null,
 ) {
 	await authorizeAccount(db, principal, accountId, "manage");
 
@@ -262,6 +281,21 @@ export async function regenerateInviteCode(
 		accountId,
 		createdByAccountId: principal.accountId,
 	});
+
+	if (principal.accountId) {
+		await safeEmitLog(db, {
+			importance: 5,
+			type: "invites",
+			summary: "{actor} regenerated invite code for {account}",
+			refs: {
+				actor: { kind: "account", id: principal.accountId },
+				account: { kind: "account", id: accountId },
+				invite: { kind: "invite", id: inviteId },
+			},
+			actorAccountId: principal.accountId,
+			context: logContext,
+		});
+	}
 
 	return { inviteCode, inviteId };
 }

@@ -11,19 +11,30 @@ import {
 import { buildSecret } from "../lib/auth/api-key";
 import { hashSecret } from "../lib/auth/password";
 import type { Principal } from "../lib/auth/types";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
 
-type CreateApiKeyInput = {
+export type CreateApiKeyParams = {
 	accountId: string;
 	name: string;
 	scopes: string[];
 	principal: Principal;
 };
 
+export type RevokeApiKeyParams = {
+	accountId: string;
+	keyId: string;
+};
+
+export type ApiKeyMutationParams =
+	| ({ action: "create" } & CreateApiKeyParams)
+	| ({ action: "revoke" } & RevokeApiKeyParams);
+
 function normalizeName(name: string): string {
 	return name.trim() || "API key";
 }
 
-function assertRequestedScopesAllowed(
+export function assertRequestedApiKeyScopesAllowed(
 	principal: Principal,
 	scopes: ApiKeyScope[],
 ): void {
@@ -34,12 +45,16 @@ function assertRequestedScopesAllowed(
 	}
 }
 
-export async function createApiKey(db: Database, input: CreateApiKeyInput) {
+export async function createApiKey(
+	db: Database,
+	input: CreateApiKeyParams,
+	logContext?: LogContext | null,
+) {
 	const scopes = normalizeApiKeyScopes(input.scopes);
 	if (scopes.length === 0) {
 		throw new Error("At least one API key scope is required");
 	}
-	assertRequestedScopesAllowed(input.principal, scopes);
+	assertRequestedApiKeyScopesAllowed(input.principal, scopes);
 
 	const { secret, keyPrefix } = buildSecret();
 	const id = crypto.randomUUID();
@@ -52,6 +67,17 @@ export async function createApiKey(db: Database, input: CreateApiKeyInput) {
 		keyHash: await hashSecret(secret),
 		scopes,
 		createdAt: now,
+	});
+	await safeEmitLog(db, {
+		importance: 4,
+		type: "api-keys",
+		summary: "{actor} created API key {key}",
+		refs: {
+			actor: { kind: "account", id: input.accountId },
+			key: { kind: "api-key", id },
+		},
+		actorAccountId: input.accountId,
+		context: logContext ?? null,
 	});
 	return { id, secret, prefix: keyPrefix, scopes };
 }
@@ -74,8 +100,8 @@ export async function listApiKeys(db: Database, accountId: string) {
 
 export async function revokeApiKey(
 	db: Database,
-	accountId: string,
-	keyId: string,
+	input: RevokeApiKeyParams,
+	logContext?: LogContext | null,
 ): Promise<boolean> {
 	const now = new Date();
 	const revoked = await db
@@ -83,11 +109,37 @@ export async function revokeApiKey(
 		.set({ revokedAt: now })
 		.where(
 			and(
-				eq(apiKeys.id, keyId),
-				eq(apiKeys.accountId, accountId),
+				eq(apiKeys.id, input.keyId),
+				eq(apiKeys.accountId, input.accountId),
 				isNull(apiKeys.revokedAt),
 			),
 		)
 		.returning({ id: apiKeys.id });
+	if (revoked.length > 0) {
+		await safeEmitLog(db, {
+			importance: 4,
+			type: "api-keys",
+			summary: "{actor} revoked API key {key}",
+			refs: {
+				actor: { kind: "account", id: input.accountId },
+				key: { kind: "api-key", id: input.keyId },
+			},
+			actorAccountId: input.accountId,
+			context: logContext ?? null,
+		});
+	}
 	return revoked.length > 0;
+}
+
+export async function mutateApiKey(
+	db: Database,
+	input: ApiKeyMutationParams,
+	logContext?: LogContext | null,
+) {
+	if (input.action === "create") {
+		const { action: _, ...createInput } = input;
+		return createApiKey(db, createInput, logContext);
+	}
+	const { action: _, ...revokeInput } = input;
+	return revokeApiKey(db, revokeInput, logContext);
 }

@@ -4,6 +4,8 @@ import type { Database } from "../db/client";
 import { oidcClients, type OidcClient } from "../db/schema";
 import { randomToken } from "../lib/auth/crypto";
 import { hashSecret } from "../lib/auth/password";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
 import {
 	cascadeDeleteOidcClient,
 	OIDC_SUPPORTED_SCOPES,
@@ -85,6 +87,7 @@ export async function createOidcClientRecord(
 		homescreenUrl?: string | null;
 		createdByAccountId?: string | null;
 	},
+	logContext?: LogContext | null,
 ): Promise<OidcClientPublic & { clientSecret: string | null }> {
 	if (!input.name.trim()) {
 		throw new Error("name is required");
@@ -120,6 +123,22 @@ export async function createOidcClientRecord(
 		.from(oidcClients)
 		.where(eq(oidcClients.id, id))
 		.limit(1);
+
+	const actorId = input.createdByAccountId;
+	if (actorId) {
+		await safeEmitLog(db, {
+			importance: 3,
+			type: "oidc",
+			summary: "{actor} created OIDC client {client}",
+			refs: {
+				actor: { kind: "account", id: actorId },
+				client: { kind: "oidc-client", id: created!.id },
+			},
+			actorAccountId: actorId,
+			context: logContext ?? null,
+		});
+	}
+
 	return { ...toPublic(created!), clientSecret };
 }
 
@@ -164,6 +183,7 @@ export async function updateOidcClient(
 		requireConsent?: boolean;
 		homescreenUrl?: string | null;
 	},
+	logMeta?: { actorAccountId: string; context?: LogContext | null },
 ): Promise<OidcClientPublic | null> {
 	const existing = await getOidcClientRowById(db, id);
 	if (!existing) {
@@ -206,7 +226,22 @@ export async function updateOidcClient(
 		})
 		.where(eq(oidcClients.id, id));
 
-	return getOidcClientById(db, id);
+	const updated = await getOidcClientById(db, id);
+	if (updated && logMeta?.actorAccountId) {
+		await safeEmitLog(db, {
+			importance: 3,
+			type: "oidc",
+			summary: "{actor} updated OIDC client {client}",
+			refs: {
+				actor: { kind: "account", id: logMeta.actorAccountId },
+				client: { kind: "oidc-client", id: updated.id },
+			},
+			actorAccountId: logMeta.actorAccountId,
+			context: logMeta.context ?? null,
+		});
+	}
+
+	return updated;
 }
 
 export async function regenerateOidcClientSecret(
@@ -235,6 +270,7 @@ export async function deleteOidcClient(
 	db: Database,
 	bucket: R2Bucket,
 	id: string,
+	logMeta?: { actorAccountId: string; context?: LogContext | null },
 ): Promise<boolean> {
 	const existing = await getOidcClientRowById(db, id);
 	if (!existing) {
@@ -243,5 +279,20 @@ export async function deleteOidcClient(
 	const { deleteOidcClientLogoFiles } = await import("./oidc-client-logo");
 	await deleteOidcClientLogoFiles(bucket, existing.id, existing.logoUpdatedAt);
 	await cascadeDeleteOidcClient(db, existing);
+
+	if (logMeta?.actorAccountId) {
+		await safeEmitLog(db, {
+			importance: 3,
+			type: "oidc",
+			summary: "{actor} deleted OIDC client {client}",
+			refs: {
+				actor: { kind: "account", id: logMeta.actorAccountId },
+				client: { kind: "oidc-client", id: id },
+			},
+			actorAccountId: logMeta.actorAccountId,
+			context: logMeta.context ?? null,
+		});
+	}
+
 	return true;
 }

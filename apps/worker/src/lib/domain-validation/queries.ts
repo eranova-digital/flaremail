@@ -1,16 +1,13 @@
 import { desc, eq } from "drizzle-orm";
 
-import type { Database } from "../db/client";
+import type { Database } from "../../db/client";
 import {
 	domainValidationChecks,
 	domainValidationLogEvents,
 	domainValidationRuns,
-} from "../db/schema";
-import {
-	DomainValidationRun,
-	getLatestValidationRunForDomain,
-	loadRunChecks,
-} from "../lib/domain-validation";
+} from "../../db/schema";
+import type { LogContext } from "../logs/context";
+import { safeEmitLog } from "../logs/emit";
 import {
 	toDomainReadinessSummaryDto,
 	toValidationCheckDto,
@@ -18,8 +15,13 @@ import {
 	toValidationRunDetailDto,
 	toValidationRunSummaryDto,
 } from "./dto";
-import type { LogContext } from "./logs";
-import { safeEmitLog } from "./logs";
+import {
+	createValidationRun,
+	executeValidationRun,
+	getActiveValidationRun,
+	getLatestValidationRunForDomain,
+	loadRunChecks,
+} from "./run-engine";
 
 export async function getDomainReadinessSummary(db: Database, domainId: string) {
 	const run = await getLatestValidationRunForDomain(db, domainId);
@@ -80,7 +82,7 @@ export async function startDomainValidation(
 	domainName: string,
 	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ) {
-	const created = await DomainValidationRun.createRun(db, domainId);
+	const created = await createValidationRun(db, domainId);
 	if (!created) {
 		throw new Error("Failed to start validation run");
 	}
@@ -102,7 +104,7 @@ export async function startDomainValidation(
 		context: logMeta?.context ?? null,
 	});
 
-	const activeBeforeExecute = await DomainValidationRun.getActiveRun(db, domainId);
+	const activeBeforeExecute = await getActiveValidationRun(db, domainId);
 	const shouldExecute =
 		activeBeforeExecute?.id === created.id &&
 		(await loadRunChecks(db, created.id)).every(
@@ -110,7 +112,7 @@ export async function startDomainValidation(
 		);
 
 	if (shouldExecute) {
-		await DomainValidationRun.executeRun(
+		await executeValidationRun(
 			db,
 			email,
 			domainId,
@@ -130,7 +132,7 @@ export async function startOrReturnValidationRun(
 	domainName: string,
 	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ) {
-	const active = await DomainValidationRun.getActiveRun(db, domainId);
+	const active = await getActiveValidationRun(db, domainId);
 	if (active) {
 		return getValidationRunDetail(db, domainId, active.id);
 	}

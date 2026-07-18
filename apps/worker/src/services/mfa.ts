@@ -11,8 +11,10 @@ import {
 } from "../lib/auth/totp";
 import { verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
 import { getInstanceSettings } from "./instance-settings";
-import { assertMfaCanBeDisabled } from "./security-compliance";
+import { assertMfaCanBeDisabled } from "./instance-settings";
 import { createSession, type SessionMetadata } from "./auth-session";
 import { verifyMfaDisableRecoveryCode } from "./recovery-email";
 
@@ -51,8 +53,17 @@ export async function isMfaEnabled(
 
 export async function setupMfa(
 	db: Database,
-	input: { accountId: string; loginIdentifier: string; encryptionKey: string },
+	input: { accountId: string; encryptionKey: string },
 ) {
+	const [account] = await db
+		.select({ loginIdentifier: accounts.loginIdentifier })
+		.from(accounts)
+		.where(eq(accounts.id, input.accountId))
+		.limit(1);
+	if (!account) {
+		throw new Error("Account not found");
+	}
+
 	const existing = await getMfaStatus(db, input.accountId);
 	if (existing.enabled) {
 		throw new Error("Two-factor authentication is already enabled");
@@ -84,7 +95,7 @@ export async function setupMfa(
 		secret,
 		otpauthUrl: buildOtpAuthUrl({
 			secret,
-			accountName: input.loginIdentifier,
+			accountName: account.loginIdentifier,
 		}),
 	};
 }
@@ -242,6 +253,7 @@ export async function completeMfaSignIn(
 		encryptionKey: string;
 	},
 	sessionMetadata?: SessionMetadata,
+	logContext?: LogContext | null,
 ) {
 	const accountId = await verifyMfaChallengeToken(
 		input.mfaToken,
@@ -264,10 +276,81 @@ export async function completeMfaSignIn(
 		throw new Error("Invalid authentication code");
 	}
 
+	const session = await createSession(db, accountId, sessionMetadata);
+	await safeEmitLog(db, {
+		importance: 4,
+		type: "auth",
+		summary: "{actor} signed in",
+		refs: { actor: { kind: "account", id: accountId } },
+		actorAccountId: accountId,
+		context: logContext ?? null,
+	});
+
 	return {
 		accountId,
-		...(await createSession(db, accountId, sessionMetadata)),
+		...session,
 	};
+}
+
+export async function verifyMfaSignIn(
+	db: Database,
+	input: {
+		mfaToken: string;
+		code: string;
+		encryptionKey: string;
+	},
+	sessionMetadata?: SessionMetadata,
+	logContext?: LogContext | null,
+) {
+	try {
+		return await completeMfaSignIn(db, input, sessionMetadata, logContext);
+	} catch (error) {
+		await recordFailedMfaSignInAttempt(db, {
+			mfaToken: input.mfaToken,
+			encryptionKey: input.encryptionKey,
+			logContext,
+		}).catch((emitError) => {
+			console.error("Failed to emit auth log", emitError);
+		});
+		throw error;
+	}
+}
+
+export async function recordFailedMfaSignInAttempt(
+	db: Database,
+	input: {
+		mfaToken: string;
+		encryptionKey: string;
+		logContext?: LogContext | null;
+	},
+): Promise<void> {
+	let accountId: string | null = null;
+	try {
+		accountId = await verifyMfaChallengeToken(input.mfaToken, input.encryptionKey);
+	} catch {
+		await safeEmitLog(db, {
+			importance: 2,
+			type: "auth",
+			summary: "Failed sign-in attempt",
+			context: input.logContext ?? null,
+		});
+		return;
+	}
+
+	const [account] = await db
+		.select({ isIntendant: accounts.isIntendant })
+		.from(accounts)
+		.where(eq(accounts.id, accountId))
+		.limit(1);
+
+	await safeEmitLog(db, {
+		importance: account?.isIntendant ? 0 : 2,
+		type: "auth",
+		summary: "{actor} failed to sign in",
+		refs: { actor: { kind: "account", id: accountId } },
+		actorAccountId: accountId,
+		context: input.logContext ?? null,
+	});
 }
 
 export async function verifyAccountTotpCode(

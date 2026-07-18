@@ -6,7 +6,7 @@ import { AuthorizationDeniedError } from "../lib/auth/actions";
 import {
 	authorizeMailbox,
 	collectManageableMailboxIds,
-} from "../lib/auth/authorize";
+} from "../lib/auth/access";
 import type { Principal } from "../lib/auth/types";
 import { htmlFromUploadedText } from "../lib/email-templates/html-from-upload";
 import { emailTemplateStorageKey } from "../lib/email-templates/keys";

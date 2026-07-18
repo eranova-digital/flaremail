@@ -3,26 +3,7 @@ import type { ApiKeyScope } from "./api-key-scopes";
 import { AuthorizationDeniedError } from "./actions";
 import { authorize } from "./access";
 import type { AuthAction, AuthResource } from "./actions";
-import type { RoutePermission } from "./types";
 import type { Principal } from "./types";
-
-export { AuthorizationDeniedError } from "./actions";
-export {
-	AccountAccessDeniedError,
-	MailboxAccessDeniedError,
-	authorize,
-	authorizeAccount,
-	authorizeMailbox,
-	authorizeMailboxAccess,
-	authorizeDraftCommand,
-	assertPrincipalCanManageDomain,
-	collectManageableMailboxIds,
-	collectReadableMailboxIds,
-	filterMailboxesForPrincipal,
-} from "./access";
-export type { AccountOperation, MailboxOperation } from "./actions";
-export type { AuthAction, AuthResource } from "./actions";
-export type { MailboxListScope } from "./access";
 
 export type AuthorizeRouteInput = {
 	action: AuthAction;
@@ -83,45 +64,4 @@ export async function authorizeRoute(
 	}
 
 	return authorizeApiKeyScopes(request, principal, input.scopes);
-}
-
-/** @deprecated Prefer authorizeRoute. */
-export async function authorizeRequest(
-	request: Request,
-	principal: Principal,
-	action: AuthAction,
-	resource: AuthResource = {},
-): Promise<Response | null> {
-	return authorizeRoute(request, principal, {
-		action,
-		scopes: null,
-		routePath: "",
-		params: {},
-		resource,
-	});
-}
-
-/** @deprecated Prefer authorizeRoute. */
-export function authorizeApiKeyRoute(
-	request: Request,
-	principal: Principal,
-	scopes: readonly ApiKeyScope[] | null,
-): Response | null {
-	return authorizeApiKeyScopes(request, principal, scopes);
-}
-
-/** @deprecated Use authorizeRoute — kept for incremental migration. */
-export async function authorizePrincipal(
-	request: Request,
-	principal: Principal,
-	permission: RoutePermission,
-	context?: { domainId?: string; mailboxId?: string },
-): Promise<Response | null> {
-	return authorizeRoute(request, principal, {
-		action: permission,
-		scopes: null,
-		routePath: "",
-		params: {},
-		resource: context ?? {},
-	});
 }

@@ -10,7 +10,7 @@ import {
 	resolveInReplyToMessageUuid,
 	toThreadMessagePreview,
 	toThreadMessageWithBody,
-} from "../dto";
+} from "./dto";
 import { getThread } from "./thread-queries";
 
 export async function listThreadMessages(

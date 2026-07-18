@@ -4,7 +4,7 @@ import {
 	buildRfcMessageIdToUuidMap,
 	resolveInReplyToMessageUuid,
 	toThreadMessagePreview,
-} from "../src/services/dto";
+} from "../src/services/threads/dto";
 import type { Message } from "../src/db/schema";
 
 function message(overrides: Partial<Message> & Pick<Message, "id" | "messageId">): Message {

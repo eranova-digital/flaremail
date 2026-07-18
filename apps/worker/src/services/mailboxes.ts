@@ -14,8 +14,37 @@ import {
 	assertMailboxNotPrimaryAccount,
 	isSystemManagedLocalPart,
 } from "../lib/system-mailboxes";
+import { isSystemManagedMailbox } from "../lib/system-mailboxes";
 import { deleteMailboxCascade } from "./cascade-delete";
-import { toMailboxDto } from "./dto";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
+
+export function toMailboxDto(mailbox: {
+	id: string;
+	domainId: string;
+	address: string;
+	localPart: string;
+	type: string;
+	aliasTargetId: string | null;
+	aliasTargetAddress: string | null;
+	isActive: boolean;
+	personalIdentityAllowance?: boolean;
+	identityExport?: boolean;
+}) {
+	return {
+		id: mailbox.id,
+		domainId: mailbox.domainId,
+		address: mailbox.address,
+		localPart: mailbox.localPart,
+		type: mailbox.type,
+		aliasTargetId: mailbox.aliasTargetId,
+		aliasTargetAddress: mailbox.aliasTargetAddress,
+		isActive: mailbox.isActive,
+		personalIdentityAllowance: mailbox.personalIdentityAllowance ?? false,
+		identityExport: mailbox.identityExport ?? false,
+		isSystemManaged: isSystemManagedMailbox(mailbox),
+	};
+}
 
 async function getMailboxRow(db: Database, id: string) {
 	const [row] = await db.select().from(mailboxes).where(eq(mailboxes.id, id)).limit(1);
@@ -49,6 +78,7 @@ export async function createMailbox(
 		aliasTargetId?: string;
 		aliasTargetAddress?: string;
 	},
+	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ) {
 	const parsed = parseEmailAddress(input.address);
 	if (!parsed) {
@@ -140,7 +170,22 @@ export async function createMailbox(
 			})
 			.returning();
 
-		return toMailboxDto(row);
+		const created = toMailboxDto(row);
+		if (created.type === "shared" && logMeta?.actorAccountId) {
+			await safeEmitLog(db, {
+				importance: 4,
+				type: "mailboxes",
+				summary: "{actor} created {mailbox}",
+				refs: {
+					actor: { kind: "account", id: logMeta.actorAccountId },
+					mailbox: { kind: "mailbox", id: created.id },
+				},
+				actorAccountId: logMeta.actorAccountId,
+				context: logMeta.context ?? null,
+			});
+		}
+
+		return created;
 	} catch {
 		throw new Error("Mailbox already exists");
 	}
@@ -200,9 +245,25 @@ export async function removeMailbox(
 	db: Database,
 	bucket: R2Bucket,
 	id: string,
+	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ): Promise<void> {
 	const existing = await getMailboxRow(db, id);
 	assertMailboxMutable(existing);
 	await assertMailboxNotPrimaryAccount(db, id);
+	const mailbox = toMailboxDto(existing);
 	await deleteMailboxCascade(db, bucket, id);
+
+	if (mailbox.type === "shared" && logMeta?.actorAccountId) {
+		await safeEmitLog(db, {
+			importance: 4,
+			type: "mailboxes",
+			summary: "{actor} deleted {mailbox}",
+			refs: {
+				actor: { kind: "account", id: logMeta.actorAccountId },
+				mailbox: { kind: "mailbox", id: mailbox.id },
+			},
+			actorAccountId: logMeta.actorAccountId,
+			context: logMeta.context ?? null,
+		});
+	}
 }

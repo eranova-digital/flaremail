@@ -2,10 +2,11 @@ export {
 	PROFILE_LOCKABLE_FIELDS,
 	type ProfileLockableField,
 	type AccountProfileInput,
+	parseProfileInput,
 } from "./shared";
-export { listAccountsForPrincipal } from "./list";
 export { inviteAccount, regenerateInviteCode } from "./invite";
 export {
+	listAccountsForPrincipal,
 	loadProfileLocks,
 	getAccountDetail,
 	updateAccountProfile,
@@ -41,7 +42,6 @@ export {
 	uploadProfilePicture,
 	uploadProfilePictureForAccount,
 } from "./profile-picture";
-export { parseProfileInput } from "./parse-profile-input";
 export {
 	adminCreatePasswordResetCode,
 	adminDisableAccountMfa,
@@ -49,4 +49,4 @@ export {
 	adminListAccountSessions,
 	adminRevokeAccountSession,
 	adminRevokeAllAccountSessions,
-} from "./admin";
+} from "./security";

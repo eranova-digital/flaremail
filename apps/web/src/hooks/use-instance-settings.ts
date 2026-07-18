@@ -47,7 +47,7 @@ export function useCanAccessOrganizationTab(account: Account | null) {
 	}
 
 	return {
-		canAccess: canAccessOrganizationTab(account, settingsQuery.data),
+		canAccess: canAccessOrganizationTab(account),
 		isLoading: false,
 	};
 }

@@ -2,9 +2,9 @@ import {
 	buildSignatureTagContext,
 	resolveFromName,
 	resolveSignatureTags,
-} from "@/lib/identities/name-pattern";
+} from "@test-worker/identity-name-pattern";
 import type { Identity } from "@/lib/identities/api";
-import type { IdentityNamePattern } from "@/lib/identities/name-pattern";
+import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
 import { isEmptyEditorHtml } from "@/lib/compose-body";
 
 export const SIGNATURE_ATTR = "data-flaremail-signature";

@@ -33,10 +33,8 @@ import {
 	updateAccountAssignments,
 	updateDomainLocalPartPolicy,
 } from "../services/accounts";
-import {
-	parseLogContextFromRequest,
-	safeEmitLog,
-} from "../services/logs";
+import { parseLogContextFromRequest } from "../services/logs";
+import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
 
 export async function handleListAccounts(context: RouteContext) {
 	try {
@@ -67,13 +65,10 @@ export async function handleUpdateAccount(context: RouteContext) {
 	}
 	const value = body as Record<string, unknown>;
 	const targetAccountId = context.params.id;
-	const actorAccountId = context.principal.accountId;
-	const isAdminUpdate =
-		Boolean(actorAccountId) && actorAccountId !== targetAccountId;
 
 	try {
-		const account = await withDb(context.env, async (db) => {
-			const updated = await updateAccountProfile(
+		const account = await withDb(context.env, (db) =>
+			updateAccountProfile(
 				db,
 				context.principal,
 				targetAccountId,
@@ -88,22 +83,9 @@ export async function handleUpdateAccount(context: RouteContext) {
 							)
 						: undefined,
 				},
-			);
-			if (isAdminUpdate && actorAccountId) {
-				await safeEmitLog(db, {
-					importance: 7,
-					type: "accounts",
-					summary: "{actor} updated {account}'s profile",
-					refs: {
-						actor: { kind: "account", id: actorAccountId },
-						account: { kind: "account", id: targetAccountId },
-					},
-					actorAccountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-			return updated;
-		});
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonResponse(account);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -127,8 +109,8 @@ export async function handleInviteAccount(context: RouteContext) {
 		typeof value.role === "string" ? (value.role as AccountRole) : "user";
 
 	try {
-		const result = await withDb(context.env, async (db) => {
-			const invited = await inviteAccount(
+		const result = await withDb(context.env, (db) =>
+			inviteAccount(
 				db,
 				context.principal,
 				{
@@ -154,28 +136,10 @@ export async function handleInviteAccount(context: RouteContext) {
 						: undefined,
 					allSharedMailboxes: value.allSharedMailboxes === true,
 				},
-				{
-					email: context.env.EMAIL,
-					bucket: context.env.BUCKET,
-				},
-			);
-			const actorAccountId = context.principal.accountId;
-			if (actorAccountId) {
-				await safeEmitLog(db, {
-					importance: 4,
-					type: "invites",
-					summary: "{actor} created invite for {account}",
-					refs: {
-						actor: { kind: "account", id: actorAccountId },
-						account: { kind: "account", id: invited.accountId },
-						invite: { kind: "invite", id: invited.inviteId },
-					},
-					actorAccountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-			return invited;
-		});
+				createTransactionalEmailDeps(context.env),
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonResponse(result);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -310,8 +274,8 @@ export async function handleUpdateDomainLocalPartPolicy(context: RouteContext) {
 	const domainId = context.params.domainId;
 
 	try {
-		const policy = await withDb(context.env, async (db) => {
-			const updated = await updateDomainLocalPartPolicy(
+		const policy = await withDb(context.env, (db) =>
+			updateDomainLocalPartPolicy(
 				db,
 				context.principal,
 				domainId,
@@ -325,34 +289,9 @@ export async function handleUpdateDomainLocalPartPolicy(context: RouteContext) {
 								? value.pattern
 								: undefined,
 				},
-			);
-			const accountId = context.principal.accountId;
-			if (accountId) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "domains",
-					summary: "{actor} updated local-part policy for {domain}",
-					refs: {
-						actor: { kind: "account", id: accountId },
-						domain: { kind: "domain", id: domainId },
-					},
-					actorAccountId: accountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			} else {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "domains",
-					summary: "Updated local-part policy for {domain}",
-					refs: {
-						domain: { kind: "domain", id: domainId },
-					},
-					actorAccountId: null,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-			return updated;
-		});
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonResponse(policy);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -396,30 +335,14 @@ export async function handleUpdateAccountAssignments(context: RouteContext) {
 
 export async function handleRegenerateInviteCode(context: RouteContext) {
 	try {
-		const targetAccountId = context.params.id;
-		const result = await withDb(context.env, async (db) => {
-			const regenerated = await regenerateInviteCode(
+		const result = await withDb(context.env, (db) =>
+			regenerateInviteCode(
 				db,
 				context.principal,
-				targetAccountId,
-			);
-			const actorAccountId = context.principal.accountId;
-			if (actorAccountId) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "invites",
-					summary: "{actor} regenerated invite code for {account}",
-					refs: {
-						actor: { kind: "account", id: actorAccountId },
-						account: { kind: "account", id: targetAccountId },
-						invite: { kind: "invite", id: regenerated.inviteId },
-					},
-					actorAccountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-			return regenerated;
-		});
+				context.params.id,
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonResponse(result);
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -452,31 +375,15 @@ export async function handleGrantSharedMailboxAccess(context: RouteContext) {
 	}
 
 	try {
-		const targetAccountId = context.params.id;
-		const mailboxId = value.mailboxId as string;
-		await withDb(context.env, async (db) => {
-			await grantSharedMailboxAccess(
+		await withDb(context.env, (db) =>
+			grantSharedMailboxAccess(
 				db,
 				context.principal,
-				targetAccountId,
-				mailboxId,
-			);
-			const actorAccountId = context.principal.accountId;
-			if (actorAccountId) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "mailboxes",
-					summary: "{actor} granted {mailbox} to {account}",
-					refs: {
-						actor: { kind: "account", id: actorAccountId },
-						account: { kind: "account", id: targetAccountId },
-						mailbox: { kind: "mailbox", id: mailboxId },
-					},
-					actorAccountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-		});
+				context.params.id,
+				value.mailboxId as string,
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonResponse({ ok: true });
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -485,31 +392,15 @@ export async function handleGrantSharedMailboxAccess(context: RouteContext) {
 
 export async function handleRevokeSharedMailboxAccess(context: RouteContext) {
 	try {
-		const targetAccountId = context.params.id;
-		const mailboxId = context.params.mailboxId;
-		await withDb(context.env, async (db) => {
-			await revokeSharedMailboxAccess(
+		await withDb(context.env, (db) =>
+			revokeSharedMailboxAccess(
 				db,
 				context.principal,
-				targetAccountId,
-				mailboxId,
-			);
-			const actorAccountId = context.principal.accountId;
-			if (actorAccountId) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "mailboxes",
-					summary: "{actor} revoked {mailbox} from {account}",
-					refs: {
-						actor: { kind: "account", id: actorAccountId },
-						account: { kind: "account", id: targetAccountId },
-						mailbox: { kind: "mailbox", id: mailboxId },
-					},
-					actorAccountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-		});
+				context.params.id,
+				context.params.mailboxId,
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return new Response(null, { status: 204 });
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -542,31 +433,15 @@ export async function handleGrantManagerMailboxAssignment(context: RouteContext)
 	}
 
 	try {
-		const targetAccountId = context.params.id;
-		const mailboxId = value.mailboxId as string;
-		await withDb(context.env, async (db) => {
-			await grantManagerMailboxAssignment(
+		await withDb(context.env, (db) =>
+			grantManagerMailboxAssignment(
 				db,
 				context.principal,
-				targetAccountId,
-				mailboxId,
-			);
-			const actorAccountId = context.principal.accountId;
-			if (actorAccountId) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "mailboxes",
-					summary: "{actor} assigned {account} to manage {mailbox}",
-					refs: {
-						actor: { kind: "account", id: actorAccountId },
-						account: { kind: "account", id: targetAccountId },
-						mailbox: { kind: "mailbox", id: mailboxId },
-					},
-					actorAccountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-		});
+				context.params.id,
+				value.mailboxId as string,
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return jsonResponse({ ok: true });
 	} catch (error) {
 		return handleRouteError(error, context.request);
@@ -575,31 +450,15 @@ export async function handleGrantManagerMailboxAssignment(context: RouteContext)
 
 export async function handleRevokeManagerMailboxAssignment(context: RouteContext) {
 	try {
-		const targetAccountId = context.params.id;
-		const mailboxId = context.params.mailboxId;
-		await withDb(context.env, async (db) => {
-			await revokeManagerMailboxAssignment(
+		await withDb(context.env, (db) =>
+			revokeManagerMailboxAssignment(
 				db,
 				context.principal,
-				targetAccountId,
-				mailboxId,
-			);
-			const actorAccountId = context.principal.accountId;
-			if (actorAccountId) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "mailboxes",
-					summary: "{actor} revoked {account}'s management of {mailbox}",
-					refs: {
-						actor: { kind: "account", id: actorAccountId },
-						account: { kind: "account", id: targetAccountId },
-						mailbox: { kind: "mailbox", id: mailboxId },
-					},
-					actorAccountId,
-					context: parseLogContextFromRequest(context.request),
-				});
-			}
-		});
+				context.params.id,
+				context.params.mailboxId,
+				parseLogContextFromRequest(context.request),
+			),
+		);
 		return new Response(null, { status: 204 });
 	} catch (error) {
 		return handleRouteError(error, context.request);

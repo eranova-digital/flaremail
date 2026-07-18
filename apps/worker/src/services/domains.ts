@@ -6,9 +6,33 @@ import { isSchemaMismatchError, isUniqueViolation, schemaMismatchMessage } from 
 import { normalizeEmailAddress } from "../lib/normalize-email-address";
 import { provisionSystemMailboxes } from "../lib/system-mailboxes";
 import { deleteDomainCascade } from "./cascade-delete";
-import { getDomainReadinessSummary } from "./domain-validation";
-import { toDomainDto } from "./dto";
-import type { LogContext } from "./logs";
+import {
+	getDomainReadinessSummary,
+	startDomainValidation,
+	toDomainReadinessSummaryDto,
+} from "../lib/domain-validation";
+import type { LogContext } from "../lib/logs/context";
+import { safeEmitLog } from "../lib/logs/emit";
+
+export function toDomainDto(
+	domain: {
+		id: string;
+		name: string;
+		isActive: boolean;
+		catchAllEnabled: boolean;
+		catchAllMailboxId: string | null;
+	},
+	readiness?: ReturnType<typeof toDomainReadinessSummaryDto>,
+) {
+	return {
+		id: domain.id,
+		domain: domain.name,
+		isActive: domain.isActive,
+		catchAllEnabled: domain.catchAllEnabled,
+		catchAllMailboxId: domain.catchAllMailboxId,
+		readiness: readiness ?? toDomainReadinessSummaryDto(null),
+	};
+}
 
 async function toDomainDtoWithReadiness(
 	db: Database,
@@ -77,12 +101,37 @@ export async function createDomain(
 		});
 
 		if (email) {
-			const { startDomainValidation } = await import("./domain-validation");
 			try {
 				await startDomainValidation(db, email, row.id, row.name, logMeta);
 			} catch (error) {
 				console.error("Initial domain validation failed to start:", error);
 			}
+		}
+
+		const actorAccountId = logMeta?.actorAccountId ?? null;
+		if (actorAccountId) {
+			await safeEmitLog(db, {
+				importance: 3,
+				type: "domains",
+				summary: "{actor} registered {domain}",
+				refs: {
+					actor: { kind: "account", id: actorAccountId },
+					domain: { kind: "domain", id: row.id },
+				},
+				actorAccountId,
+				context: logMeta?.context ?? null,
+			});
+		} else {
+			await safeEmitLog(db, {
+				importance: 3,
+				type: "domains",
+				summary: "Registered {domain}",
+				refs: {
+					domain: { kind: "domain", id: row.id },
+				},
+				actorAccountId: null,
+				context: logMeta?.context ?? null,
+			});
 		}
 
 		return getDomain(db, row.id);
@@ -135,9 +184,36 @@ export async function removeDomain(
 	db: Database,
 	bucket: R2Bucket,
 	id: string,
+	logMeta?: { actorAccountId?: string | null; context?: LogContext | null },
 ): Promise<void> {
 	await getDomain(db, id);
 	await deleteDomainCascade(db, bucket, id);
+
+	const actorAccountId = logMeta?.actorAccountId ?? null;
+	if (actorAccountId) {
+		await safeEmitLog(db, {
+			importance: 3,
+			type: "domains",
+			summary: "{actor} deleted {domain}",
+			refs: {
+				actor: { kind: "account", id: actorAccountId },
+				domain: { kind: "domain", id },
+			},
+			actorAccountId,
+			context: logMeta?.context ?? null,
+		});
+	} else {
+		await safeEmitLog(db, {
+			importance: 3,
+			type: "domains",
+			summary: "Deleted {domain}",
+			refs: {
+				domain: { kind: "domain", id },
+			},
+			actorAccountId: null,
+			context: logMeta?.context ?? null,
+		});
+	}
 }
 
 export async function getDomainRecord(db: Database, id: string) {

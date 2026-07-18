@@ -38,21 +38,25 @@ import {
 import {
 	handleCreateLabel,
 	handleDeleteLabel,
+	handleGetLabel,
+	handleListLabels,
+	handleUpdateLabel,
+} from "../../controllers/labels";
+import {
 	handleDownloadAttachment,
 	handleDownloadMessageExternalImage,
 	handleDownloadRawMessage,
-	handleGetLabel,
 	handleGetMessage,
 	handleGetMessagePreview,
+	handleSearch,
+} from "../../controllers/messages-read";
+import {
 	handleGetThread,
-	handleListLabels,
 	handleListThreadMessages,
 	handleListThreads,
 	handlePatchThread,
-	handleSearch,
 	handleThreadAction,
-	handleUpdateLabel,
-} from "../../controllers/reads";
+} from "../../controllers/threads-read";
 import {
 	handleCreateEmailTemplate,
 	handleDeleteEmailTemplate,

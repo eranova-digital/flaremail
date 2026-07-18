@@ -6,6 +6,7 @@ import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
 import { parseIdentityNamePattern } from "../services/identities";
 import {
+	canAccessOrganizationSettings,
 	getInstanceSettings,
 	InstanceSettingsAccessDeniedError,
 	OrganizationTabAccessDeniedError,
@@ -15,11 +16,7 @@ import {
 	parseRequireMfaScope,
 	updateInstanceSettings,
 } from "../services/instance-settings";
-import {
-	parseLogContextFromRequest,
-	safeEmitLog,
-} from "../services/logs";
-import { canAccessOrganizationSettings } from "../services/security-compliance";
+import { parseLogContextFromRequest } from "../lib/logs/request-context";
 
 export async function handleGetInstanceSettings(context: RouteContext) {
 	if (!context.principal.accountId) {
@@ -186,35 +183,7 @@ export async function handleUpdateInstanceSettings(context: RouteContext) {
 				logsEnabled,
 				maxImportanceStored,
 				logRetentionDays,
-			});
-
-			const accountId = context.principal.accountId!;
-			const logContext = parseLogContextFromRequest(context.request);
-			await safeEmitLog(db, {
-				importance: 4,
-				type: "settings",
-				summary: "{actor} updated organization settings",
-				refs: { actor: { kind: "account", id: accountId } },
-				actorAccountId: accountId,
-				context: logContext,
-			});
-
-			const identitySettingsChanged =
-				identitySelfServe !== undefined ||
-				customNameAllowance !== undefined ||
-				defaultIdentityNamePattern !== undefined ||
-				defaultIdentityCustomName !== undefined ||
-				defaultIdentitySignatureHtml !== undefined;
-			if (identitySettingsChanged) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "identities",
-					summary: "{actor} updated organization identity settings",
-					refs: { actor: { kind: "account", id: accountId } },
-					actorAccountId: accountId,
-					context: logContext,
-				});
-			}
+			}, parseLogContextFromRequest(context.request));
 
 			return updated;
 		});

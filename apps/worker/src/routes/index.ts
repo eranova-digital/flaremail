@@ -1,22 +1,30 @@
+import { resolvePrincipal as resolvePrincipalLib } from "../lib/auth/resolve-principal";
 import { createRouter } from "../lib/http/router";
 import { problemResponse, requestInstance } from "../lib/http/problem";
+import { touchSession } from "../services/auth-session";
 import { handleHealthRequest } from "./health";
 import { handleOpenApiJson } from "./openapi";
 import { bootstrapRoutes } from "./bootstrap";
 import { authRoutes } from "./auth";
 import { v1Routes } from "./v1";
 
-export const apiRouter = createRouter([
+export const apiRouter = createRouter(
+	[
+		{
+			method: "GET",
+			path: "/api/v1/openapi.json",
+			auth: false,
+			handler: handleOpenApiJson,
+		},
+		...bootstrapRoutes,
+		...authRoutes,
+		...v1Routes,
+	],
 	{
-		method: "GET",
-		path: "/api/v1/openapi.json",
-		auth: false,
-		handler: handleOpenApiJson,
+		resolvePrincipal: (request, env) =>
+			resolvePrincipalLib(request, env, { touchSession }),
 	},
-	...bootstrapRoutes,
-	...authRoutes,
-	...v1Routes,
-]);
+);
 
 export function handleFetchRequest(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url);

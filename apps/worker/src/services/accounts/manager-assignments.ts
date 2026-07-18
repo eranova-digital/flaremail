@@ -9,6 +9,8 @@ import {
 } from "../../db/schema";
 import type { AccountRole, Principal } from "../../lib/auth/types";
 import { authorizeAccount } from "../../lib/auth/access";
+import type { LogContext } from "../../lib/logs/context";
+import { safeEmitLog } from "../../lib/logs/emit";
 import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
 import {
 	assertCanGrantOnSharedMailbox,
@@ -113,6 +115,7 @@ export async function grantManagerMailboxAssignment(
 	principal: Principal,
 	accountId: string,
 	mailboxId: string,
+	logContext?: LogContext | null,
 ) {
 	assertCanManageManagerAssignments(principal);
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
@@ -156,6 +159,21 @@ export async function grantManagerMailboxAssignment(
 		mailboxId,
 		allSharedMailboxes: false,
 	});
+
+	if (principal.accountId) {
+		await safeEmitLog(db, {
+			importance: 5,
+			type: "mailboxes",
+			summary: "{actor} assigned {account} to manage {mailbox}",
+			refs: {
+				actor: { kind: "account", id: principal.accountId },
+				account: { kind: "account", id: accountId },
+				mailbox: { kind: "mailbox", id: mailboxId },
+			},
+			actorAccountId: principal.accountId,
+			context: logContext,
+		});
+	}
 }
 
 export async function revokeManagerMailboxAssignment(
@@ -163,6 +181,7 @@ export async function revokeManagerMailboxAssignment(
 	principal: Principal,
 	accountId: string,
 	mailboxId: string,
+	logContext?: LogContext | null,
 ) {
 	assertCanManageManagerAssignments(principal);
 	await assertCanGrantOnSharedMailbox(db, principal, mailboxId);
@@ -199,6 +218,23 @@ export async function revokeManagerMailboxAssignment(
 	if (!hasAllShared && !hasExplicit) {
 		return;
 	}
+
+	const emitRevokeLog = async () => {
+		if (principal.accountId) {
+			await safeEmitLog(db, {
+				importance: 5,
+				type: "mailboxes",
+				summary: "{actor} revoked {account}'s management of {mailbox}",
+				refs: {
+					actor: { kind: "account", id: principal.accountId },
+					account: { kind: "account", id: accountId },
+					mailbox: { kind: "mailbox", id: mailboxId },
+				},
+				actorAccountId: principal.accountId,
+				context: logContext,
+			});
+		}
+	};
 
 	if (hasAllShared) {
 		await db
@@ -237,6 +273,7 @@ export async function revokeManagerMailboxAssignment(
 				});
 			}
 		}
+		await emitRevokeLog();
 		return;
 	}
 
@@ -248,4 +285,5 @@ export async function revokeManagerMailboxAssignment(
 				eq(managerSharedMailboxAssignments.mailboxId, mailboxId),
 			),
 		);
+	await emitRevokeLog();
 }

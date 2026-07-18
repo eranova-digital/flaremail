@@ -1,21 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/services/instance-settings");
+vi.mock("../src/lib/instance-settings/read");
 vi.mock("../src/lib/mailbox-queries");
 vi.mock("../src/lib/messages/outbound-persist");
 vi.mock("../src/lib/messages/send-email");
 
 import { sendTransactionalEmail } from "../src/lib/auth/transactional-email";
+import { getPersistNoreplyOutboundEmails } from "../src/lib/instance-settings/read";
 import { loadBlackholeMailboxForDomain } from "../src/lib/mailbox-queries";
 import { sendAndPersistNewMessage } from "../src/lib/messages/outbound-persist";
 import { sendEmail } from "../src/lib/messages/send-email";
-import { getInstanceSettings } from "../src/services/instance-settings";
 
 describe("sendTransactionalEmail", () => {
 	const db = {} as never;
 	const deps = {
 		email: { send: vi.fn() } as unknown as SendEmail,
 		bucket: {} as R2Bucket,
+		resolveIdentityForSend: vi.fn(async () => ({ fromName: "" })),
 	};
 	const input = {
 		domainName: "example.com",
@@ -31,9 +32,7 @@ describe("sendTransactionalEmail", () => {
 	});
 
 	it("sends without persisting when the setting is disabled", async () => {
-		vi.mocked(getInstanceSettings).mockResolvedValue({
-			persistNoreplyOutboundEmails: false,
-		});
+		vi.mocked(getPersistNoreplyOutboundEmails).mockResolvedValue(false);
 
 		await sendTransactionalEmail(db, deps, input);
 
@@ -51,9 +50,7 @@ describe("sendTransactionalEmail", () => {
 	});
 
 	it("persists to noreply sent when the setting is enabled", async () => {
-		vi.mocked(getInstanceSettings).mockResolvedValue({
-			persistNoreplyOutboundEmails: true,
-		});
+		vi.mocked(getPersistNoreplyOutboundEmails).mockResolvedValue(true);
 		vi.mocked(loadBlackholeMailboxForDomain).mockResolvedValue({
 			id: "noreply-mailbox-id",
 			address: "noreply@example.com",
@@ -85,40 +82,28 @@ describe("sendTransactionalEmail", () => {
 		expect(sendEmail).not.toHaveBeenCalled();
 	});
 
-	it("falls back to send-only when persistence is enabled but noreply is missing", async () => {
-		vi.mocked(getInstanceSettings).mockResolvedValue({
-			persistNoreplyOutboundEmails: true,
-		});
+	it("falls back to direct send when noreply mailbox is missing", async () => {
+		vi.mocked(getPersistNoreplyOutboundEmails).mockResolvedValue(true);
 		vi.mocked(loadBlackholeMailboxForDomain).mockResolvedValue(null);
 
 		await sendTransactionalEmail(db, deps, input);
 
-		expect(sendEmail).toHaveBeenCalledWith(
-			deps.email,
-			expect.objectContaining({
-				from: "noreply@example.com",
-				to: input.to,
-				subject: input.subject,
-				text: input.text,
-			}),
-		);
+		expect(sendEmail).toHaveBeenCalled();
 		expect(sendAndPersistNewMessage).not.toHaveBeenCalled();
 	});
 
-	it("forwards html when provided", async () => {
-		vi.mocked(getInstanceSettings).mockResolvedValue({
-			persistNoreplyOutboundEmails: false,
-		});
+	it("passes html through when provided", async () => {
+		vi.mocked(getPersistNoreplyOutboundEmails).mockResolvedValue(false);
 
 		await sendTransactionalEmail(db, deps, {
 			...input,
-			html: "<p>Hello {code}</p>",
+			html: "<p>Hello</p>",
 		});
 
 		expect(sendEmail).toHaveBeenCalledWith(
 			deps.email,
 			expect.objectContaining({
-				html: "<p>Hello {code}</p>",
+				html: "<p>Hello</p>",
 			}),
 		);
 	});

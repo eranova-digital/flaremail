@@ -17,7 +17,7 @@ import { storeMessage } from "./message-store";
 import { postalEmailToMimeContent } from "./postal-to-mime-content";
 import type { StoredAttachmentInput } from "./stored-attachment-input";
 import { processInboundHtmlImages } from "../email-images/process-inbound-html";
-import { emitLog } from "../../services/logs";
+import { emitLog } from "../logs/emit";
 
 export async function storeInboundEmail(
 	db: Database,

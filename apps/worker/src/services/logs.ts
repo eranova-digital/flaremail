@@ -15,61 +15,30 @@ import {
 	threads,
 } from "../db/schema";
 import { toProfilePicturePayload } from "../lib/profile-picture/payload";
+import type { LogContext } from "../lib/logs/context";
+import { emitLog, safeEmitLog } from "../lib/logs/emit";
+import {
+	LOG_REF_KINDS,
+	LOG_TYPES,
+	type EmitLogInput,
+	type LogRef,
+	type LogRefKind,
+	type LogRefs,
+	type LogType,
+} from "../lib/logs/types";
 import { getInstanceSettings } from "./instance-settings";
 
-export const LOG_TYPES = [
-	"auth",
-	"accounts",
-	"invites",
-	"mailboxes",
-	"mailing",
-	"threads",
-	"messages",
-	"identities",
-	"domains",
-	"settings",
-	"oidc",
-	"api-keys",
-] as const;
-
-export type LogType = (typeof LOG_TYPES)[number];
-
-export const LOG_REF_KINDS = [
-	"account",
-	"mailbox",
-	"thread",
-	"message",
-	"domain",
-	"identity",
-	"invite",
-	"oidc-client",
-	"api-key",
-	"external-address",
-] as const;
-
-export type LogRefKind = (typeof LOG_REF_KINDS)[number];
-
-export type LogRef = {
-	kind: LogRefKind;
-	id: string;
-};
-
-export type LogRefs = Record<string, LogRef>;
-
-export type LogContext = {
-	ip?: string;
-	userAgent?: string;
-	method?: string;
-	path?: string;
-};
-
-export type EmitLogInput = {
-	importance: number;
-	type: LogType;
-	summary: string;
-	refs?: LogRefs;
-	actorAccountId?: string | null;
-	context?: LogContext | null;
+export {
+	LOG_REF_KINDS,
+	LOG_TYPES,
+	emitLog,
+	safeEmitLog,
+	type EmitLogInput,
+	type LogContext,
+	type LogRef,
+	type LogRefKind,
+	type LogRefs,
+	type LogType,
 };
 
 export type ResolvedAccountRef = {
@@ -116,66 +85,7 @@ export function isLogType(value: unknown): value is LogType {
 	return typeof value === "string" && (LOG_TYPES as readonly string[]).includes(value);
 }
 
-export function parseLogContextFromRequest(request: Request): LogContext {
-	const headers = request.headers;
-	const forwarded =
-		headers.get("cf-connecting-ip") ??
-		headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-		null;
-	const url = new URL(request.url);
-	return {
-		ip: forwarded ?? undefined,
-		userAgent: headers.get("user-agent") ?? undefined,
-		method: request.method,
-		path: url.pathname,
-	};
-}
-
-export async function emitLog(
-	db: Database,
-	input: EmitLogInput,
-): Promise<string | null> {
-	if (
-		!Number.isInteger(input.importance) ||
-		input.importance < 0 ||
-		input.importance > 10
-	) {
-		throw new Error("importance must be an integer from 0 to 10");
-	}
-
-	const settings = await getInstanceSettings(db);
-	if (!settings.logsEnabled) {
-		return null;
-	}
-	if (input.importance > settings.maxImportanceStored) {
-		return null;
-	}
-
-	const id = crypto.randomUUID();
-	await db.insert(logs).values({
-		id,
-		importance: input.importance,
-		type: input.type,
-		summary: input.summary,
-		refs: JSON.stringify(input.refs ?? {}),
-		actorAccountId: input.actorAccountId ?? null,
-		context: input.context ? JSON.stringify(input.context) : null,
-	});
-
-	return id;
-}
-
-/** Await emitLog without failing the main action if logging fails. */
-export async function safeEmitLog(
-	db: Database,
-	input: EmitLogInput,
-): Promise<void> {
-	try {
-		await emitLog(db, input);
-	} catch (error) {
-		console.error("Failed to emit log", error);
-	}
-}
+export { parseLogContextFromRequest } from "../lib/logs/request-context";
 
 export async function purgeExpiredLogs(db: Database): Promise<number> {
 	const settings = await getInstanceSettings(db);

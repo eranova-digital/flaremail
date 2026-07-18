@@ -1,6 +1,13 @@
 import type { Database } from "../../db/client";
 import { tryConsumeValidationInbound } from "./consume-inbound";
 import {
+	getDomainReadinessSummary,
+	getValidationRunDetail,
+	listValidationRuns,
+	startDomainValidation,
+	startOrReturnValidationRun,
+} from "./queries";
+import {
 	createValidationRun,
 	executeValidationRun,
 	getActiveValidationRun,
@@ -19,6 +26,11 @@ export const DomainValidationRun = {
 	getLatestRun: getLatestValidationRunForDomain,
 	createRun: createValidationRun,
 	executeRun: executeValidationRun,
+	getReadinessSummary: getDomainReadinessSummary,
+	listRuns: listValidationRuns,
+	getRunDetail: getValidationRunDetail,
+	startRun: startDomainValidation,
+	startOrReturnRun: startOrReturnValidationRun,
 };
 
 export type DomainValidationDb = Database;

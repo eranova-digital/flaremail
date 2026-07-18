@@ -1,8 +1,8 @@
+import { AuthorizationDeniedError } from "../auth/actions";
 import {
 	AccountAccessDeniedError,
-	AuthorizationDeniedError,
 	MailboxAccessDeniedError,
-} from "../auth/authorize";
+} from "../auth/access";
 import { NoRecoveryEmailError } from "../auth/errors";
 import { EmailSendError, emailSendErrorStatus } from "../messages/send-email";
 import { problemResponse, problemTitle, requestInstance } from "./problem";

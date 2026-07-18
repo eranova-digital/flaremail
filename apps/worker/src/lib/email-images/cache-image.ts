@@ -1,7 +1,271 @@
 import type { NewMessageExternalImage } from "../../db/schema";
-import { imageCacheKeyForUrl } from "./cache-key";
-import { fetchRemoteImage, RemoteImageFetchError } from "./fetch-remote-image";
-import { normalizeImageUrl } from "./url";
+
+export const MAX_REMOTE_IMAGE_BYTES = 10 * 1024 * 1024;
+export const REMOTE_IMAGE_FETCH_TIMEOUT_MS = 10_000;
+export const REMOTE_IMAGE_MAX_REDIRECTS = 3;
+
+export const IMAGE_CACHE_KEY_PREFIX = "images/cache";
+
+const BLOCKED_HOSTNAMES = new Set([
+	"localhost",
+	"localhost.localdomain",
+	"metadata.google.internal",
+	"metadata.goog",
+]);
+
+const PRIVATE_IPV4_RANGES = [
+	/^127\./,
+	/^10\./,
+	/^192\.168\./,
+	/^169\.254\./,
+	/^0\./,
+	/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
+	/^172\.(1[6-9]|2\d|3[01])\./,
+];
+
+function isPrivateIpv4(hostname: string): boolean {
+	return PRIVATE_IPV4_RANGES.some((pattern) => pattern.test(hostname));
+}
+
+function isPrivateIpv6(hostname: string): boolean {
+	const normalized = hostname.toLowerCase();
+	return (
+		normalized === "::1" ||
+		normalized.startsWith("fc") ||
+		normalized.startsWith("fd") ||
+		normalized.startsWith("fe80:")
+	);
+}
+
+export function normalizeImageUrl(rawUrl: string): string | null {
+	const trimmed = rawUrl.trim();
+	if (!trimmed) {
+		return null;
+	}
+
+	try {
+		const parsed = new URL(trimmed);
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			return null;
+		}
+		if (parsed.username || parsed.password) {
+			return null;
+		}
+		parsed.hash = "";
+		return parsed.toString();
+	} catch {
+		return null;
+	}
+}
+
+export function isExternalImageUrl(rawUrl: string): boolean {
+	const normalized = normalizeImageUrl(rawUrl);
+	return normalized !== null;
+}
+
+export function isAllowedRemoteImageUrl(rawUrl: string): boolean {
+	const normalized = normalizeImageUrl(rawUrl);
+	if (!normalized) {
+		return false;
+	}
+
+	const { hostname, port } = new URL(normalized);
+	const lowerHost = hostname.toLowerCase();
+
+	if (BLOCKED_HOSTNAMES.has(lowerHost)) {
+		return false;
+	}
+
+	if (lowerHost.endsWith(".localhost") || lowerHost.endsWith(".local")) {
+		return false;
+	}
+
+	if (isPrivateIpv4(lowerHost) || isPrivateIpv6(lowerHost)) {
+		return false;
+	}
+
+	if (port && port !== "80" && port !== "443") {
+		const portNumber = Number(port);
+		if (!Number.isFinite(portNumber) || portNumber <= 0 || portNumber > 65535) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+export function parseSrcsetUrls(srcset: string): string[] {
+	return srcset
+		.split(",")
+		.map((entry) => entry.trim().split(/\s+/)[0] ?? "")
+		.filter(Boolean);
+}
+
+export function rewriteSrcset(
+	srcset: string,
+	replaceUrl: (url: string) => string | null,
+): string | null {
+	let changed = false;
+	const rewritten = srcset
+		.split(",")
+		.map((entry) => {
+			const trimmed = entry.trim();
+			if (!trimmed) {
+				return trimmed;
+			}
+
+			const [url, ...descriptorParts] = trimmed.split(/\s+/);
+			if (!url) {
+				return trimmed;
+			}
+
+			const nextUrl = replaceUrl(url);
+			if (!nextUrl || nextUrl === url) {
+				return trimmed;
+			}
+
+			changed = true;
+			return [nextUrl, ...descriptorParts].join(" ");
+		})
+		.join(", ");
+
+	return changed ? rewritten : null;
+}
+
+export async function hashImageUrl(rawUrl: string): Promise<string | null> {
+	const normalized = normalizeImageUrl(rawUrl);
+	if (!normalized) {
+		return null;
+	}
+
+	const digest = await crypto.subtle.digest(
+		"SHA-256",
+		new TextEncoder().encode(normalized),
+	);
+	return [...new Uint8Array(digest)]
+		.map((byte) => byte.toString(16).padStart(2, "0"))
+		.join("");
+}
+
+export async function imageCacheKeyForUrl(rawUrl: string): Promise<string | null> {
+	const hash = await hashImageUrl(rawUrl);
+	if (!hash) {
+		return null;
+	}
+
+	return `${IMAGE_CACHE_KEY_PREFIX}/${hash}`;
+}
+
+export class RemoteImageFetchError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "RemoteImageFetchError";
+	}
+}
+
+function isImageContentType(contentType: string | null): boolean {
+	if (!contentType) {
+		return false;
+	}
+
+	const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+	return mimeType.startsWith("image/");
+}
+
+async function readResponseBytes(response: Response): Promise<ArrayBuffer> {
+	const reader = response.body?.getReader();
+	if (!reader) {
+		return new ArrayBuffer(0);
+	}
+
+	const chunks: Uint8Array[] = [];
+	let totalBytes = 0;
+
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) {
+			break;
+		}
+		if (!value) {
+			continue;
+		}
+
+		totalBytes += value.byteLength;
+		if (totalBytes > MAX_REMOTE_IMAGE_BYTES) {
+			throw new RemoteImageFetchError("Remote image exceeds size limit");
+		}
+
+		chunks.push(value);
+	}
+
+	const merged = new Uint8Array(totalBytes);
+	let offset = 0;
+	for (const chunk of chunks) {
+		merged.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+
+	return merged.buffer;
+}
+
+export async function fetchRemoteImage(
+	rawUrl: string,
+): Promise<{ body: ArrayBuffer; mimeType: string }> {
+	const normalized = normalizeImageUrl(rawUrl);
+	if (!normalized || !isAllowedRemoteImageUrl(normalized)) {
+		throw new RemoteImageFetchError("Remote image URL is not allowed");
+	}
+
+	let currentUrl = normalized;
+
+	for (let redirectCount = 0; redirectCount <= REMOTE_IMAGE_MAX_REDIRECTS; redirectCount++) {
+		if (!isAllowedRemoteImageUrl(currentUrl)) {
+			throw new RemoteImageFetchError("Redirect target is not allowed");
+		}
+
+		const response = await fetch(currentUrl, {
+			method: "GET",
+			redirect: "manual",
+			signal: AbortSignal.timeout(REMOTE_IMAGE_FETCH_TIMEOUT_MS),
+			headers: {
+				Accept: "image/*",
+				"User-Agent": "Flaremail/1.0 ImageProxy",
+			},
+		});
+
+		if (response.status >= 300 && response.status < 400) {
+			const location = response.headers.get("Location");
+			if (!location) {
+				throw new RemoteImageFetchError("Redirect response missing Location header");
+			}
+			currentUrl = new URL(location, currentUrl).toString();
+			continue;
+		}
+
+		if (!response.ok) {
+			throw new RemoteImageFetchError(
+				`Remote image fetch failed with status ${response.status}`,
+			);
+		}
+
+		const contentType = response.headers.get("Content-Type");
+		if (!isImageContentType(contentType)) {
+			throw new RemoteImageFetchError("Remote response is not an image");
+		}
+
+		const body = await readResponseBytes(response);
+		if (body.byteLength === 0) {
+			throw new RemoteImageFetchError("Remote image is empty");
+		}
+
+		return {
+			body,
+			mimeType: contentType!.split(";")[0]!.trim().toLowerCase(),
+		};
+	}
+
+	throw new RemoteImageFetchError("Too many redirects while fetching image");
+}
 
 export type CachedRemoteImage = {
 	sourceUrl: string;

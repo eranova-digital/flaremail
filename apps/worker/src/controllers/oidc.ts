@@ -1,11 +1,10 @@
-import { withDb, type Database } from "../db/client";
-import type { OidcClient } from "../db/schema";
-import type { Principal } from "../lib/auth/types";
+import { withDb } from "../db/client";
 import { getOidcPublicJwks } from "../lib/auth/oidc-signing";
 import { tryResolveSessionPrincipal } from "../lib/auth/resolve-principal";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
+import { parseLogContextFromRequest } from "../lib/logs/request-context";
 import {
 	problemResponse,
 	requestInstance,
@@ -13,29 +12,21 @@ import {
 } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
 import {
-	bindPendingAuthorizationAccount,
-	buildClientRedirect,
-	completeAuthorization,
-	createPendingAuthorization,
-	denyAuthorization,
+	adminRevokeClientGrant,
+	decideConsent,
 	discoveryDocument,
 	exchangeAuthorizationCode,
 	exchangeClientCredentials,
-	getOidcClientByClientId,
-	getPendingAuthorization,
+	getPendingAuthorizationForAccount,
 	getUserInfo,
-	intersectScopes,
-	isExactRedirectUri,
 	issuerUrl,
+	listClientGrantsByRecordId,
 	listConsentGrantsForAccount,
-	listConsentGrantsForClient,
-	needsConsent,
 	OidcError,
-	parseScopeList,
 	refreshUserToken,
-	revokeConsentGrant,
-	upsertConsentGrant,
-	type OidcPendingAuthorization,
+	revokeAccountClientGrant,
+	startAuthorization,
+	type OidcAuthorizationResult,
 } from "../services/oidc";
 import {
 	createOidcClientRecord,
@@ -45,10 +36,6 @@ import {
 	regenerateOidcClientSecret,
 	updateOidcClient,
 } from "../services/oidc-clients";
-import {
-	parseLogContextFromRequest,
-	safeEmitLog,
-} from "../services/logs";
 
 function oidcErrorResponse(error: unknown, request: Request): Response {
 	if (error instanceof OidcError) {
@@ -81,6 +68,15 @@ function logContext(request: Request) {
 	return parseLogContextFromRequest(request);
 }
 
+async function mapAuthorizationResult(
+	result: OidcAuthorizationResult,
+): Promise<Response> {
+	if (result.kind === "html_error") {
+		return htmlErrorPage(result.title, result.message);
+	}
+	return Response.redirect(result.url, 302);
+}
+
 export async function handleOpenIdDiscovery(context: RouteContext): Promise<Response> {
 	return jsonResponse(discoveryDocument(context.request));
 }
@@ -95,7 +91,6 @@ export async function handleOidcJwks(context: RouteContext): Promise<Response> {
 
 export async function handleOidcAuthorize(context: RouteContext) {
 	const url = new URL(context.request.url);
-	const pendingId = url.searchParams.get("pending");
 
 	try {
 		return await withDb(context.env, async (db) => {
@@ -103,200 +98,28 @@ export async function handleOidcAuthorize(context: RouteContext) {
 				context.request,
 				context.env,
 			);
-
-			if (pendingId) {
-				const pending = await getPendingAuthorization(db, pendingId);
-				if (!pending) {
-					return htmlErrorPage(
-						"Invalid request",
-						"This authorization request has expired.",
-					);
-				}
-				const client = await getOidcClientByClientId(db, pending.clientId);
-				if (!client) {
-					return htmlErrorPage("Invalid client", "The OIDC client no longer exists.");
-				}
-				return continuePendingAuthorization(
-					context.request,
-					context.env,
-					db,
-					pending,
-					client,
-					session,
-				);
-			}
-
-			const clientId = url.searchParams.get("client_id");
-			const redirectUri = url.searchParams.get("redirect_uri");
-			const state = url.searchParams.get("state");
-			const nonce = url.searchParams.get("nonce");
-			const codeChallenge = url.searchParams.get("code_challenge");
-			const codeChallengeMethod = url.searchParams.get("code_challenge_method");
-			const responseType = url.searchParams.get("response_type") ?? "code";
-
-			if (!clientId || !redirectUri) {
-				return htmlErrorPage(
-					"Invalid request",
-					"client_id and redirect_uri are required.",
-				);
-			}
-
-			const client = await getOidcClientByClientId(db, clientId);
-			if (!client || !isExactRedirectUri(client, redirectUri)) {
-				return htmlErrorPage(
-					"Invalid client",
-					"Unknown client_id or redirect_uri is not registered.",
-				);
-			}
-
-			if (responseType !== "code") {
-				return Response.redirect(
-					buildClientRedirect(redirectUri, {
-						error: "unsupported_response_type",
-						state: state ?? undefined,
-					}),
-					302,
-				);
-			}
-			if (!codeChallenge || codeChallengeMethod !== "S256") {
-				return Response.redirect(
-					buildClientRedirect(redirectUri, {
-						error: "invalid_request",
-						error_description: "PKCE with S256 is required",
-						state: state ?? undefined,
-					}),
-					302,
-				);
-			}
-
-			const requested = parseScopeList(url.searchParams.get("scope"));
-			const scopes = intersectScopes(requested, client.allowedScopes);
-			if (!scopes.includes("openid")) {
-				return Response.redirect(
-					buildClientRedirect(redirectUri, {
-						error: "invalid_scope",
-						error_description: "openid scope is required",
-						state: state ?? undefined,
-					}),
-					302,
-				);
-			}
-
-			const pending = await createPendingAuthorization(db, {
-				clientId: client.clientId,
-				redirectUri,
-				scopes,
-				state,
-				nonce,
-				codeChallenge,
-				codeChallengeMethod,
-			});
-
-			return continuePendingAuthorization(
-				context.request,
-				context.env,
+			const result = await startAuthorization(
 				db,
-				pending,
-				client,
+				{
+					pendingId: url.searchParams.get("pending"),
+					clientId: url.searchParams.get("client_id"),
+					redirectUri: url.searchParams.get("redirect_uri"),
+					state: url.searchParams.get("state"),
+					nonce: url.searchParams.get("nonce"),
+					codeChallenge: url.searchParams.get("code_challenge"),
+					codeChallengeMethod: url.searchParams.get("code_challenge_method"),
+					responseType: url.searchParams.get("response_type") ?? "code",
+					scope: url.searchParams.get("scope"),
+				},
 				session,
+				webOrigin(context.request, context.env),
+				logContext(context.request),
 			);
+			return mapAuthorizationResult(result);
 		});
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
 	}
-}
-
-async function continuePendingAuthorization(
-	request: Request,
-	env: Env,
-	db: Database,
-	pending: OidcPendingAuthorization,
-	client: OidcClient,
-	session: Principal | null,
-): Promise<Response> {
-	if (!session?.accountId) {
-		const resume = `/api/v1/oauth/authorize?pending=${encodeURIComponent(pending.id)}`;
-		const login = new URL("/login", webOrigin(request, env));
-		login.searchParams.set("return_to", resume);
-		return Response.redirect(login.toString(), 302);
-	}
-
-	if (session.isIntendant) {
-		await denyAuthorization(db, pending);
-		await safeEmitLog(db, {
-			importance: 6,
-			type: "oidc",
-			summary: "{actor} denied authorization for {client}",
-			refs: {
-				actor: { kind: "account", id: session.accountId },
-				client: { kind: "oidc-client", id: client.id },
-			},
-			actorAccountId: session.accountId,
-			context: logContext(request),
-		});
-		return Response.redirect(
-			buildClientRedirect(pending.redirectUri, {
-				error: "access_denied",
-				error_description: "Intendant cannot use OIDC",
-				state: pending.state ?? undefined,
-			}),
-			302,
-		);
-	}
-
-	if (session.status !== "active") {
-		await safeEmitLog(db, {
-			importance: 6,
-			type: "oidc",
-			summary: "{actor} denied authorization for {client}",
-			refs: {
-				actor: { kind: "account", id: session.accountId },
-				client: { kind: "oidc-client", id: client.id },
-			},
-			actorAccountId: session.accountId,
-			context: logContext(request),
-		});
-		return Response.redirect(
-			buildClientRedirect(pending.redirectUri, {
-				error: "access_denied",
-				error_description: "Account is not active",
-				state: pending.state ?? undefined,
-			}),
-			302,
-		);
-	}
-
-	let activePending = pending;
-	if (pending.accountId && pending.accountId !== session.accountId) {
-		return htmlErrorPage(
-			"Session mismatch",
-			"This authorization request belongs to a different account.",
-		);
-	}
-	if (!pending.accountId) {
-		await bindPendingAuthorizationAccount(db, pending.id, session.accountId);
-		activePending = { ...pending, accountId: session.accountId };
-	}
-
-	if (await needsConsent(db, client, session.accountId, activePending.scopes)) {
-		const consent = new URL("/oauth/consent", webOrigin(request, env));
-		consent.searchParams.set("pending", activePending.id);
-		return Response.redirect(consent.toString(), 302);
-	}
-
-	const location = await completeAuthorization(db, activePending, session.accountId);
-	await safeEmitLog(db, {
-		importance: 6,
-		type: "oidc",
-		summary: "{actor} authorized {client}",
-		refs: {
-			actor: { kind: "account", id: session.accountId },
-			client: { kind: "oidc-client", id: client.id },
-		},
-		actorAccountId: session.accountId,
-		context: logContext(request),
-	});
-	return Response.redirect(location, 302);
 }
 
 export async function handleGetOidcPending(context: RouteContext) {
@@ -305,32 +128,13 @@ export async function handleGetOidcPending(context: RouteContext) {
 		return validationError(context.request, "Authentication required");
 	}
 	try {
-		const result = await withDb(context.env, async (db) => {
-			const pending = await getPendingAuthorization(db, pendingId);
-			if (!pending) {
-				return null;
-			}
-			if (pending.accountId && pending.accountId !== context.principal.accountId) {
-				return "forbidden" as const;
-			}
-			const client = await getOidcClientByClientId(db, pending.clientId);
-			if (!client) {
-				return null;
-			}
-			return {
-				id: pending.id,
-				clientId: client.clientId,
-				clientRecordId: client.id,
-				clientName: client.name,
-				scopes: pending.scopes,
-				redirectUri: pending.redirectUri,
-				requireConsent: client.requireConsent,
-				homescreenUrl: client.homescreenUrl,
-				logo: client.logoUpdatedAt
-					? { updatedAt: client.logoUpdatedAt.toISOString() }
-					: null,
-			};
-		});
+		const result = await withDb(context.env, (db) =>
+			getPendingAuthorizationForAccount(
+				db,
+				pendingId,
+				context.principal.accountId!,
+			),
+		);
 		if (result === "forbidden") {
 			return problemResponse(403, "Forbidden", {
 				code: "forbidden",
@@ -370,75 +174,18 @@ export async function handleOidcConsentDecision(context: RouteContext) {
 	}
 
 	try {
-		const location = await withDb(context.env, async (db) => {
-			const pending = await getPendingAuthorization(db, pendingId);
-			if (!pending) {
-				throw new OidcError(
-					"Pending authorization not found",
-					"invalid_request",
-					404,
-				);
-			}
-			if (pending.accountId && pending.accountId !== context.principal.accountId) {
-				throw new OidcError("Session mismatch", "access_denied", 403);
-			}
-			const accountId = context.principal.accountId!;
-			if (!pending.accountId) {
-				await bindPendingAuthorizationAccount(db, pending.id, accountId);
-			}
-			const client = await getOidcClientByClientId(db, pending.clientId);
-			if (!client) {
-				throw new OidcError("Invalid client", "invalid_client", 400);
-			}
-			if (decision === "deny") {
-				const redirectTo = await denyAuthorization(db, {
-					...pending,
-					accountId,
-				});
-				await safeEmitLog(db, {
-					importance: 6,
-					type: "oidc",
-					summary: "{actor} denied authorization for {client}",
-					refs: {
-						actor: { kind: "account", id: accountId },
-						client: { kind: "oidc-client", id: client.id },
-					},
-					actorAccountId: accountId,
-					context: logContext(context.request),
-				});
-				return redirectTo;
-			}
-			await upsertConsentGrant(db, {
-				accountId,
-				clientId: client.clientId,
-				scopes: pending.scopes,
-			});
-			await safeEmitLog(db, {
-				importance: 5,
-				type: "oidc",
-				summary: "{actor} granted consent to {client}",
-				refs: {
-					actor: { kind: "account", id: accountId },
-					client: { kind: "oidc-client", id: client.id },
+		const result = await withDb(context.env, (db) =>
+			decideConsent(
+				db,
+				{
+					pendingId,
+					decision,
+					accountId: context.principal.accountId!,
 				},
-				actorAccountId: accountId,
-				context: logContext(context.request),
-			});
-			const redirectTo = await completeAuthorization(db, pending, accountId);
-			await safeEmitLog(db, {
-				importance: 6,
-				type: "oidc",
-				summary: "{actor} authorized {client}",
-				refs: {
-					actor: { kind: "account", id: accountId },
-					client: { kind: "oidc-client", id: client.id },
-				},
-				actorAccountId: accountId,
-				context: logContext(context.request),
-			});
-			return redirectTo;
-		});
-		return jsonResponse({ redirectTo: location });
+				logContext(context.request),
+			),
+		);
+		return jsonResponse({ redirectTo: result.redirectTo });
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
 	}
@@ -536,42 +283,31 @@ export async function handleCreateOidcClient(context: RouteContext) {
 		return validationError(context.request, "name and redirectUris are required");
 	}
 	try {
-		const result = await withDb(context.env, async (db) => {
-			const created = await createOidcClientRecord(db, {
-				name: value.name as string,
-				redirectUris: (value.redirectUris as unknown[]).filter(
-					(uri): uri is string => typeof uri === "string",
-				),
-				allowedScopes: Array.isArray(value.allowedScopes)
-					? value.allowedScopes.filter((s): s is string => typeof s === "string")
-					: ["openid", "profile", "email"],
-				m2mPermissions: Array.isArray(value.m2mPermissions)
-					? value.m2mPermissions.filter((s): s is string => typeof s === "string")
-					: [],
-				isConfidential: value.isConfidential !== false,
-				requireConsent: value.requireConsent !== false,
-				homescreenUrl:
-					typeof value.homescreenUrl === "string" || value.homescreenUrl === null
-						? (value.homescreenUrl as string | null)
-						: undefined,
-				createdByAccountId: context.principal.accountId,
-			});
-			const actorId = context.principal.accountId;
-			if (actorId) {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "oidc",
-					summary: "{actor} created OIDC client {client}",
-					refs: {
-						actor: { kind: "account", id: actorId },
-						client: { kind: "oidc-client", id: created.id },
-					},
-					actorAccountId: actorId,
-					context: logContext(context.request),
-				});
-			}
-			return created;
-		});
+		const result = await withDb(context.env, (db) =>
+			createOidcClientRecord(
+				db,
+				{
+					name: value.name as string,
+					redirectUris: (value.redirectUris as unknown[]).filter(
+						(uri): uri is string => typeof uri === "string",
+					),
+					allowedScopes: Array.isArray(value.allowedScopes)
+						? value.allowedScopes.filter((s): s is string => typeof s === "string")
+						: ["openid", "profile", "email"],
+					m2mPermissions: Array.isArray(value.m2mPermissions)
+						? value.m2mPermissions.filter((s): s is string => typeof s === "string")
+						: [],
+					isConfidential: value.isConfidential !== false,
+					requireConsent: value.requireConsent !== false,
+					homescreenUrl:
+						typeof value.homescreenUrl === "string" || value.homescreenUrl === null
+							? (value.homescreenUrl as string | null)
+							: undefined,
+					createdByAccountId: context.principal.accountId,
+				},
+				logContext(context.request),
+			),
+		);
 		return jsonResponse(result, 201);
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
@@ -611,46 +347,42 @@ export async function handleUpdateOidcClient(context: RouteContext) {
 	}
 	const value = body as Record<string, unknown>;
 	try {
-		const client = await withDb(context.env, async (db) => {
-			const updated = await updateOidcClient(db, context.params.id, {
-				name: typeof value.name === "string" ? value.name : undefined,
-				redirectUris: Array.isArray(value.redirectUris)
-					? value.redirectUris.filter((s): s is string => typeof s === "string")
-					: undefined,
-				allowedScopes: Array.isArray(value.allowedScopes)
-					? value.allowedScopes.filter((s): s is string => typeof s === "string")
-					: undefined,
-				m2mPermissions: Array.isArray(value.m2mPermissions)
-					? value.m2mPermissions.filter((s): s is string => typeof s === "string")
-					: undefined,
-				isConfidential:
-					typeof value.isConfidential === "boolean"
-						? value.isConfidential
+		const client = await withDb(context.env, (db) =>
+			updateOidcClient(
+				db,
+				context.params.id,
+				{
+					name: typeof value.name === "string" ? value.name : undefined,
+					redirectUris: Array.isArray(value.redirectUris)
+						? value.redirectUris.filter((s): s is string => typeof s === "string")
 						: undefined,
-				requireConsent:
-					typeof value.requireConsent === "boolean"
-						? value.requireConsent
+					allowedScopes: Array.isArray(value.allowedScopes)
+						? value.allowedScopes.filter((s): s is string => typeof s === "string")
 						: undefined,
-				homescreenUrl:
-					typeof value.homescreenUrl === "string" || value.homescreenUrl === null
-						? (value.homescreenUrl as string | null)
+					m2mPermissions: Array.isArray(value.m2mPermissions)
+						? value.m2mPermissions.filter((s): s is string => typeof s === "string")
 						: undefined,
-			});
-			if (updated && context.principal.accountId) {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "oidc",
-					summary: "{actor} updated OIDC client {client}",
-					refs: {
-						actor: { kind: "account", id: context.principal.accountId },
-						client: { kind: "oidc-client", id: updated.id },
-					},
-					actorAccountId: context.principal.accountId,
-					context: logContext(context.request),
-				});
-			}
-			return updated;
-		});
+					isConfidential:
+						typeof value.isConfidential === "boolean"
+							? value.isConfidential
+							: undefined,
+					requireConsent:
+						typeof value.requireConsent === "boolean"
+							? value.requireConsent
+							: undefined,
+					homescreenUrl:
+						typeof value.homescreenUrl === "string" || value.homescreenUrl === null
+							? (value.homescreenUrl as string | null)
+							: undefined,
+				},
+				context.principal.accountId
+					? {
+							actorAccountId: context.principal.accountId,
+							context: logContext(context.request),
+						}
+					: undefined,
+			),
+		);
 		if (!client) {
 			return problemResponse(404, "OIDC client not found", {
 				code: "not_found",
@@ -665,27 +397,19 @@ export async function handleUpdateOidcClient(context: RouteContext) {
 
 export async function handleDeleteOidcClient(context: RouteContext) {
 	try {
-		const deleted = await withDb(context.env, async (db) => {
-			const ok = await deleteOidcClient(
+		const deleted = await withDb(context.env, (db) =>
+			deleteOidcClient(
 				db,
 				context.env.BUCKET,
 				context.params.id,
-			);
-			if (ok && context.principal.accountId) {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "oidc",
-					summary: "{actor} deleted OIDC client {client}",
-					refs: {
-						actor: { kind: "account", id: context.principal.accountId },
-						client: { kind: "oidc-client", id: context.params.id },
-					},
-					actorAccountId: context.principal.accountId,
-					context: logContext(context.request),
-				});
-			}
-			return ok;
-		});
+				context.principal.accountId
+					? {
+							actorAccountId: context.principal.accountId,
+							context: logContext(context.request),
+						}
+					: undefined,
+			),
+		);
 		if (!deleted) {
 			return problemResponse(404, "OIDC client not found", {
 				code: "not_found",
@@ -717,19 +441,16 @@ export async function handleRegenerateOidcClientSecret(context: RouteContext) {
 
 export async function handleListOidcClientGrants(context: RouteContext) {
 	try {
-		const client = await withDb(context.env, (db) =>
-			getOidcClientById(db, context.params.id),
+		const result = await withDb(context.env, (db) =>
+			listClientGrantsByRecordId(db, context.params.id),
 		);
-		if (!client) {
+		if (!result) {
 			return problemResponse(404, "OIDC client not found", {
 				code: "not_found",
 				instance: requestInstance(context.request),
 			});
 		}
-		const grants = await withDb(context.env, (db) =>
-			listConsentGrantsForClient(db, client.clientId),
-		);
-		return jsonResponse({ grants });
+		return jsonResponse({ grants: result.grants });
 	} catch (error) {
 		return oidcErrorResponse(error, context.request);
 	}
@@ -737,36 +458,19 @@ export async function handleListOidcClientGrants(context: RouteContext) {
 
 export async function handleAdminRevokeOidcClientGrant(context: RouteContext) {
 	try {
-		const revoked = await withDb(context.env, async (db) => {
-			const client = await getOidcClientById(db, context.params.id);
-			if (!client) {
-				return "missing-client" as const;
-			}
-			const ok = await revokeConsentGrant(
+		const revoked = await withDb(context.env, (db) =>
+			adminRevokeClientGrant(
 				db,
+				context.params.id,
 				context.params.accountId,
-				client.clientId,
-			);
-			if (!ok) {
-				return "missing-grant" as const;
-			}
-			const actorId = context.principal.accountId;
-			if (actorId) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "oidc",
-					summary: "{actor} revoked {account}'s consent for {client}",
-					refs: {
-						actor: { kind: "account", id: actorId },
-						account: { kind: "account", id: context.params.accountId },
-						client: { kind: "oidc-client", id: client.id },
-					},
-					actorAccountId: actorId,
-					context: logContext(context.request),
-				});
-			}
-			return "ok" as const;
-		});
+				context.principal.accountId
+					? {
+							actorAccountId: context.principal.accountId,
+							context: logContext(context.request),
+						}
+					: undefined,
+			),
+		);
 		if (revoked === "missing-client") {
 			return problemResponse(404, "OIDC client not found", {
 				code: "not_found",
@@ -805,28 +509,12 @@ export async function handleRevokeMyOidcGrant(context: RouteContext) {
 	}
 	const accountId = context.principal.accountId;
 	try {
-		const revoked = await withDb(context.env, async (db) => {
-			const client = await getOidcClientByClientId(db, context.params.clientId);
-			const ok = await revokeConsentGrant(
-				db,
-				accountId,
-				context.params.clientId,
-			);
-			if (ok && client) {
-				await safeEmitLog(db, {
-					importance: 5,
-					type: "oidc",
-					summary: "{actor} revoked consent for {client}",
-					refs: {
-						actor: { kind: "account", id: accountId },
-						client: { kind: "oidc-client", id: client.id },
-					},
-					actorAccountId: accountId,
-					context: logContext(context.request),
-				});
-			}
-			return ok;
-		});
+		const revoked = await withDb(context.env, (db) =>
+			revokeAccountClientGrant(db, accountId, context.params.clientId, {
+				actorAccountId: accountId,
+				context: logContext(context.request),
+			}),
+		);
 		if (!revoked) {
 			return problemResponse(404, "Consent grant not found", {
 				code: "not_found",

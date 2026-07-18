@@ -25,9 +25,55 @@ import { storeMessage, rollbackNewThread } from "./message-store";
 import { prepareOutboundMessageBody } from "./prepare-email-html";
 import type { ThreadingContext } from "./outbound-threading";
 import { sendEmail } from "./send-email";
-import { resolveIdentityForSend } from "../../services/identities";
-import { emitLog } from "../../services/logs";
+import { emitLog } from "../logs/emit";
 import { extractEmailsFromHeaderValue } from "../extract-emails-from-header";
+
+type OutboundMailingLogInput = {
+	success: boolean;
+	mailboxId: string;
+	toAddress: string;
+	threadId: string;
+	messageId?: string;
+	actorAccountId: string | null | undefined;
+	logContext: OutboundContext["logContext"];
+};
+
+export async function emitOutboundMailingLog(
+	db: OutboundContext["db"],
+	input: OutboundMailingLogInput,
+): Promise<void> {
+	const refs: {
+		from: { kind: "mailbox"; id: string };
+		to: { kind: "external-address"; id: string };
+		thread: { kind: "thread"; id: string };
+		message?: { kind: "message"; id: string };
+	} = {
+		from: { kind: "mailbox", id: input.mailboxId },
+		to: { kind: "external-address", id: input.toAddress },
+		thread: { kind: "thread", id: input.threadId },
+	};
+	if (input.messageId) {
+		refs.message = { kind: "message", id: input.messageId };
+	}
+
+	try {
+		await emitLog(db, {
+			importance: 5,
+			type: "mailing",
+			summary: input.success ? "{from} → {to}" : "{from} → {to} failed",
+			refs,
+			actorAccountId: input.actorAccountId,
+			context: input.logContext ?? null,
+		});
+	} catch (logError) {
+		console.error(
+			input.success
+				? "Failed to emit outbound send log:"
+				: "Failed to emit outbound send failure log:",
+			logError,
+		);
+	}
+}
 
 async function resolveOutboundFrom(
 	ctx: OutboundContext,
@@ -35,7 +81,7 @@ async function resolveOutboundFrom(
 	mailboxAddress: string,
 	identityId: string | undefined,
 ): Promise<string> {
-	const { fromName } = await resolveIdentityForSend(
+	const { fromName } = await ctx.resolveIdentityForSend(
 		ctx.db,
 		ctx.principal,
 		mailboxId,
@@ -112,22 +158,14 @@ export async function sendAndPersistNewMessage(
 		rfcMessageId = canonicalizeSentMessageId(result.messageId);
 	} catch (error) {
 		await rollbackNewThread(ctx.db, threading.threadId, isNewThread);
-		try {
-			await emitLog(ctx.db, {
-				importance: 5,
-				type: "mailing",
-				summary: "{from} → {to} failed",
-				refs: {
-					from: { kind: "mailbox", id: mailbox.id },
-					to: { kind: "external-address", id: toAddress },
-					thread: { kind: "thread", id: threading.threadId },
-				},
-				actorAccountId: ctx.principal.accountId,
-				context: ctx.logContext ?? null,
-			});
-		} catch (logError) {
-			console.error("Failed to emit outbound send failure log:", logError);
-		}
+		await emitOutboundMailingLog(ctx.db, {
+			success: false,
+			mailboxId: mailbox.id,
+			toAddress,
+			threadId: threading.threadId,
+			actorAccountId: ctx.principal.accountId,
+			logContext: ctx.logContext,
+		});
 		throw error;
 	}
 
@@ -210,23 +248,15 @@ export async function sendAndPersistNewMessage(
 		throw new Error("Stored message not found");
 	}
 
-	try {
-		await emitLog(ctx.db, {
-			importance: 5,
-			type: "mailing",
-			summary: "{from} → {to}",
-			refs: {
-				from: { kind: "mailbox", id: mailbox.id },
-				to: { kind: "external-address", id: toAddress },
-				message: { kind: "message", id: stored.id },
-				thread: { kind: "thread", id: stored.threadId },
-			},
-			actorAccountId: ctx.principal.accountId,
-			context: ctx.logContext ?? null,
-		});
-	} catch (logError) {
-		console.error("Failed to emit outbound send log:", logError);
-	}
+	await emitOutboundMailingLog(ctx.db, {
+		success: true,
+		mailboxId: mailbox.id,
+		toAddress,
+		threadId: stored.threadId,
+		messageId: stored.id,
+		actorAccountId: ctx.principal.accountId,
+		logContext: ctx.logContext,
+	});
 
 	return stored;
 }

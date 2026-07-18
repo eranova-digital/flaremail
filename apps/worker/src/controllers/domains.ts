@@ -5,6 +5,7 @@ import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
 import type { RouteContext } from "../lib/http/router";
+import { parseLogContextFromRequest } from "../lib/logs/request-context";
 import {
 	createDomain,
 	getDomain,
@@ -12,10 +13,6 @@ import {
 	removeDomain,
 	updateDomain,
 } from "../services/domains";
-import {
-	parseLogContextFromRequest,
-	safeEmitLog,
-} from "../services/logs";
 
 export async function handleListDomains({
 	request,
@@ -58,37 +55,12 @@ export async function handleCreateDomain({
 
 	try {
 		const logContext = parseLogContextFromRequest(request);
-		const domain = await withDb(env, async (db) => {
-			const created = await createDomain(db, value.domain as string, env.EMAIL, {
+		const domain = await withDb(env, async (db) =>
+			createDomain(db, value.domain as string, env.EMAIL, {
 				actorAccountId: principal.accountId,
 				context: logContext,
-			});
-			if (principal.accountId) {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "domains",
-					summary: "{actor} registered {domain}",
-					refs: {
-						actor: { kind: "account", id: principal.accountId },
-						domain: { kind: "domain", id: created.id },
-					},
-					actorAccountId: principal.accountId,
-					context: logContext,
-				});
-			} else {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "domains",
-					summary: "Registered {domain}",
-					refs: {
-						domain: { kind: "domain", id: created.id },
-					},
-					actorAccountId: null,
-					context: logContext,
-				});
-			}
-			return created;
-		});
+			}),
+		);
 		return jsonResponse(domain, 201);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -150,33 +122,12 @@ export async function handleDeleteDomain({
 	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		await withDb(env, async (db) => {
-			await removeDomain(db, env.BUCKET, params.id);
-			if (principal.accountId) {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "domains",
-					summary: "{actor} deleted {domain}",
-					refs: {
-						actor: { kind: "account", id: principal.accountId },
-						domain: { kind: "domain", id: params.id },
-					},
-					actorAccountId: principal.accountId,
-					context: parseLogContextFromRequest(request),
-				});
-			} else {
-				await safeEmitLog(db, {
-					importance: 3,
-					type: "domains",
-					summary: "Deleted {domain}",
-					refs: {
-						domain: { kind: "domain", id: params.id },
-					},
-					actorAccountId: null,
-					context: parseLogContextFromRequest(request),
-				});
-			}
-		});
+		await withDb(env, async (db) =>
+			removeDomain(db, env.BUCKET, params.id, {
+				actorAccountId: principal.accountId,
+				context: parseLogContextFromRequest(request),
+			}),
+		);
 		return new Response(null, { status: 204 });
 	} catch (error) {
 		return handleRouteError(error, request);

@@ -1,7 +1,17 @@
-const TOKEN_PATTERN =
-	/\{(first_name|last_name|first_name_initial|last_name_initial|rnd_num|rnd_char)\}/g;
+export type LocalPartProfileInput = {
+	firstName?: string;
+	lastName?: string;
+};
+
+export type PatternRandomValues = {
+	rndNum: string;
+	rndChar: string;
+};
 
 export type PolicyProfileField = "firstName" | "lastName";
+
+const TOKEN_PATTERN =
+	/\{(first_name|last_name|first_name_initial|last_name_initial|rnd_num|rnd_char)\}/g;
 
 export function slugifyNamePart(value: string): string {
 	return value
@@ -12,6 +22,13 @@ export function slugifyNamePart(value: string): string {
 		.replace(/[^a-z0-9]+/g, ".")
 		.replace(/^\.+|\.+$/g, "")
 		.replace(/\.{2,}/g, ".");
+}
+
+export function generatePatternRandomValues(): PatternRandomValues {
+	return {
+		rndNum: String(Math.floor(1000 + Math.random() * 9000)),
+		rndChar: String.fromCharCode(97 + Math.floor(Math.random() * 26)),
+	};
 }
 
 export function getProfileFieldsUsedByPattern(pattern: string): PolicyProfileField[] {
@@ -30,11 +47,8 @@ export function getProfileFieldsUsedByPattern(pattern: string): PolicyProfileFie
 
 export function applyLocalPartPattern(
 	pattern: string,
-	profile: { firstName?: string; lastName?: string },
-	random = {
-		rndNum: String(Math.floor(1000 + Math.random() * 9000)),
-		rndChar: String.fromCharCode(97 + Math.floor(Math.random() * 26)),
-	},
+	profile: LocalPartProfileInput,
+	random: PatternRandomValues = generatePatternRandomValues(),
 ): string {
 	const firstName = slugifyNamePart(profile.firstName ?? "");
 	const lastName = slugifyNamePart(profile.lastName ?? "");
@@ -61,4 +75,11 @@ export function applyLocalPartPattern(
 	});
 
 	return rendered.replace(/\.{2,}/g, ".").replace(/^\.+|\.+$/g, "");
+}
+
+export function isValidMailboxLocalPart(localPart: string): boolean {
+	if (!localPart || localPart.length > 64) {
+		return false;
+	}
+	return /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/.test(localPart);
 }

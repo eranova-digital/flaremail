@@ -1,12 +1,18 @@
+/** Public entry for DomainValidationRun — import internals from their modules. */
 export { DomainValidationRun } from "./facade";
-export type { DomainReadinessBadge, CheckSnapshot } from "./types";
-export { computeReadinessBadge } from "./compute-badge";
+export type { DomainValidationDb } from "./facade";
 export {
-	createValidationRun,
-	executeValidationRun,
-	getActiveValidationRun,
-	getLatestValidationRunForDomain,
-	loadRunChecks,
-	processTimedOutValidationRuns,
-} from "./run-engine";
-export { tryConsumeValidationInbound } from "./consume-inbound";
+	getDomainReadinessSummary,
+	getValidationRunDetail,
+	listValidationRuns,
+	startDomainValidation,
+	startOrReturnValidationRun,
+} from "./queries";
+export type { DomainReadinessBadge, CheckSnapshot } from "./types";
+export {
+	toDomainReadinessSummaryDto,
+	toValidationCheckDto,
+	toValidationLogEventDto,
+	toValidationRunDetailDto,
+	toValidationRunSummaryDto,
+} from "./dto";

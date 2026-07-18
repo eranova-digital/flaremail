@@ -2,7 +2,7 @@ import type { AccountRole } from "../lib/auth/types";
 import {
 	canAccessOrganizationSettings,
 	type InstanceSettings,
-} from "./security-compliance";
+} from "./instance-settings";
 
 export type AccountCapabilities = {
 	accessManagementPage: boolean;
@@ -23,6 +23,11 @@ export type AccountCapabilities = {
 	showsManagerMailboxGrantsTab: boolean;
 	accessTemplatesTab: boolean;
 	canCreateGlobalTemplates: boolean;
+	accessOidcClientsTab: boolean;
+	accessLogsTab: boolean;
+	manageableTargetRoles: AccountRole[];
+	suspendableTargetRoles: AccountRole[];
+	removableTargetRoles: AccountRole[];
 	inviteableRoles: AccountRole[];
 };
 
@@ -40,6 +45,42 @@ function inviteableRoles(account: {
 		return ["user", "manager"];
 	}
 	return ["user"];
+}
+
+function manageableTargetRoles(account: {
+	isIntendant: boolean;
+	role: AccountRole | null;
+}): AccountRole[] {
+	if (account.isIntendant || account.role === "superadmin") {
+		return ["user", "manager", "admin", "superadmin"];
+	}
+	if (account.role === "admin") {
+		return ["user", "manager"];
+	}
+	if (account.role === "manager") {
+		return ["user"];
+	}
+	return [];
+}
+
+function suspendableTargetRoles(account: {
+	isIntendant: boolean;
+	role: AccountRole | null;
+}): AccountRole[] {
+	return manageableTargetRoles(account);
+}
+
+function removableTargetRoles(account: {
+	isIntendant: boolean;
+	role: AccountRole | null;
+}): AccountRole[] {
+	if (account.isIntendant || account.role === "superadmin") {
+		return ["user", "manager", "admin", "superadmin"];
+	}
+	if (account.role === "admin") {
+		return ["user", "manager"];
+	}
+	return [];
 }
 
 function canAssignRoles(account: {
@@ -74,6 +115,20 @@ function canAccessDomainsTab(account: {
 		account.role === "superadmin" ||
 		account.role === "admin"
 	);
+}
+
+function canAccessOidcClientsTab(account: {
+	isIntendant: boolean;
+	role: AccountRole | null;
+}): boolean {
+	return account.isIntendant || account.role === "superadmin";
+}
+
+function canAccessLogsTab(account: {
+	isIntendant: boolean;
+	role: AccountRole | null;
+}): boolean {
+	return account.isIntendant || account.role === "superadmin";
 }
 
 export function computeAccountCapabilities(
@@ -112,6 +167,11 @@ export function computeAccountCapabilities(
 			account.isIntendant ||
 			account.role === "superadmin" ||
 			account.role === "admin",
+		accessOidcClientsTab: canAccessOidcClientsTab(account),
+		accessLogsTab: canAccessLogsTab(account),
+		manageableTargetRoles: manageableTargetRoles(account),
+		suspendableTargetRoles: suspendableTargetRoles(account),
+		removableTargetRoles: removableTargetRoles(account),
 		inviteableRoles: inviteableRoles(account),
 	};
 }
