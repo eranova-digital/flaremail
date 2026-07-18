@@ -89,8 +89,16 @@ First-party authentication for the Flaremail web app. Separate from the OIDC IdP
 _Avoid_: login, JWT, cookie
 
 **OIDC client**:
-A registered relying party (e.g. CRM X) allowed to use Flaremail as an SSO source. Registered and managed by the **intendant** or a **superadmin** only. V1 flows: Authorization Code with PKCE (user login), refresh tokens, and Client Credentials (machine-to-machine). Each client has its own service permissions configured at registration, independent of any **account**. Whether an **OIDC client** requires a **consent** screen is configured per client (`require_consent`, default on). User access tokens may call the Flaremail mail API when the authorize request includes the required scopes (e.g. `mail:read`, `mail:send`).
+A registered relying party (e.g. CRM X) allowed to use Flaremail as an SSO source. Registered and managed by the **intendant** or a **superadmin** only. V1 flows: Authorization Code with PKCE (user login), refresh tokens, and Client Credentials (machine-to-machine). Each client has its own service permissions configured at registration, independent of any **account**. Whether an **OIDC client** requires a **consent** screen is configured per client (`require_consent`, default on). Optional branding: a **client profile picture** and a **homescreen URL** (Cancel on consent). User access tokens may call the Flaremail mail API when the authorize request includes the required scopes (e.g. `mail:read`, `mail:send`).
 _Avoid_: OAuth app, SSO integration, application
+
+**Client profile picture**:
+The logo/image shown for an **OIDC client** on consent and admin screens. Stored like **account** profile pictures; publicly readable so consent can display it without elevated auth.
+_Avoid_: app icon, favicon, OAuth logo
+
+**Homescreen URL**:
+Optional URL on an **OIDC client** where the end user is sent if they cancel consent (not the OAuth `redirect_uri`, which is used for Allow/Deny protocol responses).
+_Avoid_: cancel URL, homepage, client URI
 
 **Consent**:
 The end-user approval step during OIDC authorization where an **account** reviews and accepts the scopes an **OIDC client** is requesting. Shown when the client requires it and no covering **consent grant** exists yet (or requested scopes exceed a prior grant). Skipped entirely when the client does not require consent — no grant row is recorded in that case.
