@@ -207,7 +207,11 @@ export async function activateInvite(
 		.set({ usedAt: now })
 		.where(eq(invites.id, invite.id));
 
-	return createSession(db, account.id, sessionMetadata);
+	return {
+		accountId: account.id,
+		inviteId: invite.id,
+		...(await createSession(db, account.id, sessionMetadata)),
+	};
 }
 
 export async function signOut(db: Database, sessionToken: string) {
@@ -549,16 +553,17 @@ export async function createInviteRecord(
 	},
 ) {
 	const code = formatCode();
+	const inviteId = crypto.randomUUID();
 	const now = new Date();
 	await db.insert(invites).values({
-		id: crypto.randomUUID(),
+		id: inviteId,
 		accountId: input.accountId,
 		codeHash: await hashSecret(normalizeCode(code)),
 		createdByAccountId: input.createdByAccountId,
 		expiresAt: inviteExpiresAt(now),
 		createdAt: now,
 	});
-	return code;
+	return { code, inviteId };
 }
 
 export function sessionSecretForEnv(env: Env): string {

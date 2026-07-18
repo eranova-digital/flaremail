@@ -187,8 +187,8 @@ export async function handleActivateInvite(context: RouteContext) {
 
 	try {
 		const sessionMetadata = extractSessionMetadata(context.request);
-		const result = await withDb(context.env, (db) =>
-			activateInvite(
+		const result = await withDb(context.env, async (db) => {
+			const activated = await activateInvite(
 				db,
 				{
 					code: value.code as string,
@@ -271,8 +271,20 @@ export async function handleActivateInvite(context: RouteContext) {
 								? profile.addressLine2
 								: undefined,
 				},
-			}, sessionMetadata),
-		);
+			}, sessionMetadata);
+			await safeEmitLog(db, {
+				importance: 4,
+				type: "invites",
+				summary: "{actor} activated {invite}",
+				refs: {
+					actor: { kind: "account", id: activated.accountId },
+					invite: { kind: "invite", id: activated.inviteId },
+				},
+				actorAccountId: activated.accountId,
+				context: parseLogContextFromRequest(context.request),
+			});
+			return activated;
+		});
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
 		return handleRouteError(error, context.request);

@@ -216,7 +216,7 @@ export async function inviteAccount(
 		}
 	});
 
-	const inviteCode = await createInviteRecord(db, {
+	const { code: inviteCode, inviteId } = await createInviteRecord(db, {
 		accountId,
 		createdByAccountId: principal.accountId!,
 	});
@@ -229,7 +229,7 @@ export async function inviteAccount(
 		});
 	}
 
-	return { accountId, mailboxId, address, inviteCode };
+	return { accountId, mailboxId, address, inviteCode, inviteId };
 }
 
 export async function regenerateInviteCode(
@@ -258,10 +258,10 @@ export async function regenerateInviteCode(
 		.delete(invites)
 		.where(and(eq(invites.accountId, accountId), isNull(invites.usedAt)));
 
-	const inviteCode = await createInviteRecord(db, {
+	const { code: inviteCode, inviteId } = await createInviteRecord(db, {
 		accountId,
 		createdByAccountId: principal.accountId,
 	});
 
-	return { inviteCode };
+	return { inviteCode, inviteId };
 }
