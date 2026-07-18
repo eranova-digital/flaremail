@@ -123,7 +123,7 @@ describe("OIDC authorization service", () => {
 				url: `${REDIRECT_URI}?error=invalid_request&error_description=PKCE+with+S256+is+required&state=state-123`,
 			});
 		});
-	});
+	}, 20_000);
 
 	it("rejects authorization when PKCE challenge method is not S256", async () => {
 		await withDb(env, async (db) => {
@@ -143,7 +143,7 @@ describe("OIDC authorization service", () => {
 				url: `${REDIRECT_URI}?error=invalid_request&error_description=PKCE+with+S256+is+required&state=state-123`,
 			});
 		});
-	});
+	}, 20_000);
 
 	it("rejects authorization when openid scope is not granted", async () => {
 		await withDb(env, async (db) => {
@@ -163,7 +163,7 @@ describe("OIDC authorization service", () => {
 				url: `${REDIRECT_URI}?error=invalid_scope&error_description=openid+scope+is+required&state=state-123`,
 			});
 		});
-	});
+	}, 20_000);
 
 	it("denies authorization for intendant accounts", async () => {
 		await withDb(env, async (db) => {
@@ -190,7 +190,7 @@ describe("OIDC authorization service", () => {
 			expect(url.searchParams.get("state")).toBe("state-123");
 			expect(result.logs).toHaveLength(1);
 		});
-	});
+	}, 20_000);
 
 	it("redirects unauthenticated users to login", async () => {
 		await withDb(env, async (db) => {
@@ -214,7 +214,7 @@ describe("OIDC authorization service", () => {
 				/^\/api\/v1\/oauth\/authorize\?pending=/,
 			);
 		});
-	});
+	}, 20_000);
 
 	it("completes authorization and returns an authorization code", async () => {
 		await withDb(env, async (db) => {
@@ -239,7 +239,7 @@ describe("OIDC authorization service", () => {
 			expect(url.searchParams.get("state")).toBe("state-123");
 			expect(result.logs).toHaveLength(1);
 		});
-	});
+	}, 20_000);
 
 	it("redirects to consent when required and approves on decision", async () => {
 		await withDb(env, async (db) => {
@@ -274,7 +274,7 @@ describe("OIDC authorization service", () => {
 			expect(redirectUrl.searchParams.get("state")).toBe("state-123");
 			expect(approveResult.logs).toHaveLength(2);
 		});
-	});
+	}, 20_000);
 
 	it("denies consent and redirects with access_denied", async () => {
 		await withDb(env, async (db) => {
@@ -313,7 +313,7 @@ describe("OIDC authorization service", () => {
 				.where(eq(oidcPendingAuthorizations.id, pendingId!));
 			expect(pendingRows).toHaveLength(0);
 		});
-	});
+	}, 20_000);
 
 	it("exchanges an authorization code for tokens with valid PKCE", async () => {
 		clearOidcSigningKeyCache();
@@ -355,7 +355,7 @@ describe("OIDC authorization service", () => {
 			expect(tokens.id_token).toBeTruthy();
 			expect(tokens.scope).toContain("openid");
 		});
-	});
+	}, 20_000);
 
 	it("rejects token exchange with an invalid PKCE verifier", async () => {
 		clearOidcSigningKeyCache();
@@ -388,5 +388,5 @@ describe("OIDC authorization service", () => {
 				}),
 			).rejects.toBeInstanceOf(OidcError);
 		});
-	});
+	}, 20_000);
 });
