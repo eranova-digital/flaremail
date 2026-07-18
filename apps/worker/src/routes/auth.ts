@@ -107,17 +107,25 @@ import {
 const prefix = "/api/v1";
 
 export const authRoutes: RouteDefinition[] = [
-	{ method: "POST", path: `${prefix}/auth/sign-in`, auth: false, handler: handleSignIn },
+	{
+		method: "POST",
+		path: `${prefix}/auth/sign-in`,
+		auth: false,
+		authRateLimit: { keyFields: ["email"] },
+		handler: handleSignIn,
+	},
 	{
 		method: "POST",
 		path: `${prefix}/auth/passkeys/sign-in/options`,
 		auth: false,
+		authRateLimit: { keyFields: ["email"] },
 		handler: handleBeginPasskeySignIn,
 	},
 	{
 		method: "POST",
 		path: `${prefix}/auth/passkeys/sign-in/verify`,
 		auth: false,
+		authRateLimit: { keyFields: ["email"] },
 		handler: handleCompletePasskeySignIn,
 	},
 	{ method: "GET", path: `${prefix}/auth/passkeys`, action: "authenticated", handler: handleListPasskeys },
@@ -144,6 +152,7 @@ export const authRoutes: RouteDefinition[] = [
 		method: "POST",
 		path: `${prefix}/auth/mfa/verify`,
 		auth: false,
+		authRateLimit: { keyFields: ["mfaToken"] },
 		handler: handleVerifyMfaSignIn,
 	},
 	{ method: "GET", path: `${prefix}/auth/mfa`, action: "authenticated", handler: handleGetMfaStatus },
@@ -156,7 +165,13 @@ export const authRoutes: RouteDefinition[] = [
 		handler: handleSendMfaDisableRecoveryCode,
 	},
 	{ method: "DELETE", path: `${prefix}/auth/mfa`, action: "authenticated", handler: handleDisableMfa },
-	{ method: "POST", path: `${prefix}/auth/activate`, auth: false, handler: handleActivateInvite },
+	{
+		method: "POST",
+		path: `${prefix}/auth/activate`,
+		auth: false,
+		authRateLimit: { keyFields: ["code"] },
+		handler: handleActivateInvite,
+	},
 	{
 		method: "GET",
 		path: `${prefix}/auth/invite-preview`,
@@ -173,9 +188,16 @@ export const authRoutes: RouteDefinition[] = [
 		method: "POST",
 		path: `${prefix}/auth/forgot-password`,
 		auth: false,
+		authRateLimit: { keyFields: ["address"] },
 		handler: handleForgotPassword,
 	},
-	{ method: "POST", path: `${prefix}/auth/reset-password`, auth: false, handler: handleResetPassword },
+	{
+		method: "POST",
+		path: `${prefix}/auth/reset-password`,
+		auth: false,
+		authRateLimit: { keyFields: ["code"] },
+		handler: handleResetPassword,
+	},
 	{
 		method: "GET",
 		path: `${prefix}/auth/me`,
@@ -562,7 +584,13 @@ export const authRoutes: RouteDefinition[] = [
 		auth: false,
 		handler: handleOidcAuthorize,
 	},
-	{ method: "POST", path: `${prefix}/oauth/token`, auth: false, handler: handleOidcToken },
+	{
+		method: "POST",
+		path: `${prefix}/oauth/token`,
+		auth: false,
+		authRateLimit: { keyFields: ["client_id"] },
+		handler: handleOidcToken,
+	},
 	{
 		method: "GET",
 		path: `${prefix}/oauth/userinfo`,

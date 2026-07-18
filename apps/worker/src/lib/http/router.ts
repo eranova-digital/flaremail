@@ -7,6 +7,11 @@ import {
 	type ResolvePrincipalDeps,
 } from "../auth/resolve-principal";
 import { handleRouteError } from "./handle-route-error";
+import {
+	enforceAuthPreRateLimit,
+	enforceGlobalRateLimit,
+	type AuthRateLimitConfig,
+} from "./rate-limit";
 
 export type RouteContext = {
 	request: Request;
@@ -27,6 +32,7 @@ export type RouteScopeResolver = (context: {
  * - `action`: coarse RBAC check
  * - `scopes`: API key scopes (any-of), or a resolver for contextual scopes.
  *   Omit/`null` on authenticated routes → API keys forbidden.
+ * - `authRateLimit`: stricter pre-handler limit for public auth surfaces.
  */
 export type RouteDefinition = {
 	method: string;
@@ -34,6 +40,7 @@ export type RouteDefinition = {
 	auth?: boolean;
 	action?: AuthAction;
 	scopes?: readonly ApiKeyScope[] | null | RouteScopeResolver;
+	authRateLimit?: AuthRateLimitConfig | true;
 	handler: RouteHandler;
 };
 
@@ -125,10 +132,38 @@ export function createRouter(
 			if (route.auth) {
 				const principalResult = await resolvePrincipal(request, env);
 				if (principalResult instanceof Response) {
+					const limited = await enforceGlobalRateLimit(env, request);
+					if (limited) {
+						return limited;
+					}
 					return principalResult;
 				}
 				principal = principalResult;
+			}
 
+			const globalLimited = await enforceGlobalRateLimit(
+				env,
+				request,
+				principal.accountId,
+			);
+			if (globalLimited) {
+				return globalLimited;
+			}
+
+			if (route.authRateLimit) {
+				const authConfig =
+					route.authRateLimit === true ? {} : route.authRateLimit;
+				const authLimited = await enforceAuthPreRateLimit(
+					env,
+					request,
+					authConfig,
+				);
+				if (authLimited) {
+					return authLimited;
+				}
+			}
+
+			if (route.auth) {
 				const action = route.action ?? "authenticated";
 				const authzError = await authorizeRoute(request, principal, {
 					action,
