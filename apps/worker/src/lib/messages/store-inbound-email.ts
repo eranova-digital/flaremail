@@ -3,6 +3,7 @@ import type { Email } from "postal-mime";
 import type { Database } from "../../db/client";
 import { findMessageRowByRfcMessageId } from "../find-message";
 import { formatAddress, formatAddressList } from "../format-address";
+import { extractEmailsFromHeaderValue } from "../extract-emails-from-header";
 import type { StoreMailboxResolution } from "../resolve-mailbox";
 import { resolveThreadId } from "../resolve-thread-id";
 import { postalAttachmentToStoredInput } from "../store-attachments";
@@ -16,6 +17,7 @@ import { storeMessage } from "./message-store";
 import { postalEmailToMimeContent } from "./postal-to-mime-content";
 import type { StoredAttachmentInput } from "./stored-attachment-input";
 import { processInboundHtmlImages } from "../email-images/process-inbound-html";
+import { emitLog } from "../../services/logs";
 
 export async function storeInboundEmail(
 	db: Database,
@@ -76,7 +78,8 @@ export async function storeInboundEmail(
 		externalImageInputs = processed.externalImages;
 	}
 
-	return storeMessage(
+	const fromHeader = formatAddress(parsed.from) ?? message.from;
+	const storedId = await storeMessage(
 		{
 			db,
 			bucket,
@@ -89,7 +92,7 @@ export async function storeInboundEmail(
 				sendStatus: null,
 				inReplyTo: threading.inReplyTo,
 				references: threading.references,
-				from: formatAddress(parsed.from) ?? message.from,
+				from: fromHeader,
 				to: formatAddressList(parsed.to) ?? message.to,
 				envelopeTo: mailbox.envelopeTo,
 				actualMailboxId: mailbox.actualMailboxId,
@@ -126,4 +129,26 @@ export async function storeInboundEmail(
 			return duplicate.id;
 		},
 	);
+
+	const fromAddress =
+		extractEmailsFromHeaderValue(fromHeader)[0] ?? message.from;
+	try {
+		await emitLog(db, {
+			importance: 6,
+			type: "mailing",
+			summary: "{from} → {to}",
+			refs: {
+				from: { kind: "external-address", id: fromAddress },
+				to: { kind: "mailbox", id: mailbox.actualMailboxId },
+				message: { kind: "message", id: storedId },
+				thread: { kind: "thread", id: threadId },
+			},
+			actorAccountId: null,
+			context: null,
+		});
+	} catch (error) {
+		console.error("Failed to emit inbound mail log:", error);
+	}
+
+	return storedId;
 }

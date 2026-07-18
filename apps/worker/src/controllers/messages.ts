@@ -12,11 +12,22 @@ import {
 	parseReplyBody,
 	parseSendMessageBody,
 } from "../lib/messages/outbound-payload";
+import { parseLogContextFromRequest } from "../services/logs";
 import { createOutboundMail } from "../services/outbound-mail";
 import { toSendResponse } from "../services/dto";
 
-function outboundMail(env: Env, db: Database, principal: RouteContext["principal"]) {
-	return createOutboundMail({ ...outboundContext(env), db, principal });
+function outboundMail(
+	env: Env,
+	db: Database,
+	principal: RouteContext["principal"],
+	request: Request,
+) {
+	return createOutboundMail({
+		...outboundContext(env),
+		db,
+		principal,
+		logContext: parseLogContextFromRequest(request),
+	});
 }
 
 export async function handleSendMessage({
@@ -33,7 +44,7 @@ export async function handleSendMessage({
 		const payload = parseSendMessageBody(body);
 		const message = await withDb(env, async (db) => {
 			await authorizeMailboxAccess(db, principal, payload.mailboxId);
-			return outboundMail(env, db, principal).send(payload.mailboxId, payload);
+			return outboundMail(env, db, principal, request).send(payload.mailboxId, payload);
 		});
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
@@ -55,7 +66,7 @@ export async function handleCreateDraft({
 		const payload = parseCreateDraftBody(body);
 		const message = await withDb(env, async (db) => {
 			await authorizeMailboxAccess(db, principal, payload.mailboxId);
-			return outboundMail(env, db, principal).createDraft(payload);
+			return outboundMail(env, db, principal, request).createDraft(payload);
 		});
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
@@ -78,7 +89,7 @@ export async function handleUpdateDraft({
 		const payload = parseOutboundMessageBody(body);
 		const message = await withDb(env, async (db) => {
 			await authorizeDraftCommand(db, principal, params.id);
-			return outboundMail(env, db, principal).updateDraft(params.id, payload);
+			return outboundMail(env, db, principal, request).updateDraft(params.id, payload);
 		});
 		return jsonResponse(toSendResponse({ ...message, sendStatus: message.sendStatus ?? "draft" }));
 	} catch (error) {
@@ -95,7 +106,7 @@ export async function handleDeleteDraft({
 	try {
 		await withDb(env, async (db) => {
 			await authorizeDraftCommand(db, principal, params.id);
-			await outboundMail(env, db, principal).deleteDraft(params.id);
+			await outboundMail(env, db, principal, request).deleteDraft(params.id);
 		});
 		return new Response(null, { status: 204 });
 	} catch (error) {
@@ -112,7 +123,7 @@ export async function handleSendDraft({
 	try {
 		const message = await withDb(env, async (db) => {
 			await authorizeDraftCommand(db, principal, params.id);
-			return outboundMail(env, db, principal).sendDraft(params.id);
+			return outboundMail(env, db, principal, request).sendDraft(params.id);
 		});
 		return jsonResponse(toSendResponse(message));
 	} catch (error) {
@@ -135,7 +146,7 @@ export async function handleReplyToMessage({
 		const payload = parseReplyBody(body);
 		const message = await withDb(env, async (db) => {
 			await authorizeMailboxAccess(db, principal, payload.mailboxId);
-			return outboundMail(env, db, principal).reply(params.id, payload);
+			return outboundMail(env, db, principal, request).reply(params.id, payload);
 		});
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
@@ -158,7 +169,7 @@ export async function handleForwardToMessage({
 		const payload = parseForwardBody(body);
 		const message = await withDb(env, async (db) => {
 			await authorizeMailboxAccess(db, principal, payload.mailboxId);
-			return outboundMail(env, db, principal).forward(params.id, payload);
+			return outboundMail(env, db, principal, request).forward(params.id, payload);
 		});
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
