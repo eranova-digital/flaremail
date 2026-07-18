@@ -42,10 +42,11 @@ export const accountQueryKeys = {
 		["mailboxes", mailboxId, "manager-assignments"] as const,
 };
 
-export function useAccounts() {
+export function useAccounts(options?: { enabled?: boolean }) {
 	return useQuery({
 		queryKey: accountQueryKeys.all,
 		queryFn: fetchAccounts,
+		enabled: options?.enabled ?? true,
 	});
 }
 

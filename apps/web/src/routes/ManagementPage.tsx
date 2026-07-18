@@ -1,4 +1,5 @@
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 
 import { DomainSection } from "@/components/settings/DomainSection";
 import { MailboxSection } from "@/components/settings/MailboxSection";
@@ -92,6 +93,7 @@ function resolveActiveTab(
 
 export function ManagementPage() {
 	const { account } = useAuth();
+	const location = useLocation();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tabParam = searchParams.get("tab");
 	const organizationAccess = useCanAccessOrganizationTab(account);
@@ -109,6 +111,20 @@ export function ManagementPage() {
 		showOidc,
 	);
 
+	useEffect(() => {
+		if (activeTab !== "organization" || !location.hash) {
+			return;
+		}
+		const id = location.hash.slice(1);
+		const frame = requestAnimationFrame(() => {
+			document.getElementById(id)?.scrollIntoView({
+				behavior: "smooth",
+				block: "start",
+			});
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [activeTab, location.hash]);
+
 	if (!canAccessManagementPage(account)) {
 		return <Navigate to="/settings" replace />;
 	}
@@ -118,6 +134,9 @@ export function ManagementPage() {
 			(current) => {
 				const next = new URLSearchParams(current);
 				next.set("tab", value);
+				if (value !== "accounts") {
+					next.delete("account");
+				}
 				return next;
 			},
 			{ replace: true },

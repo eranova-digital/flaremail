@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
@@ -17,8 +18,39 @@ import { AccountDetailDialog } from "@/components/settings/accounts/AccountDetai
 export function AccountList() {
 	const { account: actor } = useAuth();
 	const accountsQuery = useAccounts();
+	const [searchParams, setSearchParams] = useSearchParams();
+	const accountParam = searchParams.get("account");
 	const [search, setSearch] = useState("");
-	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const [selectedId, setSelectedId] = useState<string | null>(accountParam);
+
+	useEffect(() => {
+		setSelectedId(accountParam);
+	}, [accountParam]);
+
+	const openAccount = (accountId: string) => {
+		setSelectedId(accountId);
+		setSearchParams(
+			(current) => {
+				const next = new URLSearchParams(current);
+				next.set("tab", "accounts");
+				next.set("account", accountId);
+				return next;
+			},
+			{ replace: true },
+		);
+	};
+
+	const closeAccount = () => {
+		setSelectedId(null);
+		setSearchParams(
+			(current) => {
+				const next = new URLSearchParams(current);
+				next.delete("account");
+				return next;
+			},
+			{ replace: true },
+		);
+	};
 
 	const filtered = useMemo(() => {
 		const items = accountsQuery.data ?? [];
@@ -69,17 +101,14 @@ export function AccountList() {
 									key={item.id}
 									item={item}
 									canManage={canManageTarget(actor, item)}
-									onManage={() => setSelectedId(item.id)}
+									onManage={() => openAccount(item.id)}
 								/>
 							))}
 						</ul>
 					</CardContent>
 				</Card>
 			)}
-			<AccountDetailDialog
-				accountId={selectedId}
-				onClose={() => setSelectedId(null)}
-			/>
+			<AccountDetailDialog accountId={selectedId} onClose={closeAccount} />
 		</>
 	);
 }

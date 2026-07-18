@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Inbox, Plus, Search, Trash2, Users } from "lucide-react";
+import { ChevronDown, Inbox, Plus, Search, Trash2, User, Users } from "lucide-react";
 
 import { AddMailboxDialog } from "@/components/settings/AddMailboxDialog";
 import { Alert } from "@/components/ui/alert";
@@ -10,12 +10,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAccounts } from "@/hooks/use-accounts";
 import { useDomains } from "@/hooks/use-domains";
 import { useDeleteMailbox, useMailboxes } from "@/hooks/use-mailboxes";
 import type { Mailbox } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
 import { filterDomainsForAccount } from "@/lib/accounts/domains";
-import { canManageMailboxes } from "@/lib/accounts/permissions";
+import {
+	canAccessAccountsTab,
+	canManageMailboxes,
+} from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import {
 	buildDomainNamesById,
@@ -28,8 +32,10 @@ import { cn } from "@/lib/utils";
 export function MailboxSection() {
 	const { account } = useAuth();
 	const canManage = canManageMailboxes(account);
+	const canViewAccounts = canAccessAccountsTab(account);
 	const mailboxesQuery = useMailboxes("manage");
 	const domainsQuery = useDomains();
+	const accountsQuery = useAccounts({ enabled: canViewAccounts });
 	const [search, setSearch] = useState("");
 	const [addOpen, setAddOpen] = useState(false);
 	const [collapsedTypeSections, setCollapsedTypeSections] = useState<
@@ -45,6 +51,16 @@ export function MailboxSection() {
 		() => buildDomainNamesById(domains, mailboxes),
 		[domains, mailboxes],
 	);
+
+	const accountIdByPrimaryMailboxId = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const item of accountsQuery.data ?? []) {
+			if (item.primaryMailboxId) {
+				map.set(item.primaryMailboxId, item.id);
+			}
+		}
+		return map;
+	}, [accountsQuery.data]);
 
 	const searchQuery = search.trim().toLowerCase();
 	const filteredMailboxes = useMemo(() => {
@@ -160,6 +176,8 @@ export function MailboxSection() {
 							isTypeSectionCollapsed={isTypeSectionCollapsed}
 							onToggleTypeSection={toggleTypeSection}
 							resolveAliasTargetLabel={resolveAliasTargetLabel}
+							accountIdByPrimaryMailboxId={accountIdByPrimaryMailboxId}
+							canViewAccounts={canViewAccounts}
 						/>
 					))}
 				</div>
@@ -176,12 +194,16 @@ function MailboxDomainCard({
 	isTypeSectionCollapsed,
 	onToggleTypeSection,
 	resolveAliasTargetLabel,
+	accountIdByPrimaryMailboxId,
+	canViewAccounts,
 }: {
 	group: MailboxDomainGroup;
 	showDomainHeader: boolean;
 	isTypeSectionCollapsed: (domainKey: string, type: string) => boolean;
 	onToggleTypeSection: (domainKey: string, type: string) => void;
 	resolveAliasTargetLabel: (mailbox: Mailbox) => string | undefined;
+	accountIdByPrimaryMailboxId: Map<string, string>;
+	canViewAccounts: boolean;
 }) {
 	const domainKey = group.domainId ?? group.domainName;
 
@@ -201,6 +223,8 @@ function MailboxDomainCard({
 					isCollapsed={isTypeSectionCollapsed(domainKey, typeGroup.type)}
 					onToggle={() => onToggleTypeSection(domainKey, typeGroup.type)}
 					resolveAliasTargetLabel={resolveAliasTargetLabel}
+					accountIdByPrimaryMailboxId={accountIdByPrimaryMailboxId}
+					canViewAccounts={canViewAccounts}
 				/>
 			))}
 		</Card>
@@ -213,12 +237,16 @@ function MailboxTypeSection({
 	isCollapsed,
 	onToggle,
 	resolveAliasTargetLabel,
+	accountIdByPrimaryMailboxId,
+	canViewAccounts,
 }: {
 	domainKey: string;
 	typeGroup: MailboxTypeGroup;
 	isCollapsed: boolean;
 	onToggle: () => void;
 	resolveAliasTargetLabel: (mailbox: Mailbox) => string | undefined;
+	accountIdByPrimaryMailboxId: Map<string, string>;
+	canViewAccounts: boolean;
 }) {
 	const sectionId = `${domainKey}-${typeGroup.type}-mailboxes`;
 
@@ -249,6 +277,12 @@ function MailboxTypeSection({
 							mailbox={mailbox}
 							showType={false}
 							aliasTargetLabel={resolveAliasTargetLabel(mailbox)}
+							accountId={
+								mailbox.id
+									? accountIdByPrimaryMailboxId.get(mailbox.id)
+									: undefined
+							}
+							canViewAccounts={canViewAccounts}
 						/>
 					))}
 				</ul>
@@ -261,12 +295,16 @@ function MailboxRow({
 	mailbox,
 	domainName,
 	aliasTargetLabel,
+	accountId,
+	canViewAccounts,
 	showDomain = true,
 	showType = true,
 }: {
 	mailbox: Mailbox;
 	domainName?: string;
 	aliasTargetLabel?: string;
+	accountId?: string;
+	canViewAccounts: boolean;
 	showDomain?: boolean;
 	showType?: boolean;
 }) {
@@ -288,6 +326,11 @@ function MailboxRow({
 	const isSystemManaged = mailbox.isSystemManaged ?? false;
 	const isPrimaryMailbox = mailbox.type === "primary";
 	const canDelete = !isSystemManaged && !isPrimaryMailbox;
+	const showViewUser =
+		isPrimaryMailbox && canViewAccounts && Boolean(accountId);
+	const showSharedActions = mailbox.type === "shared" && Boolean(mailbox.id);
+	const showActions =
+		!isSystemManaged && (showViewUser || showSharedActions || canDelete);
 
 	return (
 		<li className="space-y-2 p-4">
@@ -317,9 +360,17 @@ function MailboxRow({
 					</div>
 				</div>
 
-				{isSystemManaged ? null : (
+				{showActions ? (
 					<div className="flex shrink-0 items-center gap-2">
-						{mailbox.type === "shared" && mailbox.id ? (
+						{showViewUser ? (
+							<Button variant="outline" size="sm" asChild>
+								<Link to={`/management?tab=accounts&account=${accountId}`}>
+									<User className="mr-1.5 size-3.5" />
+									View user
+								</Link>
+							</Button>
+						) : null}
+						{showSharedActions ? (
 							<>
 								<Button variant="outline" size="sm" asChild>
 									<Link to={`/management/mailboxes/${mailbox.id}/users`}>
@@ -348,7 +399,7 @@ function MailboxRow({
 							</Button>
 						) : null}
 					</div>
-				)}
+				) : null}
 			</div>
 
 			{mutationError ? (
