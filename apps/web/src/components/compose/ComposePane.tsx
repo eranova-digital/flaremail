@@ -11,10 +11,14 @@ import {
 	type ComposeReplyContext,
 	useComposeDraft,
 } from "@/hooks/use-compose-draft";
+import { useAvailableIdentities } from "@/hooks/use-identities";
 import type { SendResult } from "@/lib/thread-messages-cache";
 import { ComposeAttachments } from "@/components/compose/ComposeAttachments";
 import { ComposeForwardSource } from "@/components/compose/ComposeForwardSource";
 import { getErrorMessage } from "@/lib/api/errors";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { applyIdentitySignatureHtml } from "@/lib/identities/apply-signature";
+import { useMailboxes } from "@/hooks/use-mailboxes";
 import { cn } from "@/lib/utils";
 
 type ComposePaneProps = {
@@ -48,10 +52,63 @@ export function ComposePane({
 		existingDraftId,
 		threadId,
 	});
+	const { account } = useAuth();
+	const mailboxesQuery = useMailboxes();
+	const identitiesQuery = useAvailableIdentities(mailboxId);
 	const isInline = variant === "inline";
 	const isResumedDraft = Boolean(existingDraftId);
 	const isForward = compose.isForwardMode;
 	const showDraftActions = !isForward;
+
+	const mailboxAddress =
+		mailboxesQuery.data?.find((mailbox) => mailbox.id === mailboxId)?.address ??
+		"";
+	const primaryAddress =
+		mailboxesQuery.data?.find(
+			(mailbox) => mailbox.id === account?.primaryMailboxId,
+		)?.address ?? mailboxAddress;
+
+	useEffect(() => {
+		const items = identitiesQuery.data;
+		if (!items?.length || compose.fields.identityId) {
+			return;
+		}
+		const first = items[0];
+		if (!first) {
+			return;
+		}
+		compose.updateFields({
+			identityId: first.id,
+			bodyHtml: applyIdentitySignatureHtml({
+				bodyHtml: compose.fields.bodyHtml,
+				identity: first,
+				profile: {
+					firstName: account?.profile?.firstName ?? "",
+					lastName: account?.profile?.lastName ?? "",
+				},
+				mailboxAddress,
+				primaryAddress,
+			}),
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- seed once when identities arrive
+	}, [identitiesQuery.data]);
+
+	const handleIdentityChange = (identityId: string) => {
+		const identity = identitiesQuery.data?.find((item) => item.id === identityId);
+		compose.updateFields({
+			identityId,
+			bodyHtml: applyIdentitySignatureHtml({
+				bodyHtml: compose.fields.bodyHtml,
+				identity,
+				profile: {
+					firstName: account?.profile?.firstName ?? "",
+					lastName: account?.profile?.lastName ?? "",
+				},
+				mailboxAddress,
+				primaryAddress,
+			}),
+		});
+	};
 
 	// Let the surrounding view know which draft this composer owns so it can
 	// avoid rendering that draft twice (once here, once as a thread card) while
@@ -257,6 +314,28 @@ export function ComposePane({
 
 	const fields = (
 		<div className="space-y-3">
+			{identitiesQuery.data && identitiesQuery.data.length > 0 ? (
+				<div className="space-y-2">
+					<label className="text-sm font-medium" htmlFor="compose-identity">
+						From
+					</label>
+					<select
+						id="compose-identity"
+						className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+						value={compose.fields.identityId ?? ""}
+						onChange={(event) => handleIdentityChange(event.target.value)}
+					>
+						{identitiesQuery.data.map((identity) => (
+							<option key={identity.id} value={identity.id}>
+								{identity.fromNamePreview
+									? `${identity.fromNamePreview} <${mailboxAddress}>`
+									: mailboxAddress}
+								{identity.isDefault ? " (default)" : ""}
+							</option>
+						))}
+					</select>
+				</div>
+			) : null}
 			{showToField ? (
 				<div className="space-y-2">
 					<div className="flex items-center justify-between gap-2">

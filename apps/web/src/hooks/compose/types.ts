@@ -19,6 +19,7 @@ export type ComposeFields = {
 	subject: string;
 	body: string;
 	bodyHtml: string;
+	identityId: string | null;
 };
 
 export type ComposeReplyContext = {
@@ -51,6 +52,7 @@ export const EMPTY_FIELDS: ComposeFields = {
 	subject: "",
 	body: "",
 	bodyHtml: "<p></p>",
+	identityId: null,
 };
 
 export function parseRecipients(value: string): CreateDraftRequest["to"] {
@@ -93,10 +95,14 @@ export function fieldsToPayload(
 			inReplyToMessageId: reply.inReplyToMessageId,
 			threadId: reply.threadId,
 			replyAll: reply.replyAll === true ? true : undefined,
-		};
+			...(fields.identityId ? { identityId: fields.identityId } : {}),
+		} as CreateDraftRequest;
 	}
 
-	return base;
+	return {
+		...base,
+		...(fields.identityId ? { identityId: fields.identityId } : {}),
+	} as CreateDraftRequest;
 }
 
 export function outboundFromFields(
@@ -119,7 +125,10 @@ export function outboundFromFields(
 		body.attachments = attachments;
 	}
 
-	return body;
+	return {
+		...body,
+		...(fields.identityId ? { identityId: fields.identityId } : {}),
+	} as OutboundMessageBody;
 }
 
 export function hasComposeSubject(fields: ComposeFields): boolean {
@@ -201,5 +210,6 @@ export function messageToFields(message: {
 		subject: message.subject ?? "",
 		body,
 		bodyHtml,
+		identityId: null,
 	};
 }
