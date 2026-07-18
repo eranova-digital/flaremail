@@ -56,28 +56,51 @@ export default async function HomePage() {
 					Session established via Flaremail OIDC.
 				</p>
 			</div>
-			<dl className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-				<div>
-					<dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-						Name
-					</dt>
-					<dd className="mt-1 text-lg font-medium">{session.user.name}</dd>
-				</div>
-				<div>
-					<dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-						Email
-					</dt>
-					<dd className="mt-1 text-lg font-medium">{session.user.email}</dd>
-				</div>
-				<div>
-					<dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-						User id
-					</dt>
-					<dd className="mt-1 font-mono text-sm break-all">
-						{session.user.id}
-					</dd>
-				</div>
-			</dl>
+			<div className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+				{session.user.image ? (
+					<img
+						src={session.user.image}
+						alt=""
+						className="size-16 rounded-full object-cover"
+					/>
+				) : (
+					<div className="flex size-16 items-center justify-center rounded-full bg-zinc-200 text-lg font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+						{(session.user.name ?? "?").slice(0, 2).toUpperCase()}
+					</div>
+				)}
+				<dl className="grid min-w-0 flex-1 gap-3">
+					<div>
+						<dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+							Name
+						</dt>
+						<dd className="mt-1 text-lg font-medium">{session.user.name}</dd>
+					</div>
+					<div>
+						<dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+							Email
+						</dt>
+						<dd className="mt-1 text-lg font-medium">{session.user.email}</dd>
+					</div>
+					<div>
+						<dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+							User id
+						</dt>
+						<dd className="mt-1 font-mono text-sm break-all">
+							{session.user.id}
+						</dd>
+					</div>
+					{session.user.image ? (
+						<div>
+							<dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+								Picture
+							</dt>
+							<dd className="mt-1 font-mono text-xs break-all text-zinc-500">
+								{session.user.image}
+							</dd>
+						</div>
+					) : null}
+				</dl>
+			</div>
 		</section>
 	);
 }

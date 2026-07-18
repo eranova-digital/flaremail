@@ -49,6 +49,7 @@ export const auth = betterAuth({
 							sub?: string;
 							email?: string;
 							name?: string;
+							picture?: string;
 						};
 						if (!profile.sub || !profile.email) {
 							return null;
@@ -58,7 +59,7 @@ export const auth = betterAuth({
 							name: profile.name?.trim() || profile.email,
 							email: profile.email,
 							emailVerified: true,
-							image: undefined,
+							image: profile.picture ?? undefined,
 						};
 					},
 					overrideUserInfo: true,
