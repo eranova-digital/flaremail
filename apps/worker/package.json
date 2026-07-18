@@ -33,6 +33,7 @@
 		"@jsquash/resize": "^2.1.1",
 		"@jsquash/webp": "^1.5.0",
 		"@simplewebauthn/server": "^13.3.2",
+		"@test-worker/email-html-prepare": "*",
 		"@test-worker/identity-name-pattern": "*",
 		"@test-worker/mail-quoting": "*",
 		"drizzle-orm": "^0.45.2",

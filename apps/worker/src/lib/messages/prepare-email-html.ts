@@ -1,16 +1,19 @@
+import {
+	CELL_STYLE,
+	COMPOSE_HTML_ATTR,
+	extensionForMime,
+	HEADER_CELL_STYLE,
+	imageStyle,
+	LINK_STYLE,
+	PARAGRAPH_STYLE,
+	parseDataUrl,
+	setStyleIfMissing,
+	TABLE_STYLE,
+} from "@test-worker/email-html-prepare";
+
 import type { OutboundAttachmentInput } from "./outbound-attachments";
 import type { OutboundMessageBody } from "./outbound-payload";
 
-const COMPOSE_HTML_ATTR = "data-compose-html";
-
-const TABLE_STYLE =
-	"border-collapse:collapse;width:100%;margin:12px 0;table-layout:fixed;";
-const CELL_STYLE =
-	"border:1px solid #d1d5db;padding:8px;vertical-align:top;";
-const HEADER_CELL_STYLE =
-	"border:1px solid #d1d5db;padding:8px;vertical-align:top;background-color:#f3f4f6;font-weight:600;";
-const LINK_STYLE = "color:#2563eb;text-decoration:underline;";
-const PARAGRAPH_STYLE = "margin:0 0 1em 0;";
 // Inline the quote styling so receiving clients render the vertical quote bar.
 // Mail clients strip `class` attributes, so a bare `<blockquote type="cite">`
 // would otherwise show as plain (only browser-default) indented text.
@@ -22,59 +25,11 @@ type InlineEmailAttachment = OutboundAttachmentInput & {
 	contentId: string;
 };
 
-function parseDataUrl(
-	src: string,
-): { mimeType: string; content: string } | null {
-	const match = /^data:([^;]+);base64,(.+)$/i.exec(src);
-	if (!match) {
-		return null;
-	}
-
-	return {
-		mimeType: match[1]!,
-		content: match[2]!,
-	};
-}
-
-function imageStyle(width: string | null, align: string | null): string {
-	const styles = ["max-width:100%;height:auto;"];
-
-	if (width) {
-		const normalized = /^\d+$/.test(width) ? `${width}px` : width;
-		styles.push(`width:${normalized};`);
-	}
-
-	if (align === "center") {
-		styles.push("display:block;margin-left:auto;margin-right:auto;");
-	} else if (align === "right") {
-		styles.push("display:block;margin-left:auto;margin-right:0;");
-	} else {
-		styles.push("display:block;");
-	}
-
-	return styles.join("");
-}
-
-function extensionForMime(mimeType: string): string {
-	const subtype = mimeType.split("/")[1]?.split("+")[0] ?? "bin";
-	return subtype === "jpeg" ? "jpg" : subtype;
-}
-
 function normalizeEmptyParagraphs(html: string): string {
 	return html.replace(
 		/<p style="margin:0 0 1em 0;">\s*<\/p>/g,
 		'<p style="margin:0 0 1em 0;">&nbsp;</p>',
 	);
-}
-
-function setStyleIfMissing(
-	element: { getAttribute(name: string): string | null; setAttribute(name: string, value: string): void },
-	style: string,
-) {
-	if (element.getAttribute("style")?.trim()) {
-		return;
-	}
-	element.setAttribute("style", style);
 }
 
 export async function prepareEmailHtml(html: string): Promise<{
