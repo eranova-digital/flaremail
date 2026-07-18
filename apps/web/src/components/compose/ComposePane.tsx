@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	type ComposeForwardContext,
 	type ComposeReplyContext,
 	useComposeDraft,
@@ -321,21 +328,26 @@ export function ComposePane({
 					<label className="text-sm font-medium" htmlFor="compose-identity">
 						From
 					</label>
-					<select
-						id="compose-identity"
-						className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-						value={compose.fields.identityId ?? ""}
-						onChange={(event) => handleIdentityChange(event.target.value)}
+					<Select
+						value={compose.fields.identityId ?? undefined}
+						onValueChange={handleIdentityChange}
 					>
-						{identitiesQuery.data.map((identity) => (
-							<option key={identity.id} value={identity.id}>
-								{identity.fromNamePreview
+						<SelectTrigger id="compose-identity" aria-label="From identity">
+							<SelectValue placeholder="Select identity" />
+						</SelectTrigger>
+						<SelectContent>
+							{identitiesQuery.data.map((identity) => {
+								const label = identity.fromNamePreview
 									? `${identity.fromNamePreview} <${mailboxAddress}>`
-									: mailboxAddress}
-								{identity.isDefault ? " (default)" : ""}
-							</option>
-						))}
-					</select>
+									: mailboxAddress;
+								return (
+									<SelectItem key={identity.id} value={identity.id}>
+										{identity.isDefault ? `${label} (default)` : label}
+									</SelectItem>
+								);
+							})}
+						</SelectContent>
+					</Select>
 				</div>
 			) : null}
 			{showToField ? (
