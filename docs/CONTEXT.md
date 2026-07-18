@@ -52,9 +52,49 @@ _Avoid_: actualMailboxId, owner mailbox
 Access an **account** holds to a **mailbox** other than its **primary mailbox** (e.g. a shared **mailbox** like `sales@acme.com`).
 _Avoid_: delegation, permission, membership
 
+**Identity**:
+A send persona: a **name pattern** plus optional **signature**. Most are owned by a **mailbox**; a **default identity** is instance-scoped and live-linked (not copied per mailbox). Never changes the From address — that is always the **mailbox** being sent from. Distinct from **account** (authentication). An **account** selects among **identities** it is allowed to use; it does not own them.
+_Avoid_: user identity, account identity, persona, alias (as the entity), send-as
+
+**Name pattern**:
+The rule on an **identity** that produces the **From name** (e.g. none, `{first_name}`, `{first_initial} {last_name}`, or a **custom name**). Not the account **display name**. Profile-based segments resolve from the sending **account**'s **profile fields** at send time; missing segments are omitted.
+_Avoid_: display name (for this field), from template
+
+**Custom name**:
+A free-form **name pattern** value (literal From phrase). Gated by instance-wide **custom name allowance** for **user**- and **manager**-created **identities**; **admin**+ and the **intendant** may always use **custom name**.
+_Avoid_: freeform display name
+
+**Custom name allowance**:
+Instance-wide Organization-tab setting: when off, **user** and **manager** actors cannot choose **custom name** on **identities** they create or edit. Does not constrain **admin**, **superadmin**, or **intendant**. Default: off.
+_Avoid_: allow custom display names
+
+**From name**:
+The resolved phrase in the SMTP From header when an **identity** is applied (e.g. `P. Borcean` in `P. Borcean <sales@acme.com>`). Empty when the **name pattern** is none.
+_Avoid_: display name, sender name
+
+**Signature**:
+Optional rich text on an **identity**. When an **identity** is applied in compose, the **signature** is inserted into the message body by default after new text and before any quoted thread (the sender may edit or move it as part of the body). Tags: `{from_name}`, `{first_name}`, `{last_name}`, `{first_initial}`, `{last_initial}`, `{mailbox_address}`, `{primary_address}`; unknown tags left literal. No `{display_name}`.
+_Avoid_: footer, disclaimer (unless that is all it contains)
+
+**Personal identity allowance**:
+Per-**shared mailbox** setting: when on, an **account** sending from that **mailbox** may also select **identities** owned by its **primary mailbox**. Default off.
+_Avoid_: allow personal from, borrow personal identity
+
+**Identity export**:
+Per-**shared mailbox** setting: when on, **identities** owned by that **mailbox** may be selected when sending from other **mailboxes** the **account** can access. Default off.
+_Avoid_: allow identities elsewhere, identity portability, cross-mailbox identity
+
+**Identity self-serve**:
+Instance-wide setting (Organization tab in management): when on, an **account** may create and modify **identities** on its **primary mailbox**. When off, only elevated roles manage those mailbox-owned **identities**; holders only select. Never allows editing a **default identity**. **Shared mailbox** **identities** are managed by **managers** with a **shared mailbox assignment** (or **admin**+ in scope), never by grant holders. **System mailbox** **identities** are managed by the **intendant** only. Default: on.
+_Avoid_: user-managed identities, personal identity editing
+
+**Default identity**:
+The single instance-scoped **identity** template (Organization tab), live-linked — not stamped onto each **mailbox**. Offered only when sending from **primary mailboxes** (preselected when the **account** has no other preference). Not offered on **shared** or **system mailboxes**. Not editable or deletable by mailbox holders; only Organization-tab editors change it. Changes apply immediately everywhere it is offered. New instances ship with name pattern `{first_name} {last_name}` and an empty **signature**.
+_Avoid_: stamped identity, seeded identity, system identity (ambiguous with system mailbox)
+
 **Display name**:
 How an **account** is shown to humans and in OIDC `name` claims. Formed from **first name** + **last name**.
-_Avoid_: full name, username
+_Avoid_: full name, username, from name, name pattern
 
 **Profile field**:
 A piece of **account** metadata. V1 fields: **first name**, **last name**, **recovery address** (optional), **address** (optional: country, county/state, city, address line 1, address line 2), **phone** (optional). Set at **invite** (optionally pre-filled by the inviter) and editable by the **account** holder unless **locked**. **Admin**+ can **lock** individual fields to prevent holder edits.
