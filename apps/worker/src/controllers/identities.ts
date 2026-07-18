@@ -45,10 +45,10 @@ function parseIdentityBody(value: Record<string, unknown>):
 
 export async function handleListMailboxIdentities(context: RouteContext) {
 	try {
-		const items = await withDb(context.env, (db) =>
+		const result = await withDb(context.env, (db) =>
 			listMailboxIdentities(db, context.principal, context.params.mailboxId),
 		);
-		return jsonResponse({ items });
+		return jsonResponse(result);
 	} catch (error) {
 		if (error instanceof IdentityAccessDeniedError) {
 			return validationError(context.request, error.message);

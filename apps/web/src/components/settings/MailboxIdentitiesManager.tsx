@@ -57,12 +57,12 @@ export function MailboxIdentitiesManager({
 		);
 	}
 
-	const { items: rawItems, capabilities } = identitiesQuery.data;
+	const { items: rawItems = [], capabilities } = identitiesQuery.data;
 	const items = hideDefault
 		? rawItems.filter((identity) => !identity.isDefault)
 		: rawItems;
-	const canManage = capabilities.canManage;
-	const allowCustom = capabilities.customNameAllowed;
+	const canManage = capabilities?.canManage ?? false;
+	const allowCustom = capabilities?.customNameAllowed ?? false;
 	const busy =
 		createMutation.isPending ||
 		updateMutation.isPending ||
