@@ -1,5 +1,4 @@
 import type { Database } from "../../db/client";
-import { findDraftById } from "../messages/message-queries";
 import {
 	AccountAccessDeniedError,
 	assertCanAssignInviteRole,
@@ -221,17 +220,4 @@ export async function authorizeMailbox(
 			await assertPrincipalCanAccessMailbox(db, principal, mailboxId);
 			return assertCanSendFrom(db, mailboxId);
 	}
-}
-
-export async function authorizeDraftCommand(
-	db: Database,
-	principal: Principal,
-	draftId: string,
-): Promise<{ mailboxId: string }> {
-	const draft = await findDraftById(db, draftId);
-	if (!draft) {
-		throw new Error("Draft not found");
-	}
-	await authorizeMailbox(db, principal, draft.actualMailboxId, "read");
-	return { mailboxId: draft.actualMailboxId };
 }

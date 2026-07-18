@@ -1,5 +1,4 @@
 import { withDb, type Database } from "../db/client";
-import { authorizeDraftCommand, authorizeMailbox } from "../lib/auth/access";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
@@ -42,10 +41,9 @@ export async function handleSendMessage({
 
 	try {
 		const payload = parseSendMessageBody(body);
-		const message = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, payload.mailboxId, "read");
-			return outboundMail(env, db, principal, request).send(payload.mailboxId, payload);
-		});
+		const message = await withDb(env, async (db) =>
+			outboundMail(env, db, principal, request).send(payload.mailboxId, payload),
+		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -64,10 +62,9 @@ export async function handleCreateDraft({
 
 	try {
 		const payload = parseCreateDraftBody(body);
-		const message = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, payload.mailboxId, "read");
-			return outboundMail(env, db, principal, request).createDraft(payload);
-		});
+		const message = await withDb(env, async (db) =>
+			outboundMail(env, db, principal, request).createDraft(payload),
+		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -87,10 +84,9 @@ export async function handleUpdateDraft({
 
 	try {
 		const payload = parseOutboundMessageBody(body);
-		const message = await withDb(env, async (db) => {
-			await authorizeDraftCommand(db, principal, params.id);
-			return outboundMail(env, db, principal, request).updateDraft(params.id, payload);
-		});
+		const message = await withDb(env, async (db) =>
+			outboundMail(env, db, principal, request).updateDraft(params.id, payload),
+		);
 		return jsonResponse(toSendResponse({ ...message, sendStatus: message.sendStatus ?? "draft" }));
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -105,7 +101,6 @@ export async function handleDeleteDraft({
 }: RouteContext): Promise<Response> {
 	try {
 		await withDb(env, async (db) => {
-			await authorizeDraftCommand(db, principal, params.id);
 			await outboundMail(env, db, principal, request).deleteDraft(params.id);
 		});
 		return new Response(null, { status: 204 });
@@ -121,10 +116,9 @@ export async function handleSendDraft({
 	principal,
 }: RouteContext): Promise<Response> {
 	try {
-		const message = await withDb(env, async (db) => {
-			await authorizeDraftCommand(db, principal, params.id);
-			return outboundMail(env, db, principal, request).sendDraft(params.id);
-		});
+		const message = await withDb(env, async (db) =>
+			outboundMail(env, db, principal, request).sendDraft(params.id),
+		);
 		return jsonResponse(toSendResponse(message));
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -144,10 +138,9 @@ export async function handleReplyToMessage({
 
 	try {
 		const payload = parseReplyBody(body);
-		const message = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, payload.mailboxId, "read");
-			return outboundMail(env, db, principal, request).reply(params.id, payload);
-		});
+		const message = await withDb(env, async (db) =>
+			outboundMail(env, db, principal, request).reply(params.id, payload),
+		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
 		return handleRouteError(error, request);
@@ -167,10 +160,9 @@ export async function handleForwardToMessage({
 
 	try {
 		const payload = parseForwardBody(body);
-		const message = await withDb(env, async (db) => {
-			await authorizeMailbox(db, principal, payload.mailboxId, "read");
-			return outboundMail(env, db, principal, request).forward(params.id, payload);
-		});
+		const message = await withDb(env, async (db) =>
+			outboundMail(env, db, principal, request).forward(params.id, payload),
+		);
 		return jsonResponse(toSendResponse(message), 201);
 	} catch (error) {
 		return handleRouteError(error, request);

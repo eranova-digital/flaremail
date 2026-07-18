@@ -3,7 +3,6 @@ import PostalMime from "postal-mime";
 
 import { messages, threadMailboxes } from "../../db/schema";
 import { authorizeMailbox } from "../../lib/auth/access";
-import { assertCanSendFrom } from "../../lib/authorize-mailbox";
 import { loadMailboxForSend } from "../../lib/mailbox-queries";
 import { isBlackholeMailboxType } from "../../lib/mailbox-types";
 import {
@@ -72,14 +71,12 @@ export async function sendDraftMessage(
 		throw new Error("Draft not found");
 	}
 
-	await authorizeMailbox(ctx.db, ctx.principal, draft.actualMailboxId, "read");
+	await authorizeMailbox(ctx.db, ctx.principal, draft.actualMailboxId, "send");
 
 	const mailbox = await loadMailboxForSend(ctx.db, draft.actualMailboxId);
 	if (!mailbox) {
 		throw new Error("Mailbox not found or cannot send");
 	}
-
-	await assertCanSendFrom(ctx.db, mailbox.id);
 
 	const rawPayload = await loadDraftOutboundPayload(ctx.bucket, draft);
 	const payload = await prepareOutboundMessageBody(rawPayload);
@@ -201,7 +198,7 @@ export async function directSend(
 	mailboxId: string,
 	body: OutboundMessageBody,
 ) {
-	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "send");
 	return sendAndPersistNewMessage(
 		ctx,
 		mailboxId,
@@ -226,7 +223,7 @@ export async function replyToMessage(
 		throw new Error("Message not found");
 	}
 
-	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "read");
+	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "send");
 
 	const mailbox = await loadMailboxForSend(ctx.db, body.mailboxId);
 	if (!mailbox) {
@@ -323,7 +320,7 @@ export async function forwardMessage(
 	body: ForwardBody,
 ) {
 	await assertMessageVisibleInMailbox(ctx.db, messageId, body.mailboxId);
-	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "read");
+	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "send");
 
 	const parent = await findMessageById(ctx.db, messageId);
 	if (!parent) {

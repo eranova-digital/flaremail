@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 
 import { attachments, messages } from "../../db/schema";
 import { authorizeMailbox } from "../../lib/auth/access";
-import { assertCanSendFrom } from "../../lib/authorize-mailbox";
 import { loadMailboxForSend } from "../../lib/mailbox-queries";
 import { isBlackholeMailboxType } from "../../lib/mailbox-types";
 import { buildOutboundMimeContent } from "../../lib/messages/build-outbound-mime";
@@ -30,8 +29,7 @@ export async function createDraft(
 	ctx: OutboundContext,
 	body: CreateDraftBody,
 ) {
-	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "read");
-	await assertCanSendFrom(ctx.db, body.mailboxId);
+	await authorizeMailbox(ctx.db, ctx.principal, body.mailboxId, "send");
 
 	const { parent, threading } = await resolveThreadingForCompose(ctx.db, body);
 
@@ -91,13 +89,11 @@ export async function updateDraft(
 	}
 
 	const mailboxId = draft.actualMailboxId;
-	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "read");
+	await authorizeMailbox(ctx.db, ctx.principal, mailboxId, "send");
 	const mailbox = await loadMailboxForSend(ctx.db, mailboxId);
 	if (!mailbox) {
 		throw new Error("Mailbox not found or cannot send");
 	}
-
-	await assertCanSendFrom(ctx.db, mailbox.id);
 
 	const recipients = formatRecipients(body);
 	const preview = buildPreview(body.text ?? null);
