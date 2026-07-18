@@ -33,6 +33,11 @@ export type AccountCapabilities = {
 	showsManagerMailboxGrantsTab: boolean;
 	accessTemplatesTab?: boolean;
 	canCreateGlobalTemplates?: boolean;
+	accessOidcClientsTab: boolean;
+	accessLogsTab: boolean;
+	manageableTargetRoles: string[];
+	suspendableTargetRoles: string[];
+	removableTargetRoles: string[];
 	inviteableRoles: string[];
 };
 

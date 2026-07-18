@@ -17,6 +17,20 @@ function requireCapabilities(
 	return caps;
 }
 
+function targetRoleAllowed(
+	caps: AccountCapabilities,
+	field:
+		| "manageableTargetRoles"
+		| "suspendableTargetRoles"
+		| "removableTargetRoles",
+	target: AccountSummary,
+): boolean {
+	if (target.isIntendant || !target.role) {
+		return false;
+	}
+	return caps[field].includes(target.role as AccountRole);
+}
+
 export function canAccessManagementPage(account: Account | null): boolean {
 	return requireCapabilities(account)?.accessManagementPage ?? false;
 }
@@ -41,16 +55,14 @@ export function canRemoveTarget(
 	actor: Account | null,
 	target: AccountSummary,
 ): boolean {
-	if (!actor || target.isIntendant) {
+	if (!actor || target.isIntendant || actor.id === target.id) {
 		return false;
 	}
-	if (actor.isIntendant || actor.role === "superadmin") {
-		return true;
+	const caps = requireCapabilities(actor);
+	if (!caps) {
+		return false;
 	}
-	if (actor.role === "admin") {
-		return target.role !== "admin" && target.role !== "superadmin";
-	}
-	return false;
+	return targetRoleAllowed(caps, "removableTargetRoles", target);
 }
 
 export function canSuspendTarget(
@@ -60,16 +72,11 @@ export function canSuspendTarget(
 	if (!actor || target.isIntendant || actor.id === target.id) {
 		return false;
 	}
-	if (actor.isIntendant || actor.role === "superadmin") {
-		return true;
+	const caps = requireCapabilities(actor);
+	if (!caps) {
+		return false;
 	}
-	if (actor.role === "admin") {
-		return target.role !== "admin" && target.role !== "superadmin";
-	}
-	if (actor.role === "manager") {
-		return target.role === "user";
-	}
-	return false;
+	return targetRoleAllowed(caps, "suspendableTargetRoles", target);
 }
 
 export function canAssignRoles(actor: Account | null): boolean {
@@ -95,17 +102,11 @@ export function canRegisterDomains(account: Account | null): boolean {
 }
 
 export function canManageOidcClients(account: Account | null): boolean {
-	if (!account) {
-		return false;
-	}
-	return account.isIntendant || account.role === "superadmin";
+	return requireCapabilities(account)?.accessOidcClientsTab ?? false;
 }
 
 export function canAccessLogsTab(account: Account | null): boolean {
-	if (!account) {
-		return false;
-	}
-	return account.isIntendant || account.role === "superadmin";
+	return requireCapabilities(account)?.accessLogsTab ?? false;
 }
 
 export function canAccessDomainsTab(account: Account | null): boolean {
@@ -172,42 +173,6 @@ export function canManageManagerMailboxAssignments(
 	return requireCapabilities(account)?.manageManagerMailboxAssignments ?? false;
 }
 
-const ROLE_RANK: Record<AccountRole, number> = {
-	user: 0,
-	manager: 1,
-	admin: 2,
-	superadmin: 3,
-};
-
-function roleRank(role: AccountRole): number {
-	return ROLE_RANK[role];
-}
-
-function actorRank(actor: Account): number {
-	if (actor.isIntendant) {
-		return 4;
-	}
-	if (
-		actor.role === "user" ||
-		actor.role === "manager" ||
-		actor.role === "admin" ||
-		actor.role === "superadmin"
-	) {
-		return roleRank(actor.role);
-	}
-	return -1;
-}
-
-function targetRank(target: AccountSummary): number {
-	if (target.isIntendant) {
-		return 5;
-	}
-	if (!target.role) {
-		return -1;
-	}
-	return ROLE_RANK[target.role];
-}
-
 export function canManageTarget(
 	actor: Account | null,
 	target: AccountSummary,
@@ -215,19 +180,11 @@ export function canManageTarget(
 	if (!actor || target.isIntendant || actor.id === target.id) {
 		return false;
 	}
-	if (actorRank(actor) <= targetRank(target)) {
+	const caps = requireCapabilities(actor);
+	if (!caps) {
 		return false;
 	}
-	if (actor.isIntendant || actor.role === "superadmin") {
-		return true;
-	}
-	if (actor.role === "admin") {
-		return target.role !== "admin" && target.role !== "superadmin";
-	}
-	if (actor.role === "manager") {
-		return target.role === "user";
-	}
-	return false;
+	return targetRoleAllowed(caps, "manageableTargetRoles", target);
 }
 
 export function canManageTargetSecurity(
