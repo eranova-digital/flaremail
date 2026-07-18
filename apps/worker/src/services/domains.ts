@@ -6,7 +6,7 @@ import { isSchemaMismatchError, isUniqueViolation, schemaMismatchMessage } from 
 import { normalizeEmailAddress } from "../lib/normalize-email-address";
 import { provisionSystemMailboxes } from "../lib/system-mailboxes";
 import { deleteDomainCascade } from "./cascade-delete";
-import { getDomainReadinessSummary } from "./domain-validation";
+import { getDomainReadinessSummary, startDomainValidation } from "../lib/domain-validation";
 import { toDomainDto } from "./dto";
 import type { LogContext } from "./logs";
 
@@ -77,7 +77,6 @@ export async function createDomain(
 		});
 
 		if (email) {
-			const { startDomainValidation } = await import("./domain-validation");
 			try {
 				await startDomainValidation(db, email, row.id, row.name, logMeta);
 			} catch (error) {
