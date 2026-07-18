@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import {
+	getAccountDisplayName,
+	ProfileAvatar,
+} from "@/components/ProfileAvatar";
 import { PageLoader } from "@/components/PageLoader";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,6 +15,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
 import {
 	fetchOidcPending,
+	oidcClientLogoUrl,
 	submitOidcConsent,
 	type OidcPending,
 } from "@/lib/oidc/api";
@@ -18,7 +23,6 @@ import {
 export function ConsentPage() {
 	const { account, isAuthenticated, isLoading } = useAuth();
 	const [searchParams] = useSearchParams();
-	const navigate = useNavigate();
 	const pendingId = searchParams.get("pending");
 	const [pending, setPending] = useState<OidcPending | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -89,6 +93,20 @@ export function ConsentPage() {
 		}
 	};
 
+	const cancel = () => {
+		const homescreen = pending?.homescreenUrl?.trim();
+		if (homescreen) {
+			window.location.assign(homescreen);
+			return;
+		}
+		window.location.assign("/");
+	};
+
+	const displayName = account ? getAccountDisplayName(account) : "";
+	const logoUrl = pending
+		? oidcClientLogoUrl(pending.clientRecordId, pending.logo, "large")
+		: null;
+
 	return (
 		<AuthPageShell
 			title="Authorize application"
@@ -105,14 +123,40 @@ export function ConsentPage() {
 					Loading…
 				</p>
 			) : null}
-			{pending ? (
+			{pending && account ? (
 				<Card>
 					<CardContent className="space-y-4 pt-6">
-						<div>
-							<p className="text-sm font-medium">{pending.clientName}</p>
-							<p className="text-muted-foreground font-mono text-xs">
-								{pending.clientId}
-							</p>
+						<div className="bg-muted/40 flex items-center gap-3 rounded-lg p-3">
+							<ProfileAvatar
+								accountId={account.id}
+								seed={account.loginIdentifier}
+								label={displayName}
+								profilePicture={account.profilePicture}
+								className="size-12 text-sm"
+							/>
+							<div className="min-w-0">
+								<p className="truncate text-sm font-medium">{displayName}</p>
+								<p className="text-muted-foreground truncate text-xs">
+									{account.loginIdentifier}
+								</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-3">
+							<ProfileAvatar
+								seed={pending.clientId}
+								label={pending.clientName}
+								imageUrl={logoUrl}
+								shape="rounded-square"
+								className="size-12 text-sm"
+							/>
+							<div className="min-w-0">
+								<p className="truncate text-sm font-medium">
+									{pending.clientName}
+								</p>
+								<p className="text-muted-foreground font-mono truncate text-xs">
+									{pending.clientId}
+								</p>
+							</div>
 						</div>
 						<div>
 							<p className="mb-2 text-sm font-medium">Requested scopes</p>
@@ -146,7 +190,8 @@ export function ConsentPage() {
 							type="button"
 							variant="ghost"
 							className="w-full"
-							onClick={() => navigate("/")}
+							disabled={submitting}
+							onClick={cancel}
 						>
 							Cancel
 						</Button>

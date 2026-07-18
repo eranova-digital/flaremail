@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Copy, Loader2, Plus, Trash2 } from "lucide-react";
 
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,11 +22,14 @@ import {
 	adminRevokeOidcClientGrant,
 	createOidcClient,
 	deleteOidcClient,
+	deleteOidcClientLogo,
 	listOidcClientGrants,
 	listOidcClients,
 	OIDC_SCOPE_OPTIONS,
+	oidcClientLogoUrl,
 	regenerateOidcClientSecret,
 	updateOidcClient,
+	uploadOidcClientLogo,
 	type OidcClient,
 	type OidcClientGrant,
 } from "@/lib/oidc/api";
@@ -37,6 +41,7 @@ type EditorState = {
 	m2mPermissionsText: string;
 	isConfidential: boolean;
 	requireConsent: boolean;
+	homescreenUrl: string;
 };
 
 const emptyEditor = (): EditorState => ({
@@ -46,6 +51,7 @@ const emptyEditor = (): EditorState => ({
 	m2mPermissionsText: "",
 	isConfidential: true,
 	requireConsent: true,
+	homescreenUrl: "",
 });
 
 function parseLines(value: string): string[] {
@@ -68,6 +74,7 @@ export function OidcClientsSection() {
 	const [grantsClient, setGrantsClient] = useState<OidcClient | null>(null);
 	const [grants, setGrants] = useState<OidcClientGrant[]>([]);
 	const [grantsLoading, setGrantsLoading] = useState(false);
+	const logoInputRef = useRef<HTMLInputElement>(null);
 
 	const reload = useCallback(async () => {
 		setLoading(true);
@@ -101,6 +108,7 @@ export function OidcClientsSection() {
 			m2mPermissionsText: client.m2mPermissions.join("\n"),
 			isConfidential: client.isConfidential,
 			requireConsent: client.requireConsent,
+			homescreenUrl: client.homescreenUrl ?? "",
 		});
 		setEditorOpen(true);
 	};
@@ -125,6 +133,7 @@ export function OidcClientsSection() {
 				m2mPermissions: parseLines(editor.m2mPermissionsText),
 				isConfidential: editor.isConfidential,
 				requireConsent: editor.requireConsent,
+				homescreenUrl: editor.homescreenUrl.trim() || null,
 			};
 			if (editing) {
 				await updateOidcClient(editing.id, payload);
@@ -203,6 +212,43 @@ export function OidcClientsSection() {
 		}
 	};
 
+	const handleLogoUpload = async (file: File) => {
+		if (!editing) {
+			return;
+		}
+		setSubmitting(true);
+		setError(null);
+		try {
+			const result = await uploadOidcClientLogo(editing.id, file);
+			setEditing({ ...editing, logo: result.logo });
+			await reload();
+		} catch (uploadError) {
+			setError(getErrorMessage(uploadError));
+		} finally {
+			setSubmitting(false);
+			if (logoInputRef.current) {
+				logoInputRef.current.value = "";
+			}
+		}
+	};
+
+	const handleLogoRemove = async () => {
+		if (!editing) {
+			return;
+		}
+		setSubmitting(true);
+		setError(null);
+		try {
+			await deleteOidcClientLogo(editing.id);
+			setEditing({ ...editing, logo: null });
+			await reload();
+		} catch (removeError) {
+			setError(getErrorMessage(removeError));
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-start justify-between gap-3">
@@ -232,11 +278,20 @@ export function OidcClientsSection() {
 					{clients.map((client) => (
 						<Card key={client.id}>
 							<CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-								<div>
-									<CardTitle className="text-base">{client.name}</CardTitle>
-									<p className="text-muted-foreground mt-1 font-mono text-xs">
-										{client.clientId}
-									</p>
+								<div className="flex items-start gap-3">
+									<ProfileAvatar
+										seed={client.clientId}
+										label={client.name}
+										imageUrl={oidcClientLogoUrl(client.id, client.logo)}
+										shape="rounded-square"
+										className="size-10 text-sm"
+									/>
+									<div>
+										<CardTitle className="text-base">{client.name}</CardTitle>
+										<p className="text-muted-foreground mt-1 font-mono text-xs">
+											{client.clientId}
+										</p>
+									</div>
 								</div>
 								<div className="flex flex-wrap gap-2">
 									<Button
@@ -282,6 +337,9 @@ export function OidcClientsSection() {
 									{client.requireConsent ? "required" : "skipped"}
 								</p>
 								<p>Redirect URIs: {client.redirectUris.join(", ") || "—"}</p>
+								<p>
+									Homescreen: {client.homescreenUrl ?? "—"}
+								</p>
 								<p>Scopes: {client.allowedScopes.join(" ")}</p>
 								{client.m2mPermissions.length > 0 ? (
 									<p>M2M: {client.m2mPermissions.join(" ")}</p>
@@ -323,6 +381,80 @@ export function OidcClientsSection() {
 								}
 							/>
 						</label>
+						<label className="block space-y-1.5 text-sm">
+							<span className="font-medium">Homescreen URL (optional)</span>
+							<Input
+								type="url"
+								placeholder="https://app.example.com/"
+								value={editor.homescreenUrl}
+								onChange={(event) =>
+									setEditor((current) => ({
+										...current,
+										homescreenUrl: event.target.value,
+									}))
+								}
+							/>
+							<span className="text-muted-foreground text-xs">
+								Where Cancel on the consent screen sends the user.
+							</span>
+						</label>
+						{editing ? (
+							<div className="space-y-2">
+								<p className="text-sm font-medium">Profile picture</p>
+								<div className="flex items-center gap-3">
+									<ProfileAvatar
+										seed={editing.clientId}
+										label={editing.name}
+										imageUrl={oidcClientLogoUrl(
+											editing.id,
+											editing.logo,
+											"large",
+										)}
+										shape="rounded-square"
+										className="size-14 text-lg"
+									/>
+									<div className="flex flex-wrap gap-2">
+										<input
+											ref={logoInputRef}
+											type="file"
+											accept="image/jpeg,image/png,image/webp"
+											className="sr-only"
+											disabled={submitting}
+											onChange={(event) => {
+												const file = event.target.files?.[0];
+												if (file) {
+													void handleLogoUpload(file);
+												}
+											}}
+										/>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											disabled={submitting}
+											onClick={() => logoInputRef.current?.click()}
+										>
+											{editing.logo ? "Change" : "Upload"}
+										</Button>
+										{editing.logo ? (
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												disabled={submitting}
+												onClick={() => void handleLogoRemove()}
+											>
+												Remove
+											</Button>
+										) : null}
+									</div>
+								</div>
+							</div>
+						) : (
+							<p className="text-muted-foreground text-xs">
+								Save the client first, then upload a profile picture.
+							</p>
+						)}
 						<div className="space-y-2">
 							<p className="text-sm font-medium">Allowed scopes</p>
 							{OIDC_SCOPE_OPTIONS.map((scope) => (

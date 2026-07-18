@@ -31,28 +31,46 @@ export function getInitialsFromLabel(label: string): string {
 	return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
+export type ProfileAvatarShape = "circle" | "rounded-square";
+
 type ProfileAvatarProps = {
-	accountId: string;
 	seed: string;
 	label: string;
-	profilePicture?: ProfilePicture | null;
 	className?: string;
+	/** Defaults to circle (accounts). Use rounded-square for OIDC clients. */
+	shape?: ProfileAvatarShape;
+	/** Explicit image URL (e.g. OIDC client logo). Wins over account picture. */
+	imageUrl?: string | null;
+	accountId?: string;
+	profilePicture?: ProfilePicture | null;
 };
 
+function shapeClass(shape: ProfileAvatarShape): string {
+	return shape === "rounded-square" ? "rounded-lg" : "rounded-full";
+}
+
 export function ProfileAvatar({
-	accountId,
 	seed,
 	label,
-	profilePicture,
 	className,
+	shape = "circle",
+	imageUrl: imageUrlProp,
+	accountId,
+	profilePicture,
 }: ProfileAvatarProps) {
 	const { background, foreground } = profileAvatarColorsFromSeed(seed);
 	const initials = getInitialsFromLabel(label);
-	const imageUrl = profilePictureUrl(
-		accountId,
-		pickProfilePictureSize(className ?? ""),
-		profilePicture,
-	);
+	const imageUrl =
+		imageUrlProp !== undefined
+			? imageUrlProp
+			: accountId
+				? profilePictureUrl(
+						accountId,
+						pickProfilePictureSize(className ?? ""),
+						profilePicture,
+					)
+				: null;
+	const radius = shapeClass(shape);
 
 	if (imageUrl) {
 		return (
@@ -60,10 +78,7 @@ export function ProfileAvatar({
 				src={imageUrl}
 				alt=""
 				aria-hidden
-				className={cn(
-					"shrink-0 rounded-full object-cover",
-					className,
-				)}
+				className={cn("shrink-0 object-cover", radius, className)}
 			/>
 		);
 	}
@@ -72,7 +87,8 @@ export function ProfileAvatar({
 		<span
 			aria-hidden
 			className={cn(
-				"flex shrink-0 items-center justify-center rounded-full font-semibold",
+				"flex shrink-0 items-center justify-center font-semibold",
+				radius,
 				className,
 			)}
 			style={{ backgroundColor: background, color: foreground }}

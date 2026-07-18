@@ -1,4 +1,6 @@
 import { apiRequest } from "@/lib/api/request";
+import { apiUrl } from "@/lib/api";
+import type { ProfilePicture } from "@/lib/profile-picture";
 
 export type OidcClient = {
 	id: string;
@@ -9,6 +11,8 @@ export type OidcClient = {
 	m2mPermissions: string[];
 	isConfidential: boolean;
 	requireConsent: boolean;
+	homescreenUrl: string | null;
+	logo: ProfilePicture | null;
 	createdAt: string;
 	updatedAt: string;
 };
@@ -36,10 +40,13 @@ export type OidcClientGrant = {
 export type OidcPending = {
 	id: string;
 	clientId: string;
+	clientRecordId: string;
 	clientName: string;
 	scopes: string[];
 	redirectUri: string;
 	requireConsent: boolean;
+	homescreenUrl: string | null;
+	logo: ProfilePicture | null;
 };
 
 export const OIDC_SCOPE_OPTIONS = [
@@ -49,6 +56,21 @@ export const OIDC_SCOPE_OPTIONS = [
 	"mail:read",
 	"mail:send",
 ] as const;
+
+export function oidcClientLogoUrl(
+	clientRecordId: string,
+	logo: ProfilePicture | null | undefined,
+	size: "small" | "large" = "small",
+): string | null {
+	if (!logo?.updatedAt) {
+		return null;
+	}
+	const params = new URLSearchParams({
+		size,
+		v: logo.updatedAt,
+	});
+	return apiUrl(`/oidc-clients/${clientRecordId}/logo?${params.toString()}`);
+}
 
 export function listOidcClients(): Promise<{ clients: OidcClient[] }> {
 	return apiRequest("/oidc-clients");
@@ -61,6 +83,7 @@ export function createOidcClient(input: {
 	m2mPermissions: string[];
 	isConfidential: boolean;
 	requireConsent: boolean;
+	homescreenUrl: string | null;
 }): Promise<OidcClientCreated> {
 	return apiRequest("/oidc-clients", {
 		method: "POST",
@@ -77,6 +100,7 @@ export function updateOidcClient(
 		m2mPermissions: string[];
 		isConfidential: boolean;
 		requireConsent: boolean;
+		homescreenUrl: string | null;
 	}>,
 ): Promise<OidcClient> {
 	return apiRequest(`/oidc-clients/${id}`, {
@@ -87,6 +111,37 @@ export function updateOidcClient(
 
 export function deleteOidcClient(id: string): Promise<void> {
 	return apiRequest(`/oidc-clients/${id}`, { method: "DELETE" });
+}
+
+export async function uploadOidcClientLogo(
+	id: string,
+	file: File,
+): Promise<{ logo: ProfilePicture }> {
+	const formData = new FormData();
+	formData.set("file", file);
+	const response = await fetch(apiUrl(`/oidc-clients/${id}/logo`), {
+		method: "PUT",
+		credentials: "include",
+		body: formData,
+	});
+	if (!response.ok) {
+		const problem = await response.json().catch(() => null);
+		throw new Error(
+			typeof problem === "object" &&
+				problem &&
+				"detail" in problem &&
+				typeof (problem as { detail: unknown }).detail === "string"
+				? (problem as { detail: string }).detail
+				: `Upload failed with status ${response.status}`,
+		);
+	}
+	return (await response.json()) as { logo: ProfilePicture };
+}
+
+export function deleteOidcClientLogo(
+	id: string,
+): Promise<{ logo: null }> {
+	return apiRequest(`/oidc-clients/${id}/logo`, { method: "DELETE" });
 }
 
 export function regenerateOidcClientSecret(
