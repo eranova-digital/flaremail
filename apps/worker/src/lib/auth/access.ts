@@ -95,10 +95,16 @@ function authorizeAccountPrincipal(
 	if (principal.kind === "oidc_user") {
 		if (action === "mail_read") {
 			assertOidcScope(principal, "mail:read");
-		}
-		if (action === "mail_write") {
+		} else if (action === "mail_write") {
 			assertOidcScope(principal, "mail:send");
+		} else {
+			deny();
 		}
+		if (resource.mailboxId && principal.role === "user") {
+			const allowed = accessibleMailboxIds(principal);
+			return allowed.has(resource.mailboxId) ? undefined : deny();
+		}
+		return principal.role || principal.isIntendant ? undefined : deny();
 	}
 
 	switch (action) {
