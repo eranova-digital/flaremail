@@ -1,3 +1,5 @@
+import { resolveErrorCode } from "@test-worker/api-errors";
+
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";
 
 export type ProblemDetails = {
@@ -92,9 +94,13 @@ export function requestInstance(request: Request): string {
 	return new URL(request.url).pathname;
 }
 
+/**
+ * Validation / bad-request helper. Maps known English details to stable codes
+ * so the web app can translate without worker-side i18n.
+ */
 export function validationError(request: Request, detail: string): Response {
 	return problemResponse(400, detail, {
-		code: "validation-error",
+		code: resolveErrorCode(detail, "validation-error"),
 		instance: requestInstance(request),
 	});
 }

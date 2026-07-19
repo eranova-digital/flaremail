@@ -53,7 +53,7 @@ export async function resolvePrincipal(
 	}
 
 	return problemResponse(401, "Authentication required", {
-		code: "unauthorized",
+		code: "authentication-required",
 		instance: requestInstance(request),
 	});
 }
@@ -117,7 +117,7 @@ async function tryOidcBearer(
 					.limit(1);
 				if (!client) {
 					return problemResponse(401, "Invalid token", {
-						code: "unauthorized",
+						code: "invalid-token",
 						instance: requestInstance(request),
 					});
 				}
@@ -147,7 +147,7 @@ async function tryOidcBearer(
 
 		if (payload.typ !== "access") {
 			return problemResponse(401, "Invalid token", {
-				code: "unauthorized",
+				code: "invalid-token",
 				instance: requestInstance(request),
 			});
 		}
@@ -155,7 +155,7 @@ async function tryOidcBearer(
 		const accountId = typeof payload.sub === "string" ? payload.sub : null;
 		if (!accountId) {
 			return problemResponse(401, "Invalid token", {
-				code: "unauthorized",
+				code: "invalid-token",
 				instance: requestInstance(request),
 			});
 		}
@@ -177,7 +177,7 @@ async function tryOidcBearer(
 		});
 	} catch {
 		return problemResponse(401, "Invalid token", {
-			code: "unauthorized",
+			code: "invalid-token",
 			instance: requestInstance(request),
 		});
 	}
@@ -210,7 +210,7 @@ async function trySession(
 			.limit(1);
 		if (!row) {
 			return problemResponse(401, "Session expired", {
-				code: "unauthorized",
+				code: "session-expired",
 				instance: requestInstance(request),
 			});
 		}
@@ -220,7 +220,7 @@ async function trySession(
 		});
 		if (!principal || principal.status === "suspended") {
 			return problemResponse(401, "Session invalid", {
-				code: "unauthorized",
+				code: "session-invalid",
 				instance: requestInstance(request),
 			});
 		}

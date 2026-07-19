@@ -1,3 +1,4 @@
+import { resolveErrorCode } from "@test-worker/api-errors";
 import { AuthorizationDeniedError } from "../auth/actions";
 import {
 	AccountAccessDeniedError,
@@ -8,8 +9,8 @@ import { EmailSendError, emailSendErrorStatus } from "../messages/send-email";
 import { problemResponse, problemTitle, requestInstance } from "./problem";
 
 /**
- * Known Error.message values that are safe to return to clients.
- * Everything else maps to a generic 400/404/500.
+ * Known Error.message values that are safe to return to clients as English
+ * `detail` (for non-UI API consumers). UI clients should translate via `code`.
  */
 const SAFE_CLIENT_MESSAGES = new Set([
 	"Invalid credentials",
@@ -119,14 +120,11 @@ export function handleRouteError(error: unknown, request?: Request): Response {
 		const notFound =
 			/not found/i.test(error.message) ||
 			error.message === "Thread has no messages to reply to";
-		return problemResponse(
-			notFound ? 404 : 400,
-			clientSafeDetail(error, notFound),
-			{
-				code: notFound ? "not-found" : "bad-request",
-				instance,
-			},
-		);
+		const detail = clientSafeDetail(error, notFound);
+		return problemResponse(notFound ? 404 : 400, detail, {
+			code: resolveErrorCode(detail, notFound ? "not-found" : "bad-request"),
+			instance,
+		});
 	}
 
 	return problemResponse(500, "Internal server error", {

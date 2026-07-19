@@ -38,14 +38,14 @@ export async function resolveApiKeyPrincipal(
 		.limit(1);
 	if (!row) {
 		return problemResponse(401, "Invalid API key", {
-			code: "unauthorized",
+			code: "invalid-api-key",
 			instance: options?.instance,
 		});
 	}
 	const tokenHash = await hashSecret(token);
 	if (tokenHash !== row.keyHash) {
 		return problemResponse(401, "Invalid API key", {
-			code: "unauthorized",
+			code: "invalid-api-key",
 			instance: options?.instance,
 		});
 	}
@@ -62,7 +62,7 @@ export async function resolveApiKeyPrincipal(
 	});
 	if (!principal || principal.status === "suspended") {
 		return problemResponse(401, "Invalid API key", {
-			code: "unauthorized",
+			code: "invalid-api-key",
 			instance: options?.instance,
 		});
 	}

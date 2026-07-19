@@ -144,7 +144,7 @@ export async function handleGetOidcPending(context: RouteContext) {
 		}
 		if (!result) {
 			return problemResponse(404, "Pending authorization not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
@@ -339,7 +339,7 @@ export async function handleGetOidcClient(context: RouteContext) {
 		);
 		if (!client) {
 			return problemResponse(404, "OIDC client not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
@@ -394,7 +394,7 @@ export async function handleUpdateOidcClient(context: RouteContext) {
 		);
 		if (!client) {
 			return problemResponse(404, "OIDC client not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
@@ -421,7 +421,7 @@ export async function handleDeleteOidcClient(context: RouteContext) {
 		);
 		if (!deleted) {
 			return problemResponse(404, "OIDC client not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
@@ -438,7 +438,7 @@ export async function handleRegenerateOidcClientSecret(context: RouteContext) {
 		);
 		if (!result) {
 			return problemResponse(404, "OIDC client not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
@@ -455,7 +455,7 @@ export async function handleListOidcClientGrants(context: RouteContext) {
 		);
 		if (!result) {
 			return problemResponse(404, "OIDC client not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
@@ -482,13 +482,13 @@ export async function handleAdminRevokeOidcClientGrant(context: RouteContext) {
 		);
 		if (revoked === "missing-client") {
 			return problemResponse(404, "OIDC client not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
 		if (revoked === "missing-grant") {
 			return problemResponse(404, "Consent grant not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
@@ -526,7 +526,7 @@ export async function handleRevokeMyOidcGrant(context: RouteContext) {
 		);
 		if (!revoked) {
 			return problemResponse(404, "Consent grant not found", {
-				code: "not_found",
+				code: "not-found",
 				instance: requestInstance(context.request),
 			});
 		}
