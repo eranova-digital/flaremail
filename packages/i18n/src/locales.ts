@@ -49,6 +49,23 @@ export const LOCALE_LABELS: Record<AppLocale, string> = {
 	"ru-RU": "Русский",
 };
 
+/** Regional flags shown next to locale labels in the language switcher. */
+export const LOCALE_FLAGS: Record<AppLocale, string> = {
+	"en-US": "🇺🇸",
+	"ro-RO": "🇷🇴",
+	"es-ES": "🇪🇸",
+	"de-DE": "🇩🇪",
+	"fr-FR": "🇫🇷",
+	"pt-BR": "🇧🇷",
+	"it-IT": "🇮🇹",
+	"pl-PL": "🇵🇱",
+	"tr-TR": "🇹🇷",
+	"ja-JP": "🇯🇵",
+	"ko-KR": "🇰🇷",
+	"zh-CN": "🇨🇳",
+	"ru-RU": "🇷🇺",
+};
+
 /** Map BCP 47 primary language subtags to a supported AppLocale. */
 export const LANGUAGE_TO_LOCALE: Record<string, AppLocale> = {
 	en: "en-US",

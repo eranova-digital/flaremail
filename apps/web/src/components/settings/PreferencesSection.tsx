@@ -1,15 +1,23 @@
-import { Languages, Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import type { ThemePreference } from "@/lib/theme-preference";
 import { cn } from "@/lib/utils";
 import {
+	LOCALE_FLAGS,
 	LOCALE_LABELS,
 	SUPPORTED_LOCALES,
-	type AppLocale,
+	isAppLocale,
 } from "@test-worker/i18n";
 
 function ThemeOption({
@@ -52,45 +60,6 @@ function ThemeOption({
 						{description}
 					</span>
 				</span>
-			</span>
-		</label>
-	);
-}
-
-function LocaleOption({
-	value,
-	currentValue,
-	label,
-	onChange,
-}: {
-	value: AppLocale;
-	currentValue: AppLocale;
-	label: string;
-	onChange: (value: AppLocale) => void;
-}) {
-	const selected = value === currentValue;
-
-	return (
-		<label
-			className={cn(
-				"flex cursor-pointer gap-3 rounded-lg border px-4 py-3 transition-colors",
-				selected && "border-primary bg-primary/5",
-			)}
-		>
-			<input
-				type="radio"
-				name="locale-preference"
-				value={value}
-				checked={selected}
-				onChange={() => onChange(value)}
-				className="mt-1"
-			/>
-			<span className="flex min-w-0 flex-1 items-start gap-3">
-				<Languages
-					className="text-muted-foreground mt-0.5 size-4 shrink-0"
-					aria-hidden
-				/>
-				<span className="block text-sm font-medium">{label}</span>
 			</span>
 		</label>
 	);
@@ -146,21 +115,33 @@ export function PreferencesSection() {
 					<p className="text-muted-foreground text-sm">
 						{t("preferences.language.description")}
 					</p>
-					<div
-						className="space-y-2"
-						role="radiogroup"
-						aria-label={t("preferences.language.title")}
+					<Select
+						value={locale}
+						onValueChange={(value) => {
+							if (isAppLocale(value)) {
+								setLocale(value);
+							}
+						}}
 					>
-						{SUPPORTED_LOCALES.map((value) => (
-							<LocaleOption
-								key={value}
-								value={value}
-								currentValue={locale}
-								label={LOCALE_LABELS[value]}
-								onChange={setLocale}
-							/>
-						))}
-					</div>
+						<SelectTrigger
+							className="max-w-sm"
+							aria-label={t("preferences.language.title")}
+						>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{SUPPORTED_LOCALES.map((value) => (
+								<SelectItem key={value} value={value}>
+									<span className="flex items-center gap-2">
+										<span className="text-base leading-none" aria-hidden>
+											{LOCALE_FLAGS[value]}
+										</span>
+										<span>{LOCALE_LABELS[value]}</span>
+									</span>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</CardContent>
 			</Card>
 
