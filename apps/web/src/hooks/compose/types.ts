@@ -9,6 +9,7 @@ import {
 	composeBodyHasContent,
 	isEmptyEditorHtml,
 } from "@/lib/compose-body";
+import i18n from "@/lib/i18n";
 
 export type { ReplyQuoteParent };
 
@@ -179,15 +180,15 @@ export function getSaveBlockedReason(
 	isReply: boolean,
 ): string | null {
 	if (!hasComposeSubject(fields)) {
-		return "Subject is required";
+		return i18n.t("validation.subjectRequired", { ns: "compose" });
 	}
 
 	if (!isReply && !hasComposeRecipient(fields)) {
-		return "Recipient is required";
+		return i18n.t("validation.recipientRequired", { ns: "compose" });
 	}
 
 	if (!hasComposeContent(fields, attachments)) {
-		return "Enter a message to save";
+		return i18n.t("validation.messageRequired", { ns: "compose" });
 	}
 
 	return null;

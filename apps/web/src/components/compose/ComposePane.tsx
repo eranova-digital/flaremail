@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { RecipientCombobox } from "@/components/compose/RecipientCombobox";
 import { ComposeEditor } from "@/components/compose/ComposeEditor";
@@ -53,6 +54,7 @@ export function ComposePane({
 	onDeleted,
 	onDraftIdChange,
 }: ComposePaneProps) {
+	const { t } = useTranslation("compose");
 	const compose = useComposeDraft(mailboxId, {
 		reply,
 		forward,
@@ -193,7 +195,7 @@ export function ComposePane({
 			return;
 		}
 
-		if (!window.confirm("Delete this draft permanently?")) {
+		if (!window.confirm(t("confirm.deleteDraft"))) {
 			return;
 		}
 
@@ -219,15 +221,25 @@ export function ComposePane({
 			>
 				<Loader2 className="size-4 animate-spin" />
 				{existingDraftId
-					? "Loading draft…"
+					? t("loading.draft")
 					: reply
-						? "Preparing reply…"
+						? t("loading.reply")
 						: forward
-							? "Preparing forward…"
-							: "Loading…"}
+							? t("loading.forward")
+							: t("loading.generic")}
 			</div>
 		);
 	}
+
+	const headerTitle = existingDraftId
+		? t("title.editDraft")
+		: reply
+			? isReplyAll
+				? t("title.replyAll")
+				: t("title.reply")
+			: forward
+				? t("title.forward")
+				: t("title.newMessage");
 
 	const header = (
 		<div
@@ -236,17 +248,7 @@ export function ComposePane({
 				isInline ? "mb-3" : "border-b px-4 py-3",
 			)}
 		>
-			<h2 className={cn("font-medium", isInline && "text-sm")}>
-				{existingDraftId
-					? "Edit draft"
-					: reply
-						? isReplyAll
-							? "Reply all"
-							: "Reply"
-						: forward
-							? "Forward"
-							: "New message"}
-			</h2>
+			<h2 className={cn("font-medium", isInline && "text-sm")}>{headerTitle}</h2>
 			<div className="flex items-center gap-2">
 				{showDraftActions ? (
 					isResumedDraft ? (
@@ -260,10 +262,10 @@ export function ComposePane({
 							{compose.isDeleting ? (
 								<>
 									<Loader2 className="size-4 animate-spin" />
-									Deleting
+									{t("actions.deleting")}
 								</>
 							) : (
-								"Delete"
+								t("actions.delete")
 							)}
 						</Button>
 					) : (
@@ -273,7 +275,7 @@ export function ComposePane({
 							onClick={() => void handleCancel()}
 							disabled={compose.isDeleting || compose.isSending || compose.isSaving}
 						>
-							Cancel
+							{t("actions.cancel")}
 						</Button>
 					)
 				) : (
@@ -283,7 +285,7 @@ export function ComposePane({
 						onClick={onClose}
 						disabled={compose.isSending}
 					>
-						Cancel
+						{t("actions.cancel")}
 					</Button>
 				)}
 				{showDraftActions ? (
@@ -296,10 +298,10 @@ export function ComposePane({
 						{compose.isSaving ? (
 							<>
 								<Loader2 className="size-4 animate-spin" />
-								Saving
+								{t("actions.saving")}
 							</>
 						) : (
-							"Save"
+							t("actions.save")
 						)}
 					</Button>
 				) : null}
@@ -311,10 +313,10 @@ export function ComposePane({
 					{compose.isSending ? (
 						<>
 							<Loader2 className="size-4 animate-spin" />
-							Sending
+							{t("actions.sending")}
 						</>
 					) : (
-						"Send"
+						t("actions.send")
 					)}
 				</Button>
 			</div>
@@ -326,14 +328,17 @@ export function ComposePane({
 			{identitiesQuery.data && identitiesQuery.data.length > 0 ? (
 				<div className="space-y-2">
 					<label className="text-sm font-medium" htmlFor="compose-identity">
-						From
+						{t("fields.from")}
 					</label>
 					<Select
 						value={compose.fields.identityId ?? undefined}
 						onValueChange={handleIdentityChange}
 					>
-						<SelectTrigger id="compose-identity" aria-label="From identity">
-							<SelectValue placeholder="Select identity" />
+						<SelectTrigger
+							id="compose-identity"
+							aria-label={t("fields.fromIdentityAria")}
+						>
+							<SelectValue placeholder={t("fields.selectIdentity")} />
 						</SelectTrigger>
 						<SelectContent>
 							{identitiesQuery.data.map((identity) => {
@@ -342,7 +347,9 @@ export function ComposePane({
 									: mailboxAddress;
 								return (
 									<SelectItem key={identity.id} value={identity.id}>
-										{identity.isDefault ? `${label} (default)` : label}
+										{identity.isDefault
+											? t("fields.defaultIdentity", { label })
+											: label}
 									</SelectItem>
 								);
 							})}
@@ -354,7 +361,7 @@ export function ComposePane({
 				<div className="space-y-2">
 					<div className="flex items-center justify-between gap-2">
 						<label className="text-sm font-medium" htmlFor="compose-to">
-							To
+							{t("fields.to")}
 						</label>
 						{showCcBccButtons ? (
 							<div className="flex items-center gap-1">
@@ -366,7 +373,7 @@ export function ComposePane({
 										className="text-muted-foreground h-7 px-2"
 										onClick={() => setShowCc(true)}
 									>
-										Cc
+										{t("fields.cc")}
 									</Button>
 								) : null}
 								{!showBccField ? (
@@ -377,7 +384,7 @@ export function ComposePane({
 										className="text-muted-foreground h-7 px-2"
 										onClick={() => setShowBcc(true)}
 									>
-										Bcc
+										{t("fields.bcc")}
 									</Button>
 								) : null}
 							</div>
@@ -387,7 +394,7 @@ export function ComposePane({
 						id="compose-to"
 						value={compose.fields.to}
 						onValueChange={(to) => compose.updateFields({ to })}
-						placeholder="recipient@example.com"
+						placeholder={t("placeholders.to")}
 					/>
 				</div>
 			) : null}
@@ -401,7 +408,7 @@ export function ComposePane({
 							className="text-muted-foreground h-7 px-2"
 							onClick={() => setShowCc(true)}
 						>
-							Cc
+							{t("fields.cc")}
 						</Button>
 					) : null}
 					{!showBccField ? (
@@ -412,7 +419,7 @@ export function ComposePane({
 							className="text-muted-foreground h-7 px-2"
 							onClick={() => setShowBcc(true)}
 						>
-							Bcc
+							{t("fields.bcc")}
 						</Button>
 					) : null}
 				</div>
@@ -422,13 +429,15 @@ export function ComposePane({
 					{showCcField ? (
 						<div className="min-w-0 flex-1 space-y-2">
 							<label className="text-sm font-medium" htmlFor="compose-cc">
-								Cc
+								{t("fields.cc")}
 							</label>
 							<RecipientCombobox
 								id="compose-cc"
 								value={compose.fields.cc}
 								onValueChange={(cc) => compose.updateFields({ cc })}
-								placeholder={isReply ? "Optional" : "cc@example.com"}
+								placeholder={
+									isReply ? t("placeholders.optional") : t("placeholders.cc")
+								}
 								onEmptyBlur={() => setShowCc(false)}
 							/>
 						</div>
@@ -436,13 +445,15 @@ export function ComposePane({
 					{showBccField ? (
 						<div className="min-w-0 flex-1 space-y-2">
 							<label className="text-sm font-medium" htmlFor="compose-bcc">
-								Bcc
+								{t("fields.bcc")}
 							</label>
 							<RecipientCombobox
 								id="compose-bcc"
 								value={compose.fields.bcc}
 								onValueChange={(bcc) => compose.updateFields({ bcc })}
-								placeholder={isReply ? "Optional" : "bcc@example.com"}
+								placeholder={
+									isReply ? t("placeholders.optional") : t("placeholders.bcc")
+								}
 								onEmptyBlur={() => setShowBcc(false)}
 							/>
 						</div>
@@ -453,7 +464,7 @@ export function ComposePane({
 				showSubjectEditor ? (
 					<div className="space-y-2">
 						<label className="text-sm font-medium" htmlFor="compose-subject">
-							Subject
+							{t("fields.subject")}
 						</label>
 						<Input
 							id="compose-subject"
@@ -471,13 +482,13 @@ export function ComposePane({
 						className="text-muted-foreground h-auto p-0"
 						onClick={() => setShowSubjectEditor(true)}
 					>
-						Change subject
+						{t("fields.changeSubject")}
 					</Button>
 				)
 			) : (
 				<div className="space-y-2">
 					<label className="text-sm font-medium" htmlFor="compose-subject">
-						Subject
+						{t("fields.subject")}
 					</label>
 					<Input
 						id="compose-subject"
@@ -493,7 +504,7 @@ export function ComposePane({
 			) : null}
 			<div className="space-y-2">
 				<label className="text-sm font-medium" htmlFor="compose-body">
-					{compose.forwardSource ? "Message" : "Body"}
+					{compose.forwardSource ? t("fields.message") : t("fields.body")}
 				</label>
 				<ComposeEditor
 					key={`${compose.draftId ?? "new"}-${compose.initialized}`}
@@ -502,7 +513,7 @@ export function ComposePane({
 					className={cn(isInline ? "min-h-[160px]" : "min-h-[280px]")}
 					initialHtml={compose.fields.bodyHtml}
 					signatureHtml={signatureHtml}
-					placeholder="Write your message…"
+					placeholder={t("placeholders.body")}
 					disabled={compose.isSending}
 					onChange={({ html, text }) =>
 						compose.updateFields({ bodyHtml: html, body: text })

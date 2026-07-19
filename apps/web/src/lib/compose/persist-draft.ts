@@ -10,6 +10,7 @@ import {
 	type ComposeFields,
 	type ComposeReplyContext,
 } from "@/hooks/compose/types";
+import i18n from "@/lib/i18n";
 
 export type PersistDraftArgs = {
 	mailboxId: string;
@@ -59,7 +60,10 @@ export async function persistDraft(
 			);
 			id = created.id ?? null;
 			if (!id) {
-				return { ok: false, error: "Draft was not created" };
+				return {
+					ok: false,
+					error: i18n.t("validation.draftNotCreated", { ns: "compose" }),
+				};
 			}
 			if (outboundAttachments !== undefined && refreshAttachments) {
 				await refreshAttachments(id);
@@ -78,7 +82,10 @@ export async function persistDraft(
 	} catch (error) {
 		return {
 			ok: false,
-			error: error instanceof Error ? error.message : "Failed to save draft",
+			error:
+				error instanceof Error
+					? error.message
+					: i18n.t("validation.saveFailed", { ns: "compose" }),
 		};
 	}
 }

@@ -1,5 +1,6 @@
 import { Download, FileIcon, Forward } from 'lucide-react';
 import { useState, type MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
 	AttachmentPreviewDialog,
@@ -26,6 +27,7 @@ import { getErrorMessage } from '@/lib/api/errors';
 import { formatAttachmentDescription } from '@/lib/format-attachment';
 
 function formatMessageDate(
+	locale: string,
 	sentAt?: string | null,
 	receivedAt?: string | null,
 ): string | null {
@@ -34,7 +36,7 @@ function formatMessageDate(
 		return null;
 	}
 
-	return new Date(when).toLocaleString(undefined, {
+	return new Date(when).toLocaleString(locale, {
 		weekday: 'short',
 		year: 'numeric',
 		month: 'short',
@@ -63,6 +65,7 @@ function toComposePreviewSource(attachment: ComposeAttachment): AttachmentPrevie
 }
 
 function ForwardedAttachmentCard({ attachment }: { attachment: ComposeAttachment }) {
+	const { t } = useTranslation('compose');
 	const [previewOpen, setPreviewOpen] = useState(false);
 	const [downloading, setDownloading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -105,7 +108,9 @@ function ForwardedAttachmentCard({ attachment }: { attachment: ComposeAttachment
 				</AttachmentContent>
 				<AttachmentActions>
 					<AttachmentAction
-						aria-label={`Download ${attachment.filename}`}
+						aria-label={t('attachments.downloadAria', {
+							filename: attachment.filename,
+						})}
 						disabled={downloading}
 						onClick={(event) => void handleDownload(event)}
 					>
@@ -113,7 +118,9 @@ function ForwardedAttachmentCard({ attachment }: { attachment: ComposeAttachment
 					</AttachmentAction>
 				</AttachmentActions>
 				<AttachmentTrigger
-					aria-label={`Preview ${attachment.filename}`}
+					aria-label={t('attachments.previewAria', {
+						filename: attachment.filename,
+					})}
 					onClick={() => setPreviewOpen(true)}
 				/>
 			</Attachment>
@@ -131,7 +138,12 @@ type ComposeForwardSourceProps = {
 };
 
 export function ComposeForwardSource({ source }: ComposeForwardSourceProps) {
-	const formattedDate = formatMessageDate(source.sentAt, source.receivedAt);
+	const { t, i18n } = useTranslation('compose');
+	const formattedDate = formatMessageDate(
+		i18n.language,
+		source.sentAt,
+		source.receivedAt,
+	);
 	const preview = source.preview?.trim();
 
 	return (
@@ -142,10 +154,10 @@ export function ComposeForwardSource({ source }: ComposeForwardSourceProps) {
 						<Forward className="size-4" />
 					</div>
 					<div className="min-w-0 space-y-1">
-						<p className="text-sm font-medium">Forwarding this message</p>
+						<p className="text-sm font-medium">{t('forward.title')}</p>
 						{source.from ? (
 							<p className="text-muted-foreground truncate text-sm">
-								From {source.from}
+								{t('forward.from', { from: source.from })}
 							</p>
 						) : null}
 						{source.subject ? (
@@ -164,8 +176,9 @@ export function ComposeForwardSource({ source }: ComposeForwardSourceProps) {
 				{source.attachments.length > 0 ? (
 					<div className="space-y-2">
 						<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-							{source.attachments.length} attachment
-							{source.attachments.length === 1 ? '' : 's'} included
+							{t('forward.attachmentsIncluded', {
+								count: source.attachments.length,
+							})}
 						</p>
 						<AttachmentGroup>
 							{source.attachments.map((attachment) => (

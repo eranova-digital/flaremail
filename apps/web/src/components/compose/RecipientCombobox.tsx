@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 
 import {
 	Combobox,
@@ -28,11 +29,13 @@ export function RecipientCombobox({
 	id,
 	value,
 	onValueChange,
-	placeholder = "recipient@example.com",
+	placeholder,
 	disabled = false,
 	suggestions = [],
 	onEmptyBlur,
 }: RecipientComboboxProps) {
+	const { t } = useTranslation("compose");
+	const resolvedPlaceholder = placeholder ?? t("placeholders.to");
 	const anchor = useComboboxAnchor();
 	const valueRef = React.useRef(value);
 	const queryRef = React.useRef("");
@@ -160,7 +163,7 @@ export function RecipientCombobox({
 								<ComboboxChip key={email}>{email}</ComboboxChip>
 							))}
 							<ComboboxChipsInput
-								placeholder={values.length === 0 ? placeholder : undefined}
+								placeholder={values.length === 0 ? resolvedPlaceholder : undefined}
 								onBlur={handleInputBlur}
 								onKeyDown={handleInputKeyDown}
 							/>
@@ -169,7 +172,7 @@ export function RecipientCombobox({
 				</ComboboxValue>
 			</ComboboxChips>
 			<ComboboxContent anchor={anchor}>
-				<ComboboxEmpty>Type an email address</ComboboxEmpty>
+				<ComboboxEmpty>{t("recipients.empty")}</ComboboxEmpty>
 				<ComboboxList>
 					{(item) => (
 						<ComboboxItem key={item} value={item}>

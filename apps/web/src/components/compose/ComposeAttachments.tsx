@@ -1,5 +1,6 @@
 import { Download, FileIcon, Paperclip, X } from 'lucide-react';
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
 	AttachmentPreviewDialog,
@@ -123,6 +124,7 @@ function ComposeAttachmentCard({
 	disabled: boolean;
 	onRemove: () => void;
 }) {
+	const { t } = useTranslation('compose');
 	const [previewOpen, setPreviewOpen] = useState(false);
 	const [downloading, setDownloading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -178,14 +180,18 @@ function ComposeAttachmentCard({
 				</AttachmentContent>
 				<AttachmentActions>
 					<AttachmentAction
-						aria-label={`Download ${attachment.filename}`}
+						aria-label={t('attachments.downloadAria', {
+							filename: attachment.filename,
+						})}
 						disabled={disabled || downloading}
 						onClick={(event) => void handleDownload(event)}
 					>
 						<Download className="size-3.5" />
 					</AttachmentAction>
 					<AttachmentAction
-						aria-label={`Remove ${attachment.filename}`}
+						aria-label={t('attachments.removeAria', {
+							filename: attachment.filename,
+						})}
 						disabled={disabled}
 						onClick={(event) => {
 							event.stopPropagation();
@@ -196,7 +202,9 @@ function ComposeAttachmentCard({
 					</AttachmentAction>
 				</AttachmentActions>
 				<AttachmentTrigger
-					aria-label={`Preview ${attachment.filename}`}
+					aria-label={t('attachments.previewAria', {
+						filename: attachment.filename,
+					})}
 					disabled={disabled}
 					onClick={() => setPreviewOpen(true)}
 				/>
@@ -215,6 +223,7 @@ export function ComposeAttachments({
 	onChange,
 	disabled = false,
 }: ComposeAttachmentsProps) {
+	const { t } = useTranslation('compose');
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const handleFilesSelected = (files: FileList | null) => {
@@ -240,7 +249,7 @@ export function ComposeAttachments({
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center justify-between gap-3">
-				<label className="text-sm font-medium">Attachments</label>
+				<label className="text-sm font-medium">{t('attachments.title')}</label>
 				<div>
 					<input
 						ref={inputRef}
@@ -258,7 +267,7 @@ export function ComposeAttachments({
 						onClick={() => inputRef.current?.click()}
 					>
 						<Paperclip className="size-4" />
-						Add files
+						{t('attachments.addFiles')}
 					</Button>
 				</div>
 			</div>
@@ -275,7 +284,7 @@ export function ComposeAttachments({
 					))}
 				</AttachmentGroup>
 			) : (
-				<p className="text-muted-foreground text-sm">No attachments added.</p>
+				<p className="text-muted-foreground text-sm">{t('attachments.empty')}</p>
 			)}
 		</div>
 	);

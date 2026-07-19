@@ -27,6 +27,7 @@ import {
 	Undo,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { TableInsertButton } from "@/components/compose/editor/TableControls";
 import { TemplateInsertControl } from "@/components/compose/editor/TemplateInsertControl";
@@ -45,6 +46,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import i18n from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const TEXT_COLORS = [
@@ -127,7 +129,10 @@ function ToolbarDivider() {
 
 function setLink(editor: Editor) {
 	const previousUrl = editor.getAttributes("link").href as string | undefined;
-	const url = window.prompt("URL", previousUrl ?? "https://");
+	const url = window.prompt(
+		i18n.t("toolbar.linkPrompt", { ns: "compose" }),
+		previousUrl ?? "https://",
+	);
 
 	if (url === null) {
 		return;
@@ -194,6 +199,7 @@ function ColorSwatches({
 	onClear?: () => void;
 	clearLabel?: string;
 }) {
+	const { t } = useTranslation("compose");
 	const activeHex = normalizeHexColor(value);
 	const [hexDraft, setHexDraft] = useState(activeHex ?? "");
 
@@ -223,7 +229,7 @@ function ColorSwatches({
 						activeHex === color.toLowerCase() && "ring-ring ring-2 ring-offset-1",
 					)}
 					style={{ backgroundColor: color }}
-					aria-label={`Color ${color}`}
+					aria-label={t("toolbar.colorSwatch", { color })}
 					aria-pressed={activeHex === color.toLowerCase()}
 					tabIndex={-1}
 					onClick={() => onPick(color)}
@@ -234,14 +240,14 @@ function ColorSwatches({
 					type="color"
 					className="border-input size-8 cursor-pointer rounded-md border bg-transparent p-0.5"
 					value={activeHex ?? "#000000"}
-					aria-label="Custom color"
+					aria-label={t("toolbar.customColor")}
 					tabIndex={-1}
 					onChange={(event) => onPick(event.target.value)}
 				/>
 				<Input
 					value={hexDraft}
 					placeholder="#000000"
-					aria-label="Custom color hex"
+					aria-label={t("toolbar.customColorHex")}
 					className="h-8 font-mono text-xs"
 					tabIndex={-1}
 					onChange={(event) => setHexDraft(event.target.value)}
@@ -261,7 +267,7 @@ function ColorSwatches({
 					tabIndex={-1}
 					onClick={onClear}
 				>
-					{clearLabel ?? "Clear"}
+					{clearLabel ?? t("toolbar.clear")}
 				</button>
 			) : null}
 		</div>
@@ -269,13 +275,14 @@ function ColorSwatches({
 }
 
 export function MarkControls({ editor, disabled = false }: ControlProps) {
+	const { t } = useTranslation("compose");
 	const currentHighlight =
 		(editor.getAttributes("highlight").color as string | undefined) ?? "";
 
 	return (
 		<>
 			<ToolbarButton
-				label="Bold"
+				label={t("toolbar.bold")}
 				isActive={editor.isActive("bold")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleBold().run()}
@@ -283,7 +290,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 				<Bold className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Italic"
+				label={t("toolbar.italic")}
 				isActive={editor.isActive("italic")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -291,7 +298,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 				<Italic className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Underline"
+				label={t("toolbar.underline")}
 				isActive={editor.isActive("underline")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleUnderline().run()}
@@ -299,7 +306,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 				<Underline className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Strikethrough"
+				label={t("toolbar.strikethrough")}
 				isActive={editor.isActive("strike")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleStrike().run()}
@@ -307,7 +314,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 				<Strikethrough className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Code"
+				label={t("toolbar.code")}
 				isActive={editor.isActive("code")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleCode().run()}
@@ -326,7 +333,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 								"bg-accent text-accent-foreground",
 						)}
 						disabled={disabled}
-						aria-label="Highlight"
+						aria-label={t("toolbar.highlight")}
 						tabIndex={-1}
 					>
 						<Highlighter className="size-4" />
@@ -340,12 +347,12 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 							editor.chain().focus().toggleHighlight({ color }).run()
 						}
 						onClear={() => editor.chain().focus().unsetHighlight().run()}
-						clearLabel="Remove highlight"
+						clearLabel={t("toolbar.removeHighlight")}
 					/>
 				</PopoverContent>
 			</Popover>
 			<ToolbarButton
-				label="Subscript"
+				label={t("toolbar.subscript")}
 				isActive={editor.isActive("subscript")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleSubscript().run()}
@@ -353,7 +360,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 				<Subscript className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Superscript"
+				label={t("toolbar.superscript")}
 				isActive={editor.isActive("superscript")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleSuperscript().run()}
@@ -361,7 +368,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 				<Superscript className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Link"
+				label={t("toolbar.link")}
 				isActive={editor.isActive("link")}
 				disabled={disabled}
 				onClick={() => setLink(editor)}
@@ -369,7 +376,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 				<Link2 className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Clear formatting"
+				label={t("toolbar.clearFormatting")}
 				disabled={disabled}
 				onClick={() =>
 					editor.chain().focus().unsetAllMarks().clearNodes().run()
@@ -382,6 +389,7 @@ export function MarkControls({ editor, disabled = false }: ControlProps) {
 }
 
 export function StyleControls({ editor, disabled = false }: ControlProps) {
+	const { t } = useTranslation("compose");
 	const currentColor =
 		(editor.getAttributes("textStyle").color as string | undefined) ?? "";
 	const currentBackground =
@@ -400,7 +408,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 						size="icon-xs"
 						className="size-8"
 						disabled={disabled}
-						aria-label="Text color"
+						aria-label={t("toolbar.textColorAria")}
 						tabIndex={-1}
 					>
 						<Palette className="size-4" style={{ color: currentColor || undefined }} />
@@ -408,14 +416,14 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-3" align="start">
 					<p className="text-muted-foreground mb-2 text-xs font-medium">
-						Text color
+						{t("toolbar.textColor")}
 					</p>
 					<ColorSwatches
 						colors={TEXT_COLORS}
 						value={currentColor}
 						onPick={(color) => editor.chain().focus().setColor(color).run()}
 						onClear={() => editor.chain().focus().unsetColor().run()}
-						clearLabel="Default color"
+						clearLabel={t("toolbar.defaultColor")}
 					/>
 				</PopoverContent>
 			</Popover>
@@ -427,7 +435,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 						size="sm"
 						className="h-8 px-2"
 						disabled={disabled}
-						aria-label="Background color"
+						aria-label={t("toolbar.backgroundColorAria")}
 						tabIndex={-1}
 					>
 						<span
@@ -438,7 +446,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-3" align="start">
 					<p className="text-muted-foreground mb-2 text-xs font-medium">
-						Background color
+						{t("toolbar.backgroundColor")}
 					</p>
 					<ColorSwatches
 						colors={BACKGROUND_COLORS}
@@ -447,7 +455,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 							editor.chain().focus().setBackgroundColor(color).run()
 						}
 						onClear={() => editor.chain().focus().unsetBackgroundColor().run()}
-						clearLabel="No background"
+						clearLabel={t("toolbar.noBackground")}
 					/>
 				</PopoverContent>
 			</Popover>
@@ -464,10 +472,10 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 				disabled={disabled}
 			>
 				<SelectTrigger className="h-8 w-[5.5rem] px-2 text-xs" tabIndex={-1}>
-					<SelectValue placeholder="Size" />
+					<SelectValue placeholder={t("toolbar.fontSize")} />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="default">Default</SelectItem>
+					<SelectItem value="default">{t("toolbar.fontSizeDefault")}</SelectItem>
 					{FONT_SIZES.map((size) => (
 						<SelectItem key={size} value={size}>
 							{size}
@@ -480,10 +488,12 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 }
 
 export function AlignControls({ editor, disabled = false }: ControlProps) {
+	const { t } = useTranslation("compose");
+
 	return (
 		<>
 			<ToolbarButton
-				label="Align left"
+				label={t("toolbar.alignLeft")}
 				isActive={editor.isActive({ textAlign: "left" })}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().setTextAlign("left").run()}
@@ -491,7 +501,7 @@ export function AlignControls({ editor, disabled = false }: ControlProps) {
 				<AlignLeft className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Align center"
+				label={t("toolbar.alignCenter")}
 				isActive={editor.isActive({ textAlign: "center" })}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().setTextAlign("center").run()}
@@ -499,7 +509,7 @@ export function AlignControls({ editor, disabled = false }: ControlProps) {
 				<AlignCenter className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Align right"
+				label={t("toolbar.alignRight")}
 				isActive={editor.isActive({ textAlign: "right" })}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().setTextAlign("right").run()}
@@ -507,7 +517,7 @@ export function AlignControls({ editor, disabled = false }: ControlProps) {
 				<AlignRight className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Justify"
+				label={t("toolbar.justify")}
 				isActive={editor.isActive({ textAlign: "justify" })}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().setTextAlign("justify").run()}
@@ -523,13 +533,14 @@ export function BlockControls({
 	disabled = false,
 	mailboxId,
 }: ControlProps & { mailboxId?: string }) {
+	const { t } = useTranslation("compose");
 	const [emojiOpen, setEmojiOpen] = useState(false);
 	const imageInputRef = useRef<HTMLInputElement>(null);
 
 	return (
 		<>
 			<ToolbarButton
-				label="Bullet list"
+				label={t("toolbar.bulletList")}
 				isActive={editor.isActive("bulletList")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -537,7 +548,7 @@ export function BlockControls({
 				<List className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Numbered list"
+				label={t("toolbar.numberedList")}
 				isActive={editor.isActive("orderedList")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -545,7 +556,7 @@ export function BlockControls({
 				<ListOrdered className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Blockquote"
+				label={t("toolbar.blockquote")}
 				isActive={editor.isActive("blockquote")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -553,14 +564,14 @@ export function BlockControls({
 				<Quote className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Horizontal rule"
+				label={t("toolbar.horizontalRule")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().setHorizontalRule().run()}
 			>
 				<Minus className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="HTML block"
+				label={t("toolbar.htmlBlock")}
 				isActive={editor.isActive("composeHtml")}
 				disabled={disabled}
 				onClick={() => editor.chain().focus().insertComposeHtml().run()}
@@ -588,7 +599,7 @@ export function BlockControls({
 				}}
 			/>
 			<ToolbarButton
-				label="Upload image"
+				label={t("toolbar.uploadImage")}
 				disabled={disabled}
 				onClick={() => imageInputRef.current?.click()}
 			>
@@ -603,7 +614,7 @@ export function BlockControls({
 						size="icon-xs"
 						className="size-8"
 						disabled={disabled}
-						aria-label="Insert emoji"
+						aria-label={t("toolbar.insertEmoji")}
 						tabIndex={-1}
 					>
 						<Smile className="size-4" />
@@ -634,17 +645,19 @@ export function BlockControls({
 }
 
 export function HistoryControls({ editor, disabled = false }: ControlProps) {
+	const { t } = useTranslation("compose");
+
 	return (
 		<>
 			<ToolbarButton
-				label="Undo"
+				label={t("toolbar.undo")}
 				disabled={disabled || !editor.can().chain().focus().undo().run()}
 				onClick={() => editor.chain().focus().undo().run()}
 			>
 				<Undo className="size-4" />
 			</ToolbarButton>
 			<ToolbarButton
-				label="Redo"
+				label={t("toolbar.redo")}
 				disabled={disabled || !editor.can().chain().focus().redo().run()}
 				onClick={() => editor.chain().focus().redo().run()}
 			>

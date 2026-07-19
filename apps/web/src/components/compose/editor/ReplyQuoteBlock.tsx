@@ -1,10 +1,13 @@
 import type { NodeViewProps } from "@tiptap/react";
 import { NodeViewWrapper } from "@tiptap/react";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function ReplyQuoteBlock({ node, editor, deleteNode }: NodeViewProps) {
+	const { t } = useTranslation("compose");
 	const attribution = node.attrs.attribution as string;
 	const quotedText = node.attrs.quotedText as string;
+	const removeLabel = t("replyQuote.remove");
 
 	return (
 		<NodeViewWrapper
@@ -16,8 +19,8 @@ export function ReplyQuoteBlock({ node, editor, deleteNode }: NodeViewProps) {
 			{editor.isEditable ? (
 				<button
 					type="button"
-					aria-label="Remove quoted message"
-					title="Remove quoted message"
+					aria-label={removeLabel}
+					title={removeLabel}
 					className="reply-quote-remove"
 					onClick={() => deleteNode()}
 				>

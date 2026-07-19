@@ -1,1 +1,170 @@
-{}
+{
+	"title": {
+		"editDraft": "Editează ciorna",
+		"reply": "Răspunde",
+		"replyAll": "Răspunde tuturor",
+		"forward": "Redirecționează",
+		"newMessage": "Mesaj nou"
+	},
+	"loading": {
+		"draft": "Se încarcă ciorna…",
+		"reply": "Se pregătește răspunsul…",
+		"forward": "Se pregătește redirecționarea…",
+		"generic": "Se încarcă…",
+		"editor": "Se încarcă editorul…"
+	},
+	"actions": {
+		"cancel": "Anulează",
+		"delete": "Șterge",
+		"deleting": "Se șterge",
+		"save": "Salvează",
+		"saving": "Se salvează",
+		"send": "Trimite",
+		"sending": "Se trimite"
+	},
+	"confirm": {
+		"deleteDraft": "Ștergi definitiv această ciornă?"
+	},
+	"fields": {
+		"from": "De la",
+		"fromIdentityAria": "Identitate expeditor",
+		"selectIdentity": "Selectează identitatea",
+		"defaultIdentity": "{{label}} (implicită)",
+		"to": "Către",
+		"cc": "Cc",
+		"bcc": "Bcc",
+		"subject": "Subiect",
+		"changeSubject": "Schimbă subiectul",
+		"body": "Conținut",
+		"message": "Mesaj"
+	},
+	"placeholders": {
+		"to": "destinatar@exemplu.com",
+		"cc": "cc@exemplu.com",
+		"bcc": "bcc@exemplu.com",
+		"optional": "Opțional",
+		"body": "Scrie mesajul…"
+	},
+	"recipients": {
+		"empty": "Tastează o adresă de e-mail"
+	},
+	"attachments": {
+		"title": "Atașamente",
+		"addFiles": "Adaugă fișiere",
+		"empty": "Niciun atașament adăugat.",
+		"downloadAria": "Descarcă {{filename}}",
+		"removeAria": "Elimină {{filename}}",
+		"previewAria": "Previzualizează {{filename}}"
+	},
+	"forward": {
+		"title": "Se redirecționează acest mesaj",
+		"from": "De la {{from}}",
+		"attachmentsIncluded_one": "{{count}} atașament inclus",
+		"attachmentsIncluded_few": "{{count}} atașamente incluse",
+		"attachmentsIncluded_other": "{{count}} de atașamente incluse"
+	},
+	"validation": {
+		"subjectRequired": "Subiectul este obligatoriu",
+		"recipientRequired": "Destinatarul este obligatoriu",
+		"messageRequired": "Introdu un mesaj pentru a salva",
+		"sendInProgress": "Trimiterea este deja în curs",
+		"forwardRequired": "Contextul de redirecționare este obligatoriu",
+		"draftNotCreated": "Ciorna nu a fost creată",
+		"saveFailed": "Salvarea ciornei a eșuat"
+	},
+	"toolbar": {
+		"bold": "Aldin",
+		"italic": "Cursiv",
+		"underline": "Subliniat",
+		"strikethrough": "Tăiat",
+		"code": "Cod",
+		"highlight": "Evidențiere",
+		"removeHighlight": "Elimină evidențierea",
+		"subscript": "Indice",
+		"superscript": "Exponent",
+		"link": "Link",
+		"linkPrompt": "URL",
+		"clearFormatting": "Șterge formatarea",
+		"textColor": "Culoare text",
+		"textColorAria": "Culoare text",
+		"defaultColor": "Culoare implicită",
+		"backgroundColor": "Culoare fundal",
+		"backgroundColorAria": "Culoare fundal",
+		"noBackground": "Fără fundal",
+		"fontSize": "Dimensiune",
+		"fontSizeDefault": "Implicită",
+		"alignLeft": "Aliniere la stânga",
+		"alignCenter": "Aliniere la centru",
+		"alignRight": "Aliniere la dreapta",
+		"justify": "Justificare",
+		"bulletList": "Listă cu puncte",
+		"numberedList": "Listă numerotată",
+		"blockquote": "Citat",
+		"horizontalRule": "Linie orizontală",
+		"htmlBlock": "Bloc HTML",
+		"uploadImage": "Încarcă imagine",
+		"insertEmoji": "Inserează emoji",
+		"undo": "Anulează",
+		"redo": "Refă",
+		"colorSwatch": "Culoare {{color}}",
+		"customColor": "Culoare personalizată",
+		"customColorHex": "Hex culoare personalizată",
+		"clear": "Șterge"
+	},
+	"table": {
+		"insert": "Inserează tabel",
+		"insertAria": "Inserează tabel",
+		"rows": "Rânduri",
+		"columns": "Coloane",
+		"insertAction": "Inserează",
+		"label": "Tabel",
+		"addRowAbove": "Adaugă rând deasupra",
+		"addRowBelow": "Adaugă rând dedesubt",
+		"deleteRow": "Șterge rândul",
+		"addColumnLeft": "Adaugă coloană la stânga",
+		"addColumnRight": "Adaugă coloană la dreapta",
+		"deleteColumn": "Șterge coloana",
+		"deleteTable": "Șterge tabelul"
+	},
+	"templates": {
+		"insertAria": "Inserează șablon de e-mail",
+		"search": "Caută…",
+		"noneFound": "Niciun șablon găsit",
+		"global": "Global",
+		"mailbox": "Cutie",
+		"preview": "Previzualizare",
+		"hoverToPreview": "Treci cu mouse-ul peste un șablon pentru previzualizare"
+	},
+	"htmlBlock": {
+		"modeAria": "Mod bloc HTML",
+		"template": "Șablon",
+		"templateNamed": "Șablon: {{name}}",
+		"edit": "Editează",
+		"preview": "Previzualizare",
+		"upload": "Încarcă",
+		"remove": "Elimină blocul HTML",
+		"removeTemplate": "Elimină șablonul",
+		"uploadFailed": "Încărcarea a eșuat",
+		"readFailed": "Nu s-a putut citi fișierul.",
+		"emptyFile": "Fișierul HTML este gol.",
+		"unfilledTitle": "Etichete necompletate",
+		"unfilledTags_one": "{{tags}} mai are nevoie de o valoare înainte de trimitere.",
+		"unfilledTags_few": "{{tags}} mai au nevoie de o valoare înainte de trimitere.",
+		"unfilledTags_other": "{{tags}} mai au nevoie de o valoare înainte de trimitere.",
+		"editorPlaceholder": "Lipește sau scrie HTML, sau încarcă un fișier…",
+		"emptyPreview": "Nimic de previzualizat încă."
+	},
+	"signature": {
+		"remove": "Elimină semnătura"
+	},
+	"image": {
+		"width": "Lățime",
+		"alignLeft": "Aliniază imaginea la stânga",
+		"alignCenter": "Aliniază imaginea la centru",
+		"alignRight": "Aliniază imaginea la dreapta",
+		"remove": "Elimină imaginea"
+	},
+	"replyQuote": {
+		"remove": "Elimină mesajul citat"
+	}
+}
