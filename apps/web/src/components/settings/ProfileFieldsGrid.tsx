@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
 	InputGroup,
@@ -9,10 +10,6 @@ import { Input } from "@/components/ui/input";
 import { PROFILE_FIELDS } from "@/lib/accounts/api";
 
 export type ProfileFieldKey = (typeof PROFILE_FIELDS)[number]["key"];
-
-const FIELD_LABELS = Object.fromEntries(
-	PROFILE_FIELDS.map((field) => [field.key, field.label]),
-) as Record<ProfileFieldKey, string>;
 
 const AUTOCOMPLETE: Partial<Record<ProfileFieldKey, string>> = {
 	firstName: "given-name",
@@ -58,6 +55,8 @@ export function ProfileFieldsGrid({
 	requiredFields,
 	hiddenFields,
 }: ProfileFieldsGridProps) {
+	const { t } = useTranslation("settings");
+
 	const field = (key: ProfileFieldKey) => {
 		if (hiddenFields?.has(key)) {
 			return null;
@@ -71,7 +70,7 @@ export function ProfileFieldsGrid({
 			<div className="space-y-1">
 				<div className="flex min-h-5 items-center justify-between gap-2">
 					<label htmlFor={inputId} className="text-sm font-medium">
-						{FIELD_LABELS[key]}
+						{t(`profile.fields.${key}`)}
 						{isRequired ? <span className="text-destructive ml-1">*</span> : null}
 					</label>
 					{extra}
@@ -112,7 +111,7 @@ export function ProfileFieldsGrid({
 			</div>
 			<div className="space-y-3">
 				<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-					Address
+					{t("profile.fields.addressHeading")}
 				</p>
 				<div className="grid gap-3">
 					{field("addressLine1")}

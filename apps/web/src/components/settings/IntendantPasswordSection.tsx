@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check, Copy, KeyRound, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { TotpCodeInput, isTotpCodeComplete } from "@/components/auth/TotpCodeInput";
 import { Alert } from "@/components/ui/alert";
@@ -24,6 +25,8 @@ type IntendantPasswordSectionProps = {
 export function IntendantPasswordSection({
 	mfaEnabled,
 }: IntendantPasswordSectionProps) {
+	const { t } = useTranslation("settings");
+	const { t: tc } = useTranslation("common");
 	const [open, setOpen] = useState(false);
 	const [code, setCode] = useState("");
 	const [pending, setPending] = useState(false);
@@ -86,17 +89,15 @@ export function IntendantPasswordSection({
 				<CardHeader className="pb-4">
 					<CardTitle className="flex items-center gap-2 text-base">
 						<KeyRound className="text-muted-foreground size-4" aria-hidden />
-						Recovery account password
+						{t("intendantPassword.title")}
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<p className="text-muted-foreground text-sm">
-						The intendant password is randomly generated and never chosen by
-						you. Regenerating replaces the current password immediately — store
-						the new one somewhere safe.
+						{t("intendantPassword.description")}
 					</p>
 					<Button variant="outline" onClick={() => setOpen(true)}>
-						Regenerate password
+						{t("intendantPassword.regenerate")}
 					</Button>
 				</CardContent>
 			</Card>
@@ -106,25 +107,25 @@ export function IntendantPasswordSection({
 					{password ? (
 						<>
 							<DialogHeader>
-								<DialogTitle>New password generated</DialogTitle>
+								<DialogTitle>{t("intendantPassword.newTitle")}</DialogTitle>
 								<DialogDescription asChild>
 									<div className="text-muted-foreground space-y-1 text-sm">
-										<p>
-											Copy this password now. It will not be shown again after
-											you close this dialog.
-										</p>
+										<p>{t("intendantPassword.newBody")}</p>
 									</div>
 								</DialogDescription>
 							</DialogHeader>
-							<Alert tone="success" title="Password rotated">
-								<p>The previous intendant password no longer works.</p>
+							<Alert
+								tone="success"
+								title={t("intendantPassword.rotatedTitle")}
+							>
+								<p>{t("intendantPassword.rotatedBody")}</p>
 							</Alert>
 							<div className="space-y-2">
 								<label
 									htmlFor="intendant-new-password"
 									className="text-sm font-medium"
 								>
-									New password
+									{t("intendantPassword.newPasswordLabel")}
 								</label>
 								<div className="flex gap-2">
 									<Input
@@ -138,7 +139,11 @@ export function IntendantPasswordSection({
 										variant="outline"
 										size="icon"
 										onClick={() => void handleCopy()}
-										aria-label={copied ? "Copied" : "Copy password"}
+										aria-label={
+											copied
+												? tc("copied")
+												: t("intendantPassword.copyAria")
+										}
 									>
 										{copied ? (
 											<Check className="size-4" aria-hidden />
@@ -149,24 +154,20 @@ export function IntendantPasswordSection({
 								</div>
 							</div>
 							<DialogFooter>
-								<Button onClick={() => handleOpenChange(false)}>Done</Button>
+								<Button onClick={() => handleOpenChange(false)}>
+									{t("intendantPassword.done")}
+								</Button>
 							</DialogFooter>
 						</>
 					) : (
 						<>
 							<DialogHeader>
-								<DialogTitle>Regenerate intendant password?</DialogTitle>
+								<DialogTitle>{t("intendantPassword.confirmTitle")}</DialogTitle>
 								<DialogDescription asChild>
 									<div className="text-muted-foreground space-y-1 text-sm">
-										<p>
-											This immediately replaces the current password with a new
-											random secret. You will need the new password the next
-											time you sign in.
-										</p>
+										<p>{t("intendantPassword.confirmBody")}</p>
 										{mfaEnabled ? (
-											<p>
-												Enter a code from your authenticator app to confirm.
-											</p>
+											<p>{t("intendantPassword.confirmMfaHint")}</p>
 										) : null}
 									</div>
 								</DialogDescription>
@@ -178,7 +179,7 @@ export function IntendantPasswordSection({
 										htmlFor="intendant-regenerate-code"
 										className="text-sm font-medium"
 									>
-										Authenticator code
+										{t("intendantPassword.authenticatorCode")}
 									</label>
 									<TotpCodeInput
 										id="intendant-regenerate-code"
@@ -197,7 +198,7 @@ export function IntendantPasswordSection({
 									onClick={() => handleOpenChange(false)}
 									disabled={pending}
 								>
-									Cancel
+									{tc("cancel")}
 								</Button>
 								<Button
 									variant="destructive"
@@ -209,7 +210,7 @@ export function IntendantPasswordSection({
 									{pending ? (
 										<Loader2 className="size-4 animate-spin" aria-hidden />
 									) : null}
-									Regenerate password
+									{t("intendantPassword.regenerate")}
 								</Button>
 							</DialogFooter>
 						</>

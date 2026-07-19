@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, MonitorSmartphone } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,17 +39,10 @@ function formatLocation(session: AuthSession): string | null {
 	return null;
 }
 
-function formatDevice(session: AuthSession): string {
-	const parts = [session.browser, session.os].filter(Boolean);
-	if (parts.length > 0) {
-		return parts.join(" on ");
-	}
-	return "Unknown device";
-}
-
 type RevokeAllMode = "others" | "all";
 
 export function SessionsSection() {
+	const { t } = useTranslation("settings");
 	const { refresh } = useAuth();
 	const [sessions, setSessions] = useState<AuthSession[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -129,12 +123,12 @@ export function SessionsSection() {
 				<CardHeader className="pb-4">
 					<CardTitle className="flex items-center gap-2 text-base">
 						<MonitorSmartphone className="text-muted-foreground size-4" aria-hidden />
-						Sessions
+						{t("sessions.title")}
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<p className="text-muted-foreground text-sm">
-						These are the devices and browsers currently signed in to your account.
+						{t("sessions.description")}
 					</p>
 
 					{error ? (
@@ -150,7 +144,7 @@ export function SessionsSection() {
 							))}
 						</div>
 					) : sessions.length === 0 ? (
-						<p className="text-muted-foreground text-sm">No active sessions found.</p>
+						<p className="text-muted-foreground text-sm">{t("sessions.empty")}</p>
 					) : (
 						<Card className="gap-0 rounded-lg py-0">
 							<CardContent className="p-0">
@@ -177,7 +171,7 @@ export function SessionsSection() {
 									onClick={() => setRevokeAllMode("others")}
 									disabled={Boolean(revokingId) || revokingAll}
 								>
-									Sign out other sessions
+									{t("sessions.signOutOthers")}
 								</Button>
 							) : null}
 							<Button
@@ -186,7 +180,7 @@ export function SessionsSection() {
 								onClick={() => setRevokeAllMode("all")}
 								disabled={Boolean(revokingId) || revokingAll}
 							>
-								Sign out all sessions
+								{t("sessions.signOutAll")}
 							</Button>
 						</div>
 					) : null}
@@ -198,23 +192,20 @@ export function SessionsSection() {
 				onOpenChange={(open) => !open && !revokingAll && setRevokeAllMode(null)}
 				title={
 					revokeAllMode === "all"
-						? "Sign out everywhere?"
-						: "Sign out other sessions?"
+						? t("sessions.confirmAllTitle")
+						: t("sessions.confirmOthersTitle")
 				}
 				description={
 					revokeAllMode === "all" ? (
-						<p>
-							This will sign you out on every device, including this browser. You
-							will need to sign in again.
-						</p>
+						<p>{t("sessions.confirmAllBody")}</p>
 					) : (
-						<p>
-							This will sign out every session except the one you are using now.
-						</p>
+						<p>{t("sessions.confirmOthersBody")}</p>
 					)
 				}
 				confirmLabel={
-					revokeAllMode === "all" ? "Sign out all sessions" : "Sign out others"
+					revokeAllMode === "all"
+						? t("sessions.confirmAllLabel")
+						: t("sessions.confirmOthersLabel")
 				}
 				onConfirm={handleRevokeAll}
 				pending={revokingAll}
@@ -232,7 +223,19 @@ function SessionRow({
 	revoking: boolean;
 	onRevoke: () => void;
 }) {
+	const { t } = useTranslation("settings");
 	const location = formatLocation(session);
+
+	const formatDevice = (s: AuthSession): string => {
+		const parts = [s.browser, s.os].filter(Boolean);
+		if (parts.length === 2) {
+			return t("sessions.deviceOn", { browser: s.browser, os: s.os });
+		}
+		if (parts.length === 1) {
+			return parts[0]!;
+		}
+		return t("sessions.unknownDevice");
+	};
 
 	return (
 		<li className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-4 py-3 text-sm">
@@ -240,17 +243,18 @@ function SessionRow({
 				<div className="flex flex-wrap items-center gap-2">
 					<p className="font-medium">{formatDevice(session)}</p>
 					{session.current ? (
-						<Badge variant="success">Current session</Badge>
+						<Badge variant="success">{t("sessions.currentBadge")}</Badge>
 					) : null}
 				</div>
 				<p className="text-muted-foreground text-xs">
-					First seen {formatDateTime(session.createdAt)}
-					{" · "}
-					Last seen {formatDateTime(session.lastSeenAt)}
+					{t("sessions.seenMeta", {
+						createdAt: formatDateTime(session.createdAt),
+						lastSeenAt: formatDateTime(session.lastSeenAt),
+					})}
 				</p>
 				{location || session.ipAddress ? (
 					<p className="text-muted-foreground text-xs">
-						{location ?? "Unknown location"}
+						{location ?? t("sessions.unknownLocation")}
 						{session.ipAddress ? ` · ${session.ipAddress}` : ""}
 					</p>
 				) : null}
@@ -263,7 +267,7 @@ function SessionRow({
 				className="shrink-0"
 			>
 				{revoking ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-				Sign out
+				{t("sessions.signOut")}
 			</Button>
 		</li>
 	);

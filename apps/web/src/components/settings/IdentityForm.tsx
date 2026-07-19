@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ComposeEditor } from "@/components/compose/ComposeEditor";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,8 @@ export function IdentityForm({
 	onSubmit,
 	onCancel,
 }: IdentityFormProps) {
+	const { t } = useTranslation("settings");
+	const { t: tc } = useTranslation("common");
 	const [namePattern, setNamePattern] = useState<IdentityNamePattern>(
 		initial?.namePattern ?? "first_name_last_name",
 	);
@@ -49,7 +52,7 @@ export function IdentityForm({
 		<div className="space-y-3 rounded-lg border p-4">
 			<div className="space-y-2">
 				<label htmlFor="identity-name-pattern" className="text-sm font-medium">
-					Name pattern
+					{t("identities.form.namePattern")}
 				</label>
 				<Select
 					value={namePattern}
@@ -64,7 +67,7 @@ export function IdentityForm({
 					<SelectContent>
 						{patternOptions.map((option) => (
 							<SelectItem key={option.value} value={option.value}>
-								{option.label}
+								{t(`identities.patterns.${option.value}`)}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -73,7 +76,7 @@ export function IdentityForm({
 			{namePattern === "custom" ? (
 				<div className="space-y-2">
 					<label htmlFor="identity-custom-name" className="text-sm font-medium">
-						Custom name
+						{t("identities.form.customName")}
 					</label>
 					<Input
 						id="identity-custom-name"
@@ -84,19 +87,19 @@ export function IdentityForm({
 				</div>
 			) : null}
 			<div className="space-y-2">
-				<label className="text-sm font-medium">Signature</label>
+				<label className="text-sm font-medium">
+					{t("identities.form.signature")}
+				</label>
 				<ComposeEditor
 					key={initial?.id ?? "new"}
 					initialHtml={signatureHtml || "<p></p>"}
-					placeholder="Optional signature…"
+					placeholder={t("identities.form.signaturePlaceholder")}
 					disabled={busy}
 					className="min-h-[140px]"
 					onChange={({ html }) => setSignatureHtml(html)}
 				/>
 				<p className="text-muted-foreground text-xs">
-					Tags: {"{from_name}"}, {"{first_name}"}, {"{last_name}"},{" "}
-					{"{first_initial}"}, {"{last_initial}"}, {"{mailbox_address}"},{" "}
-					{"{primary_address}"}
+					{t("identities.form.tagsHelp")}
 				</p>
 			</div>
 			<div className="flex gap-2">
@@ -114,10 +117,10 @@ export function IdentityForm({
 					}
 				>
 					{busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-					Save
+					{tc("save")}
 				</Button>
 				<Button variant="outline" disabled={busy} onClick={onCancel}>
-					Cancel
+					{tc("cancel")}
 				</Button>
 			</div>
 		</div>
