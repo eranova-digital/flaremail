@@ -1,0 +1,28 @@
+{
+	"preferences": {
+		"title": "Preferințe",
+		"description": "Personalizați aspectul și comportamentul Flaremail pe acest dispozitiv. Aceste setări rămân în browser și nu sunt sincronizate cu contul.",
+		"language": {
+			"title": "Limbă",
+			"description": "Alegeți limba aplicației web pe acest dispozitiv."
+		},
+		"appearance": {
+			"title": "Aspect",
+			"description": "Alegeți o temă pentru aplicația web."
+		},
+		"theme": {
+			"light": {
+				"label": "Deschis",
+				"description": "Folosește întotdeauna aspectul deschis."
+			},
+			"dark": {
+				"label": "Întunecat",
+				"description": "Folosește întotdeauna aspectul întunecat."
+			},
+			"system": {
+				"label": "Sistem",
+				"description": "Potrivește setarea sistemului de operare."
+			}
+		}
+	}
+}

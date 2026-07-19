@@ -1,0 +1,28 @@
+{
+	"preferences": {
+		"title": "Preferences",
+		"description": "Customize how Flaremail looks and feels on this device. These settings stay in your browser and are not synced to your account.",
+		"language": {
+			"title": "Language",
+			"description": "Choose the language for the web app on this device."
+		},
+		"appearance": {
+			"title": "Appearance",
+			"description": "Choose a theme for the web app."
+		},
+		"theme": {
+			"light": {
+				"label": "Light",
+				"description": "Always use the light appearance."
+			},
+			"dark": {
+				"label": "Dark",
+				"description": "Always use the dark appearance."
+			},
+			"system": {
+				"label": "System",
+				"description": "Match your operating system setting."
+			}
+		}
+	}
+}

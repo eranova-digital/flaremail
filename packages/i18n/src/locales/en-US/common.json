@@ -1,0 +1,77 @@
+{
+	"appName": "Flaremail",
+	"loading": "Loading…",
+	"save": "Save",
+	"cancel": "Cancel",
+	"delete": "Delete",
+	"edit": "Edit",
+	"create": "Create",
+	"close": "Close",
+	"back": "Back",
+	"next": "Next",
+	"continue": "Continue",
+	"confirm": "Confirm",
+	"search": "Search",
+	"retry": "Retry",
+	"copy": "Copy",
+	"copied": "Copied",
+	"remove": "Remove",
+	"add": "Add",
+	"upload": "Upload",
+	"download": "Download",
+	"enabled": "Enabled",
+	"disabled": "Disabled",
+	"yes": "Yes",
+	"no": "No",
+	"none": "None",
+	"unknown": "Unknown",
+	"optional": "Optional",
+	"required": "Required",
+	"actions": "Actions",
+	"status": "Status",
+	"name": "Name",
+	"email": "Email",
+	"password": "Password",
+	"description": "Description",
+	"settings": "Settings",
+	"management": "Management",
+	"backToMail": "Back to mail",
+	"somethingWentWrong": "Something went wrong",
+	"noResults": "No results",
+	"learnMore": "Learn more",
+	"roles": {
+		"user": {
+			"label": "User",
+			"description": "Sends and receives mail in their own and granted mailboxes."
+		},
+		"manager": {
+			"label": "Manager",
+			"description": "Everything a user can do, plus manages shared mailbox access on assigned domains."
+		},
+		"admin": {
+			"label": "Admin",
+			"description": "Manages mailboxes, users, and managers on their assigned domains."
+		},
+		"superadmin": {
+			"label": "Owner",
+			"description": "Full control over every domain, mailbox, and account on this instance."
+		},
+		"intendant": {
+			"label": "Recovery account",
+			"description": "Break-glass account used to bootstrap and recover this instance."
+		}
+	},
+	"statusValues": {
+		"active": "Active",
+		"pending": "Pending activation",
+		"suspended": "Suspended"
+	},
+	"folders": {
+		"inbox": "Inbox",
+		"sent": "Sent",
+		"drafts": "Drafts",
+		"archived": "Archived",
+		"trash": "Trash",
+		"spam": "Spam"
+	}
+}
