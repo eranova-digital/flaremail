@@ -40,6 +40,13 @@ export type AccountDetail = AccountSummary & {
 	allSharedMailboxes: boolean;
 	sharedMailboxIds: string[];
 	grantedMailboxIds: string[];
+	invitedBy: {
+		id: string;
+		displayName: string;
+		loginIdentifier: string;
+		profilePicture: ProfilePicture | null;
+		deleted: boolean;
+	} | null;
 };
 
 export type LocalPartPolicy = {

@@ -4,6 +4,7 @@ import { Loader2, MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { AccountIdentitiesTab } from "@/components/settings/accounts/AccountIdentitiesTab";
+import { AccountLogsTab } from "@/components/settings/accounts/AccountLogsTab";
 import { AccountSecurityTab } from "@/components/settings/accounts/AccountSecurityTab";
 import { ProfileFieldsGrid } from "@/components/settings/ProfileFieldsGrid";
 import { ProfileFieldLockToggle } from "@/components/settings/accounts/ProfileFieldLockToggle";
@@ -55,6 +56,7 @@ import type { AccountRole } from "@/lib/accounts/api";
 import { filterDomainsForAccount } from "@/lib/accounts/domains";
 import {
 	canAssignRoles,
+	canAccessLogsTab,
 	canLockProfileFields,
 	canManageAssignments,
 	canManageTarget,
@@ -171,7 +173,9 @@ export function AccountDetailDialog({
 
 	const showSecurityTab = !!target && canManageTargetSecurity(actor, target);
 	const showIdentitiesTab = Boolean(target?.primaryMailboxId);
-	const showTabs = showAccessTab || showSecurityTab || showIdentitiesTab;
+	const showLogsTab = canAccessLogsTab(actor);
+	const showTabs =
+		showAccessTab || showSecurityTab || showIdentitiesTab || showLogsTab;
 
 	useEffect(() => {
 		if (!accountId) {
@@ -533,6 +537,11 @@ export function AccountDetailDialog({
 												{t("accounts.detail.tab.security")}
 											</TabsTrigger>
 										) : null}
+										{showLogsTab ? (
+											<TabsTrigger className="h-7 px-4" value="logs">
+												Logs
+											</TabsTrigger>
+										) : null}
 									</TabsList>
 								</div>
 							) : null}
@@ -784,6 +793,15 @@ export function AccountDetailDialog({
 										<AccountSecurityTab
 											accountId={accountId}
 											displayName={target.displayName}
+										/>
+									</TabsContent>
+								) : null}
+
+								{showLogsTab && accountId ? (
+									<TabsContent value="logs" className="mt-0 space-y-4">
+										<AccountLogsTab
+											accountId={accountId}
+											invitedBy={target.invitedBy}
 										/>
 									</TabsContent>
 								) : null}

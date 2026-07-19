@@ -1,4 +1,16 @@
-import { and, desc, eq, gte, ilike, inArray, lt, lte, or, type SQL } from "drizzle-orm";
+import {
+	and,
+	desc,
+	eq,
+	gte,
+	ilike,
+	inArray,
+	lt,
+	lte,
+	or,
+	sql,
+	type SQL,
+} from "drizzle-orm";
 
 import type { Database } from "../db/client";
 import {
@@ -79,6 +91,8 @@ export type ListLogsInput = {
 	to?: Date;
 	limit?: number;
 	before?: string;
+	/** Match logs where this account is the actor or appears in refs. */
+	accountId?: string;
 };
 
 export function isLogType(value: unknown): value is LogType {
@@ -138,6 +152,20 @@ export async function listLogs(
 				ilike(logs.summary, pattern),
 				ilike(logs.refs, pattern),
 				ilike(logs.context, pattern),
+			)!,
+		);
+	}
+	if (input.accountId) {
+		const accountId = input.accountId;
+		conditions.push(
+			or(
+				eq(logs.actorAccountId, accountId),
+				sql`EXISTS (
+					SELECT 1
+					FROM jsonb_each((${logs.refs})::jsonb) AS ref
+					WHERE ref.value->>'kind' = 'account'
+						AND ref.value->>'id' = ${accountId}
+				)`,
 			)!,
 		);
 	}

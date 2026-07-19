@@ -87,6 +87,18 @@ export async function handleListLogs(context: RouteContext) {
 
 	const before = url.searchParams.get("before") ?? undefined;
 
+	const accountIdRaw = url.searchParams.get("accountId")?.trim() || undefined;
+	const accountId =
+		accountIdRaw &&
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+			accountIdRaw,
+		)
+			? accountIdRaw
+			: undefined;
+	if (accountIdRaw && !accountId) {
+		return validationError(context.request, "accountId must be a valid UUID");
+	}
+
 	try {
 		const result = await withDb(context.env, (db) =>
 			listLogs(db, {
@@ -98,6 +110,7 @@ export async function handleListLogs(context: RouteContext) {
 				to,
 				limit,
 				before,
+				accountId,
 			}),
 		);
 		return jsonResponse(result);
