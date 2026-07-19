@@ -1,5 +1,6 @@
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ type Crumb = {
 };
 
 type SettingsShellProps = {
-	/** Root breadcrumb label. Defaults to "Settings". */
+	/** Root breadcrumb label. Defaults to common "Settings". */
 	rootLabel?: string;
 	/** Root breadcrumb link. Defaults to "/settings". */
 	rootTo?: string;
@@ -32,17 +33,21 @@ type SettingsShellProps = {
 };
 
 export function SettingsShell({
-	rootLabel = "Settings",
+	rootLabel,
 	rootTo = "/settings",
 	crumbs = [],
 	backTo = "/",
-	backLabel = "Back",
+	backLabel,
 	actions,
 	description,
 	widthClassName = "max-w-4xl",
 	children,
 }: SettingsShellProps) {
-	const title = crumbs.length > 0 ? crumbs[crumbs.length - 1].label : rootLabel;
+	const { t } = useTranslation("mail");
+	const { t: tc } = useTranslation("common");
+	const resolvedRootLabel = rootLabel ?? tc("settings");
+	const resolvedBackLabel = backLabel ?? tc("back");
+	const title = crumbs.length > 0 ? crumbs[crumbs.length - 1].label : resolvedRootLabel;
 	const trail = crumbs.slice(0, -1);
 
 	return (
@@ -52,17 +57,17 @@ export function SettingsShell({
 					className={`mx-auto flex items-center gap-3 px-4 py-3 sm:px-6 ${widthClassName}`}
 				>
 					<Button variant="ghost" size="icon" asChild>
-						<Link to={backTo} aria-label={backLabel}>
+						<Link to={backTo} aria-label={resolvedBackLabel}>
 							<ArrowLeft className="size-4" />
 						</Link>
 					</Button>
 					<nav
-						aria-label="Breadcrumb"
+						aria-label={t("settingsShell.breadcrumb")}
 						className="flex min-w-0 flex-1 items-center gap-1.5"
 					>
 						{crumbs.length === 0 ? (
 							<h1 className="truncate text-base font-semibold tracking-tight">
-								{rootLabel}
+								{resolvedRootLabel}
 							</h1>
 						) : (
 							<>
@@ -70,7 +75,7 @@ export function SettingsShell({
 									to={rootTo}
 									className="text-muted-foreground hover:text-foreground shrink-0 text-sm font-medium transition-colors"
 								>
-									{rootLabel}
+									{resolvedRootLabel}
 								</Link>
 								{trail.map((crumb) => (
 									<span

@@ -1,16 +1,17 @@
 import { Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import type { Label, Thread } from "@/lib/api/client";
 import { SeenByAvatarGroup } from "@/components/SeenByAvatarGroup";
 import { DEFAULT_LABEL_COLOR } from "@/lib/label-colors";
 import { cn } from "@/lib/utils";
 
-function formatWhen(value?: string | null): string {
+function formatWhen(value: string | null | undefined, locale: string): string {
 	if (!value) {
 		return "";
 	}
 
-	return new Date(value).toLocaleString(undefined, {
+	return new Date(value).toLocaleString(locale, {
 		month: "short",
 		day: "numeric",
 		hour: "numeric",
@@ -31,8 +32,9 @@ export function ThreadListItem({
 	labels = [],
 	onSelect,
 }: ThreadListItemProps) {
+	const { t, i18n } = useTranslation("mail");
 	const displayName =
-		thread.participants?.join(", ") || thread.sender || "(unknown)";
+		thread.participants?.join(", ") || thread.sender || t("threadList.unknown");
 	const threadLabels = (thread.labelIds ?? [])
 		.map((id) => labels.find((label) => label.id === id))
 		.filter((label): label is Label => Boolean(label));
@@ -57,13 +59,13 @@ export function ThreadListItem({
 							<Star className="size-3.5 fill-current text-amber-500" />
 						) : null}
 						<span className="text-muted-foreground text-xs whitespace-nowrap">
-							{formatWhen(thread.lastMessageAt)}
+							{formatWhen(thread.lastMessageAt, i18n.language)}
 						</span>
 					</div>
 				</div>
 				<div className="mt-1 flex items-center justify-between gap-2">
 					<p className="min-w-0 flex-1 truncate text-sm">
-						{thread.subject || "(no subject)"}
+						{thread.subject || t("threadList.noSubject")}
 					</p>
 					<SeenByAvatarGroup
 						seenBy={thread.seenBy}
@@ -90,7 +92,7 @@ export function ThreadListItem({
 					</div>
 				) : null}
 				<p className="text-muted-foreground mt-1 h-0 origin-top scale-y-0 transform truncate text-xs blur-xs transition-all duration-300 ease-in-out group-hover:h-4 group-hover:scale-y-100 group-hover:blur-none">
-					{thread.preview || "No preview"}
+					{thread.preview || t("threadList.noPreview")}
 				</p>
 			</button>
 		</li>

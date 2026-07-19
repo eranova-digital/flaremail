@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import {
 	Tooltip,
@@ -7,12 +9,15 @@ import {
 import type { SeenByViewer } from "@/lib/api/generated";
 import { cn } from "@/lib/utils";
 
-function viewerDisplayName(viewer: SeenByViewer): string {
+function viewerDisplayName(
+	viewer: SeenByViewer,
+	unknownLabel: string,
+): string {
 	return (
 		viewer.displayName?.trim() ||
 		viewer.loginIdentifier ||
 		viewer.accountId ||
-		"(unknown)"
+		unknownLabel
 	);
 }
 
@@ -27,6 +32,8 @@ export function SeenByAvatarGroup({
 	size?: "sm" | "md";
 	showLabel?: boolean;
 }) {
+	const { t } = useTranslation("mail");
+	const unknownLabel = t("threadList.unknown");
 	const list = seenBy ?? [];
 	if (list.length === 0) {
 		return null;
@@ -42,7 +49,9 @@ export function SeenByAvatarGroup({
 	return (
 		<div className={cn("flex shrink-0 items-center", showLabel && "gap-1.5", className)}>
 			{showLabel ? (
-				<span className={cn("text-muted-foreground shrink-0", labelClassName)}>Seen by</span>
+				<span className={cn("text-muted-foreground shrink-0", labelClassName)}>
+					{t("seenBy")}
+				</span>
 			) : null}
 			<div className="flex items-center -space-x-2">
 				{visible.map((viewer) => (
@@ -52,13 +61,13 @@ export function SeenByAvatarGroup({
 								<ProfileAvatar
 									accountId={viewer.accountId ?? ""}
 									seed={viewer.loginIdentifier ?? viewer.accountId ?? ""}
-									label={viewerDisplayName(viewer)}
+									label={viewerDisplayName(viewer, unknownLabel)}
 									profilePicture={viewer.profilePicture}
 									className={avatarClassName}
 								/>
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>{viewerDisplayName(viewer)}</TooltipContent>
+						<TooltipContent>{viewerDisplayName(viewer, unknownLabel)}</TooltipContent>
 					</Tooltip>
 				))}
 
@@ -76,4 +85,3 @@ export function SeenByAvatarGroup({
 		</div>
 	);
 }
-

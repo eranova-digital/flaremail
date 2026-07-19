@@ -1,5 +1,6 @@
 import { FileCode2, Forward, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { MessageOriginalDialog } from "@/components/message/MessageOriginalDialog";
@@ -25,6 +26,7 @@ export function MessageActionsMenu({
 	threadId,
 	folder,
 }: MessageActionsMenuProps) {
+	const { t } = useTranslation("mail");
 	const navigate = useNavigate();
 	const [originalOpen, setOriginalOpen] = useState(false);
 
@@ -36,7 +38,7 @@ export function MessageActionsMenu({
 						variant="ghost"
 						size="icon"
 						className="size-7"
-						aria-label="Message actions"
+						aria-label={t("message.actions")}
 					>
 						<MoreHorizontal className="size-4" />
 					</Button>
@@ -50,11 +52,11 @@ export function MessageActionsMenu({
 						}
 					>
 						<Forward />
-						Forward
+						{t("message.forward")}
 					</DropdownMenuItem>
 					<DropdownMenuItem onClick={() => setOriginalOpen(true)}>
 						<FileCode2 />
-						View original
+						{t("message.viewOriginal")}
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>

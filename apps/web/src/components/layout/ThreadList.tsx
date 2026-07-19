@@ -1,5 +1,6 @@
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ThreadListItem } from '@/components/layout/ThreadListItem';
@@ -40,6 +41,7 @@ function FolderThreadList({
 	activeFolder: ThreadFolder;
 	labels: ReturnType<typeof useLabels>['data'];
 }) {
+	const { t } = useTranslation('mail');
 	const navigate = useNavigate();
 	const threadsQuery = useThreads(mailboxId, activeFolder);
 
@@ -58,6 +60,7 @@ function FolderThreadList({
 	}
 
 	const threads = threadsQuery.data?.items ?? [];
+	const unreadCount = threads.filter((thread) => !thread.isRead).length;
 
 	return (
 		<>
@@ -68,24 +71,22 @@ function FolderThreadList({
 						variant="ghost"
 						size="icon"
 						className="size-8"
-						aria-label="Refresh threads"
+						aria-label={t('threadList.refresh')}
 						disabled={threadsQuery.isFetching}
 						onClick={() => void threadsQuery.refetch()}
 					>
 						<RefreshCw className={cn('size-4', threadsQuery.isFetching && 'animate-spin')} />
 					</Button>
 					<Badge variant="secondary">
-						{threads.filter((thread) => !thread.isRead).length > 0
-							? `${threads.filter((thread) => !thread.isRead).length} unread /`
-							: ''}{' '}
-						{threads.length} {threads.length === 1 ? 'thread' : 'threads'}
+						{unreadCount > 0 ? t('threadList.unreadPrefix', { count: unreadCount }) : ''}
+						{t('threadList.threadCount', { count: threads.length })}
 					</Badge>
 				</div>
 			</div>
 			<div className="flex-1 max-w-full overflow-y-auto">
 				{threads.length === 0 ? (
 					<p className="text-muted-foreground p-4 text-sm">
-						No threads in {FOLDER_LABELS[activeFolder].toLowerCase()}.
+						{t('threadList.emptyFolder', { folder: FOLDER_LABELS[activeFolder] })}
 					</p>
 				) : (
 					<ul>
@@ -134,6 +135,7 @@ function LabelFolderSection({
 	error: unknown;
 	isFetching: boolean;
 }) {
+	const { t } = useTranslation('mail');
 	const navigate = useNavigate();
 	const unreadCount = threads.filter((thread) => !thread.isRead).length;
 
@@ -153,7 +155,7 @@ function LabelFolderSection({
 				/>
 				<span className="flex-1">{FOLDER_LABELS[folder]}</span>
 				<Badge variant="secondary" className="text-xs font-normal">
-					{unreadCount > 0 ? `${unreadCount} unread / ` : ''}
+					{unreadCount > 0 ? t('threadList.unreadPrefix', { count: unreadCount }) : ''}
 					{threads.length}
 				</Badge>
 			</button>
@@ -169,7 +171,7 @@ function LabelFolderSection({
 						<p className="text-destructive p-4 text-sm">{getErrorMessage(error)}</p>
 					) : threads.length === 0 ? (
 						<p className="text-muted-foreground px-4 py-3 text-xs">
-							No threads in {FOLDER_LABELS[folder].toLowerCase()}.
+							{t('threadList.emptyFolder', { folder: FOLDER_LABELS[folder] })}
 						</p>
 					) : (
 						<ul>
@@ -187,7 +189,7 @@ function LabelFolderSection({
 						</ul>
 					)}
 					{isFetching && !isLoading ? (
-						<p className="text-muted-foreground px-4 py-2 text-xs">Refreshing…</p>
+						<p className="text-muted-foreground px-4 py-2 text-xs">{t('threadList.refreshing')}</p>
 					) : null}
 				</div>
 			) : null}
@@ -206,6 +208,7 @@ function LabelThreadList({
 	threadId?: string;
 	labels: ReturnType<typeof useLabels>['data'];
 }) {
+	const { t } = useTranslation('mail');
 	const folderQueries = useThreadsByLabel(mailboxId, labelId);
 	const [expandedFolder, setExpandedFolder] = useState<ThreadFolder | null>('inbox');
 
@@ -242,22 +245,22 @@ function LabelThreadList({
 							backgroundColor: activeLabel?.color ?? DEFAULT_LABEL_COLOR,
 						}}
 					/>
-					<h2 className="truncate font-medium">{activeLabel?.name ?? 'Label'}</h2>
+					<h2 className="truncate font-medium">{activeLabel?.name ?? t('labels.fallback')}</h2>
 				</div>
 				<div className="flex items-center gap-2">
 					<Button
 						variant="ghost"
 						size="icon"
 						className="size-8"
-						aria-label="Refresh threads"
+						aria-label={t('threadList.refresh')}
 						disabled={isAnyFetching}
 						onClick={refetchAll}
 					>
 						<RefreshCw className={cn('size-4', isAnyFetching && 'animate-spin')} />
 					</Button>
 					<Badge variant="secondary">
-						{totalUnread > 0 ? `${totalUnread} unread / ` : ''}
-						{totalThreads} {totalThreads === 1 ? 'thread' : 'threads'}
+						{totalUnread > 0 ? t('threadList.unreadPrefix', { count: totalUnread }) : ''}
+						{t('threadList.threadCount', { count: totalThreads })}
 					</Badge>
 				</div>
 			</div>
@@ -269,7 +272,7 @@ function LabelThreadList({
 						))}
 					</div>
 				) : totalThreads === 0 ? (
-					<p className="text-muted-foreground p-4 text-sm">No threads with this label.</p>
+					<p className="text-muted-foreground p-4 text-sm">{t('threadList.emptyLabel')}</p>
 				) : (
 					FOLDERS.map((folder, index) => {
 						const query = folderQueries[index];

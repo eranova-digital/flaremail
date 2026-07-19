@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ChevronsUpDown, LogOut, Settings } from 'lucide-react';
 
@@ -23,6 +24,8 @@ type UserCardProps = {
 };
 
 export function UserCard({ collapsed }: UserCardProps) {
+	const { t } = useTranslation('mail');
+	const { t: tc } = useTranslation('common');
 	const { account, signOut } = useAuth();
 	const navigate = useNavigate();
 	const [signingOut, setSigningOut] = useState(false);
@@ -47,7 +50,7 @@ export function UserCard({ collapsed }: UserCardProps) {
 		<DropdownMenuTrigger asChild>
 			<button
 				type="button"
-				aria-label="Account menu"
+				aria-label={t('userCard.accountMenu')}
 				className={cn(
 					'hover:bg-accent data-[state=open]:bg-accent flex w-full items-center gap-2 rounded-md p-2 text-left transition-colors',
 					collapsed && 'justify-center p-1.5',
@@ -95,11 +98,11 @@ export function UserCard({ collapsed }: UserCardProps) {
 				<DropdownMenuSeparator />
 				<DropdownMenuItem onSelect={() => navigate('/settings')}>
 					<Settings className="size-4" />
-					Settings
+					{tc('settings')}
 				</DropdownMenuItem>
 				<DropdownMenuItem disabled={signingOut} onSelect={() => void handleSignOut()}>
 					<LogOut className="size-4" />
-					Sign out
+					{t('userCard.signOut')}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

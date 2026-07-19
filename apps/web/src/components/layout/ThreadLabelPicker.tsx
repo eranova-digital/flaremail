@@ -1,4 +1,5 @@
 import { Check, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ type ThreadLabelPickerProps = {
 };
 
 export function ThreadLabelPicker({ mailboxId, threadId }: ThreadLabelPickerProps) {
+	const { t } = useTranslation("mail");
 	const labelsQuery = useLabels(mailboxId);
 	const threadQuery = useThread(mailboxId, threadId);
 	const patchMutation = usePatchThreadLabels(mailboxId, threadId);
@@ -41,6 +43,8 @@ export function ThreadLabelPicker({ mailboxId, threadId }: ThreadLabelPickerProp
 		patchMutation.mutate([...next]);
 	};
 
+	const labelsLabel = t("threadActions.labels");
+
 	return (
 		<DropdownMenu>
 			<Tooltip>
@@ -50,20 +54,20 @@ export function ThreadLabelPicker({ mailboxId, threadId }: ThreadLabelPickerProp
 							variant="outline"
 							size="icon"
 							disabled={patchMutation.isPending || labelsQuery.isLoading}
-							aria-label="Labels"
+							aria-label={labelsLabel}
 						>
 							<Tag className="size-4" />
 						</Button>
 					</DropdownMenuTrigger>
 				</TooltipTrigger>
-				<TooltipContent>Labels</TooltipContent>
+				<TooltipContent>{labelsLabel}</TooltipContent>
 			</Tooltip>
 			<DropdownMenuContent align="start" className="w-52">
-				<DropdownMenuLabel>Thread labels</DropdownMenuLabel>
+				<DropdownMenuLabel>{t("labels.threadLabels")}</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				{labels.length === 0 ? (
 					<p className="text-muted-foreground px-2 py-1.5 text-xs">
-						No labels yet. Add labels from the sidebar.
+						{t("labels.emptyPicker")}
 					</p>
 				) : (
 					labels.map((label) => {

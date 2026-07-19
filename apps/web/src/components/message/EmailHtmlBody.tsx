@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import { SandboxedHtml } from "@/components/html/SandboxedHtml";
 
 type EmailHtmlBodyProps = {
@@ -18,9 +20,11 @@ const MESSAGE_BODY_CSS = [
 
 /** Renders message HTML in a sandboxed iframe (no scripts). */
 export function EmailHtmlBody({ html }: EmailHtmlBodyProps) {
+	const { t } = useTranslation("mail");
+
 	return (
 		<SandboxedHtml
-			title="Email message"
+			title={t("message.emailTitle")}
 			html={html}
 			bodyCss={MESSAGE_BODY_CSS}
 			className="message-html-body min-h-[8rem]"

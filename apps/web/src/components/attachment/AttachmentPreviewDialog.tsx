@@ -1,5 +1,6 @@
 import { Download, FileIcon, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -95,6 +96,8 @@ function PreviewBody({
 	loaded: LoadedPreview;
 	filename: string;
 }) {
+	const { t } = useTranslation('mail');
+
 	switch (loaded.previewKind) {
 		case 'image':
 			return (
@@ -114,7 +117,7 @@ function PreviewBody({
 					</pre>
 					{loaded.textTruncated ? (
 						<p className="text-muted-foreground border-t px-4 py-2 text-xs">
-							Preview truncated. Download the file to view the full contents.
+							{t('attachments.truncated')}
 						</p>
 					) : null}
 				</ScrollArea>
@@ -134,7 +137,7 @@ function PreviewBody({
 				<div className="bg-muted/30 flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border p-8 text-center">
 					<FileIcon className="text-muted-foreground size-10" />
 					<p className="text-muted-foreground text-sm">
-						Preview is not available for this file type.
+						{t('attachments.unavailable')}
 					</p>
 				</div>
 			);
@@ -146,6 +149,8 @@ export function AttachmentPreviewDialog({
 	open,
 	onOpenChange,
 }: AttachmentPreviewDialogProps) {
+	const { t } = useTranslation('mail');
+	const { t: tc } = useTranslation('common');
 	const [loaded, setLoaded] = useState<LoadedPreview | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -206,7 +211,7 @@ export function AttachmentPreviewDialog({
 		};
 	}, [loaded]);
 
-	const filename = source?.filename ?? 'attachment';
+	const filename = source?.filename ?? t('attachments.fallbackName');
 	const description = source
 		? formatAttachmentDescription(
 				source.filename,
@@ -269,7 +274,7 @@ export function AttachmentPreviewDialog({
 						variant="outline"
 						onClick={() => onOpenChange(false)}
 					>
-						Close
+						{tc('close')}
 					</Button>
 					<Button
 						disabled={!source || downloading}
@@ -280,7 +285,7 @@ export function AttachmentPreviewDialog({
 						) : (
 							<Download className="size-4" />
 						)}
-						Download
+						{tc('download')}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
