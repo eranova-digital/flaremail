@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -452,12 +452,13 @@ for (const key of Object.keys(ro)) {
 	}
 }
 
-function writeLocale(locale, namespace, data) {
-	const path = join(root, "src/locales", locale, `${namespace}.json`);
-	mkdirSync(dirname(path), { recursive: true });
-	writeFileSync(path, `${JSON.stringify(data, null, "\t")}\n`);
+function writeErrorsNamespace(locale, data) {
+	const path = join(root, "src/locales", `${locale}.json`);
+	const catalog = JSON.parse(readFileSync(path, "utf8"));
+	catalog.errors = data;
+	writeFileSync(path, `${JSON.stringify(catalog, null, "\t")}\n`);
 }
 
-writeLocale("en-US", "errors", en);
-writeLocale("ro-RO", "errors", ro);
+writeErrorsNamespace("en-US", en);
+writeErrorsNamespace("ro-RO", ro);
 console.log(`Wrote ${Object.keys(en).length} error strings`);
