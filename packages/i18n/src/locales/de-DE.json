@@ -1575,7 +1575,7 @@
 			"metaLine": "{{clientType}} · Zustimmung {{consent}}",
 			"redirectUris": "Weiterleitungs-URIs: {{uris}}",
 			"homescreen": "Startseite: {{url}}",
-			"scopes": "Scopes: {{scopes}}",
+			"scopes": "Bereiche: {{scopes}}",
 			"m2m": "M2M: {{permissions}}",
 			"emDash": "—",
 			"editor": {
