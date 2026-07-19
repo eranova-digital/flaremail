@@ -24,7 +24,7 @@ function authorizeApiKeyScopes(
 
 	if (!scopes || scopes.length === 0) {
 		return problemResponse(403, "API keys cannot access this endpoint", {
-			code: "forbidden",
+			code: "api-keys-cannot-access",
 			instance: requestInstance(request),
 		});
 	}
@@ -36,7 +36,7 @@ function authorizeApiKeyScopes(
 
 	const scopeList = scopes.join("' or '");
 	return problemResponse(403, `API key scope '${scopeList}' is required`, {
-		code: "forbidden",
+		code: "api-key-scope-required",
 		instance: requestInstance(request),
 	});
 }
@@ -54,7 +54,10 @@ export async function authorizeRoute(
 	} catch (error) {
 		if (error instanceof AuthorizationDeniedError) {
 			const status = error.message === "Account is suspended" ? 401 : 403;
-			const code = status === 401 ? "unauthorized" : "forbidden";
+			const code =
+				error.message === "Account is suspended"
+					? "account-suspended"
+					: "forbidden";
 			return problemResponse(status, error.message, {
 				code,
 				instance: requestInstance(request),
