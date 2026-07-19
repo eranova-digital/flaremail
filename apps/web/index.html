@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-US">
 	<head>
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -10,8 +10,8 @@
 		<script>
 			(function () {
 				try {
-					var key = "flaremail:theme";
-					var preference = localStorage.getItem(key);
+					var themeKey = "flaremail:theme";
+					var preference = localStorage.getItem(themeKey);
 					if (
 						preference !== "light" &&
 						preference !== "dark" &&
@@ -25,6 +25,32 @@
 							window.matchMedia("(prefers-color-scheme: dark)").matches);
 					document.documentElement.classList.toggle("dark", dark);
 					document.documentElement.style.colorScheme = dark ? "dark" : "light";
+
+					var localeKey = "flaremail:locale";
+					var locale = localStorage.getItem(localeKey);
+					if (locale !== "en-US" && locale !== "ro-RO") {
+						var languages = navigator.languages || [navigator.language];
+						locale = "en-US";
+						for (var i = 0; i < languages.length; i++) {
+							var tag = String(languages[i] || "")
+								.trim()
+								.replace(/_/g, "-");
+							if (tag === "en-US" || tag === "ro-RO") {
+								locale = tag;
+								break;
+							}
+							var lang = tag.split("-")[0].toLowerCase();
+							if (lang === "ro") {
+								locale = "ro-RO";
+								break;
+							}
+							if (lang === "en") {
+								locale = "en-US";
+								break;
+							}
+						}
+					}
+					document.documentElement.lang = locale;
 				} catch (_) {}
 			})();
 		</script>
