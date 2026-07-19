@@ -1,4 +1,8 @@
 import { PROBLEM_CONTENT_TYPE, buildProblemDetails, requestInstance } from "./problem";
+import {
+	MAX_AUTH_JSON_BODY_BYTES,
+	contentLengthTooLarge,
+} from "./parse-body";
 
 export const RATE_LIMIT_RETRY_AFTER_SECONDS = 60;
 
@@ -108,6 +112,10 @@ export async function enforceAuthPreRateLimit(
 	request: Request,
 	config: AuthRateLimitConfig,
 ): Promise<Response | null> {
+	const tooLarge = contentLengthTooLarge(request, MAX_AUTH_JSON_BODY_BYTES);
+	if (tooLarge) {
+		return tooLarge;
+	}
 	const ip = clientIpFromRequest(request);
 	const identifier = await peekAuthRateLimitIdentifier(
 		request,
