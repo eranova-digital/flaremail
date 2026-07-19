@@ -1,41 +1,51 @@
 import type { AccountRole } from "@/lib/accounts/api";
+import i18n from "@/lib/i18n";
 
 export type RoleMeta = {
 	label: string;
 	description: string;
 };
 
-/**
- * Plain-language names and one-line capability summaries for account roles.
- * Internal identifiers (`superadmin`, `intendant`, …) stay in the API; the UI
- * always speaks in these terms.
- */
+export function roleMeta(
+	role: AccountRole,
+): RoleMeta {
+	return {
+		label: i18n.t(`roles.${role}.label`, { ns: "common" }),
+		description: i18n.t(`roles.${role}.description`, { ns: "common" }),
+	};
+}
+
+export function intendantMeta(): RoleMeta {
+	return {
+		label: i18n.t("roles.intendant.label", { ns: "common" }),
+		description: i18n.t("roles.intendant.description", { ns: "common" }),
+	};
+}
+
+/** @deprecated Prefer roleMeta() / intendantMeta() for locale-aware copy. */
 export const ROLE_META: Record<AccountRole, RoleMeta> = {
-	user: {
-		label: "User",
-		description: "Sends and receives mail in their own and granted mailboxes.",
+	get user() {
+		return roleMeta("user");
 	},
-	manager: {
-		label: "Manager",
-		description:
-			"Everything a user can do, plus manages shared mailbox access on assigned domains.",
+	get manager() {
+		return roleMeta("manager");
 	},
-	admin: {
-		label: "Admin",
-		description:
-			"Manages mailboxes, users, and managers on their assigned domains.",
+	get admin() {
+		return roleMeta("admin");
 	},
-	superadmin: {
-		label: "Owner",
-		description:
-			"Full control over every domain, mailbox, and account on this instance.",
+	get superadmin() {
+		return roleMeta("superadmin");
 	},
 };
 
+/** @deprecated Prefer intendantMeta(). */
 export const INTENDANT_META: RoleMeta = {
-	label: "Recovery account",
-	description:
-		"Break-glass account used to bootstrap and recover this instance.",
+	get label() {
+		return intendantMeta().label;
+	},
+	get description() {
+		return intendantMeta().description;
+	},
 };
 
 export function roleLabel(
@@ -43,12 +53,12 @@ export function roleLabel(
 	isIntendant = false,
 ): string {
 	if (isIntendant) {
-		return INTENDANT_META.label;
+		return intendantMeta().label;
 	}
 	if (!role) {
-		return "Unknown";
+		return i18n.t("unknown", { ns: "common" });
 	}
-	return ROLE_META[role].label;
+	return roleMeta(role).label;
 }
 
 export function roleDescription(
@@ -56,12 +66,12 @@ export function roleDescription(
 	isIntendant = false,
 ): string | null {
 	if (isIntendant) {
-		return INTENDANT_META.description;
+		return intendantMeta().description;
 	}
 	if (!role) {
 		return null;
 	}
-	return ROLE_META[role].description;
+	return roleMeta(role).description;
 }
 
 export type AccountStatusTone = "success" | "secondary" | "warning";
@@ -72,11 +82,20 @@ export function statusMeta(status: string): {
 } {
 	switch (status) {
 		case "active":
-			return { label: "Active", tone: "success" };
+			return {
+				label: i18n.t("statusValues.active", { ns: "common" }),
+				tone: "success",
+			};
 		case "pending":
-			return { label: "Pending activation", tone: "warning" };
+			return {
+				label: i18n.t("statusValues.pending", { ns: "common" }),
+				tone: "warning",
+			};
 		case "suspended":
-			return { label: "Suspended", tone: "secondary" };
+			return {
+				label: i18n.t("statusValues.suspended", { ns: "common" }),
+				tone: "secondary",
+			};
 		default:
 			return { label: status, tone: "secondary" };
 	}
