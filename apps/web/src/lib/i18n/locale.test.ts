@@ -1,5 +1,6 @@
 import {
 	DEFAULT_LOCALE,
+	LANGUAGE_TO_LOCALE,
 	LOCALE_STORAGE_KEY,
 	SUPPORTED_LOCALES,
 	detectLocaleFromLanguages,
@@ -13,23 +14,31 @@ describe("locale resolution", () => {
 	it("detects exact locale tags", () => {
 		expect(detectLocaleFromLanguages(["ro-RO", "en"])).toBe("ro-RO");
 		expect(detectLocaleFromLanguages(["en-US"])).toBe("en-US");
+		expect(detectLocaleFromLanguages(["ja-JP"])).toBe("ja-JP");
+		expect(detectLocaleFromLanguages(["zh-CN"])).toBe("zh-CN");
 	});
 
 	it("falls back from language-only tags", () => {
 		expect(detectLocaleFromLanguages(["ro"])).toBe("ro-RO");
 		expect(detectLocaleFromLanguages(["en-GB"])).toBe("en-US");
+		expect(detectLocaleFromLanguages(["de"])).toBe("de-DE");
+		expect(detectLocaleFromLanguages(["pt-PT"])).toBe("pt-BR");
+		expect(detectLocaleFromLanguages(["zh-TW"])).toBe("zh-CN");
 	});
 
 	it("uses default when nothing matches", () => {
-		expect(detectLocaleFromLanguages(["de-DE", "fr"])).toBe(DEFAULT_LOCALE);
+		expect(detectLocaleFromLanguages(["sv-SE", "nl"])).toBe(DEFAULT_LOCALE);
 	});
 
 	it("validates supported locales", () => {
 		expect(isAppLocale("en-US")).toBe(true);
 		expect(isAppLocale("ro-RO")).toBe(true);
-		expect(isAppLocale("de-DE")).toBe(false);
+		expect(isAppLocale("de-DE")).toBe(true);
+		expect(isAppLocale("zh-CN")).toBe(true);
+		expect(isAppLocale("sv-SE")).toBe(false);
 		expect(SUPPORTED_LOCALES).toContain("en-US");
-		expect(SUPPORTED_LOCALES).toContain("ro-RO");
+		expect(SUPPORTED_LOCALES).toContain("ru-RU");
+		expect(Object.keys(LANGUAGE_TO_LOCALE).length).toBeGreaterThan(10);
 	});
 
 	it("resolveInitialLocale prefers browser when storage empty", () => {

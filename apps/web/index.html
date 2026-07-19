@@ -28,24 +28,50 @@
 
 					var localeKey = "flaremail:locale";
 					var locale = localStorage.getItem(localeKey);
-					if (locale !== "en-US" && locale !== "ro-RO") {
+					var supported = {
+						"en-US": 1,
+						"ro-RO": 1,
+						"es-ES": 1,
+						"de-DE": 1,
+						"fr-FR": 1,
+						"pt-BR": 1,
+						"it-IT": 1,
+						"pl-PL": 1,
+						"tr-TR": 1,
+						"ja-JP": 1,
+						"ko-KR": 1,
+						"zh-CN": 1,
+						"ru-RU": 1,
+					};
+					var languageMap = {
+						en: "en-US",
+						ro: "ro-RO",
+						es: "es-ES",
+						de: "de-DE",
+						fr: "fr-FR",
+						pt: "pt-BR",
+						it: "it-IT",
+						pl: "pl-PL",
+						tr: "tr-TR",
+						ja: "ja-JP",
+						ko: "ko-KR",
+						zh: "zh-CN",
+						ru: "ru-RU",
+					};
+					if (!supported[locale]) {
 						var languages = navigator.languages || [navigator.language];
 						locale = "en-US";
 						for (var i = 0; i < languages.length; i++) {
 							var tag = String(languages[i] || "")
 								.trim()
 								.replace(/_/g, "-");
-							if (tag === "en-US" || tag === "ro-RO") {
+							if (supported[tag]) {
 								locale = tag;
 								break;
 							}
 							var lang = tag.split("-")[0].toLowerCase();
-							if (lang === "ro") {
-								locale = "ro-RO";
-								break;
-							}
-							if (lang === "en") {
-								locale = "en-US";
+							if (languageMap[lang]) {
+								locale = languageMap[lang];
 								break;
 							}
 						}

@@ -1,6 +1,7 @@
 import {
 	DEFAULT_LOCALE,
 	I18N_NAMESPACES,
+	isAppLocale,
 	resolveInitialLocale,
 	resources,
 	type AppLocale,
@@ -24,10 +25,12 @@ export function applyDocumentLocale(locale: AppLocale): void {
 	document.documentElement.lang = locale;
 }
 
-applyDocumentLocale((i18n.language as AppLocale) || DEFAULT_LOCALE);
+applyDocumentLocale(
+	isAppLocale(i18n.language) ? i18n.language : DEFAULT_LOCALE,
+);
 
 i18n.on("languageChanged", (lng) => {
-	if (lng === "en-US" || lng === "ro-RO") {
+	if (isAppLocale(lng)) {
 		applyDocumentLocale(lng);
 	}
 });
