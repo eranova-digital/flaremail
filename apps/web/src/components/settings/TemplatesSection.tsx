@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { FileCode2, Globe, Plus, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,8 @@ import { ComposeTemplateDownloadButton } from "@/components/email-templates/Temp
 const GLOBAL_SCOPE = "__global__";
 
 export function TemplatesSection() {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const { account } = useAuth();
 	const canCreateGlobal = canCreateGlobalTemplates(account);
 	const organizationAccess = useCanAccessOrganizationTab(account);
@@ -87,15 +90,15 @@ export function TemplatesSection() {
 	const submitCreate = async () => {
 		setFormError(null);
 		if (!name.trim()) {
-			setFormError("Name is required.");
+			setFormError(t("templates.validation.nameRequired"));
 			return;
 		}
 		if (!file) {
-			setFormError("Choose an HTML file to upload.");
+			setFormError(t("templates.validation.fileRequired"));
 			return;
 		}
 		if (!scopeValue) {
-			setFormError("Choose a scope (global or mailbox).");
+			setFormError(t("templates.validation.scopeRequired"));
 			return;
 		}
 
@@ -116,15 +119,14 @@ export function TemplatesSection() {
 		<section className="space-y-4">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
-					<h2 className="text-lg font-medium">Email templates</h2>
+					<h2 className="text-lg font-medium">{t("templates.title")}</h2>
 					<p className="text-muted-foreground text-sm">
-						Upload HTML templates for compose. Global templates are available on
-						every mailbox; mailbox templates only on that mailbox.
+						{t("templates.description")}
 					</p>
 				</div>
 				<Button onClick={openAdd}>
 					<Plus className="size-4" aria-hidden />
-					Add template
+					{t("templates.add")}
 				</Button>
 			</div>
 
@@ -135,19 +137,17 @@ export function TemplatesSection() {
 					))}
 				</div>
 			) : templatesQuery.isError ? (
-				<Alert tone="destructive" title="Couldn't load templates">
+				<Alert tone="destructive" title={t("templates.loadErrorTitle")}>
 					<p>{getErrorMessage(templatesQuery.error)}</p>
 				</Alert>
 			) : items.length === 0 ? (
-				<p className="text-muted-foreground text-sm">
-					No templates yet. Upload an HTML file to get started.
-				</p>
+				<p className="text-muted-foreground text-sm">{t("templates.empty")}</p>
 			) : (
 				<div className="space-y-6">
 					{sorted.global.length > 0 ? (
 						<div className="space-y-2">
 							<h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-								Global
+								{t("templates.scope.global")}
 							</h3>
 							<ul className="divide-border border-border divide-y rounded-lg border">
 								{sorted.global.map((template) => (
@@ -167,7 +167,7 @@ export function TemplatesSection() {
 					{sorted.mailbox.length > 0 ? (
 						<div className="space-y-2">
 							<h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-								Mailbox
+								{t("templates.scope.mailbox")}
 							</h3>
 							<ul className="divide-border border-border divide-y rounded-lg border">
 								{sorted.mailbox.map((template) => (
@@ -198,28 +198,28 @@ export function TemplatesSection() {
 			>
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
-						<DialogTitle>Add email template</DialogTitle>
+						<DialogTitle>{t("templates.addDialog.title")}</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4">
 						<label className="block space-y-1.5">
-							<span className="text-sm font-medium">Name</span>
+							<span className="text-sm font-medium">{tc("name")}</span>
 							<Input
 								value={name}
 								onChange={(event) => setName(event.target.value)}
-								placeholder="Welcome email"
+								placeholder={t("templates.addDialog.namePlaceholder")}
 								autoFocus
 							/>
 						</label>
 						<label className="block space-y-1.5">
-							<span className="text-sm font-medium">Scope</span>
+							<span className="text-sm font-medium">{t("templates.addDialog.scope")}</span>
 							<Select value={scopeValue} onValueChange={setScopeValue}>
 								<SelectTrigger>
-									<SelectValue placeholder="Choose scope" />
+									<SelectValue placeholder={t("templates.addDialog.scopePlaceholder")} />
 								</SelectTrigger>
 								<SelectContent>
 									{canCreateGlobal ? (
 										<SelectItem value={GLOBAL_SCOPE}>
-											Global (all mailboxes)
+											{t("templates.scope.global")}
 										</SelectItem>
 									) : null}
 									{mailboxes
@@ -236,7 +236,7 @@ export function TemplatesSection() {
 							</Select>
 						</label>
 						<label className="block space-y-1.5">
-							<span className="text-sm font-medium">HTML file</span>
+							<span className="text-sm font-medium">{t("templates.addDialog.htmlFile")}</span>
 							<input
 								ref={fileInputRef}
 								type="file"
@@ -248,7 +248,7 @@ export function TemplatesSection() {
 							/>
 						</label>
 						{formError ? (
-							<Alert tone="destructive" title="Couldn't create template">
+							<Alert tone="destructive" title={t("templates.loadErrorTitle")}>
 								<p>{formError}</p>
 							</Alert>
 						) : null}
@@ -259,13 +259,15 @@ export function TemplatesSection() {
 							onClick={() => setAddOpen(false)}
 							disabled={createMutation.isPending}
 						>
-							Cancel
+							{tc("cancel")}
 						</Button>
 						<Button
 							onClick={() => void submitCreate()}
 							disabled={createMutation.isPending}
 						>
-							{createMutation.isPending ? "Uploading…" : "Upload"}
+							{createMutation.isPending
+								? t("templates.addDialog.uploading")
+								: tc("upload")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -278,13 +280,13 @@ export function TemplatesSection() {
 						setDeleteTarget(null);
 					}
 				}}
-				title="Delete template?"
+				title={t("templates.deleteConfirm.title")}
 				description={
 					deleteTarget
-						? `Remove “${deleteTarget.name}”? This cannot be undone.`
+						? t("templates.deleteConfirm.description", { name: deleteTarget.name })
 						: ""
 				}
-				confirmLabel="Delete"
+				confirmLabel={tc("delete")}
 				pending={deleteMutation.isPending}
 				onConfirm={() => {
 					if (!deleteTarget) {
@@ -310,6 +312,8 @@ function TemplateRow({
 	onDelete: () => void;
 	deleting: boolean;
 }) {
+	const { t } = useTranslation("management");
+
 	return (
 		<li className="flex items-center justify-between gap-3 px-3 py-2.5">
 			<div className="flex min-w-0 items-center gap-2.5">
@@ -329,7 +333,7 @@ function TemplateRow({
 						</p>
 					) : (
 						<Badge variant="secondary" className="mt-0.5">
-							Global
+							{t("templates.scope.global")}
 						</Badge>
 					)}
 				</div>
@@ -344,7 +348,7 @@ function TemplateRow({
 					type="button"
 					variant="ghost"
 					size="icon-xs"
-					aria-label={`Delete ${template.name}`}
+					aria-label={t("templates.deleteAria", { name: template.name })}
 					disabled={deleting}
 					onClick={onDelete}
 				>

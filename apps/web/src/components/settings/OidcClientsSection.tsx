@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Copy, Loader2, Plus, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Alert } from "@/components/ui/alert";
@@ -62,6 +63,8 @@ function parseLines(value: string): string[] {
 }
 
 export function OidcClientsSection() {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const [clients, setClients] = useState<OidcClient[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -253,14 +256,14 @@ export function OidcClientsSection() {
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
-					<h2 className="text-lg font-semibold">OIDC clients</h2>
+					<h2 className="text-lg font-semibold">{t("oidc.title")}</h2>
 					<p className="text-muted-foreground max-w-prose text-sm">
-						Register relying parties for SSO and machine-to-machine access.
+						{t("oidc.description")}
 					</p>
 				</div>
 				<Button type="button" onClick={openCreate}>
 					<Plus className="size-4" />
-					Add client
+					{t("oidc.add")}
 				</Button>
 			</div>
 
@@ -272,7 +275,7 @@ export function OidcClientsSection() {
 					<Skeleton className="h-24 w-full" />
 				</div>
 			) : clients.length === 0 ? (
-				<p className="text-muted-foreground text-sm">No OIDC clients yet.</p>
+				<p className="text-muted-foreground text-sm">{t("oidc.empty")}</p>
 			) : (
 				<div className="space-y-3">
 					{clients.map((client) => (
@@ -300,7 +303,7 @@ export function OidcClientsSection() {
 										size="sm"
 										onClick={() => void openGrants(client)}
 									>
-										Grants
+										{t("oidc.grants")}
 									</Button>
 									{client.isConfidential ? (
 										<Button
@@ -310,7 +313,7 @@ export function OidcClientsSection() {
 											disabled={submitting}
 											onClick={() => void handleRegenerate(client)}
 										>
-											Regenerate secret
+											{t("oidc.regenerateSecret")}
 										</Button>
 									) : null}
 									<Button
@@ -319,7 +322,7 @@ export function OidcClientsSection() {
 										size="sm"
 										onClick={() => openEdit(client)}
 									>
-										Edit
+										{tc("edit")}
 									</Button>
 									<Button
 										type="button"
@@ -333,16 +336,35 @@ export function OidcClientsSection() {
 							</CardHeader>
 							<CardContent className="text-muted-foreground space-y-1 text-sm">
 								<p>
-									{client.isConfidential ? "Confidential" : "Public"} · Consent{" "}
-									{client.requireConsent ? "required" : "skipped"}
+									{client.isConfidential
+										? t("oidc.confidential")
+										: t("oidc.public")}{" "}
+									·{" "}
+									{client.requireConsent
+										? t("oidc.consentRequired")
+										: t("oidc.consentSkipped")}
 								</p>
-								<p>Redirect URIs: {client.redirectUris.join(", ") || "—"}</p>
 								<p>
-									Homescreen: {client.homescreenUrl ?? "—"}
+									{t("oidc.redirectUris", {
+										uris: client.redirectUris.join(", ") || t("oidc.emDash"),
+									})}
 								</p>
-								<p>Scopes: {client.allowedScopes.join(" ")}</p>
+								<p>
+									{t("oidc.homescreen", {
+										url: client.homescreenUrl ?? t("oidc.emDash"),
+									})}
+								</p>
+								<p>
+									{t("oidc.scopes", {
+										scopes: client.allowedScopes.join(" "),
+									})}
+								</p>
 								{client.m2mPermissions.length > 0 ? (
-									<p>M2M: {client.m2mPermissions.join(" ")}</p>
+									<p>
+										{t("oidc.m2m", {
+											permissions: client.m2mPermissions.join(" "),
+										})}
+									</p>
 								) : null}
 							</CardContent>
 						</Card>
@@ -353,14 +375,14 @@ export function OidcClientsSection() {
 			<Dialog open={editorOpen} onOpenChange={setEditorOpen}>
 				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
 					<DialogHeader>
-						<DialogTitle>{editing ? "Edit OIDC client" : "Add OIDC client"}</DialogTitle>
-						<DialogDescription>
-							Configure redirect URIs, scopes, and consent for this relying party.
-						</DialogDescription>
+						<DialogTitle>
+							{editing ? t("oidc.editor.editTitle") : t("oidc.editor.addTitle")}
+						</DialogTitle>
+						<DialogDescription>{t("oidc.editor.description")}</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4">
 						<label className="block space-y-1.5 text-sm">
-							<span className="font-medium">Name</span>
+							<span className="font-medium">{tc("name")}</span>
 							<Input
 								value={editor.name}
 								onChange={(event) =>
@@ -369,7 +391,7 @@ export function OidcClientsSection() {
 							/>
 						</label>
 						<label className="block space-y-1.5 text-sm">
-							<span className="font-medium">Redirect URIs (one per line)</span>
+							<span className="font-medium">{t("oidc.editor.redirectUris")}</span>
 							<textarea
 								className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
 								value={editor.redirectUrisText}
@@ -382,10 +404,10 @@ export function OidcClientsSection() {
 							/>
 						</label>
 						<label className="block space-y-1.5 text-sm">
-							<span className="font-medium">Homescreen URL (optional)</span>
+							<span className="font-medium">{t("oidc.editor.homescreenUrl")}</span>
 							<Input
 								type="url"
-								placeholder="https://app.example.com/"
+								placeholder={t("oidc.editor.homescreenPlaceholder")}
 								value={editor.homescreenUrl}
 								onChange={(event) =>
 									setEditor((current) => ({
@@ -395,12 +417,12 @@ export function OidcClientsSection() {
 								}
 							/>
 							<span className="text-muted-foreground text-xs">
-								Where Cancel on the consent screen sends the user.
+								{t("oidc.editor.homescreenHint")}
 							</span>
 						</label>
 						{editing ? (
 							<div className="space-y-2">
-								<p className="text-sm font-medium">Profile picture</p>
+								<p className="text-sm font-medium">{t("oidc.editor.profilePicture")}</p>
 								<div className="flex items-center gap-3">
 									<ProfileAvatar
 										seed={editing.clientId}
@@ -434,7 +456,7 @@ export function OidcClientsSection() {
 											disabled={submitting}
 											onClick={() => logoInputRef.current?.click()}
 										>
-											{editing.logo ? "Change" : "Upload"}
+											{editing.logo ? t("oidc.editor.change") : tc("upload")}
 										</Button>
 										{editing.logo ? (
 											<Button
@@ -444,19 +466,17 @@ export function OidcClientsSection() {
 												disabled={submitting}
 												onClick={() => void handleLogoRemove()}
 											>
-												Remove
+												{tc("remove")}
 											</Button>
 										) : null}
 									</div>
 								</div>
 							</div>
 						) : (
-							<p className="text-muted-foreground text-xs">
-								Save the client first, then upload a profile picture.
-							</p>
+							<p className="text-muted-foreground text-xs">{t("oidc.editor.saveFirst")}</p>
 						)}
 						<div className="space-y-2">
-							<p className="text-sm font-medium">Allowed scopes</p>
+							<p className="text-sm font-medium">{t("oidc.editor.allowedScopes")}</p>
 							{OIDC_SCOPE_OPTIONS.map((scope) => (
 								<label key={scope} className="flex items-center gap-2 text-sm">
 									<Checkbox
@@ -470,7 +490,7 @@ export function OidcClientsSection() {
 							))}
 						</div>
 						<label className="block space-y-1.5 text-sm">
-							<span className="font-medium">M2M permissions (one per line)</span>
+							<span className="font-medium">{t("oidc.editor.m2mPermissions")}</span>
 							<textarea
 								className="border-input bg-background min-h-20 w-full rounded-md border px-3 py-2 text-sm"
 								value={editor.m2mPermissionsText}
@@ -492,7 +512,7 @@ export function OidcClientsSection() {
 									}))
 								}
 							/>
-							Confidential client (has secret)
+							{t("oidc.editor.confidential")}
 						</label>
 						<label className="flex items-center gap-2 text-sm">
 							<Checkbox
@@ -504,16 +524,16 @@ export function OidcClientsSection() {
 									}))
 								}
 							/>
-							Require consent screen
+							{t("oidc.editor.requireConsent")}
 						</label>
 					</div>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => setEditorOpen(false)}>
-							Cancel
+							{tc("cancel")}
 						</Button>
 						<Button type="button" disabled={submitting} onClick={() => void handleSave()}>
 							{submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-							Save
+							{tc("save")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -522,10 +542,8 @@ export function OidcClientsSection() {
 			<Dialog open={secretReveal !== null} onOpenChange={() => setSecretReveal(null)}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Client secret</DialogTitle>
-						<DialogDescription>
-							Copy this secret now. It will not be shown again.
-						</DialogDescription>
+						<DialogTitle>{t("oidc.secret.title")}</DialogTitle>
+						<DialogDescription>{t("oidc.secret.description")}</DialogDescription>
 					</DialogHeader>
 					<div className="flex items-center gap-2">
 						<code className="bg-muted flex-1 overflow-x-auto rounded-md px-3 py-2 text-sm">
@@ -557,15 +575,15 @@ export function OidcClientsSection() {
 			>
 				<DialogContent className="sm:max-w-lg">
 					<DialogHeader>
-						<DialogTitle>Consent grants — {grantsClient?.name}</DialogTitle>
-						<DialogDescription>
-							Revoke an account’s grant to force re-consent on the next authorize.
-						</DialogDescription>
+						<DialogTitle>
+							{t("oidc.grantsDialog.title", { name: grantsClient?.name ?? "" })}
+						</DialogTitle>
+						<DialogDescription>{t("oidc.grantsDialog.description")}</DialogDescription>
 					</DialogHeader>
 					{grantsLoading ? (
 						<Skeleton className="h-20 w-full" />
 					) : grants.length === 0 ? (
-						<p className="text-muted-foreground text-sm">No grants yet.</p>
+						<p className="text-muted-foreground text-sm">{t("oidc.grantsDialog.empty")}</p>
 					) : (
 						<ul className="space-y-2">
 							{grants.map((grant) => (
@@ -586,7 +604,7 @@ export function OidcClientsSection() {
 										disabled={submitting}
 										onClick={() => void revokeGrant(grant.accountId)}
 									>
-										Revoke
+										{t("oidc.grantsDialog.revoke")}
 									</Button>
 								</li>
 							))}
@@ -602,9 +620,9 @@ export function OidcClientsSection() {
 						setDeleteId(null);
 					}
 				}}
-				title="Delete OIDC client?"
-				description="This revokes refresh tokens and consent grants for the client. Access tokens expire naturally."
-				confirmLabel="Delete"
+				title={t("oidc.deleteConfirm.title")}
+				description={t("oidc.deleteConfirm.description")}
+				confirmLabel={tc("delete")}
 				pending={submitting}
 				onConfirm={() => void handleDelete()}
 			/>

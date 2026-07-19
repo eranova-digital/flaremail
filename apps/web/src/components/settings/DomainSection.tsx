@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Activity, ChevronDown, Globe, Trash2 } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { ReadinessBadge } from "@/components/settings/domain-validation/ReadinessBadge";
 import { Alert } from "@/components/ui/alert";
@@ -33,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { DomainLocalPartPolicy } from "@/components/settings/accounts/DomainLocalPartPolicy";
 
 export function DomainSection() {
+	const { t } = useTranslation("management");
 	const { account } = useAuth();
 	const canRegister = canRegisterDomains(account);
 	const domainsQuery = useDomains();
@@ -57,28 +59,26 @@ export function DomainSection() {
 	return (
 		<section className="space-y-4">
 			<div>
-				<h2 className="text-lg font-medium">Domains</h2>
-				<p className="text-muted-foreground text-sm">
-					Manage the domains Flaremail receives mail for.
-				</p>
+				<h2 className="text-lg font-medium">{t("domains.title")}</h2>
+				<p className="text-muted-foreground text-sm">{t("domains.description")}</p>
 			</div>
 
 			{canRegister ? (
 				<form onSubmit={handleCreate} className="flex gap-2">
 					<Input
-						placeholder="example.com"
+						placeholder={t("domains.placeholder")}
 						value={newDomain}
 						onChange={(event) => setNewDomain(event.target.value)}
 						disabled={createDomain.isPending}
 					/>
 					<Button type="submit" disabled={createDomain.isPending || !newDomain.trim()}>
-						Add domain
+						{t("domains.add")}
 					</Button>
 				</form>
 			) : null}
 
 			{canRegister && createDomain.isError ? (
-				<Alert tone="destructive" title="Couldn't add domain">
+				<Alert tone="destructive" title={t("domains.createErrorTitle")}>
 					<p>{getErrorMessage(createDomain.error)}</p>
 				</Alert>
 			) : null}
@@ -90,7 +90,7 @@ export function DomainSection() {
 					))}
 				</div>
 			) : domainsQuery.isError ? (
-				<Alert tone="destructive" title="Couldn't load domains">
+				<Alert tone="destructive" title={t("domains.loadErrorTitle")}>
 					<p>{getErrorMessage(domainsQuery.error)}</p>
 				</Alert>
 			) : (domainsQuery.data ?? []).length === 0 ? (
@@ -99,13 +99,13 @@ export function DomainSection() {
 						<Globe className="text-muted-foreground/60 size-6" aria-hidden />
 						<p className="text-sm font-medium">
 							{canRegister
-								? "No domains yet"
-								: "No domains assigned to your account"}
+								? t("domains.empty.title")
+								: t("domains.empty.titleNoAccess")}
 						</p>
 						<p className="text-muted-foreground max-w-sm text-sm">
 							{canRegister
-								? "Add the domain you want Flaremail to receive mail for. You can verify DNS afterwards."
-								: "Ask an owner to assign a domain to your account."}
+								? t("domains.empty.description")
+								: t("domains.empty.descriptionNoAccess")}
 						</p>
 					</CardContent>
 				</Card>
@@ -125,6 +125,8 @@ export function DomainSection() {
 }
 
 function DomainRow({ domain }: { domain: Domain }) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const { account } = useAuth();
 	const canRegister = canRegisterDomains(account);
 	const updateDomain = useUpdateDomain();
@@ -176,11 +178,11 @@ function DomainRow({ domain }: { domain: Domain }) {
 					<p className="font-medium">{domain.domain}</p>
 					<div className="flex flex-wrap gap-1.5">
 						{domain.isActive === false ? (
-							<Badge variant="secondary">Disabled</Badge>
+							<Badge variant="secondary">{t("domains.badge.disabled")}</Badge>
 						) : null}
 						<ReadinessBadge readiness={domain.readiness} />
 						{domain.catchAllEnabled ? (
-							<Badge variant="secondary">Catch-all</Badge>
+							<Badge variant="secondary">{t("domains.badge.catchAll")}</Badge>
 						) : null}
 					</div>
 				</div>
@@ -188,10 +190,12 @@ function DomainRow({ domain }: { domain: Domain }) {
 					<Button variant="outline" size="sm" asChild>
 						<Link
 							to={`/management/domains/${domain.id}/validation`}
-							aria-label={`View readiness for ${domain.domain}`}
+							aria-label={t("domains.viewReadinessAria", {
+								domain: domain.domain,
+							})}
 						>
 							<Activity className="size-3.5" />
-							Readiness
+							{t("domains.readiness")}
 						</Link>
 					</Button>
 					{canRegister ? (
@@ -200,7 +204,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 							size="icon"
 							onClick={() => setConfirmingDelete(true)}
 							disabled={isPending}
-							aria-label={`Delete ${domain.domain}`}
+							aria-label={t("domains.deleteAria", { domain: domain.domain })}
 						>
 							<Trash2 className="text-destructive size-4" />
 						</Button>
@@ -211,17 +215,20 @@ function DomainRow({ domain }: { domain: Domain }) {
 			<ConfirmDialog
 				open={confirmingDelete}
 				onOpenChange={setConfirmingDelete}
-				title={`Delete ${domain.domain}?`}
+				title={t("domains.deleteConfirm.title", { domain: domain.domain })}
 				description={
 					<>
 						<p>
-							This permanently removes the domain along with{" "}
-							<strong>every mailbox and message</strong> on it.
+							<Trans
+								i18nKey="domains.deleteConfirm.description"
+								ns="management"
+								components={{ strong: <strong /> }}
+							/>
 						</p>
-						<p>This cannot be undone.</p>
+						<p>{t("domains.deleteConfirm.cannotUndo")}</p>
 					</>
 				}
-				confirmLabel="Delete domain"
+				confirmLabel={t("domains.deleteConfirm.confirm")}
 				onConfirm={handleDelete}
 				pending={deleteDomain.isPending}
 			/>
@@ -234,9 +241,9 @@ function DomainRow({ domain }: { domain: Domain }) {
 					className="hover:bg-muted/40 flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
 				>
 					<div>
-						<p className="text-sm font-medium">Catch-all</p>
+						<p className="text-sm font-medium">{t("domains.catchAll.title")}</p>
 						<p className="text-muted-foreground text-xs">
-							Route unmatched addresses to a mailbox on this domain.
+							{t("domains.catchAll.description")}
 						</p>
 					</div>
 					<ChevronDown
@@ -259,7 +266,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 								htmlFor={`domain-catch-all-${domain.id}`}
 								className="cursor-pointer"
 							>
-								Enabled
+								{tc("enabled")}
 							</label>
 						</div>
 						{domain.catchAllEnabled ? (
@@ -268,7 +275,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 									className="text-muted-foreground text-xs"
 									htmlFor={`catch-all-mailbox-${domain.id}`}
 								>
-									Catch-all mailbox
+									{t("domains.catchAll.mailboxLabel")}
 								</label>
 								<Select
 									value={domain.catchAllMailboxId ?? undefined}
@@ -279,7 +286,7 @@ function DomainRow({ domain }: { domain: Domain }) {
 										id={`catch-all-mailbox-${domain.id}`}
 										className="max-w-sm"
 									>
-										<SelectValue placeholder="Select mailbox…" />
+										<SelectValue placeholder={t("domains.catchAll.selectPlaceholder")} />
 									</SelectTrigger>
 									<SelectContent>
 										{domainMailboxes.map((mailbox) =>

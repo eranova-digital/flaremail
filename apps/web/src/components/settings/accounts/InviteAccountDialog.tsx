@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, Copy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,8 @@ export function InviteAccountDialog({
 	open,
 	onOpenChange,
 }: InviteAccountDialogProps) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const { account } = useAuth();
 	const domainsQuery = useDomains();
 	const mailboxesQuery = useMailboxes("manage");
@@ -332,14 +335,14 @@ export function InviteAccountDialog({
 	});
 
 	const missingRequirement = !domainId
-		? "Select a domain to continue."
+		? t("accounts.inviteDialog.req.selectDomain")
 		: !localPart.trim()
-			? "Enter a mailbox address."
+			? t("accounts.inviteDialog.req.enterMailbox")
 			: policyEnforced && !requiredProfileComplete
-				? "Fill in the profile fields required by the domain policy."
+				? t("accounts.inviteDialog.req.fillPolicyFields")
 				: (role === "admin" || role === "manager") &&
 					  assignedDomainIds.length === 0
-					? "Assign at least one domain for this role."
+					? t("accounts.inviteDialog.req.assignDomain")
 					: null;
 
 	const canSubmit = !missingRequirement;
@@ -397,16 +400,13 @@ export function InviteAccountDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-xl">
 				<DialogHeader className="border-b px-6 py-4">
-					<DialogTitle>Invite person</DialogTitle>
-					<DialogDescription>
-						Create a mailbox and send an invite code so they can activate their
-						account.
-					</DialogDescription>
+					<DialogTitle>{t("accounts.inviteDialog.title")}</DialogTitle>
+					<DialogDescription>{t("accounts.inviteDialog.description")}</DialogDescription>
 				</DialogHeader>
 
 				{inviteCode ? (
 					<div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-						<Alert tone="success" title="Invite created">
+						<Alert tone="success" title={t("accounts.inviteDialog.createdTitle")}>
 							<div className="mt-1 flex items-center gap-2">
 								<code className="bg-background/60 rounded px-2 py-1 font-mono text-sm font-semibold tracking-wider">
 									{inviteCode}
@@ -422,12 +422,11 @@ export function InviteAccountDialog({
 									) : (
 										<Copy className="size-3.5" aria-hidden />
 									)}
-									{codeCopied ? "Copied" : "Copy code"}
+									{codeCopied ? tc("copied") : t("accounts.inviteDialog.copyCode")}
 								</Button>
 							</div>
 							<p className="text-muted-foreground mt-1.5 text-xs">
-								Share this code with the person so they can activate their
-								account. It is shown only once.
+								{t("accounts.inviteDialog.codeHint")}
 							</p>
 						</Alert>
 					</div>
@@ -436,17 +435,13 @@ export function InviteAccountDialog({
 						{!policyEnforced && policyHasPattern && localPartOverridden ? (
 							<Alert
 								tone="warning"
-								title="Custom address diverges from policy"
+								title={t("accounts.inviteDialog.policyDivergeTitle")}
 								className="border-amber-500/70 bg-amber-50 ring-2 ring-amber-500/30 dark:bg-amber-950/40 dark:ring-amber-500/20"
 							>
 								<p>
-									This domain expects addresses like{" "}
-									<code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs dark:bg-amber-900/60">
-										{policyPattern}
-									</code>
-									. Your custom address will not auto-update when profile fields
-									change, and may be rejected if the domain enforces the policy
-									for managers.
+									{t("accounts.inviteDialog.policyDivergeBody", {
+										pattern: policyPattern,
+									})}
 								</p>
 								<Button
 									type="button"
@@ -455,7 +450,7 @@ export function InviteAccountDialog({
 									className="mt-2 border-amber-600/40"
 									onClick={() => setLocalPartOverridden(false)}
 								>
-									Revert to policy suggestion
+									{t("accounts.inviteDialog.revertPolicy")}
 								</Button>
 							</Alert>
 						) : null}
@@ -463,7 +458,7 @@ export function InviteAccountDialog({
 						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="space-y-1">
 								<label className="text-sm font-medium" htmlFor="invite-domain">
-									Domain
+									{t("accounts.inviteDialog.domain")}
 								</label>
 								<Select
 									value={domainId || undefined}
@@ -471,7 +466,7 @@ export function InviteAccountDialog({
 									disabled={availableDomains.length === 0}
 								>
 									<SelectTrigger id="invite-domain">
-										<SelectValue placeholder="Select domain…" />
+										<SelectValue placeholder={t("accounts.inviteDialog.selectDomain")} />
 									</SelectTrigger>
 									<SelectContent>
 										{availableDomains.map((domain) =>
@@ -487,7 +482,7 @@ export function InviteAccountDialog({
 							{roles.length > 1 ? (
 								<div className="space-y-1">
 									<label className="text-sm font-medium" htmlFor="invite-role">
-										Role
+										{t("accounts.inviteDialog.role")}
 									</label>
 									<Select
 										value={role}
@@ -516,18 +511,18 @@ export function InviteAccountDialog({
 
 						{availableDomains.length === 0 ? (
 							<p className="text-muted-foreground text-sm">
-								No domains available for your account.
+								{t("accounts.inviteDialog.noDomains")}
 							</p>
 						) : null}
 
 						<div className="space-y-1">
 							<label className="text-sm font-medium" htmlFor="invite-local-part">
-								Mailbox address
+								{t("accounts.inviteDialog.mailboxAddress")}
 							</label>
 							<div className="flex items-center gap-2">
 								<Input
 									id="invite-local-part"
-									placeholder="patrick"
+									placeholder={t("accounts.inviteDialog.localPartPlaceholder")}
 									value={localPart}
 									onChange={(event) => {
 										setLocalPart(event.target.value);
@@ -546,19 +541,23 @@ export function InviteAccountDialog({
 							</div>
 							{policyEnforced && policyPattern ? (
 								<p className="text-muted-foreground text-xs">
-									Local part follows policy: {policyPattern}
+									{t("accounts.inviteDialog.followsPolicy", {
+										pattern: policyPattern,
+									})}
 								</p>
 							) : null}
 							{!policyEnforced && policyHasPattern && !localPartOverridden ? (
 								<p className="text-muted-foreground text-xs">
-									Auto-updates from policy: {policyPattern}
+									{t("accounts.inviteDialog.autoUpdates", {
+										pattern: policyPattern,
+									})}
 								</p>
 							) : null}
 						</div>
 
 						<CollapsibleSection
-							title="Profile"
-							description="Pre-fill onboarding details. Locked fields cannot be changed during activation."
+							title={t("accounts.inviteDialog.profileSection")}
+							description={t("accounts.inviteDialog.profileSectionDesc")}
 						>
 							<ProfileFieldsGrid
 								idPrefix="invite-profile"
@@ -600,7 +599,7 @@ export function InviteAccountDialog({
 									if (policyLocked) {
 										return (
 											<span className="text-muted-foreground text-xs">
-												Required by policy
+												{t("accounts.inviteDialog.requiredByPolicy")}
 											</span>
 										);
 									}
@@ -611,8 +610,8 @@ export function InviteAccountDialog({
 
 						{role === "admin" ? (
 							<CollapsibleSection
-								title="Domain assignments"
-								description="Domains this admin can manage."
+								title={t("accounts.inviteDialog.domainAssignments")}
+								description={t("accounts.inviteDialog.domainAssignmentsDesc")}
 								defaultOpen
 							>
 								<div className="space-y-2">
@@ -644,8 +643,8 @@ export function InviteAccountDialog({
 
 						{role === "manager" ? (
 							<CollapsibleSection
-								title="Shared mailbox access"
-								description="Shared mailboxes this manager can administer."
+								title={t("accounts.inviteDialog.sharedAccess")}
+								description={t("accounts.inviteDialog.sharedAccessDesc")}
 								defaultOpen
 							>
 								<div className="mb-3 flex items-center gap-2 text-sm">
@@ -663,11 +662,13 @@ export function InviteAccountDialog({
 										htmlFor="invite-all-shared-mailboxes"
 										className="cursor-pointer"
 									>
-										All shared mailboxes on assigned domains
+										{t("accounts.inviteDialog.allShared")}
 									</label>
 								</div>
 								<div className="mb-3 space-y-2">
-									<p className="text-muted-foreground text-xs">Assigned domains</p>
+									<p className="text-muted-foreground text-xs">
+										{t("accounts.inviteDialog.assignedDomains")}
+									</p>
 									{availableDomains.map((domain) =>
 										domain.id ? (
 											<div
@@ -695,7 +696,7 @@ export function InviteAccountDialog({
 									<div className="space-y-2">
 										{sharedMailboxes.length === 0 ? (
 											<p className="text-muted-foreground text-sm">
-												No shared mailboxes on the selected domains.
+												{t("accounts.inviteDialog.noSharedOnDomains")}
 											</p>
 										) : (
 											sharedMailboxes.map((mailbox) =>
@@ -726,7 +727,7 @@ export function InviteAccountDialog({
 							</CollapsibleSection>
 						) : null}
 
-						<CollapsibleSection title="Delivery">
+						<CollapsibleSection title={t("accounts.inviteDialog.delivery")}>
 							<div className="flex items-center gap-2 text-sm">
 								<Checkbox
 									id="invite-send-email"
@@ -736,13 +737,13 @@ export function InviteAccountDialog({
 									}
 								/>
 								<label htmlFor="invite-send-email" className="cursor-pointer">
-									Send invite code to recovery address
+									{t("accounts.inviteDialog.sendEmail")}
 								</label>
 							</div>
 						</CollapsibleSection>
 
 						{error ? (
-							<Alert tone="destructive" title="Couldn't create invite">
+							<Alert tone="destructive" title={t("accounts.inviteDialog.createErrorTitle")}>
 								<p>{error}</p>
 							</Alert>
 						) : null}
@@ -753,7 +754,9 @@ export function InviteAccountDialog({
 					{inviteCode ? (
 						<>
 							<span />
-							<Button onClick={() => handleOpenChange(false)}>Done</Button>
+							<Button onClick={() => handleOpenChange(false)}>
+								{t("accounts.inviteDialog.done")}
+							</Button>
 						</>
 					) : (
 						<>
@@ -765,13 +768,15 @@ export function InviteAccountDialog({
 									variant="outline"
 									onClick={() => handleOpenChange(false)}
 								>
-									Cancel
+									{tc("cancel")}
 								</Button>
 								<Button
 									onClick={handleInvite}
 									disabled={!canSubmit || inviteMutation.isPending}
 								>
-									{inviteMutation.isPending ? "Creating…" : "Create invite"}
+									{inviteMutation.isPending
+										? t("accounts.inviteDialog.creating")
+										: t("accounts.inviteDialog.createInvite")}
 								</Button>
 							</div>
 						</>

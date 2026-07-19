@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -35,22 +36,7 @@ import {
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { buildDomainNamesById, sortMailboxes } from "@/lib/sort-mailboxes";
 
-const MAILBOX_TYPES: {
-	value: CreateMailboxRequest["type"];
-	label: string;
-	description: string;
-}[] = [
-	{
-		value: "shared",
-		label: "Shared mailbox",
-		description: "A mailbox several users can be granted access to.",
-	},
-	{
-		value: "alias",
-		label: "Alias",
-		description: "Forwards mail to another mailbox or external address.",
-	},
-];
+const MAILBOX_TYPE_VALUES: CreateMailboxRequest["type"][] = ["shared", "alias"];
 
 const emptyForm = {
 	localPart: "",
@@ -107,11 +93,29 @@ type AddMailboxDialogProps = {
 };
 
 export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const { account } = useAuth();
 	const domainsQuery = useDomains();
 	const mailboxesQuery = useMailboxes("manage");
 	const createMailbox = useCreateMailbox();
 	const [form, setForm] = useState(emptyForm);
+
+	const mailboxTypes = useMemo(
+		() =>
+			MAILBOX_TYPE_VALUES.map((value) => ({
+				value,
+				label:
+					value === "shared"
+						? t("mailboxes.types.shared.label")
+						: t("mailboxes.types.alias.label"),
+				description:
+					value === "shared"
+						? t("mailboxes.types.shared.description")
+						: t("mailboxes.types.alias.description"),
+			})),
+		[t],
+	);
 
 	const domains = useMemo(
 		() => filterDomainsForAccount(account, domainsQuery.data ?? []),
@@ -159,17 +163,17 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 		[form.type, form.aliasTarget, receivingMailboxes],
 	);
 
-	const selectedType = MAILBOX_TYPES.find((item) => item.value === form.type);
+	const selectedType = mailboxTypes.find((item) => item.value === form.type);
 
 	const missingRequirement =
 		domains.length === 0
-			? "Add a domain first."
+			? t("mailboxes.addDialog.req.addDomain")
 			: !form.domainId
-				? "Select a domain."
+				? t("mailboxes.addDialog.req.selectDomain")
 				: !form.localPart.trim()
-					? "Enter an address."
+					? t("mailboxes.addDialog.req.enterAddress")
 					: form.type === "alias" && resolvedAliasTarget?.kind === "invalid"
-						? "Choose a valid alias target."
+						? t("mailboxes.addDialog.req.validAlias")
 						: null;
 
 	const canSubmit = !missingRequirement;
@@ -216,21 +220,19 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Add mailbox</DialogTitle>
-					<DialogDescription>
-						Create a new address on one of your domains.
-					</DialogDescription>
+					<DialogTitle>{t("mailboxes.addDialog.title")}</DialogTitle>
+					<DialogDescription>{t("mailboxes.addDialog.description")}</DialogDescription>
 				</DialogHeader>
 
 				<form onSubmit={handleCreate} className="space-y-4">
 					<div className="space-y-1">
 						<label className="text-sm font-medium" htmlFor="mailbox-local-part">
-							Address
+							{t("mailboxes.addDialog.address")}
 						</label>
 						<InputGroup>
 							<InputGroupInput
 								id="mailbox-local-part"
-								placeholder="sales"
+								placeholder={t("mailboxes.addDialog.localPartPlaceholder")}
 								value={form.localPart}
 								onChange={(event) =>
 									setForm((current) => ({
@@ -253,10 +255,10 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 								>
 									<SelectTrigger
 										id="mailbox-domain"
-										aria-label="Domain"
+										aria-label={t("mailboxes.addDialog.domainAria")}
 										className="h-8 max-w-40 gap-1 border-0 bg-transparent px-1 shadow-none focus:ring-0"
 									>
-										<SelectValue placeholder="domain…" />
+										<SelectValue placeholder={t("mailboxes.addDialog.domainPlaceholder")} />
 									</SelectTrigger>
 									<SelectContent>
 										{domains.map((domain) =>
@@ -274,7 +276,7 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 
 					<div className="space-y-1">
 						<label className="text-sm font-medium" htmlFor="mailbox-type">
-							Type
+							{t("mailboxes.addDialog.type")}
 						</label>
 						<Select
 							value={form.type}
@@ -291,7 +293,7 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								{MAILBOX_TYPES.map((type) => (
+								{mailboxTypes.map((type) => (
 									<SelectItem key={type.value} value={type.value}>
 										{type.label}
 									</SelectItem>
@@ -308,7 +310,7 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 					{form.type === "alias" ? (
 						<div className="space-y-1">
 							<label className="text-sm font-medium" htmlFor="alias-target">
-								Alias target
+								{t("mailboxes.addDialog.aliasTarget")}
 							</label>
 							<LegacyCombobox
 								id="alias-target"
@@ -318,21 +320,21 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 								}
 								options={aliasTargetOptions}
 								allowCustom
-								placeholder="Select or enter target address…"
-								searchPlaceholder="Search mailboxes or enter email…"
-								emptyText="No mailboxes found."
+								placeholder={t("mailboxes.addDialog.aliasPlaceholder")}
+								searchPlaceholder={t("mailboxes.addDialog.aliasSearchPlaceholder")}
+								emptyText={t("mailboxes.addDialog.aliasEmpty")}
 								disabled={createMailbox.isPending}
 							/>
 							{resolvedAliasTarget?.kind === "external" ? (
 								<p className="text-muted-foreground text-xs">
-									Mail to this alias is forwarded externally and not stored.
+									{t("mailboxes.addDialog.externalForwardHint")}
 								</p>
 							) : null}
 						</div>
 					) : null}
 
 					{createMailbox.isError ? (
-						<Alert tone="destructive" title="Couldn't create mailbox">
+						<Alert tone="destructive" title={t("mailboxes.addDialog.createErrorTitle")}>
 							<p>{getErrorMessage(createMailbox.error)}</p>
 						</Alert>
 					) : null}
@@ -347,13 +349,15 @@ export function AddMailboxDialog({ open, onOpenChange }: AddMailboxDialogProps) 
 								variant="outline"
 								onClick={() => handleOpenChange(false)}
 							>
-								Cancel
+								{tc("cancel")}
 							</Button>
 							<Button
 								type="submit"
 								disabled={createMailbox.isPending || !canSubmit}
 							>
-								{createMailbox.isPending ? "Creating…" : "Add mailbox"}
+								{createMailbox.isPending
+									? t("mailboxes.addDialog.creating")
+									: t("mailboxes.add")}
 							</Button>
 						</div>
 					</DialogFooter>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Alert } from "@/components/ui/alert";
@@ -29,6 +30,8 @@ type SharedMailboxManagerEditorProps = {
 export function SharedMailboxManagerEditor({
 	mailboxId,
 }: SharedMailboxManagerEditorProps) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const assignmentsQuery = useMailboxManagerAssignments(mailboxId);
 	const accountsQuery = useAccounts();
 	const grantMutation = useGrantManagerMailboxAssignment();
@@ -65,10 +68,9 @@ export function SharedMailboxManagerEditor({
 	return (
 		<section className="space-y-4">
 			<div>
-				<h2 className="text-base font-medium">Managers</h2>
+				<h2 className="text-base font-medium">{t("mailboxes.managerGrants.title")}</h2>
 				<p className="text-muted-foreground text-sm">
-					Managers assigned here can administer user access for this shared
-					mailbox.
+					{t("mailboxes.managerGrants.description")}
 				</p>
 			</div>
 
@@ -82,10 +84,9 @@ export function SharedMailboxManagerEditor({
 				<Card className="gap-0 rounded-lg py-0">
 					<CardContent className="flex flex-col items-center gap-2 px-4 py-10 text-center">
 						<Shield className="text-muted-foreground/60 size-6" aria-hidden />
-						<p className="text-sm font-medium">No managers assigned yet</p>
+						<p className="text-sm font-medium">{t("sharedMailboxUsers.managers.emptyTitle")}</p>
 						<p className="text-muted-foreground max-w-sm text-sm">
-							Assign a manager below so they can manage user access on this
-							mailbox.
+							{t("sharedMailboxUsers.managers.emptyDesc")}
 						</p>
 					</CardContent>
 				</Card>
@@ -115,7 +116,9 @@ export function SharedMailboxManagerEditor({
 									</div>
 									<div className="flex shrink-0 items-center gap-2">
 										{holder.viaAllShared ? (
-											<Badge variant="outline">All shared mailboxes</Badge>
+											<Badge variant="outline">
+												{t("sharedMailboxUsers.managers.allSharedBadge")}
+											</Badge>
 										) : null}
 										<Button
 											variant="outline"
@@ -128,7 +131,7 @@ export function SharedMailboxManagerEditor({
 												})
 											}
 										>
-											Remove
+											{tc("remove")}
 										</Button>
 									</div>
 								</li>
@@ -141,7 +144,7 @@ export function SharedMailboxManagerEditor({
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-end">
 				<div className="min-w-0 flex-1 space-y-1">
 					<label className="text-sm font-medium" htmlFor="assign-manager">
-						Add manager
+						{t("sharedMailboxUsers.managers.add")}
 					</label>
 					<Select
 						value={selectedAccountId || undefined}
@@ -151,7 +154,7 @@ export function SharedMailboxManagerEditor({
 						}
 					>
 						<SelectTrigger id="assign-manager">
-							<SelectValue placeholder="Select manager…" />
+							<SelectValue placeholder={t("sharedMailboxUsers.managers.select")} />
 						</SelectTrigger>
 						<SelectContent>
 							{assignableManagers.map((manager) => (
@@ -166,11 +169,11 @@ export function SharedMailboxManagerEditor({
 					onClick={handleGrant}
 					disabled={!selectedAccountId || grantMutation.isPending}
 				>
-					Assign manager
+					{t("sharedMailboxUsers.managers.assign")}
 				</Button>
 			</div>
 			{error ? (
-				<Alert tone="destructive" title="Couldn't assign manager">
+				<Alert tone="destructive" title={t("sharedMailboxUsers.managers.errorTitle")}>
 					<p>{error}</p>
 				</Alert>
 			) : null}

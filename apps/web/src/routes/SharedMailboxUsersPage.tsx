@@ -1,4 +1,5 @@
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { SharedMailboxGrantEditor } from "@/components/settings/SharedMailboxGrantEditor";
 import { SharedMailboxIdentitiesEditor } from "@/components/settings/SharedMailboxIdentitiesEditor";
@@ -16,6 +17,8 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
 
 export function SharedMailboxUsersPage() {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const { mailboxId } = useParams();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { account } = useAuth();
@@ -34,15 +37,15 @@ export function SharedMailboxUsersPage() {
 
 	return (
 		<SettingsShell
-			rootLabel="Management"
+			rootLabel={tc("management")}
 			rootTo="/management"
 			crumbs={[
-				{ label: "Mailboxes", to: "/management?tab=mailboxes" },
-				{ label: mailbox?.address ?? "Shared mailbox" },
+				{ label: t("mailboxes.title"), to: "/management?tab=mailboxes" },
+				{ label: mailbox?.address ?? t("sharedMailboxUsers.crumbFallback") },
 			]}
 			backTo="/management?tab=mailboxes"
-			backLabel="Back to mailboxes"
-			description="Control who can administer and use this shared mailbox, and how send personas work."
+			backLabel={t("shell.backToMailboxes")}
+			description={t("sharedMailboxUsers.description")}
 		>
 			{mailboxesQuery.isLoading ? (
 				<div className="space-y-3">
@@ -51,19 +54,19 @@ export function SharedMailboxUsersPage() {
 					<Skeleton className="h-10 w-64 rounded-lg" />
 				</div>
 			) : mailboxesQuery.isError ? (
-				<Alert tone="destructive" title="Couldn't load mailboxes">
+				<Alert
+					tone="destructive"
+					title={t("sharedMailboxUsers.loadErrorTitle")}
+				>
 					<p>{getErrorMessage(mailboxesQuery.error)}</p>
 				</Alert>
 			) : !mailbox ? (
-				<Alert tone="warning" title="Mailbox not found">
-					<p>
-						This mailbox may have been deleted, or you may not have access to
-						it.
-					</p>
+				<Alert tone="warning" title={t("sharedMailboxUsers.notFoundTitle")}>
+					<p>{t("sharedMailboxUsers.notFoundBody")}</p>
 				</Alert>
 			) : mailbox.type !== "shared" ? (
-				<Alert tone="warning" title="Not a shared mailbox">
-					<p>Only shared mailboxes support user access management.</p>
+				<Alert tone="warning" title={t("sharedMailboxUsers.notSharedTitle")}>
+					<p>{t("sharedMailboxUsers.notSharedBody")}</p>
 				</Alert>
 			) : (
 				<Tabs
@@ -84,8 +87,12 @@ export function SharedMailboxUsersPage() {
 					}}
 				>
 					<TabsList>
-						<TabsTrigger value="users">Users</TabsTrigger>
-						<TabsTrigger value="identities">Identities</TabsTrigger>
+						<TabsTrigger value="users">
+							{t("sharedMailboxUsers.tab.users")}
+						</TabsTrigger>
+						<TabsTrigger value="identities">
+							{t("sharedMailboxUsers.tab.identities")}
+						</TabsTrigger>
 					</TabsList>
 					<TabsContent value="users" className="space-y-8 pt-4">
 						{canManageManagerMailboxAssignments(account) ? (
@@ -94,15 +101,13 @@ export function SharedMailboxUsersPage() {
 
 						<section className="space-y-4">
 							<div>
-								<h2 className="text-base font-medium">User access</h2>
+								<h2 className="text-base font-medium">
+									{t("sharedMailboxUsers.userAccess.title")}
+								</h2>
 								<p className="text-muted-foreground text-sm">
-									Users granted here can read and send from this shared mailbox.
+									{t("sharedMailboxUsers.userAccess.description")}
 									{account?.role === "admin" || account?.role === "superadmin" ? (
-										<>
-											{" "}
-											Admins and owners already have mail access to all mailboxes
-											on their domains and do not need to be added here.
-										</>
+										<> {t("sharedMailboxUsers.userAccess.adminNote")}</>
 									) : null}
 								</p>
 							</div>

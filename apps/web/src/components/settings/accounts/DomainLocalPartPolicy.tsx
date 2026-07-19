@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ type DomainLocalPartPolicyProps = {
 };
 
 export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) {
+	const { t } = useTranslation("management");
 	const { account } = useAuth();
 	const policyQuery = useLocalPartPolicy(domainId);
 	const updateMutation = useUpdateLocalPartPolicy();
@@ -62,9 +64,9 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 				className="hover:bg-muted/40 flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
 			>
 				<div>
-					<p className="text-sm font-medium">Local part policy</p>
+					<p className="text-sm font-medium">{t("domains.localPartPolicy.title")}</p>
 					<p className="text-muted-foreground text-xs">
-						Controls how mailbox addresses are suggested when inviting users.
+						{t("domains.localPartPolicy.description")}
 					</p>
 				</div>
 				<ChevronDown
@@ -77,11 +79,11 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 			{open ? (
 				<div className="space-y-3 border-t px-3 py-3">
 					<label htmlFor={`local-part-pattern-${domainId}`} className="text-sm font-medium">
-						Address pattern
+						{t("domains.localPartPolicy.patternLabel")}
 					</label>
 					<Input
 						id={`local-part-pattern-${domainId}`}
-						placeholder="Pattern e.g. {first_name}.{last_name}"
+						placeholder={t("domains.localPartPolicy.patternPlaceholder")}
 						value={pattern}
 						onChange={(event) => {
 							setPattern(event.target.value);
@@ -93,7 +95,7 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 							htmlFor={`local-part-enforced-${domainId}`}
 							className="cursor-pointer text-sm"
 						>
-							Enforce for manager invites
+							{t("domains.localPartPolicy.enforce")}
 						</label>
 						<Switch
 							id={`local-part-enforced-${domainId}`}
@@ -105,13 +107,12 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 						/>
 					</div>
 					<p className="text-muted-foreground text-xs">
-						Tokens: {"{first_name}"}, {"{last_name}"}, {"{first_name_initial}"},{" "}
-						{"{last_name_initial}"}, {"{rnd_num}"}, {"{rnd_char}"}
+						{t("domains.localPartPolicy.tokens")}
 					</p>
 					{error ? <p className="text-destructive text-sm">{error}</p> : null}
 					{saved ? (
 						<p className="text-muted-foreground text-sm" role="status">
-							Policy saved.
+							{t("domains.localPartPolicy.saved")}
 						</p>
 					) : null}
 					<Button
@@ -119,7 +120,7 @@ export function DomainLocalPartPolicy({ domainId }: DomainLocalPartPolicyProps) 
 						onClick={handleSave}
 						disabled={updateMutation.isPending}
 					>
-						Save policy
+						{t("domains.localPartPolicy.save")}
 					</Button>
 				</div>
 			) : null}

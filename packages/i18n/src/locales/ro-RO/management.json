@@ -1,1 +1,734 @@
-{}
+{
+	"tabs": {
+		"domains": "Domenii",
+		"mailboxes": "Cutii poștale",
+		"accounts": "Persoane și acces",
+		"templates": "Șabloane",
+		"organization": "Organizație",
+		"oidc": "Clienți OIDC",
+		"logs": "Jurnale"
+	},
+	"shell": {
+		"root": "Administrare",
+		"backToMailboxes": "Înapoi la cutii poștale",
+		"backToDomains": "Înapoi la domenii",
+		"breadcrumbAria": "Fir de navigare"
+	},
+	"domains": {
+		"title": "Domenii",
+		"description": "Gestionează domeniile pentru care Flaremail primește e-mail.",
+		"placeholder": "example.com",
+		"add": "Adaugă domeniu",
+		"createErrorTitle": "Nu s-a putut adăuga domeniul",
+		"loadErrorTitle": "Nu s-au putut încărca domeniile",
+		"empty": {
+			"title": "Niciun domeniu încă",
+			"titleNoAccess": "Niciun domeniu atribuit contului tău",
+			"description": "Adaugă domeniul pentru care vrei ca Flaremail să primească e-mail. Poți verifica DNS-ul ulterior.",
+			"descriptionNoAccess": "Cere unui proprietar să îți atribuie un domeniu."
+		},
+		"badge": {
+			"disabled": "Dezactivat",
+			"catchAll": "Catch-all"
+		},
+		"readiness": "Pregătire",
+		"viewReadinessAria": "Vezi pregătirea pentru {{domain}}",
+		"deleteAria": "Șterge {{domain}}",
+		"deleteConfirm": {
+			"title": "Ștergi {{domain}}?",
+			"description": "Aceasta elimină definitiv domeniul, împreună cu toate cutiile poștale și mesajele de pe el.",
+			"cannotUndo": "Această acțiune nu poate fi anulată.",
+			"confirm": "Șterge domeniul"
+		},
+		"catchAll": {
+			"title": "Catch-all",
+			"description": "Redirecționează adresele nerecunoscute către o cutie poștală de pe acest domeniu.",
+			"enabled": "Activat",
+			"mailboxLabel": "Cutie poștală catch-all",
+			"selectPlaceholder": "Selectează cutia poștală…"
+		},
+		"localPartPolicy": {
+			"title": "Politică parte locală",
+			"description": "Controlează cum sunt sugerate adresele de cutie poștală la invitarea utilizatorilor.",
+			"patternLabel": "Model adresă",
+			"patternPlaceholder": "Model, ex. {first_name}.{last_name}",
+			"enforce": "Aplică pentru invitațiile managerilor",
+			"tokens": "Tokeni: {first_name}, {last_name}, {first_name_initial}, {last_name_initial}, {rnd_num}, {rnd_char}",
+			"saved": "Politică salvată.",
+			"save": "Salvează politica"
+		}
+	},
+	"mailboxes": {
+		"noPermission": "Nu ai permisiunea de a crea sau gestiona cutii poștale.",
+		"title": "Cutii poștale",
+		"description": "Creează și gestionează adrese de e-mail pe domeniile tale.",
+		"add": "Adaugă cutie poștală",
+		"searchPlaceholder": "Caută cutii poștale după adresă…",
+		"searchAria": "Caută cutii poștale",
+		"loadErrorTitle": "Nu s-au putut încărca cutiile poștale",
+		"empty": {
+			"title": "Nicio cutie poștală încă",
+			"noMatch": "Nicio cutie poștală nu corespunde cu „{{query}}”",
+			"tryDifferent": "Încearcă un alt termen de căutare.",
+			"addDomainFirst": "Adaugă mai întâi un domeniu, apoi creează cutii poștale pe el.",
+			"createHint": "Creează o cutie poștală partajată sau un alias pentru a începe rutarea e-mailului pe domeniile tale."
+		},
+		"badge": {
+			"systemManaged": "gestionat de sistem",
+			"disabled": "Dezactivat"
+		},
+		"viewUser": "Vezi utilizatorul",
+		"users": "Utilizatori",
+		"identities": "Identități",
+		"deleteAria": "Șterge {{address}}",
+		"deleteConfirm": {
+			"title": "Ștergi {{address}}?",
+			"description": "Aceasta elimină definitiv cutia poștală și toate mesajele stocate în ea.",
+			"cannotUndo": "Această acțiune nu poate fi anulată.",
+			"confirm": "Șterge cutia poștală"
+		},
+		"managerGrants": {
+			"title": "Cutii poștale partajate",
+			"description": "Alege o cutie poștală partajată pentru a gestiona ce utilizatori o pot accesa.",
+			"empty": "Nicio cutie poștală partajată atribuită contului tău.",
+			"subtitle": "Cutie poștală partajată"
+		},
+		"addDialog": {
+			"title": "Adaugă cutie poștală",
+			"description": "Creează o adresă nouă pe unul dintre domeniile tale.",
+			"address": "Adresă",
+			"localPartPlaceholder": "sales",
+			"domainAria": "Domeniu",
+			"domainPlaceholder": "domeniu…",
+			"type": "Tip",
+			"aliasTarget": "Țintă alias",
+			"aliasPlaceholder": "Selectează sau introdu adresa țintă…",
+			"aliasSearchPlaceholder": "Caută cutii poștale sau introdu e-mail…",
+			"aliasEmpty": "Nicio cutie poștală găsită.",
+			"externalForwardHint": "E-mailul către acest alias este redirecționat extern și nu este stocat.",
+			"createErrorTitle": "Nu s-a putut crea cutia poștală",
+			"req": {
+				"addDomain": "Adaugă mai întâi un domeniu.",
+				"selectDomain": "Selectează un domeniu.",
+				"enterAddress": "Introdu o adresă.",
+				"validAlias": "Alege o țintă alias validă."
+			},
+			"cancel": "Anulează",
+			"creating": "Se creează…",
+			"submit": "Adaugă cutie poștală"
+		},
+		"types": {
+			"shared": {
+				"label": "Cutie poștală partajată",
+				"description": "O cutie poștală la care mai mulți utilizatori pot primi acces."
+			},
+			"alias": {
+				"label": "Alias",
+				"description": "Redirecționează e-mailul către o altă cutie poștală sau o adresă externă."
+			}
+		},
+		"typeLabels": {
+			"primary": "Principală",
+			"shared": "Partajată",
+			"alias": "Alias",
+			"system": "Sistem",
+			"blackhole": "Blackhole"
+		}
+	},
+	"accounts": {
+		"noPermission": "Nu ai permisiunea de a gestiona conturile.",
+		"title": "Persoane și acces",
+		"description": "Gestionează cine poate folosi Flaremail și la ce are acces.",
+		"invite": "Invită persoană",
+		"searchPlaceholder": "Caută persoane după nume sau adresă…",
+		"searchAria": "Caută conturi",
+		"empty": {
+			"noMatch": "Nicio persoană nu corespunde cu „{{query}}”.",
+			"none": "Niciun cont încă. Invită pe cineva pentru a începe."
+		},
+		"manage": "Gestionează",
+		"inviteDialog": {
+			"title": "Invită persoană",
+			"description": "Creează o cutie poștală și trimite un cod de invitație pentru activarea contului.",
+			"createdTitle": "Invitație creată",
+			"copyCode": "Copiază codul",
+			"copied": "Copiat",
+			"codeHint": "Distribuie acest cod persoanei pentru activarea contului. Este afișat o singură dată.",
+			"policyDivergeTitle": "Adresa personalizată diferă de politică",
+			"policyDivergeBody": "Acest domeniu așteaptă adrese de tipul {{pattern}}. Adresa ta personalizată nu se va actualiza automat când se modifică câmpurile de profil și poate fi respinsă dacă domeniul aplică politica pentru manageri.",
+			"revertPolicy": "Revino la sugestia din politică",
+			"domain": "Domeniu",
+			"selectDomain": "Selectează domeniul…",
+			"role": "Rol",
+			"noDomains": "Niciun domeniu disponibil pentru contul tău.",
+			"mailboxAddress": "Adresă cutie poștală",
+			"localPartPlaceholder": "patrick",
+			"followsPolicy": "Partea locală respectă politica: {{pattern}}",
+			"autoUpdates": "Se actualizează automat din politică: {{pattern}}",
+			"profileSection": "Profil",
+			"profileSectionDesc": "Completează din timp detaliile de onboarding. Câmpurile blocate nu pot fi modificate la activare.",
+			"requiredByPolicy": "Obligatoriu conform politicii",
+			"domainAssignments": "Atribuiri de domenii",
+			"domainAssignmentsDesc": "Domeniile pe care acest administrator le poate gestiona.",
+			"sharedAccess": "Acces la cutii partajate",
+			"sharedAccessDesc": "Cutiile partajate pe care acest manager le poate administra.",
+			"allShared": "Toate cutiile partajate de pe domeniile atribuite",
+			"assignedDomains": "Domenii atribuite",
+			"noSharedOnDomains": "Nicio cutie partajată pe domeniile selectate.",
+			"delivery": "Livrare",
+			"sendEmail": "Trimite codul de invitație la adresa de recuperare",
+			"createErrorTitle": "Nu s-a putut crea invitația",
+			"req": {
+				"selectDomain": "Selectează un domeniu pentru a continua.",
+				"enterMailbox": "Introdu o adresă de cutie poștală.",
+				"fillPolicyFields": "Completează câmpurile de profil cerute de politica domeniului.",
+				"assignDomain": "Atribuie cel puțin un domeniu pentru acest rol."
+			},
+			"done": "Gata",
+			"cancel": "Anulează",
+			"creating": "Se creează…",
+			"createInvite": "Creează invitație"
+		},
+		"profileFields": {
+			"firstName": "Prenume",
+			"lastName": "Nume",
+			"recoveryAddress": "Adresă de recuperare",
+			"phone": "Telefon",
+			"addressCountry": "Țară",
+			"addressState": "Județ / Stat",
+			"addressCity": "Oraș",
+			"addressLine1": "Adresă linia 1",
+			"addressLine2": "Adresă linia 2",
+			"addressHeading": "Adresă"
+		},
+		"lockField": "Blochează câmpul",
+		"unlockField": "Deblochează câmpul",
+		"detail": {
+			"fallbackTitle": "Cont",
+			"loading": "Se încarcă…",
+			"notFound": "Contul nu a fost găsit.",
+			"pictureActionsAria": "Acțiuni fotografie de profil",
+			"changePhoto": "Schimbă fotografia",
+			"uploadPhoto": "Încarcă fotografie",
+			"removePhoto": "Elimină fotografia",
+			"uploadFailed": "Încărcarea a eșuat",
+			"removeFailed": "Eliminarea a eșuat",
+			"tab": {
+				"profile": "Profil",
+				"access": "Acces",
+				"identities": "Identități",
+				"security": "Securitate"
+			},
+			"locked": "Blocat",
+			"role": "Rol",
+			"roleDesc": "Ce poate face această persoană în Flaremail.",
+			"roleChangeHint": "Schimbarea rolului se aplică la salvare.",
+			"managedDomains": "Domenii gestionate",
+			"managedDomainsAdmin": "Domeniile pe care acest administrator le poate gestiona.",
+			"managedDomainsManager": "Domeniile la care acest manager este atribuit.",
+			"sharedAdmin": "Administrare cutii partajate",
+			"sharedAdminDesc": "Cutiile partajate pe care acest manager le poate administra.",
+			"allShared": "Toate cutiile partajate de pe domeniile atribuite",
+			"noSharedOnDomains": "Nicio cutie partajată pe domeniile selectate.",
+			"sharedAccess": "Acces la cutii partajate",
+			"sharedAccessDesc": "Cutiile partajate pe care acest cont le poate citi și trimite.",
+			"noSharedAvailable": "Nicio cutie partajată disponibilă.",
+			"resetCodeTitle": "Cod de resetare parolă emis",
+			"resetCodeHint": "Distribuie acest cod persoanei pentru a seta o parolă nouă. Este afișat o singură dată.",
+			"newInviteTitle": "Cod de invitație nou",
+			"newInviteHint": "Distribuie acest cod persoanei pentru a finaliza activarea. Codurile neutilizate anterioare au fost invalidate.",
+			"saveErrorTitle": "Nu s-au putut salva modificările",
+			"photoErrorTitle": "Nu s-a putut actualiza fotografia",
+			"accountActions": "Acțiuni cont",
+			"showInviteCode": "Afișează codul de invitație",
+			"issueResetCode": "Emite cod de resetare",
+			"suspend": "Suspendă contul",
+			"unsuspend": "Reactivează contul",
+			"remove": "Elimină contul",
+			"cancel": "Anulează",
+			"saving": "Se salvează…",
+			"save": "Salvează modificările",
+			"removeConfirm": {
+				"title": "Elimini pe {{name}}?",
+				"description": "Aceasta elimină definitiv contul și accesul la cutiile poștale.",
+				"cannotUndo": "Această acțiune nu poate fi anulată.",
+				"confirm": "Elimină contul"
+			}
+		},
+		"identities": {
+			"loading": "Se încarcă identitățile…",
+			"loadError": "Nu s-au putut încărca identitățile.",
+			"title": "Identități",
+			"description": "Personae de trimitere pe care {{name}} le poate folosi. Identitățile proprii pot fi editate aici; identitățile implicite și partajate se gestionează în altă parte.",
+			"viewOnly": "Poți vedea aceste identități, dar nu poți crea sau edita identitățile proprii ale acestui cont.",
+			"ownTitle": "Identități proprii",
+			"ownDesc": "Deținute de cutia poștală principală a lui {{name}}.",
+			"ownEmpty": "Nicio identitate personală încă.",
+			"editAria": "Editează identitatea",
+			"deleteAria": "Șterge identitatea",
+			"add": "Adaugă identitate",
+			"defaultTitle": "Identitate implicită",
+			"defaultDesc": "Șablon la nivel de instanță folosit la trimiterea din cutia poștală principală.",
+			"managedInOrg": "Gestionată în setările Organizație.",
+			"organizationLink": "Organizație",
+			"sharedTitle": "Identități din cutii partajate",
+			"sharedDesc": "Identități din cutiile partajate la care acest cont are acces.",
+			"sharedEmpty": "Nicio identitate din cutii partajate.",
+			"usableOutside": "Utilizabilă în afara acestei cutii",
+			"managedOnShared": "Gestionată pe cutia partajată.",
+			"onlyWhenSending": "Doar la trimiterea din {{address}}",
+			"manage": "Gestionează"
+		},
+		"security": {
+			"mfaTitle": "Autentificare în doi pași",
+			"mfaEnabledDesc": "Această persoană folosește o aplicație de autentificare la conectare.",
+			"mfaDisabledDesc": "Autentificarea în doi pași nu este activată pentru acest cont.",
+			"enabledSince": "Activată din {{date}}.",
+			"enabled": "Activată.",
+			"disableTitle": "Dezactivează autentificarea în doi pași",
+			"disableDesc": "Elimină cerința de autentificator pentru acest cont.",
+			"disableHint": "Va avea nevoie doar de parolă la conectare până configurează din nou 2FA.",
+			"disableButton": "Dezactivează 2FA",
+			"nothingToManage": "Nimic de gestionat aici până când 2FA este activat.",
+			"sessionsTitle": "Sesiuni",
+			"sessionsDesc": "Conectări active pentru {{name}}. Revocarea unei sesiuni îl deconectează pe acel dispozitiv.",
+			"noSessions": "Nicio sesiune activă găsită.",
+			"signOutAll": "Deconectează toate sesiunile",
+			"signOutAllConfirm": {
+				"title": "Deconectezi toate sesiunile?",
+				"description": "Aceasta îl va deconecta pe {{name}} de pe fiecare dispozitiv. Va trebui să se conecteze din nou."
+			},
+			"disableMfaConfirm": {
+				"title": "Dezactivezi autentificarea în doi pași?",
+				"description": "Aceasta elimină 2FA de pe contul lui {{name}}. Va avea nevoie doar de parolă la conectare până configurează din nou 2FA."
+			},
+			"sessionSignedOut": "Sesiune deconectată.",
+			"allSessionsSignedOut": "Toate sesiunile au fost deconectate.",
+			"mfaDisabledSuccess": "Autentificarea în doi pași a fost dezactivată.",
+			"unknownDevice": "Dispozitiv necunoscut",
+			"deviceOn": "{{browser}} pe {{os}}",
+			"currentSession": "Sesiune curentă",
+			"firstSeen": "Prima conectare {{datetime}}",
+			"lastSeen": "Ultima activitate {{datetime}}",
+			"unknownLocation": "Locație necunoscută",
+			"signOut": "Deconectează",
+			"seenMeta": "Prima conectare {{createdAt}} · Ultima activitate {{lastSeenAt}}",
+			"locationIp": "{{location}} · {{ipAddress}}"
+		}
+	},
+	"identities": {
+		"noName": "(fără nume)",
+		"defaultBadge": "Implicită",
+		"signature": "Semnătură",
+		"signatureTitle": "Semnătură identitate",
+		"noSignature": "Fără semnătură",
+		"form": {
+			"namePattern": "Model de nume",
+			"customName": "Nume personalizat",
+			"signaturePlaceholder": "Semnătură opțională…",
+			"tagsHelp": "Etichete: {from_name}, {first_name}, {last_name}, {first_initial}, {last_initial}, {mailbox_address}, {primary_address}",
+			"save": "Salvează",
+			"cancel": "Anulează",
+			"signature": "Semnătură"
+		},
+		"namePatterns": {
+			"none": "Fără nume (doar adresa)",
+			"first_name": "Prenume",
+			"last_name": "Nume",
+			"first_name_last_name": "Prenume Nume",
+			"last_name_first_name": "Nume Prenume",
+			"first_initial_last_name": "P. Nume",
+			"last_name_first_initial": "Nume P.",
+			"first_name_last_initial": "Prenume N.",
+			"last_initial_first_name": "N. Prenume",
+			"custom": "Nume personalizat"
+		},
+		"viewOnlyMailbox": "Poți vedea aceste identități, dar nu le poți crea sau edita.",
+		"defaultNotEditable": "Gestionat în setările Organizație. Nu poate fi editat aici.",
+		"loading": "Se încarcă identitățile…",
+		"loadError": "Nu s-au putut încărca identitățile.",
+		"title": "Identități",
+		"add": "Adaugă identitate",
+		"editAria": "Editează identitatea",
+		"deleteAria": "Șterge identitatea"
+	},
+	"templates": {
+		"title": "Șabloane e-mail",
+		"description": "Încarcă șabloane HTML pentru compunere. Șabloanele globale sunt disponibile pe fiecare cutie poștală; șabloanele de cutie poștală doar pe acea cutie.",
+		"add": "Adaugă șablon",
+		"loadErrorTitle": "Nu s-au putut încărca șabloanele",
+		"empty": "Niciun șablon încă. Încarcă un fișier HTML pentru a începe.",
+		"scope": {
+			"global": "Global",
+			"mailbox": "Cutie poștală"
+		},
+		"addDialog": {
+			"title": "Adaugă șablon e-mail",
+			"name": "Nume",
+			"namePlaceholder": "E-mail de bun venit",
+			"scope": "Domeniu de aplicare",
+			"scopePlaceholder": "Alege domeniul de aplicare",
+			"scopeGlobal": "Global (toate cutiile poștale)",
+			"htmlFile": "Fișier HTML",
+			"createErrorTitle": "Nu s-a putut crea șablonul",
+			"cancel": "Anulează",
+			"uploading": "Se încarcă…",
+			"upload": "Încarcă"
+		},
+		"validation": {
+			"nameRequired": "Numele este obligatoriu.",
+			"fileRequired": "Alege un fișier HTML de încărcat.",
+			"scopeRequired": "Alege un domeniu de aplicare (global sau cutie poștală)."
+		},
+		"deleteConfirm": {
+			"title": "Ștergi șablonul?",
+			"description": "Elimini „{{name}}”? Această acțiune nu poate fi anulată.",
+			"confirm": "Șterge"
+		},
+		"deleteAria": "Șterge {{name}}",
+		"preview": "Previzualizare",
+		"previewTitle": "Previzualizare",
+		"previewEmpty": "Selectează un șablon pentru previzualizare",
+		"previewIframeTitle": "Previzualizare șablon",
+		"download": "Descarcă",
+		"downloading": "Se descarcă…",
+		"downloadAria": "Descarcă {{name}}"
+	},
+	"systemTemplates": {
+		"title": "Șabloane de sistem",
+		"description": "HTML opțional pentru e-mailurile instanței (invitații, resetare parolă și coduri de recuperare). Dacă nu este setat, Flaremail trimite mesajul text implicit. Folosește etichetele listate în HTML — acestea sunt înlocuite la trimiterea e-mailului.",
+		"uploadFailedTitle": "Încărcarea a eșuat",
+		"loadErrorTitle": "Nu s-au putut încărca șabloanele de sistem",
+		"badge": {
+			"custom": "HTML personalizat",
+			"default": "Text implicit"
+		},
+		"subject": "Subiect: {{subject}}",
+		"replace": "Înlocuiește",
+		"upload": "Încarcă",
+		"revert": "Revino",
+		"availableTags": "Etichete disponibile",
+		"revertConfirm": {
+			"title": "Revii la implicit?",
+			"description": "Elimini HTML-ul personalizat pentru „{{label}}”? Flaremail va trimite din nou e-mailul text implicit.",
+			"confirm": "Revino"
+		}
+	},
+	"organization": {
+		"loading": "Se încarcă setările organizației…",
+		"loadError": "Nu s-au putut încărca setările organizației.",
+		"title": "Organizație",
+		"description": "Configurează politicile de securitate la nivel de instanță pentru fiecare cont.",
+		"saved": "Setările organizației au fost salvate.",
+		"accessSecurity": "Acces și securitate",
+		"tabAccess": {
+			"label": "Acces la fila Organizație",
+			"descIntendant": "Cine poate vedea fila Organizație în Administrare. Doar tu poți modifica această setare.",
+			"descOther": "Cine poate vedea fila Organizație în Administrare. Doar contul de recuperare poate modifica această setare.",
+			"intendant_only": "Doar eu",
+			"intendant_and_superadmins": "Eu și proprietarii"
+		},
+		"requireMfa": {
+			"label": "Autentificare în doi pași obligatorie",
+			"description": "Conturile din domeniul de aplicare trebuie să activeze 2FA la activare sau la următoarea conectare.",
+			"none": "Nu este obligatoriu",
+			"all": "Toate conturile",
+			"manager_and_above": "Manageri și superiori",
+			"admin_and_above": "Administratori și superiori",
+			"superadmin_and_above": "Proprietari și superiori"
+		},
+		"requireRecoveryEmail": {
+			"label": "E-mail de recuperare obligatoriu",
+			"description": "Fiecare cont trebuie să verifice un e-mail de recuperare la activare sau la următoarea conectare."
+		},
+		"persistNoreply": {
+			"label": "Păstrează e-mailurile trimise de noreply",
+			"description": "Păstrează copii ale e-mailurilor tranzacționale de la noreply@ în folderul Trimise noreply al fiecărui domeniu."
+		},
+		"identitiesCard": "Identități",
+		"identitySelfServe": {
+			"label": "Identități self-service",
+			"description": "Permite conturilor să creeze și editeze identități pe cutia poștală principală. Identitatea implicită a organizației rămâne blocată."
+		},
+		"customNames": {
+			"label": "Permite nume personalizate",
+			"description": "Permite utilizatorilor și managerilor să aleagă un nume From liber. Administratorii și superiorii pot folosi întotdeauna nume personalizate."
+		},
+		"defaultIdentity": {
+			"label": "Identitate implicită",
+			"description": "Șablon live oferit pe fiecare cutie poștală principală. Modificările se aplică imediat pentru toate conturile.",
+			"namePattern": "Model de nume",
+			"customName": "Nume personalizat",
+			"signature": "Semnătură",
+			"signaturePlaceholder": "Semnătură implicită opțională…"
+		},
+		"logsCard": "Jurnale",
+		"logsEnabled": {
+			"label": "Jurnale activate",
+			"description": "Când este dezactivat, jurnalele noi nu sunt stocate. Jurnalele existente rămân vizibile până la ștergerea conform retenției."
+		},
+		"maxImportance": {
+			"label": "Importanță maximă stocată",
+			"description": "Sunt stocate doar jurnalele cu importanță egală sau mai mică decât această valoare (0 este cea mai importantă).",
+			"option": "≤ {{n}}"
+		},
+		"retention": {
+			"label": "Retenție jurnale",
+			"description": "Cât timp sunt păstrate jurnalele înainte ca ștergerea programată să le elimine.",
+			"days_one": "{{count}} zi",
+			"days_other": "{{count}} zile"
+		},
+		"save": "Salvează setările organizației"
+	},
+	"oidc": {
+		"title": "Clienți OIDC",
+		"description": "Înregistrează părți care se bazează pe SSO și acces machine-to-machine.",
+		"add": "Adaugă client",
+		"empty": "Niciun client OIDC încă.",
+		"grants": "Acorduri",
+		"regenerateSecret": "Regenerează secretul",
+		"edit": "Editează",
+		"confidential": "Confidențial",
+		"public": "Public",
+		"consentRequired": "obligatoriu",
+		"consentSkipped": "omis",
+		"metaLine": "{{clientType}} · Consimțământ {{consent}}",
+		"redirectUris": "URI-uri de redirecționare: {{uris}}",
+		"homescreen": "Ecran principal: {{url}}",
+		"scopes": "Domenii: {{scopes}}",
+		"m2m": "M2M: {{permissions}}",
+		"emDash": "—",
+		"editor": {
+			"addTitle": "Adaugă client OIDC",
+			"editTitle": "Editează client OIDC",
+			"description": "Configurează URI-urile de redirecționare, domeniile și consimțământul pentru această parte care se bazează.",
+			"name": "Nume",
+			"redirectUris": "URI-uri de redirecționare (câte unul pe linie)",
+			"homescreenUrl": "URL ecran principal (opțional)",
+			"homescreenPlaceholder": "https://app.example.com/",
+			"homescreenHint": "Unde trimite utilizatorul butonul Anulează de pe ecranul de consimțământ.",
+			"profilePicture": "Fotografie de profil",
+			"change": "Schimbă",
+			"upload": "Încarcă",
+			"remove": "Elimină",
+			"saveFirst": "Salvează clientul mai întâi, apoi încarcă o fotografie de profil.",
+			"allowedScopes": "Domenii permise",
+			"m2mPermissions": "Permisiuni M2M (câte una pe linie)",
+			"confidential": "Client confidențial (are secret)",
+			"requireConsent": "Afișează ecranul de consimțământ",
+			"cancel": "Anulează",
+			"save": "Salvează"
+		},
+		"secret": {
+			"title": "Secret client",
+			"description": "Copiază acest secret acum. Nu va mai fi afișat."
+		},
+		"grantsDialog": {
+			"title": "Acorduri de consimțământ — {{name}}",
+			"description": "Revocă acordul unui cont pentru a forța re-consimțământul la următoarea autorizare.",
+			"empty": "Niciun acord încă.",
+			"revoke": "Revocă"
+		},
+		"deleteConfirm": {
+			"title": "Ștergi clientul OIDC?",
+			"description": "Aceasta revocă token-urile de reîmprospătare și acordurile de consimțământ pentru client. Token-urile de acces expiră natural.",
+			"confirm": "Șterge"
+		}
+	},
+	"logs": {
+		"title": "Jurnale",
+		"description": "Activitatea instanței pentru intendant și superadministratori. Importanța mai mică înseamnă mai critic.",
+		"pageCount": "{{count}} pe această pagină",
+		"pageCountMore": "{{count}}+ pe această pagină",
+		"refreshAria": "Reîmprospătează jurnalele",
+		"refresh": "Reîmprospătează",
+		"search": "Caută",
+		"searchPlaceholder": "Caută în rezumat, referințe, context…",
+		"maxImportance": "Importanță maximă",
+		"maxImportanceOption": "≤ {{n}}",
+		"type": "Tip",
+		"dateRangeLabel": "Interval dată și oră",
+		"loadError": "Nu s-au putut încărca jurnalele.",
+		"emptyTitle": "Niciun jurnal găsit",
+		"emptyHint": "Încearcă să mărești importanța maximă, să ștergi intervalul de date sau să alegi alt tip.",
+		"importanceTitle": "Importanță {{n}} (0 = cea mai importantă)",
+		"page": "Pagina {{n}}",
+		"moreAvailable": " · mai multe disponibile",
+		"endOfResults": " · sfârșitul rezultatelor",
+		"pageSize": "Dimensiune pagină",
+		"perPage": "{{n}} / pagină",
+		"previous": "Anterior",
+		"next": "Următor",
+		"types": {
+			"all": "Toate tipurile",
+			"aria": "Tipuri de jurnal",
+			"label": "Tipuri",
+			"count_one": "{{count}} tip",
+			"count_other": "{{count}} tipuri"
+		},
+		"dateRange": {
+			"placeholder": "Alege un interval dată și oră",
+			"aria": "Interval dată și oră",
+			"fromTime": "De la ora",
+			"toTime": "Până la ora",
+			"clearAria": "Șterge intervalul de date",
+			"openEnded": "{{from}} – …"
+		}
+	},
+	"domainValidation": {
+		"crumbDomains": "Domenii",
+		"crumbFallback": "Pregătire domeniu",
+		"back": "Înapoi la domenii",
+		"unavailableTitle": "Acest domeniu nu este disponibil contului tău",
+		"checking": "Se verifică…",
+		"recheck": "Reverifică",
+		"overallStatus": "Stare generală",
+		"noRunYet": "Nicio rulare de validare încă. Apasă Reverifică pentru a începe una.",
+		"lastChecked": "Ultima verificare {{when}}",
+		"advisoryNote": "Pregătirea este doar informativă. Nu blochează trimiterea, primirea sau gestionarea cutiilor poștale pentru acest domeniu.",
+		"checksTitle": "Verificări",
+		"checksDescription": "Verificările obligatorii trebuie să treacă pentru un flux de e-mail sănătos. Verificările consultative sunt doar recomandări.",
+		"runLoadError": "Nu s-a putut încărca această rulare",
+		"selectRun": "Selectează o rulare de validare din istoric pentru a vedea detaliile verificărilor.",
+		"logsTitle": "Jurnale",
+		"logsDescription": "Evenimente worker înregistrate în timpul rulării selectate.",
+		"recheckFailed": "Reverificarea a eșuat",
+		"historyTitle": "Istoric rulări",
+		"historyDescription": "Rulările anterioare rămân disponibile pentru comparație.",
+		"historyLoadError": "Nu s-a putut încărca istoricul rulărilor",
+		"started": "Început",
+		"finished": "Finalizat",
+		"receiveDeadline": "Termen limită primire",
+		"emDash": "—",
+		"badges": {
+			"checking": {
+				"label": "Se verifică",
+				"headline": "Validare în curs",
+				"description": "Verificările DNS și bucla de e-mail rulează. Această pagină se reîmprospătează automat până când rularea se finalizează."
+			},
+			"healthy": {
+				"label": "Sănătos",
+				"headline": "Fluxul de e-mail arată bine",
+				"description": "Toate verificările critice și consultative au trecut. Domeniul tău este configurat corect pentru trimitere și primire."
+			},
+			"unhealthy": {
+				"label": "Nesănătos",
+				"headline": "E-mailul funcționează, dar ceva nu e în regulă",
+				"description": "Verificările critice au trecut, deci e-mailul poate circula, dar cel puțin o verificare consultativă a eșuat. Revizuiește recomandările de mai jos."
+			},
+			"fail": {
+				"label": "Eșuat",
+				"headline": "Fluxul de e-mail nu este verificat",
+				"description": "Cel puțin o verificare critică a eșuat. E-mailul poate să nu se trimită sau să nu se primească fiabil până când problemele de mai jos sunt remediate."
+			}
+		},
+		"tier": {
+			"required": "Obligatoriu",
+			"advisory": "Consultativ"
+		},
+		"status": {
+			"passed": "Trecut",
+			"failed": "Eșuat",
+			"advisoryFail": "Eșec consultativ",
+			"skipped": "Omis",
+			"pending": "În așteptare"
+		},
+		"hint": {
+			"skipped": "Omis deoarece o verificare critică anterioară a eșuat.",
+			"waiting": "Se așteaptă rularea acestui pas."
+		},
+		"checks": {
+			"mx": {
+				"title": "Înregistrări MX",
+				"summary": "E-mailul primit necesită înregistrări MX DNS pentru domeniu.",
+				"description": "Serverele de e-mail caută înregistrări MX pentru a ști unde să livreze e-mailul pentru domeniul tău. Fără ele, nimic nu poate ajunge la Flaremail.",
+				"passHint": "Există cel puțin o înregistrare MX pentru acest domeniu.",
+				"failHint": "Nu s-au găsit înregistrări MX. Configurează Cloudflare Email Routing și așteaptă propagarea DNS, apoi reverifică."
+			},
+			"dmarc_rua": {
+				"title": "Rapoarte agregate DMARC",
+				"summary": "DMARC rua ar trebui să includă mailto:{{postmaster}}.",
+				"description": "DMARC se află la _dmarc.{{domain}}. Eticheta rua spune destinatarilor unde să trimită rapoartele agregate de autentificare. Direcționarea rua către {{postmaster}} păstrează rapoartele în platforma ta.",
+				"passHint": "O înregistrare TXT DMARC include mailto:{{postmaster}} în eticheta rua.",
+				"failHint": "DMARC lipsește sau eticheta rua nu include adresa postmaster. E-mailul circulă în continuare; aceasta este o recomandare de bune practici."
+			},
+			"loop_send": {
+				"title": "Trimitere ieșire",
+				"summary": "Poate Flaremail trimite e-mail de la {{noreply}}?",
+				"description": "Trimite un mesaj de validare de la {{noreply}} către {{postmaster}} prin Cloudflare Email Sending. Confirmă că domeniul tău este autorizat să trimită și că calea de ieșire funcționează.",
+				"passHint": "E-mailul de validare a fost acceptat pentru livrare de la {{noreply}}.",
+				"failHint": "Trimiterea a eșuat. Verifică că Email Routing și Sending sunt activate pentru acest domeniu în Cloudflare."
+			},
+			"loop_receive": {
+				"title": "Livrare intrare",
+				"summary": "Ajunge e-mailul la {{postmaster}}?",
+				"description": "Așteaptă ca e-mailul de validare să ajungă la {{postmaster}} prin configurația ta live de rutare. Rularea se finalizează imediat ce mesajul este primit sau eșuează după un termen de 10 minute.",
+				"passHint": "E-mailul de validare a fost primit la {{postmaster}}.",
+				"failHint": "E-mailul de validare nu a ajuns niciodată. Rutarea poate fi încă în propagare sau regulile de intrare pot să nu indice către acest worker."
+			}
+		},
+		"logs": {
+			"empty": "Niciun eveniment de jurnal pentru această rulare încă."
+		},
+		"history": {
+			"empty": "Nicio rulare de validare încă.",
+			"inProgress": "În curs",
+			"completed": "Finalizat"
+		}
+	},
+	"sharedMailboxUsers": {
+		"crumbMailboxes": "Cutii poștale",
+		"crumbFallback": "Cutie poștală partajată",
+		"back": "Înapoi la cutii poștale",
+		"description": "Controlează cine poate administra și folosi această cutie poștală partajată și cum funcționează personae de trimitere.",
+		"loadErrorTitle": "Nu s-au putut încărca cutiile poștale",
+		"notFoundTitle": "Cutia poștală nu a fost găsită",
+		"notFoundBody": "Această cutie poștală poate fi ștearsă sau poate că nu ai acces la ea.",
+		"notSharedTitle": "Nu este o cutie poștală partajată",
+		"notSharedBody": "Doar cutiile poștale partajate suportă gestionarea accesului utilizatorilor.",
+		"tab": {
+			"users": "Utilizatori",
+			"identities": "Identități"
+		},
+		"userAccess": {
+			"title": "Acces utilizatori",
+			"description": "Utilizatorii cărora li se acordă acces aici pot citi și trimite din această cutie poștală partajată.",
+			"adminNote": "Administratorii și proprietarii au deja acces la e-mail pentru toate cutiile poștale de pe domeniile lor și nu trebuie adăugați aici."
+		},
+		"grants": {
+			"emptyTitle": "Nimeni nu are acces încă",
+			"emptyDesc": "Acordă acces unui utilizator mai jos pentru a putea citi și trimite din această cutie poștală.",
+			"revoke": "Revocă",
+			"addUser": "Adaugă utilizator",
+			"selectUser": "Selectează utilizator…",
+			"userOption": "{{name}} ({{login}})",
+			"grant": "Acordă acces",
+			"errorTitle": "Nu s-a putut acorda accesul"
+		},
+		"managers": {
+			"title": "Manageri",
+			"description": "Managerii atribuiți aici pot administra accesul utilizatorilor pentru această cutie poștală partajată.",
+			"emptyTitle": "Niciun manager atribuit încă",
+			"emptyDesc": "Atribuie un manager mai jos pentru a putea gestiona accesul utilizatorilor pe această cutie poștală.",
+			"allSharedBadge": "Toate cutiile partajate",
+			"remove": "Elimină",
+			"add": "Adaugă manager",
+			"select": "Selectează manager…",
+			"assign": "Atribuie manager",
+			"errorTitle": "Nu s-a putut atribui managerul",
+			"managerOption": "{{name}} ({{login}})"
+		},
+		"identityPolicy": {
+			"title": "Politică identități",
+			"description": "Controlează ce personae de trimitere apar la compunere din această cutie poștală sau din altă parte. Adresa De la rămâne întotdeauna cutia activă.",
+			"allowPersonal": "Permite identități personale",
+			"allowPersonalDesc": "La trimiterea din această cutie poștală, oferă identități din cutia poștală principală a expeditorului.",
+			"export": "Exportă identități",
+			"exportDesc": "Permite selectarea identităților acestei cutii poștale la trimiterea din alte cutii poștale la care contul are acces."
+		},
+		"mailboxIdentities": {
+			"title": "Identități cutie poștală",
+			"description": "Modele de nume și semnături deținute de această cutie poștală partajată."
+		}
+	}
+}

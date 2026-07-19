@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
+
 import { Badge } from "@/components/ui/badge";
 import type { DomainReadinessSummary } from "@/lib/api/client";
-import { BADGE_META, type ReadinessBadge as ReadinessBadgeValue } from "@/lib/domain-validation";
+import { type ReadinessBadge as ReadinessBadgeValue } from "@/lib/domain-validation";
 import { cn } from "@/lib/utils";
 
 const BADGE_STYLES: Record<ReadinessBadgeValue, { dot: string; text: string }> = {
@@ -27,6 +29,7 @@ export function ReadinessBadge({
 }: {
 	readiness?: DomainReadinessSummary;
 }) {
+	const { t } = useTranslation("management");
 	const badge = readiness?.badge;
 	if (!badge) {
 		return null;
@@ -43,7 +46,7 @@ export function ReadinessBadge({
 					badge === "checking" && "animate-pulse",
 				)}
 			/>
-			{BADGE_META[badge].label}
+			{t(`domainValidation.badges.${badge}.label`)}
 		</Badge>
 	);
 }

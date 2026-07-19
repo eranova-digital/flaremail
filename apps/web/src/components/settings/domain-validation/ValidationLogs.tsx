@@ -1,12 +1,18 @@
+import { useTranslation } from "react-i18next";
+
 import type { DomainValidationLogEvent } from "@/lib/api/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatValidationTimestamp } from "@/lib/domain-validation";
 import { cn } from "@/lib/utils";
 
 export function ValidationLogs({ logs }: { logs: DomainValidationLogEvent[] }) {
+	const { t } = useTranslation("management");
+
 	if (!logs.length) {
 		return (
-			<p className="text-muted-foreground text-sm">No log events for this run yet.</p>
+			<p className="text-muted-foreground text-sm">
+				{t("domainValidation.logs.empty")}
+			</p>
 		);
 	}
 

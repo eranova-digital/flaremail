@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Inbox, Plus, Search, Trash2, User, Users } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { AddMailboxDialog } from "@/components/settings/AddMailboxDialog";
 import { Alert } from "@/components/ui/alert";
@@ -30,6 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export function MailboxSection() {
+	const { t } = useTranslation("management");
 	const { account } = useAuth();
 	const canManage = canManageMailboxes(account);
 	const canViewAccounts = canAccessAccountsTab(account);
@@ -108,9 +110,7 @@ export function MailboxSection() {
 
 	if (!canManage) {
 		return (
-			<p className="text-muted-foreground text-sm">
-				You do not have permission to create or manage mailboxes.
-			</p>
+			<p className="text-muted-foreground text-sm">{t("mailboxes.noPermission")}</p>
 		);
 	}
 
@@ -118,25 +118,23 @@ export function MailboxSection() {
 		<section className="space-y-4">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
-					<h2 className="text-lg font-medium">Mailboxes</h2>
-					<p className="text-muted-foreground text-sm">
-						Create and manage email addresses on your domains.
-					</p>
+					<h2 className="text-lg font-medium">{t("mailboxes.title")}</h2>
+					<p className="text-muted-foreground text-sm">{t("mailboxes.description")}</p>
 				</div>
 				<Button onClick={() => setAddOpen(true)} disabled={domains.length === 0}>
 					<Plus className="size-4" aria-hidden />
-					Add mailbox
+					{t("mailboxes.add")}
 				</Button>
 			</div>
 
 			<div className="relative">
 				<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
 				<Input
-					placeholder="Search mailboxes by address…"
+					placeholder={t("mailboxes.searchPlaceholder")}
 					className="pl-9"
 					value={search}
 					onChange={(event) => setSearch(event.target.value)}
-					aria-label="Search mailboxes"
+					aria-label={t("mailboxes.searchAria")}
 				/>
 			</div>
 
@@ -147,7 +145,7 @@ export function MailboxSection() {
 					))}
 				</div>
 			) : mailboxesQuery.isError ? (
-				<Alert tone="destructive" title="Couldn't load mailboxes">
+				<Alert tone="destructive" title={t("mailboxes.loadErrorTitle")}>
 					<p>{getErrorMessage(mailboxesQuery.error)}</p>
 				</Alert>
 			) : filteredMailboxes.length === 0 ? (
@@ -155,14 +153,16 @@ export function MailboxSection() {
 					<CardContent className="flex flex-col items-center gap-2 px-4 py-10 text-center">
 						<Inbox className="text-muted-foreground/60 size-6" aria-hidden />
 						<p className="text-sm font-medium">
-							{searchQuery ? `No mailboxes match "${search.trim()}"` : "No mailboxes yet"}
+							{searchQuery
+								? t("mailboxes.empty.noMatch", { query: search.trim() })
+								: t("mailboxes.empty.title")}
 						</p>
 						<p className="text-muted-foreground max-w-sm text-sm">
 							{searchQuery
-								? "Try a different search term."
+								? t("mailboxes.empty.tryDifferent")
 								: domains.length === 0
-									? "Add a domain first, then create mailboxes on it."
-									: "Create a shared mailbox or alias to start routing mail on your domains."}
+									? t("mailboxes.empty.addDomainFirst")
+									: t("mailboxes.empty.createHint")}
 						</p>
 					</CardContent>
 				</Card>
@@ -248,6 +248,7 @@ function MailboxTypeSection({
 	accountIdByPrimaryMailboxId: Map<string, string>;
 	canViewAccounts: boolean;
 }) {
+	const { t } = useTranslation("management");
 	const sectionId = `${domainKey}-${typeGroup.type}-mailboxes`;
 
 	return (
@@ -265,7 +266,11 @@ function MailboxTypeSection({
 						isCollapsed && "-rotate-90",
 					)}
 				/>
-				<span className="text-foreground capitalize">{typeGroup.type}</span>
+				<span className="text-foreground">
+					{t(`mailboxes.typeLabels.${typeGroup.type}`, {
+						defaultValue: typeGroup.type,
+					})}
+				</span>
 				<span className="font-normal">({typeGroup.mailboxes.length})</span>
 			</button>
 
@@ -308,6 +313,7 @@ function MailboxRow({
 	showDomain?: boolean;
 	showType?: boolean;
 }) {
+	const { t } = useTranslation("management");
 	const deleteMailbox = useDeleteMailbox();
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -341,12 +347,14 @@ function MailboxRow({
 						{showDomain && domainName ? <span>{domainName}</span> : null}
 						{showType && mailbox.type ? (
 							<Badge variant="outline" className="text-xs">
-								{mailbox.type}
+								{t(`mailboxes.typeLabels.${mailbox.type}`, {
+									defaultValue: mailbox.type,
+								})}
 							</Badge>
 						) : null}
 						{isSystemManaged ? (
 							<Badge variant="secondary" className="text-xs">
-								system managed
+								{t("mailboxes.badge.systemManaged")}
 							</Badge>
 						) : null}
 						{mailbox.type === "alias" && aliasTargetLabel ? (
@@ -354,7 +362,7 @@ function MailboxRow({
 						) : null}
 						{mailbox.isActive === false ? (
 							<Badge variant="secondary" className="text-xs">
-								Disabled
+								{t("mailboxes.badge.disabled")}
 							</Badge>
 						) : null}
 					</div>
@@ -366,7 +374,7 @@ function MailboxRow({
 							<Button variant="outline" size="sm" asChild>
 								<Link to={`/management?tab=accounts&account=${accountId}`}>
 									<User className="mr-1.5 size-3.5" />
-									View user
+									{t("mailboxes.viewUser")}
 								</Link>
 							</Button>
 						) : null}
@@ -375,14 +383,14 @@ function MailboxRow({
 								<Button variant="outline" size="sm" asChild>
 									<Link to={`/management/mailboxes/${mailbox.id}/users`}>
 										<Users className="mr-1.5 size-3.5" />
-										Users
+										{t("mailboxes.users")}
 									</Link>
 								</Button>
 								<Button variant="outline" size="sm" asChild>
 									<Link
 										to={`/management/mailboxes/${mailbox.id}/users?tab=identities`}
 									>
-										Identities
+										{t("mailboxes.identities")}
 									</Link>
 								</Button>
 							</>
@@ -393,7 +401,9 @@ function MailboxRow({
 								size="icon"
 								onClick={() => setConfirmingDelete(true)}
 								disabled={isPending}
-								aria-label={`Delete ${mailbox.address}`}
+								aria-label={t("mailboxes.deleteAria", {
+									address: mailbox.address,
+								})}
 							>
 								<Trash2 className="text-destructive size-4" />
 							</Button>
@@ -411,17 +421,20 @@ function MailboxRow({
 			<ConfirmDialog
 				open={confirmingDelete}
 				onOpenChange={setConfirmingDelete}
-				title={`Delete ${mailbox.address}?`}
+				title={t("mailboxes.deleteConfirm.title", { address: mailbox.address })}
 				description={
 					<>
 						<p>
-							This permanently removes the mailbox and{" "}
-							<strong>every message stored in it</strong>.
+							<Trans
+								i18nKey="mailboxes.deleteConfirm.description"
+								ns="management"
+								components={{ strong: <strong /> }}
+							/>
 						</p>
-						<p>This cannot be undone.</p>
+						<p>{t("mailboxes.deleteConfirm.cannotUndo")}</p>
 					</>
 				}
-				confirmLabel="Delete mailbox"
+				confirmLabel={t("mailboxes.deleteConfirm.confirm")}
 				onConfirm={handleDelete}
 				pending={deleteMailbox.isPending}
 			/>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import { Badge } from "@/components/ui/badge";
 
 export function CheckStatusBadge({
@@ -7,18 +9,22 @@ export function CheckStatusBadge({
 	status?: string;
 	tier?: string;
 }) {
+	const { t } = useTranslation("management");
+
 	if (status === "passed") {
-		return <Badge variant="default">Passed</Badge>;
+		return <Badge variant="default">{t("domainValidation.status.passed")}</Badge>;
 	}
 	if (status === "failed") {
 		return (
 			<Badge variant={tier === "advisory" ? "secondary" : "outline"}>
-				{tier === "advisory" ? "Advisory fail" : "Failed"}
+				{tier === "advisory"
+					? t("domainValidation.status.advisoryFail")
+					: t("domainValidation.status.failed")}
 			</Badge>
 		);
 	}
 	if (status === "skipped") {
-		return <Badge variant="secondary">Skipped</Badge>;
+		return <Badge variant="secondary">{t("domainValidation.status.skipped")}</Badge>;
 	}
-	return <Badge variant="outline">Pending</Badge>;
+	return <Badge variant="outline">{t("domainValidation.status.pending")}</Badge>;
 }

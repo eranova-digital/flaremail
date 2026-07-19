@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Users } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Alert } from "@/components/ui/alert";
@@ -29,6 +30,8 @@ type SharedMailboxGrantEditorProps = {
 export function SharedMailboxGrantEditor({
 	mailboxId,
 }: SharedMailboxGrantEditorProps) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const grantsQuery = useMailboxGrantHolders(mailboxId);
 	const accountsQuery = useAccounts();
 	const grantMutation = useGrantSharedMailboxAccess();
@@ -74,10 +77,11 @@ export function SharedMailboxGrantEditor({
 				<Card className="gap-0 rounded-lg py-0">
 					<CardContent className="flex flex-col items-center gap-2 px-4 py-10 text-center">
 						<Users className="text-muted-foreground/60 size-6" aria-hidden />
-						<p className="text-sm font-medium">No one has access yet</p>
+						<p className="text-sm font-medium">
+							{t("sharedMailboxUsers.grants.emptyTitle")}
+						</p>
 						<p className="text-muted-foreground max-w-sm text-sm">
-							Grant a user access below so they can read and send from this
-							mailbox.
+							{t("sharedMailboxUsers.grants.emptyDesc")}
 						</p>
 					</CardContent>
 				</Card>
@@ -111,7 +115,9 @@ export function SharedMailboxGrantEditor({
 												holder.status === "active" ? "success" : "secondary"
 											}
 										>
-											{holder.status}
+											{tc(`statusValues.${holder.status}`, {
+												defaultValue: holder.status,
+											})}
 										</Badge>
 										<Button
 											variant="outline"
@@ -124,7 +130,7 @@ export function SharedMailboxGrantEditor({
 												})
 											}
 										>
-											Revoke
+											{t("sharedMailboxUsers.grants.revoke")}
 										</Button>
 									</div>
 								</li>
@@ -137,7 +143,7 @@ export function SharedMailboxGrantEditor({
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-end">
 				<div className="min-w-0 flex-1 space-y-1">
 					<label className="text-sm font-medium" htmlFor="grant-user">
-						Add user
+						{t("sharedMailboxUsers.grants.addUser")}
 					</label>
 					<Select
 						value={selectedAccountId || undefined}
@@ -145,7 +151,7 @@ export function SharedMailboxGrantEditor({
 						disabled={grantableUsers.length === 0 || grantMutation.isPending}
 					>
 						<SelectTrigger id="grant-user">
-							<SelectValue placeholder="Select user…" />
+							<SelectValue placeholder={t("sharedMailboxUsers.grants.selectUser")} />
 						</SelectTrigger>
 						<SelectContent>
 							{grantableUsers.map((user) => (
@@ -160,11 +166,11 @@ export function SharedMailboxGrantEditor({
 					onClick={handleGrant}
 					disabled={!selectedAccountId || grantMutation.isPending}
 				>
-					Grant access
+					{t("sharedMailboxUsers.grants.grant")}
 				</Button>
 			</div>
 			{error ? (
-				<Alert tone="destructive" title="Couldn't grant access">
+				<Alert tone="destructive" title={t("sharedMailboxUsers.grants.errorTitle")}>
 					<p>{error}</p>
 				</Alert>
 			) : null}

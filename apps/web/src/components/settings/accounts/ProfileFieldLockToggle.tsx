@@ -1,4 +1,5 @@
 import { Lock, LockOpen } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Toggle } from "@/components/ui/toggle";
 
@@ -13,6 +14,8 @@ export function ProfileFieldLockToggle({
 	onToggle,
 	disabled,
 }: ProfileFieldLockToggleProps) {
+	const { t } = useTranslation("management");
+
 	return (
 		<Toggle
 			size="sm"
@@ -20,7 +23,11 @@ export function ProfileFieldLockToggle({
 			pressed={locked}
 			onPressedChange={() => onToggle()}
 			disabled={disabled}
-			aria-label={locked ? "Unlock field" : "Lock field"}
+			aria-label={
+				locked
+					? t("accounts.unlockField")
+					: t("accounts.lockField")
+			}
 			className="size-6 min-w-6 px-0"
 		>
 			{locked ? (

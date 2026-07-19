@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Navigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { ReadinessBadge } from "@/components/settings/domain-validation/ReadinessBadge";
 import { ValidationCheckCard } from "@/components/settings/domain-validation/ValidationCheckCard";
@@ -18,16 +19,14 @@ import {
 	useRecheckDomain,
 } from "@/hooks/use-domain-validation";
 import { getErrorMessage } from "@/lib/api/errors";
-import {
-	BADGE_META,
-	formatValidationTimestamp,
-	sortChecks,
-} from "@/lib/domain-validation";
+import { formatValidationTimestamp, sortChecks } from "@/lib/domain-validation";
 import { canAccessDomainsTab } from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/utils";
 
 export function DomainValidationPage() {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const { domainId } = useParams();
 	const { account } = useAuth();
 	const canAccess = canAccessDomainsTab(account);
@@ -55,7 +54,6 @@ export function DomainValidationPage() {
 	const runQuery = useDomainValidationRun(domainId, selectedRunId);
 	const selectedRun = runQuery.data;
 	const badge = selectedRun?.badge ?? domain?.readiness?.badge;
-	const badgeMeta = badge ? BADGE_META[badge] : null;
 	const isChecking = badge === "checking" || selectedRun?.status === "checking";
 	const isPending = recheckDomain.isPending;
 
@@ -66,16 +64,16 @@ export function DomainValidationPage() {
 	if (domainQuery.isError) {
 		return (
 			<SettingsShell
-				rootLabel="Management"
+				rootLabel={tc("management")}
 				rootTo="/management"
 				crumbs={[
-					{ label: "Domains", to: "/management?tab=domains" },
-					{ label: "Domain readiness" },
+					{ label: t("domains.title"), to: "/management?tab=domains" },
+					{ label: t("domainValidation.crumbFallback") },
 				]}
 				backTo="/management?tab=domains"
-				backLabel="Back to domains"
+				backLabel={t("shell.backToDomains")}
 			>
-				<Alert tone="warning" title="This domain is unavailable to your account">
+				<Alert tone="warning" title={t("domainValidation.unavailableTitle")}>
 					<p>{getErrorMessage(domainQuery.error)}</p>
 				</Alert>
 			</SettingsShell>
@@ -84,14 +82,14 @@ export function DomainValidationPage() {
 
 	return (
 		<SettingsShell
-			rootLabel="Management"
+			rootLabel={tc("management")}
 			rootTo="/management"
 			crumbs={[
-				{ label: "Domains", to: "/management?tab=domains" },
-				{ label: domain?.domain ?? "Domain readiness" },
+				{ label: t("domains.title"), to: "/management?tab=domains" },
+				{ label: domain?.domain ?? t("domainValidation.crumbFallback") },
 			]}
 			backTo="/management?tab=domains"
-			backLabel="Back to domains"
+			backLabel={t("shell.backToDomains")}
 			widthClassName="max-w-5xl"
 			actions={
 				<Button
@@ -101,7 +99,9 @@ export function DomainValidationPage() {
 					disabled={isPending || isChecking || domainQuery.isLoading}
 				>
 					<RefreshCw className={cn("size-4", isChecking && "animate-spin")} />
-					{isChecking ? "Checking…" : "Recheck"}
+					{isChecking
+						? t("domainValidation.checking")
+						: t("domainValidation.recheck")}
 				</Button>
 			}
 		>
@@ -119,29 +119,34 @@ export function DomainValidationPage() {
 						<Card className="gap-0 rounded-lg py-0">
 							<CardContent className="space-y-3 p-5">
 								<div className="flex flex-wrap items-center gap-2">
-									<h2 className="text-lg font-medium">Overall status</h2>
+									<h2 className="text-lg font-medium">
+										{t("domainValidation.overallStatus")}
+									</h2>
 									{badge ? <ReadinessBadge readiness={{ badge }} /> : null}
 								</div>
-								{badgeMeta ? (
+								{badge ? (
 									<>
-										<p className="font-medium">{badgeMeta.headline}</p>
+										<p className="font-medium">
+											{t(`domainValidation.badges.${badge}.headline`)}
+										</p>
 										<p className="text-muted-foreground text-sm leading-relaxed">
-											{badgeMeta.description}
+											{t(`domainValidation.badges.${badge}.description`)}
 										</p>
 									</>
 								) : (
 									<p className="text-muted-foreground text-sm">
-										No validation run yet. Click Recheck to start one.
+										{t("domainValidation.noRunYet")}
 									</p>
 								)}
 								{selectedRun?.finishedAt ? (
 									<p className="text-muted-foreground text-sm">
-										Last checked {formatValidationTimestamp(selectedRun.finishedAt)}
+										{t("domainValidation.lastChecked", {
+											time: formatValidationTimestamp(selectedRun.finishedAt),
+										})}
 									</p>
 								) : null}
 								<p className="text-muted-foreground border-t pt-3 text-sm">
-									Readiness is advisory only. It does not block sending,
-									receiving, or mailbox management for this domain.
+									{t("domainValidation.advisoryNote")}
 								</p>
 							</CardContent>
 						</Card>
@@ -149,10 +154,11 @@ export function DomainValidationPage() {
 
 					<section className="space-y-4">
 						<div>
-							<h2 className="text-lg font-medium">Checks</h2>
+							<h2 className="text-lg font-medium">
+								{t("domainValidation.checksTitle")}
+							</h2>
 							<p className="text-muted-foreground text-sm">
-								Required checks must pass for a healthy mail flow. Advisory
-								checks are recommendations only.
+								{t("domainValidation.checksDescription")}
 							</p>
 						</div>
 
@@ -163,7 +169,10 @@ export function DomainValidationPage() {
 								))}
 							</div>
 						) : runQuery.isError ? (
-							<Alert tone="destructive" title="Couldn't load this run">
+							<Alert
+								tone="destructive"
+								title={t("domainValidation.runLoadError")}
+							>
 								<p>{getErrorMessage(runQuery.error)}</p>
 							</Alert>
 						) : selectedRun && domain?.domain ? (
@@ -178,16 +187,18 @@ export function DomainValidationPage() {
 							</div>
 						) : (
 							<p className="text-muted-foreground text-sm">
-								Select a validation run from the history to view check details.
+								{t("domainValidation.selectRun")}
 							</p>
 						)}
 					</section>
 
 					<section className="space-y-4">
 						<div>
-							<h2 className="text-lg font-medium">Logs</h2>
+							<h2 className="text-lg font-medium">
+								{t("domainValidation.logsTitle")}
+							</h2>
 							<p className="text-muted-foreground text-sm">
-								Worker events recorded during the selected run.
+								{t("domainValidation.logsDescription")}
 							</p>
 						</div>
 						{runQuery.isLoading ? (
@@ -198,7 +209,10 @@ export function DomainValidationPage() {
 					</section>
 
 					{recheckDomain.isError ? (
-						<Alert tone="destructive" title="Recheck failed">
+						<Alert
+							tone="destructive"
+							title={t("domainValidation.recheckFailed")}
+						>
 							<p>{getErrorMessage(recheckDomain.error)}</p>
 						</Alert>
 					) : null}
@@ -206,16 +220,21 @@ export function DomainValidationPage() {
 
 				<aside className="space-y-4">
 					<div>
-						<h2 className="text-lg font-medium">Run history</h2>
+						<h2 className="text-lg font-medium">
+							{t("domainValidation.historyTitle")}
+						</h2>
 						<p className="text-muted-foreground text-sm">
-							Earlier runs stay available for comparison.
+							{t("domainValidation.historyDescription")}
 						</p>
 					</div>
 
 					{runsQuery.isLoading ? (
 						<Skeleton className="h-48 w-full rounded-lg" />
 					) : runsQuery.isError ? (
-						<Alert tone="destructive" title="Couldn't load run history">
+						<Alert
+							tone="destructive"
+							title={t("domainValidation.historyLoadError")}
+						>
 							<p>{getErrorMessage(runsQuery.error)}</p>
 						</Alert>
 					) : (
@@ -231,17 +250,21 @@ export function DomainValidationPage() {
 							<CardContent className="p-0">
 								<dl className="text-muted-foreground space-y-2 p-4 text-sm">
 									<div>
-										<dt className="text-xs tracking-wide uppercase">Started</dt>
+										<dt className="text-xs tracking-wide uppercase">
+											{t("domainValidation.started")}
+										</dt>
 										<dd>{formatValidationTimestamp(selectedRun.startedAt)}</dd>
 									</div>
 									<div>
-										<dt className="text-xs tracking-wide uppercase">Finished</dt>
+										<dt className="text-xs tracking-wide uppercase">
+											{t("domainValidation.finished")}
+										</dt>
 										<dd>{formatValidationTimestamp(selectedRun.finishedAt)}</dd>
 									</div>
 									{selectedRun.receiveDeadlineAt ? (
 										<div>
 											<dt className="text-xs tracking-wide uppercase">
-												Receive deadline
+												{t("domainValidation.receiveDeadline")}
 											</dt>
 											<dd>
 												{formatValidationTimestamp(selectedRun.receiveDeadlineAt)}

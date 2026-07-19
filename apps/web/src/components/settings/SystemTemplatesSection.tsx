@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,8 @@ import type {
 } from "@/lib/email-templates/api";
 
 export function SystemTemplatesSection() {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const templatesQuery = useSystemEmailTemplates();
 	const uploadMutation = useUploadSystemEmailTemplate();
 	const deleteMutation = useDeleteSystemEmailTemplate();
@@ -51,17 +54,14 @@ export function SystemTemplatesSection() {
 	return (
 		<section className="space-y-4 border-t pt-8">
 			<div>
-				<h2 className="text-lg font-medium">System templates</h2>
+				<h2 className="text-lg font-medium">{t("systemTemplates.title")}</h2>
 				<p className="text-muted-foreground text-sm">
-					Optional HTML for instance emails (invites, password reset, and
-					recovery codes). If unset, Flaremail sends the built-in plain-text
-					message. Use the listed tags in your HTML — they are replaced when the
-					email is sent.
+					{t("systemTemplates.description")}
 				</p>
 			</div>
 
 			{uploadError ? (
-				<Alert tone="destructive" title="Upload failed">
+				<Alert tone="destructive" title={t("systemTemplates.uploadFailedTitle")}>
 					<p>{uploadError}</p>
 				</Alert>
 			) : null}
@@ -73,7 +73,7 @@ export function SystemTemplatesSection() {
 					))}
 				</div>
 			) : templatesQuery.isError ? (
-				<Alert tone="destructive" title="Couldn't load system templates">
+				<Alert tone="destructive" title={t("systemTemplates.loadErrorTitle")}>
 					<p>{getErrorMessage(templatesQuery.error)}</p>
 				</Alert>
 			) : (
@@ -85,16 +85,20 @@ export function SystemTemplatesSection() {
 									<div className="flex flex-wrap items-center gap-2">
 										<p className="text-sm font-medium">{template.label}</p>
 										{template.configured ? (
-											<Badge variant="secondary">Custom HTML</Badge>
+											<Badge variant="secondary">
+												{t("systemTemplates.badge.custom")}
+											</Badge>
 										) : (
-											<Badge variant="outline">Default text</Badge>
+											<Badge variant="outline">
+												{t("systemTemplates.badge.default")}
+											</Badge>
 										)}
 									</div>
 									<p className="text-muted-foreground text-xs leading-relaxed">
 										{template.description}
 									</p>
 									<p className="text-muted-foreground text-xs">
-										Subject: {template.subject}
+										{t("systemTemplates.subject", { subject: template.subject })}
 									</p>
 								</div>
 								<div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
@@ -132,7 +136,9 @@ export function SystemTemplatesSection() {
 										}
 									>
 										<Upload className="size-3.5" aria-hidden />
-										{template.configured ? "Replace" : "Upload"}
+										{template.configured
+											? t("systemTemplates.replace")
+											: tc("upload")}
 									</Button>
 									{template.configured ? (
 										<Button
@@ -142,14 +148,14 @@ export function SystemTemplatesSection() {
 											disabled={deleteMutation.isPending}
 											onClick={() => setDeleteTarget(template)}
 										>
-											Revert
+											{t("systemTemplates.revert")}
 										</Button>
 									) : null}
 								</div>
 							</div>
 							<div className="bg-muted/50 rounded-md px-2.5 py-2">
 								<p className="text-muted-foreground mb-1.5 text-xs font-medium">
-									Available tags
+									{t("systemTemplates.availableTags")}
 								</p>
 								<ul className="space-y-1">
 									{template.tags.map((tag) => (
@@ -179,13 +185,15 @@ export function SystemTemplatesSection() {
 						setDeleteTarget(null);
 					}
 				}}
-				title="Revert to default?"
+				title={t("systemTemplates.revertConfirm.title")}
 				description={
 					deleteTarget
-						? `Remove the custom HTML for “${deleteTarget.label}”? Flaremail will send the built-in plain-text email again.`
+						? t("systemTemplates.revertConfirm.description", {
+								label: deleteTarget.label,
+							})
 						: ""
 				}
-				confirmLabel="Revert"
+				confirmLabel={t("systemTemplates.revert")}
 				pending={deleteMutation.isPending}
 				onConfirm={() => {
 					if (!deleteTarget) {

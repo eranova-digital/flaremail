@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Users } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +9,7 @@ import { useMailboxes } from "@/hooks/use-mailboxes";
 import { getErrorMessage } from "@/lib/api/errors";
 
 export function ManagerMailboxGrantsSection() {
+	const { t } = useTranslation("management");
 	const mailboxesQuery = useMailboxes("manage");
 	const sharedMailboxes = useMemo(
 		() =>
@@ -18,10 +20,8 @@ export function ManagerMailboxGrantsSection() {
 	return (
 		<section className="space-y-4">
 			<div>
-				<h2 className="text-lg font-medium">Shared mailboxes</h2>
-				<p className="text-muted-foreground text-sm">
-					Choose a shared mailbox to manage which users can access it.
-				</p>
+				<h2 className="text-lg font-medium">{t("sharedMailboxUsers.managers.title")}</h2>
+				<p className="text-muted-foreground text-sm">{t("sharedMailboxUsers.managers.description")}</p>
 			</div>
 
 			{mailboxesQuery.isLoading ? (
@@ -35,9 +35,7 @@ export function ManagerMailboxGrantsSection() {
 					{getErrorMessage(mailboxesQuery.error)}
 				</p>
 			) : sharedMailboxes.length === 0 ? (
-				<p className="text-muted-foreground text-sm">
-					No shared mailboxes assigned to your account.
-				</p>
+				<p className="text-muted-foreground text-sm">{t("sharedMailboxUsers.managers.emptyTitle")}</p>
 			) : (
 				<Card className="gap-0 rounded-md py-0">
 					<CardContent className="p-0">
@@ -52,7 +50,7 @@ export function ManagerMailboxGrantsSection() {
 											<div className="min-w-0">
 												<p className="truncate font-medium">{mailbox.address}</p>
 												<p className="text-muted-foreground text-xs">
-													Shared mailbox
+													{t("mailboxes.managerGrants.subtitle")}
 												</p>
 											</div>
 											<Users className="text-muted-foreground size-4 shrink-0" />

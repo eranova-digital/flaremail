@@ -6,6 +6,7 @@ import {
 	ShieldCheck,
 	ShieldOff,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -51,12 +52,21 @@ function formatLocation(session: AuthSession): string | null {
 	return null;
 }
 
-function formatDevice(session: AuthSession): string {
+function formatDevice(
+	session: AuthSession,
+	t: (key: string, options?: Record<string, string>) => string,
+): string {
 	const parts = [session.browser, session.os].filter(Boolean);
-	if (parts.length > 0) {
-		return parts.join(" on ");
+	if (parts.length === 2) {
+		return t("accounts.security.deviceOn", {
+			browser: session.browser!,
+			os: session.os!,
+		});
 	}
-	return "Unknown device";
+	if (parts.length === 1) {
+		return parts[0]!;
+	}
+	return t("accounts.security.unknownDevice");
 }
 
 function formatEnabledDate(value: string | null | undefined): string | null {
@@ -79,6 +89,7 @@ export function AccountSecurityTab({
 	accountId,
 	displayName,
 }: AccountSecurityTabProps) {
+	const { t } = useTranslation("management");
 	const sessionsQuery = useAccountSessions(accountId);
 	const mfaQuery = useAccountMfaStatus(accountId);
 	const revokeSessionMutation = useRevokeAccountSession();
@@ -101,7 +112,7 @@ export function AccountSecurityTab({
 		setError(null);
 		try {
 			await revokeSessionMutation.mutateAsync({ accountId, sessionId });
-			setSuccess("Session signed out.");
+			setSuccess(t("accounts.security.sessionSignedOut"));
 		} catch (err) {
 			setError(getErrorMessage(err));
 		} finally {
@@ -114,7 +125,7 @@ export function AccountSecurityTab({
 		try {
 			await revokeAllMutation.mutateAsync(accountId);
 			setConfirmRevokeAll(false);
-			setSuccess("All sessions have been signed out.");
+			setSuccess(t("accounts.security.allSessionsSignedOut"));
 		} catch (err) {
 			setError(getErrorMessage(err));
 		}
@@ -126,7 +137,7 @@ export function AccountSecurityTab({
 			await disableMfaMutation.mutateAsync(accountId);
 			setConfirmDisableMfa(false);
 			setDisableOpen(false);
-			setSuccess("Two-factor authentication has been disabled.");
+			setSuccess(t("accounts.security.mfaDisabledSuccess"));
 		} catch (err) {
 			setError(getErrorMessage(err));
 		}
@@ -158,12 +169,12 @@ export function AccountSecurityTab({
 						) : (
 							<ShieldOff className="text-muted-foreground size-4" aria-hidden />
 						)}
-						Two-factor authentication
+						{t("accounts.security.mfaTitle")}
 					</p>
 					<p className="text-muted-foreground text-xs">
 						{mfaEnabled
-							? "This person uses an authenticator app when signing in."
-							: "Two-factor authentication is not enabled for this account."}
+							? t("accounts.security.mfaEnabledDesc")
+							: t("accounts.security.mfaDisabledDesc")}
 					</p>
 				</div>
 
@@ -172,7 +183,9 @@ export function AccountSecurityTab({
 				) : mfaEnabled ? (
 					<div className="space-y-3">
 						<p className="text-sm">
-							Enabled{mfaEnabledAt ? ` since ${mfaEnabledAt}` : ""}.
+							{mfaEnabledAt
+								? t("accounts.security.enabledSince", { date: mfaEnabledAt })
+								: t("accounts.security.enabled")}
 						</p>
 						<div className="rounded-md border">
 							<button
@@ -183,10 +196,10 @@ export function AccountSecurityTab({
 							>
 								<div>
 									<p className="text-sm font-medium">
-										Disable two-factor authentication
+										{t("accounts.security.disableTitle")}
 									</p>
 									<p className="text-muted-foreground text-xs">
-										Removes the authenticator requirement for this account.
+										{t("accounts.security.disableDesc")}
 									</p>
 								</div>
 								<ChevronDown
@@ -199,8 +212,7 @@ export function AccountSecurityTab({
 							{disableOpen ? (
 								<div className="space-y-3 border-t px-3 py-3">
 									<p className="text-muted-foreground text-sm">
-										They will only need their password to sign in until they set up
-										2FA again.
+										{t("accounts.security.disableHint")}
 									</p>
 									<Button
 										variant="destructive"
@@ -208,7 +220,7 @@ export function AccountSecurityTab({
 										onClick={() => setConfirmDisableMfa(true)}
 										disabled={isBusy}
 									>
-										Disable 2FA
+										{t("accounts.security.disableButton")}
 									</Button>
 								</div>
 							) : null}
@@ -216,7 +228,7 @@ export function AccountSecurityTab({
 					</div>
 				) : (
 					<p className="text-muted-foreground text-sm">
-						Nothing to manage here until 2FA is enabled.
+						{t("accounts.security.nothingToManage")}
 					</p>
 				)}
 			</div>
@@ -225,11 +237,10 @@ export function AccountSecurityTab({
 				<div>
 					<p className="flex items-center gap-2 text-sm font-medium">
 						<MonitorSmartphone className="text-muted-foreground size-4" aria-hidden />
-						Sessions
+						{t("accounts.security.sessionsTitle")}
 					</p>
 					<p className="text-muted-foreground text-xs">
-						Active sign-ins for {displayName}. Revoking a session signs them out on
-						that device.
+						{t("accounts.security.sessionsDesc", { name: displayName })}
 					</p>
 				</div>
 
@@ -240,7 +251,9 @@ export function AccountSecurityTab({
 						))}
 					</div>
 				) : sessions.length === 0 ? (
-					<p className="text-muted-foreground text-sm">No active sessions found.</p>
+					<p className="text-muted-foreground text-sm">
+						{t("accounts.security.noSessions")}
+					</p>
 				) : (
 					<Card className="gap-0 rounded-lg py-0">
 						<CardContent className="p-0">
@@ -266,7 +279,7 @@ export function AccountSecurityTab({
 						onClick={() => setConfirmRevokeAll(true)}
 						disabled={isBusy}
 					>
-						Sign out all sessions
+						{t("accounts.security.signOutAll")}
 					</Button>
 				) : null}
 			</div>
@@ -274,14 +287,13 @@ export function AccountSecurityTab({
 			<ConfirmDialog
 				open={confirmRevokeAll}
 				onOpenChange={(open) => !open && !revokeAllMutation.isPending && setConfirmRevokeAll(open)}
-				title="Sign out all sessions?"
+				title={t("accounts.security.signOutAllConfirm.title")}
 				description={
 					<p>
-						This will sign {displayName} out on every device. They will need to sign
-						in again.
+						{t("accounts.security.signOutAllConfirm.description", { name: displayName })}
 					</p>
 				}
-				confirmLabel="Sign out all sessions"
+				confirmLabel={t("accounts.security.signOutAll")}
 				onConfirm={handleRevokeAll}
 				pending={revokeAllMutation.isPending}
 			/>
@@ -291,14 +303,13 @@ export function AccountSecurityTab({
 				onOpenChange={(open) =>
 					!open && !disableMfaMutation.isPending && setConfirmDisableMfa(open)
 				}
-				title="Disable two-factor authentication?"
+				title={t("accounts.security.disableMfaConfirm.title")}
 				description={
 					<p>
-						This removes 2FA from {displayName}&apos;s account. They will only need
-						their password to sign in until they set up 2FA again.
+						{t("accounts.security.disableMfaConfirm.description", { name: displayName })}
 					</p>
 				}
-				confirmLabel="Disable 2FA"
+				confirmLabel={t("accounts.security.disableButton")}
 				onConfirm={handleDisableMfa}
 				pending={disableMfaMutation.isPending}
 			/>
@@ -317,25 +328,30 @@ function SessionRow({
 	onRevoke: () => void;
 	disabled: boolean;
 }) {
+	const { t } = useTranslation("management");
 	const location = formatLocation(session);
 
 	return (
 		<li className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-4 py-3 text-sm">
 			<div className="min-w-0 space-y-1">
 				<div className="flex flex-wrap items-center gap-2">
-					<p className="font-medium">{formatDevice(session)}</p>
+					<p className="font-medium">{formatDevice(session, t)}</p>
 					{session.current ? (
-						<Badge variant="success">Current session</Badge>
+						<Badge variant="success">{t("accounts.security.currentSession")}</Badge>
 					) : null}
 				</div>
 				<p className="text-muted-foreground text-xs">
-					First seen {formatDateTime(session.createdAt)}
+					{t("accounts.security.firstSeen", {
+						datetime: formatDateTime(session.createdAt),
+					})}
 					{" · "}
-					Last seen {formatDateTime(session.lastSeenAt)}
+					{t("accounts.security.lastSeen", {
+						datetime: formatDateTime(session.lastSeenAt),
+					})}
 				</p>
 				{location || session.ipAddress ? (
 					<p className="text-muted-foreground text-xs">
-						{location ?? "Unknown location"}
+						{location ?? t("accounts.security.unknownLocation")}
 						{session.ipAddress ? ` · ${session.ipAddress}` : ""}
 					</p>
 				) : null}
@@ -348,7 +364,7 @@ function SessionRow({
 				className="shrink-0"
 			>
 				{revoking ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-				Sign out
+				{t("accounts.security.signOut")}
 			</Button>
 		</li>
 	);

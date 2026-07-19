@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { IdentityCard } from "@/components/settings/IdentityCard";
 import { IdentityForm } from "@/components/settings/IdentityForm";
@@ -26,10 +27,11 @@ type MailboxIdentitiesManagerProps = {
 export function MailboxIdentitiesManager({
 	mailboxId,
 	mailboxAddress,
-	title = "Identities",
+	title,
 	description,
 	hideDefault = false,
 }: MailboxIdentitiesManagerProps) {
+	const { t } = useTranslation("management");
 	const identitiesQuery = useMailboxIdentities(mailboxId);
 	const createMutation = useCreateMailboxIdentity(mailboxId);
 	const updateMutation = useUpdateMailboxIdentity(mailboxId);
@@ -38,11 +40,13 @@ export function MailboxIdentitiesManager({
 	const [creating, setCreating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	const resolvedTitle = title ?? t("accounts.identities.defaultTitle");
+
 	if (identitiesQuery.isLoading) {
 		return (
 			<div className="text-muted-foreground flex items-center gap-2 text-sm">
 				<Loader2 className="size-4 animate-spin" aria-hidden />
-				Loading identities…
+				{t("accounts.identities.loading")}
 			</div>
 		);
 	}
@@ -51,7 +55,7 @@ export function MailboxIdentitiesManager({
 		return (
 			<Alert tone="destructive">
 				{getErrorMessage(identitiesQuery.error) ??
-					"Could not load identities."}
+					t("accounts.identities.loadError")}
 			</Alert>
 		);
 	}
@@ -80,9 +84,11 @@ export function MailboxIdentitiesManager({
 
 	return (
 		<section className="space-y-4">
-			{(title || description) && (
+			{(resolvedTitle || description) && (
 				<div>
-					{title ? <h2 className="text-base font-medium">{title}</h2> : null}
+					{resolvedTitle ? (
+						<h2 className="text-base font-medium">{resolvedTitle}</h2>
+					) : null}
 					{description ? (
 						<p className="text-muted-foreground text-sm">{description}</p>
 					) : null}
@@ -92,9 +98,7 @@ export function MailboxIdentitiesManager({
 			{error ? <Alert tone="destructive">{error}</Alert> : null}
 
 			{!canManage ? (
-				<Alert>
-					You can view these identities but cannot create or edit them.
-				</Alert>
+				<Alert>{t("accounts.identities.viewOnly")}</Alert>
 			) : null}
 
 			<div className="space-y-3">
@@ -106,7 +110,7 @@ export function MailboxIdentitiesManager({
 							<>
 								{showDefaultNote ? (
 									<p className="text-muted-foreground text-xs">
-										Managed in Organization settings. Not editable here.
+										{t("accounts.identities.managedInOrg")}
 									</p>
 								) : null}
 								{isEditing ? (
@@ -141,7 +145,7 @@ export function MailboxIdentitiesManager({
 										<Button
 											size="icon"
 											variant="ghost"
-											aria-label="Edit identity"
+											aria-label={t("accounts.identities.editAria")}
 											disabled={busy}
 											onClick={() => {
 												setCreating(false);
@@ -153,7 +157,7 @@ export function MailboxIdentitiesManager({
 										<Button
 											size="icon"
 											variant="ghost"
-											aria-label="Delete identity"
+											aria-label={t("accounts.identities.deleteAria")}
 											disabled={busy}
 											onClick={() => {
 												setError(null);
@@ -190,7 +194,7 @@ export function MailboxIdentitiesManager({
 					}}
 				>
 					<Plus className="size-4" aria-hidden />
-					Add identity
+					{t("accounts.identities.add")}
 				</Button>
 			) : null}
 		</section>
