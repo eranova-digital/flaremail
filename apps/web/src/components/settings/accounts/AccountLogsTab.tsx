@@ -1,19 +1,35 @@
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, ScrollText } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+	ChevronLeft,
+	ChevronRight,
+	Loader2,
+	RefreshCw,
+	ScrollText,
+} from "lucide-react";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { LogSummary } from "@/components/settings/logs/LogSummary";
+import { DateTimeRangePicker } from "@/components/settings/logs/DateTimeRangePicker";
+import { LogTypeMultiSelect } from "@/components/settings/logs/LogTypeMultiSelect";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLogs } from "@/hooks/use-logs";
 import type { AccountDetail } from "@/lib/accounts/api";
 import { getErrorMessage } from "@/lib/api/errors";
-import type { LogListItem } from "@/lib/logs/api";
+import type { LogListItem, LogType } from "@/lib/logs/api";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 25;
+const PAGE_SIZES = [25, 50, 100] as const;
 
 function formatWhen(iso: string): string {
 	try {
@@ -50,6 +66,14 @@ function LogRow({ item }: { item: LogListItem }) {
 						<Badge variant="outline" className="font-medium">
 							{item.type}
 						</Badge>
+						{item.context?.method && item.context?.path ? (
+							<span
+								className="text-muted-foreground hidden max-w-[12rem] truncate font-mono text-[11px] sm:inline"
+								title={`${item.context.method} ${item.context.path}`}
+							>
+								{item.context.method} {item.context.path}
+							</span>
+						) : null}
 					</div>
 					<LogSummary summary={item.summary} refs={item.refs} />
 				</div>
@@ -70,21 +94,54 @@ type AccountLogsTabProps = {
 };
 
 export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
+	const [searchDraft, setSearchDraft] = useState("");
+	const [q, setQ] = useState("");
+	const [maxImportance, setMaxImportance] = useState(5);
+	const [types, setTypes] = useState<LogType[]>([]);
+	const [dateRange, setDateRange] = useState<
+		{ from?: Date; to?: Date } | undefined
+	>(undefined);
+	const [limit, setLimit] = useState<(typeof PAGE_SIZES)[number]>(25);
 	const [cursorStack, setCursorStack] = useState<(string | undefined)[]>([
 		undefined,
 	]);
 	const [pageIndex, setPageIndex] = useState(0);
 
 	useEffect(() => {
+		const handle = window.setTimeout(() => {
+			setQ(searchDraft.trim());
+		}, 300);
+		return () => window.clearTimeout(handle);
+	}, [searchDraft]);
+
+	const filterKey = useMemo(
+		() =>
+			JSON.stringify({
+				accountId,
+				q,
+				maxImportance,
+				types,
+				from: dateRange?.from?.toISOString() ?? null,
+				to: dateRange?.to?.toISOString() ?? null,
+				limit,
+			}),
+		[accountId, q, maxImportance, types, dateRange, limit],
+	);
+
+	useEffect(() => {
 		setCursorStack([undefined]);
 		setPageIndex(0);
-	}, [accountId]);
+	}, [filterKey]);
 
 	const before = cursorStack[pageIndex];
 	const query = useLogs({
 		accountId,
-		maxImportance: 10,
-		limit: PAGE_SIZE,
+		q: q || undefined,
+		types: types.length > 0 ? types : undefined,
+		maxImportance,
+		from: dateRange?.from?.toISOString(),
+		to: dateRange?.to?.toISOString(),
+		limit,
 		before,
 	});
 
@@ -92,6 +149,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 	const nextBefore = query.data?.nextBefore ?? null;
 	const hasNext = Boolean(nextBefore);
 	const hasPrev = pageIndex > 0;
+	const pageNumber = pageIndex + 1;
 
 	const goNext = () => {
 		if (!nextBefore) return;
@@ -144,11 +202,102 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 				)}
 			</div>
 
-			<div className="space-y-2">
-				<p className="text-sm font-medium">Related logs</p>
-				<p className="text-muted-foreground text-xs">
-					Logs where this account is the actor or is referenced.
-				</p>
+			<div className="flex items-start justify-between gap-3">
+				<div className="min-w-0 space-y-0.5">
+					<p className="text-sm font-medium">Related logs</p>
+					<p className="text-muted-foreground text-xs">
+						Logs where this account is the actor or is referenced.
+					</p>
+				</div>
+				<div className="flex shrink-0 items-center gap-2">
+					{query.data ? (
+						<Badge variant="secondary">
+							{items.length}
+							{hasNext ? "+" : ""} on this page
+						</Badge>
+					) : null}
+					<Button
+						variant="outline"
+						size="sm"
+						className="gap-2"
+						aria-label="Refresh logs"
+						disabled={query.isFetching}
+						onClick={() => void query.refetch()}
+					>
+						<RefreshCw
+							className={cn("size-3.5", query.isFetching && "animate-spin")}
+						/>
+						Refresh
+					</Button>
+				</div>
+			</div>
+
+			<div className="space-y-3 rounded-lg border p-4">
+				<div className="space-y-1">
+					<label
+						className="text-muted-foreground text-xs"
+						htmlFor="account-logs-q"
+					>
+						Search
+					</label>
+					<Input
+						id="account-logs-q"
+						value={searchDraft}
+						placeholder="Search summary, refs, context…"
+						onChange={(event) => setSearchDraft(event.target.value)}
+					/>
+				</div>
+				<div className="grid gap-3 sm:grid-cols-2">
+					<div className="space-y-1">
+						<label
+							className="text-muted-foreground text-xs"
+							htmlFor="account-logs-importance"
+						>
+							Max importance
+						</label>
+						<Select
+							value={String(maxImportance)}
+							onValueChange={(value) => setMaxImportance(Number(value))}
+						>
+							<SelectTrigger id="account-logs-importance">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{Array.from({ length: 11 }, (_, i) => (
+									<SelectItem key={i} value={String(i)}>
+										≤ {i}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="space-y-1">
+						<label
+							className="text-muted-foreground text-xs"
+							htmlFor="account-logs-type"
+						>
+							Type
+						</label>
+						<LogTypeMultiSelect
+							id="account-logs-type"
+							value={types}
+							onChange={setTypes}
+						/>
+					</div>
+					<div className="space-y-1 sm:col-span-2">
+						<label
+							className="text-muted-foreground text-xs"
+							htmlFor="account-logs-range"
+						>
+							Date & time range
+						</label>
+						<DateTimeRangePicker
+							id="account-logs-range"
+							value={dateRange}
+							onChange={setDateRange}
+						/>
+					</div>
+				</div>
 			</div>
 
 			{query.isError ? (
@@ -175,9 +324,10 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 			{!query.isLoading && !query.isError && items.length === 0 ? (
 				<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-12 text-center">
 					<ScrollText className="size-7 opacity-40" aria-hidden />
-					<p className="text-foreground text-sm font-medium">No related logs</p>
+					<p className="text-foreground text-sm font-medium">No logs found</p>
 					<p className="max-w-sm text-xs">
-						Nothing in retention mentions this account yet.
+						Try widening max importance, clearing the date range, or choosing
+						another type.
 					</p>
 				</div>
 			) : null}
@@ -194,42 +344,71 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 							<LogRow key={item.id} item={item} />
 						))}
 					</ul>
-					{(hasPrev || hasNext) && (
-						<div className="bg-muted/30 flex items-center justify-between border-t px-4 py-2.5">
+
+					<div className="bg-muted/30 flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex flex-wrap items-center gap-3">
 							<p className="text-muted-foreground text-xs">
-								Page {pageIndex + 1}
+								Page {pageNumber}
 								{hasNext ? " · more available" : " · end of results"}
 							</p>
 							<div className="flex items-center gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!hasPrev || query.isFetching}
-									onClick={goPrev}
-									className="gap-1"
+								<label
+									className="text-muted-foreground text-xs"
+									htmlFor="account-logs-limit"
 								>
-									<ChevronLeft className="size-4" />
-									Previous
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={!hasNext || query.isFetching}
-									onClick={goNext}
-									className="gap-1"
+									Page size
+								</label>
+								<Select
+									value={String(limit)}
+									onValueChange={(value) =>
+										setLimit(Number(value) as (typeof PAGE_SIZES)[number])
+									}
 								>
-									{query.isFetching && !query.isLoading ? (
-										<Loader2 className="size-4 animate-spin" />
-									) : (
-										<>
-											Next
-											<ChevronRight className="size-4" />
-										</>
-									)}
-								</Button>
+									<SelectTrigger
+										id="account-logs-limit"
+										className="h-8 w-[7.5rem]"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{PAGE_SIZES.map((size) => (
+											<SelectItem key={size} value={String(size)}>
+												{size} / page
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 						</div>
-					)}
+						<div className="flex items-center gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!hasPrev || query.isFetching}
+								onClick={goPrev}
+								className="gap-1"
+							>
+								<ChevronLeft className="size-4" />
+								Previous
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!hasNext || query.isFetching}
+								onClick={goNext}
+								className="gap-1"
+							>
+								{query.isFetching && !query.isLoading ? (
+									<Loader2 className="size-4 animate-spin" />
+								) : (
+									<>
+										Next
+										<ChevronRight className="size-4" />
+									</>
+								)}
+							</Button>
+						</div>
+					</div>
 				</div>
 			) : null}
 		</div>
