@@ -65,6 +65,14 @@
 				"period": 60,
 			},
 		},
+		{
+			"name": "RATE_LIMIT_INVITE",
+			"namespace_id": "1004",
+			"simple": {
+				"limit": 10,
+				"period": 60,
+			},
+		},
 	],
 	/**
 	 * Smart Placement

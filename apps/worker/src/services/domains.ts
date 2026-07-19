@@ -81,7 +81,7 @@ export async function createDomain(
 			await tx.insert(domains).values({
 				id,
 				name: normalized,
-				isActive: true,
+				isActive: false,
 				catchAllEnabled: false,
 				createdAt: now,
 				updatedAt: now,

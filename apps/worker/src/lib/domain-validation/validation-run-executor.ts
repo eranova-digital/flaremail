@@ -5,6 +5,7 @@ import {
 	domainValidationChecks,
 	domainValidationLogEvents,
 	domainValidationRuns,
+	domains,
 } from "../../db/schema";
 import { buildEmailAddress } from "../normalize-email-address";
 import { sendEmail, EmailSendError } from "../messages/send-email";
@@ -117,6 +118,12 @@ async function completeRun(db: RunDb, runId: string): Promise<void> {
 	const badge = computeReadinessBadge("completed", checks);
 	const now = new Date();
 
+	const [run] = await db
+		.select({ domainId: domainValidationRuns.domainId })
+		.from(domainValidationRuns)
+		.where(eq(domainValidationRuns.id, runId))
+		.limit(1);
+
 	await db
 		.update(domainValidationRuns)
 		.set({
@@ -126,6 +133,13 @@ async function completeRun(db: RunDb, runId: string): Promise<void> {
 			updatedAt: now,
 		})
 		.where(eq(domainValidationRuns.id, runId));
+
+	if (badge === "healthy" && run?.domainId) {
+		await db
+			.update(domains)
+			.set({ isActive: true, updatedAt: now })
+			.where(eq(domains.id, run.domainId));
+	}
 
 	await appendLog(db, runId, {
 		level: badge === "healthy" ? "info" : badge === "unhealthy" ? "warning" : "error",
