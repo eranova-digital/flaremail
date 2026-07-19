@@ -82,6 +82,7 @@ export type ListLogsParams = {
 	to?: string;
 	limit?: number;
 	before?: string;
+	accountId?: string;
 };
 
 export async function fetchLogs(
@@ -104,6 +105,7 @@ export async function fetchLogs(
 	if (params.to) search.set("to", params.to);
 	if (params.limit !== undefined) search.set("limit", String(params.limit));
 	if (params.before) search.set("before", params.before);
+	if (params.accountId) search.set("accountId", params.accountId);
 
 	const qs = search.toString();
 	return apiRequest<ListLogsResponse>(`/logs${qs ? `?${qs}` : ""}`);

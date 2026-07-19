@@ -1,13 +1,11 @@
-import { eq } from "drizzle-orm";
+import { and, asc, eq, isNotNull } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import {
-	accountDomainAssignments,
 	accountProfiles,
 	accounts,
-	mailboxGrants,
+	invites,
 	mailboxes,
-	managerSharedMailboxAssignments,
 	profileFieldLocks,
 } from "../../db/schema";
 import { authorizeAccount } from "../../lib/auth/access";
@@ -98,6 +96,7 @@ export async function getAccountDetail(
 	const domainIds = await loadDomainAssignments(db, accountId);
 	const managerAssignments = await loadManagerSharedMailboxAssignments(db, accountId);
 	const grantedMailboxIds = await loadAccountMailboxGrants(db, accountId);
+	const invitedBy = await loadInvitedBy(db, accountId);
 
 	return {
 		...toAccountListItem(row.account, row.profile, row.domainId),
@@ -124,6 +123,64 @@ export async function getAccountDetail(
 			.filter((row) => row.mailboxId)
 			.map((row) => row.mailboxId as string),
 		grantedMailboxIds,
+		invitedBy,
+	};
+}
+
+async function loadInvitedBy(db: Database, accountId: string) {
+	const [usedInvite] = await db
+		.select({ createdByAccountId: invites.createdByAccountId })
+		.from(invites)
+		.where(and(eq(invites.accountId, accountId), isNotNull(invites.usedAt)))
+		.orderBy(asc(invites.usedAt))
+		.limit(1);
+
+	let createdByAccountId = usedInvite?.createdByAccountId;
+	if (!createdByAccountId) {
+		const [oldestInvite] = await db
+			.select({ createdByAccountId: invites.createdByAccountId })
+			.from(invites)
+			.where(eq(invites.accountId, accountId))
+			.orderBy(asc(invites.createdAt))
+			.limit(1);
+		createdByAccountId = oldestInvite?.createdByAccountId;
+	}
+
+	if (!createdByAccountId) {
+		return null;
+	}
+
+	const [inviter] = await db
+		.select({
+			accountId: accounts.id,
+			loginIdentifier: accounts.loginIdentifier,
+			firstName: accountProfiles.firstName,
+			lastName: accountProfiles.lastName,
+			profilePictureUpdatedAt: accountProfiles.profilePictureUpdatedAt,
+		})
+		.from(accounts)
+		.leftJoin(accountProfiles, eq(accountProfiles.accountId, accounts.id))
+		.where(eq(accounts.id, createdByAccountId))
+		.limit(1);
+
+	if (!inviter) {
+		return {
+			id: createdByAccountId,
+			displayName: "Deleted account",
+			loginIdentifier: createdByAccountId,
+			profilePicture: toProfilePicturePayload(null),
+			deleted: true as const,
+		};
+	}
+
+	return {
+		id: inviter.accountId,
+		displayName:
+			[inviter.firstName, inviter.lastName].filter(Boolean).join(" ").trim() ||
+			inviter.loginIdentifier,
+		loginIdentifier: inviter.loginIdentifier,
+		profilePicture: toProfilePicturePayload(inviter.profilePictureUpdatedAt),
+		deleted: false as const,
 	};
 }
 
