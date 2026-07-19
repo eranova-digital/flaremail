@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useTranslation } from "react-i18next";
 
 import { TotpCodeInput, isTotpCodeComplete } from "@/components/auth/TotpCodeInput";
 import { Alert } from "@/components/ui/alert";
@@ -16,8 +17,10 @@ type MfaSetupPanelProps = {
 
 export function MfaSetupPanel({
 	onComplete,
-	submitLabel = "Enable two-factor authentication",
+	submitLabel,
 }: MfaSetupPanelProps) {
+	const { t } = useTranslation("auth");
+	const resolvedSubmitLabel = submitLabel ?? t("mfaSetup.enable");
 	const [setup, setSetup] = useState<MfaSetup | null>(null);
 	const [confirmCode, setConfirmCode] = useState("");
 	const [loadingSetup, setLoadingSetup] = useState(true);
@@ -73,7 +76,7 @@ export function MfaSetupPanel({
 		return (
 			<div className="text-muted-foreground flex items-center gap-2 text-sm">
 				<Loader2 className="size-4 animate-spin" aria-hidden />
-				Preparing authenticator setup…
+				{t("mfaSetup.preparing")}
 			</div>
 		);
 	}
@@ -84,19 +87,14 @@ export function MfaSetupPanel({
 
 	return (
 		<div className="space-y-4">
-			<p className="text-sm">
-				Scan this QR code with your authenticator app, then enter the 6-digit code
-				to finish setup.
-			</p>
+			<p className="text-sm">{t("mfaSetup.instructions")}</p>
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-start">
 				<div className="bg-background inline-flex rounded-lg border p-3">
 					<QRCodeSVG value={setup.otpauthUrl} size={160} />
 				</div>
 				<div className="space-y-2 text-sm">
-					<p className="font-medium">Can&apos;t scan the code?</p>
-					<p className="text-muted-foreground">
-						Enter this key manually in your authenticator app:
-					</p>
+					<p className="font-medium">{t("mfaSetup.cantScan")}</p>
+					<p className="text-muted-foreground">{t("mfaSetup.manualKey")}</p>
 					<code className="bg-muted block rounded px-2 py-1 font-mono text-xs break-all">
 						{setup.secret}
 					</code>
@@ -105,7 +103,7 @@ export function MfaSetupPanel({
 			<div className="grid gap-3 sm:max-w-xs">
 				<div className="space-y-2">
 					<label htmlFor="compliance-mfa-code" className="text-sm font-medium">
-						Verification code
+						{t("mfaSetup.codeLabel")}
 					</label>
 					<TotpCodeInput
 						id="compliance-mfa-code"
@@ -125,7 +123,7 @@ export function MfaSetupPanel({
 					{submitting ? (
 						<Loader2 className="size-4 animate-spin" aria-hidden />
 					) : null}
-					{submitting ? "Enabling…" : submitLabel}
+					{submitting ? t("mfaSetup.enabling") : resolvedSubmitLabel}
 				</Button>
 			</div>
 		</div>

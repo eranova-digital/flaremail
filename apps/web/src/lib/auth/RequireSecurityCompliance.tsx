@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { PasskeyReminderGate } from "@/components/auth/PasskeyReminderGate";
 import { PageLoader } from "@/components/PageLoader";
@@ -12,11 +13,12 @@ function hasPendingSecurityRequirements(account: {
 }
 
 export function RequireSecurityCompliance() {
+	const { t } = useTranslation("auth");
 	const { account, isLoading } = useAuth();
 	const location = useLocation();
 
 	if (isLoading) {
-		return <PageLoader label="Checking your session…" />;
+		return <PageLoader label={t("session.checking")} />;
 	}
 
 	if (!account) {

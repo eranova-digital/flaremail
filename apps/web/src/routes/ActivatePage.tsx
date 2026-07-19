@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { AtSign, Loader2, Lock } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -100,6 +101,7 @@ function profileFromPreview(
 }
 
 export function ActivatePage() {
+	const { t } = useTranslation("auth");
 	const { isAuthenticated, isLoading, account, activate, refresh } = useAuth();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
@@ -204,7 +206,7 @@ export function ActivatePage() {
 	}, [initialCode, step]);
 
 	if (isLoading) {
-		return <PageLoader label="Checking your session…" />;
+		return <PageLoader label={t("session.checking")} />;
 	}
 
 	if (isAuthenticated && account && step !== "recovery") {
@@ -237,7 +239,7 @@ export function ActivatePage() {
 		setError(null);
 
 		if (!passwordsMatch) {
-			setError("Passwords do not match.");
+			setError(t("passwordsDoNotMatch"));
 			return;
 		}
 
@@ -271,17 +273,15 @@ export function ActivatePage() {
 		}
 	};
 
+	const description =
+		step === "code"
+			? t("activate.descriptionCode")
+			: step === "profile"
+				? t("activate.descriptionProfile")
+				: t("activate.descriptionRecovery");
+
 	return (
-		<AuthPageShell
-			title="Activate your account"
-			description={
-				step === "code"
-					? "Enter the invite code from your administrator."
-					: step === "profile"
-						? "Confirm your mailbox, customize your profile, and choose a password."
-						: "Add a recovery email so you can regain access if you forget your password."
-			}
-		>
+		<AuthPageShell title={t("activate.title")} description={description}>
 			<Card className="rounded-xl py-6 shadow-sm">
 				<CardContent>
 					{step === "code" ? (
@@ -294,7 +294,7 @@ export function ActivatePage() {
 						>
 							<div className="space-y-2">
 								<label htmlFor="code" className="text-sm font-medium">
-									Invite code
+									{t("activate.inviteCode")}
 								</label>
 								<AuthCodeInput
 									id="code"
@@ -306,8 +306,13 @@ export function ActivatePage() {
 								/>
 								{!codeComplete && !previewError ? (
 									<p className="text-muted-foreground text-xs">
-										You'll find this in your invitation. Codes look like{" "}
-										<span className="font-mono">AB2C-D4EF</span>.
+										<Trans
+											i18nKey="activate.codeHint"
+											ns="auth"
+											components={{
+												example: <span className="font-mono" />,
+											}}
+										/>
 									</p>
 								) : null}
 							</div>
@@ -315,7 +320,9 @@ export function ActivatePage() {
 							{previewLoading ? (
 								<div className="bg-muted flex items-center gap-3 rounded-lg px-4 py-3 text-sm">
 									<Loader2 className="text-muted-foreground size-4 shrink-0 animate-spin" />
-									<p className="text-muted-foreground">Checking invite code…</p>
+									<p className="text-muted-foreground">
+										{t("activate.checkingInvite")}
+									</p>
 								</div>
 							) : previewError && codeComplete ? (
 								<Alert tone="destructive">{previewError}</Alert>
@@ -326,7 +333,7 @@ export function ActivatePage() {
 								className="w-full"
 								disabled={!canContinueToProfile || submitting}
 							>
-								Continue
+								{t("activate.continue")}
 							</Button>
 						</form>
 					) : step === "profile" ? (
@@ -334,17 +341,18 @@ export function ActivatePage() {
 							<div className="bg-muted flex items-center gap-3 rounded-lg px-4 py-3 text-sm">
 								<AtSign className="text-muted-foreground size-4 shrink-0" />
 								<div>
-									<p className="text-muted-foreground text-xs">Your mailbox</p>
+									<p className="text-muted-foreground text-xs">
+										{t("activate.yourMailbox")}
+									</p>
 									<p className="font-medium">{inviteAddress}</p>
 								</div>
 							</div>
 
 							<div className="space-y-3">
 								<div>
-									<p className="text-sm font-medium">Your profile</p>
+									<p className="text-sm font-medium">{t("activate.yourProfile")}</p>
 									<p className="text-muted-foreground text-xs">
-										Add or update your details. Locked fields were set by your
-										administrator.
+										{t("activate.profileHint")}
 									</p>
 								</div>
 								<ProfileFieldsGrid
@@ -361,7 +369,7 @@ export function ActivatePage() {
 										lockedFieldSet.has(key) ? (
 											<Lock
 												className="text-muted-foreground size-3"
-												aria-label="Locked by your administrator"
+												aria-label={t("activate.lockedByAdmin")}
 											/>
 										) : null
 									}
@@ -370,7 +378,7 @@ export function ActivatePage() {
 
 							<div className="space-y-2">
 								<label htmlFor="password" className="text-sm font-medium">
-									Choose a password
+									{t("activate.choosePassword")}
 								</label>
 								<PasswordInput
 									id="password"
@@ -381,13 +389,13 @@ export function ActivatePage() {
 									required
 								/>
 								<p className="text-muted-foreground text-xs">
-									Use a long, unique password you don't use anywhere else.
+									{t("activate.passwordHint")}
 								</p>
 							</div>
 
 							<div className="space-y-2">
 								<label htmlFor="confirm-password" className="text-sm font-medium">
-									Confirm password
+									{t("activate.confirmPassword")}
 								</label>
 								<PasswordInput
 									id="confirm-password"
@@ -402,7 +410,7 @@ export function ActivatePage() {
 								/>
 								{confirmPassword && !passwordsMatch ? (
 									<p className="text-destructive text-xs">
-										Passwords do not match.
+										{t("passwordsDoNotMatch")}
 									</p>
 								) : null}
 							</div>
@@ -417,7 +425,9 @@ export function ActivatePage() {
 								{submitting ? (
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
-								{submitting ? "Activating…" : "Activate account"}
+								{submitting
+									? t("activate.activating")
+									: t("activate.activateAccount")}
 							</Button>
 							<Button
 								type="button"
@@ -426,7 +436,7 @@ export function ActivatePage() {
 								onClick={handleBackToCode}
 								disabled={submitting}
 							>
-								Back
+								{t("activate.back")}
 							</Button>
 						</form>
 					) : (
@@ -449,9 +459,9 @@ export function ActivatePage() {
 				</CardContent>
 			</Card>
 			<p className="text-muted-foreground text-center text-sm">
-				Already activated?{" "}
+				{t("activate.alreadyActivated")}{" "}
 				<Link to="/login" className="text-primary font-medium hover:underline">
-					Sign in
+					{t("activate.signIn")}
 				</Link>
 			</p>
 		</AuthPageShell>

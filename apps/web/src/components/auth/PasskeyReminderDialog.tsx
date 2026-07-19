@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Fingerprint, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ export function PasskeyReminderDialog({
 	onDismiss,
 	onPasskeyAdded,
 }: PasskeyReminderDialogProps) {
+	const { t } = useTranslation("auth");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -66,22 +68,19 @@ export function PasskeyReminderDialog({
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Fingerprint className="text-primary size-5" aria-hidden />
-						Sign in faster with a passkey
+						{t("passkeyReminder.title")}
 					</DialogTitle>
 					<DialogDescription asChild>
 						<div className="text-muted-foreground space-y-2 text-sm">
+							<p>{t("passkeyReminder.body")}</p>
 							<p>
-								Add a passkey to sign in with your fingerprint, face, or device
-								PIN. Passkey sign-in also skips two-factor authentication.
-							</p>
-							<p>
-								You can manage passkeys anytime in{" "}
+								{t("passkeyReminder.managePrefix")}{" "}
 								<Link
 									to="/settings?tab=security"
 									className="text-foreground font-medium underline-offset-4 hover:underline"
 									onClick={handleDismiss}
 								>
-									Settings → Security
+									{t("passkeyReminder.settingsSecurity")}
 								</Link>
 								.
 							</p>
@@ -95,7 +94,7 @@ export function PasskeyReminderDialog({
 						onClick={handleDismiss}
 						disabled={submitting}
 					>
-						Not now
+						{t("passkeyReminder.notNow")}
 					</Button>
 					<Button onClick={() => void handleAddPasskey()} disabled={submitting}>
 						{submitting ? (
@@ -103,7 +102,7 @@ export function PasskeyReminderDialog({
 						) : (
 							<Fingerprint className="size-4" aria-hidden />
 						)}
-						Add passkey
+						{t("passkeyReminder.addPasskey")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
