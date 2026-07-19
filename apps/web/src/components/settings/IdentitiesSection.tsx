@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { IdentityCard } from "@/components/settings/IdentityCard";
 import { IdentityForm } from "@/components/settings/IdentityForm";
@@ -17,6 +18,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import type { IdentityInput } from "@/lib/identities/api";
 
 export function IdentitiesSection() {
+	const { t } = useTranslation("settings");
 	const { account } = useAuth();
 	const overviewQuery = useAccountIdentities();
 	const primaryMailboxId =
@@ -34,18 +36,14 @@ export function IdentitiesSection() {
 	const [error, setError] = useState<string | null>(null);
 
 	if (!account?.primaryMailboxId && !overviewQuery.isLoading) {
-		return (
-			<Alert>
-				Identities are available for accounts with a primary mailbox.
-			</Alert>
-		);
+		return <Alert>{t("identities.noPrimaryMailbox")}</Alert>;
 	}
 
 	if (overviewQuery.isLoading) {
 		return (
 			<div className="text-muted-foreground flex items-center gap-2 text-sm">
 				<Loader2 className="size-4 animate-spin" aria-hidden />
-				Loading identities…
+				{t("identities.loading")}
 			</div>
 		);
 	}
@@ -53,8 +51,7 @@ export function IdentitiesSection() {
 	if (overviewQuery.isError || !overviewQuery.data || !primaryMailboxId) {
 		return (
 			<Alert tone="destructive">
-				{getErrorMessage(overviewQuery.error) ??
-					"Could not load identities."}
+				{getErrorMessage(overviewQuery.error) ?? t("identities.loadError")}
 			</Alert>
 		);
 	}
@@ -79,31 +76,26 @@ export function IdentitiesSection() {
 	return (
 		<section className="space-y-8">
 			<div>
-				<h2 className="text-base font-medium">Identities</h2>
+				<h2 className="text-base font-medium">{t("identities.title")}</h2>
 				<p className="text-muted-foreground text-sm">
-					How your name and signature appear when sending. The From address
-					always stays the mailbox you send from.
+					{t("identities.description")}
 				</p>
 			</div>
 
 			{error ? <Alert tone="destructive">{error}</Alert> : null}
 
-			{!canManage ? (
-				<Alert>
-					You can view these identities but cannot create or edit your own.
-				</Alert>
-			) : null}
+			{!canManage ? <Alert>{t("identities.viewOnlyAlert")}</Alert> : null}
 
 			<div className="space-y-3">
 				<div>
-					<h3 className="text-sm font-medium">Your identities</h3>
+					<h3 className="text-sm font-medium">{t("identities.yourIdentities")}</h3>
 					<p className="text-muted-foreground text-xs">
-						Owned by your primary mailbox.
+						{t("identities.yourIdentitiesHint")}
 					</p>
 				</div>
 				{own.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
-						No personal identities yet.
+						{t("identities.emptyOwn")}
 					</p>
 				) : (
 					own.map((identity) => (
@@ -117,7 +109,7 @@ export function IdentitiesSection() {
 										<Button
 											size="icon"
 											variant="ghost"
-											aria-label="Edit identity"
+											aria-label={t("identities.editAria")}
 											disabled={busy}
 											onClick={() => {
 												setCreating(false);
@@ -129,7 +121,7 @@ export function IdentitiesSection() {
 										<Button
 											size="icon"
 											variant="ghost"
-											aria-label="Delete identity"
+											aria-label={t("identities.deleteAria")}
 											disabled={busy}
 											onClick={() => {
 												setError(null);
@@ -183,7 +175,7 @@ export function IdentitiesSection() {
 						}}
 					>
 						<Plus className="size-4" aria-hidden />
-						Add identity
+						{t("identities.add")}
 					</Button>
 				) : null}
 			</div>
@@ -191,31 +183,31 @@ export function IdentitiesSection() {
 			{defaultIdentity ? (
 				<div className="space-y-3">
 					<div>
-						<h3 className="text-sm font-medium">Default identity</h3>
+						<h3 className="text-sm font-medium">
+							{t("identities.defaultTitle")}
+						</h3>
 						<p className="text-muted-foreground text-xs">
-							Instance-wide template used when sending from your primary
-							mailbox. Managed in Organization settings.
+							{t("identities.defaultHint")}
 						</p>
 					</div>
 					<IdentityCard
 						identity={defaultIdentity}
 						mailboxAddress={primaryAddress}
-						description="Managed in Organization settings. Not editable here."
+						description={t("identities.defaultCardDescription")}
 					/>
 				</div>
 			) : null}
 
 			<div className="space-y-3">
 				<div>
-					<h3 className="text-sm font-medium">Shared mailbox identities</h3>
+					<h3 className="text-sm font-medium">{t("identities.sharedTitle")}</h3>
 					<p className="text-muted-foreground text-xs">
-						Identities from shared mailboxes you can access. Managed by mailbox
-						managers.
+						{t("identities.sharedHint")}
 					</p>
 				</div>
 				{shared.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
-						No shared mailbox identities.
+						{t("identities.emptyShared")}
 					</p>
 				) : (
 					shared.map((group) => (
@@ -229,14 +221,16 @@ export function IdentitiesSection() {
 									badges={
 										group.identityExport ? (
 											<Badge variant="outline">
-												Usable outside this mailbox
+												{t("identities.usableOutsideMailbox")}
 											</Badge>
 										) : undefined
 									}
 									description={
 										group.identityExport
 											? undefined
-											: `Only when sending from ${group.mailboxAddress}`
+											: t("identities.onlyWhenSendingFrom", {
+													mailboxAddress: group.mailboxAddress,
+												})
 									}
 								/>
 							))}

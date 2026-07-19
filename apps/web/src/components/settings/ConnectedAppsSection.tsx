@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ import {
 } from "@/lib/oidc/api";
 
 export function ConnectedAppsSection() {
+	const { t } = useTranslation("settings");
+	const { t: tc } = useTranslation("common");
 	const [grants, setGrants] = useState<OidcConsentGrant[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -50,20 +53,19 @@ export function ConnectedAppsSection() {
 	return (
 		<div className="space-y-3">
 			<div>
-				<h3 className="text-base font-semibold">Connected apps</h3>
+				<h3 className="text-base font-semibold">{t("connectedApps.title")}</h3>
 				<p className="text-muted-foreground text-sm">
-					OIDC clients you have authorized. Revoking signs them out of refresh
-					access until you consent again.
+					{t("connectedApps.description")}
 				</p>
 			</div>
 			{error ? <Alert tone="destructive">{error}</Alert> : null}
 			{loading ? (
 				<p className="text-muted-foreground flex items-center gap-2 text-sm">
 					<Loader2 className="size-4 animate-spin" />
-					Loading…
+					{tc("loading")}
 				</p>
 			) : grants.length === 0 ? (
-				<p className="text-muted-foreground text-sm">No connected apps.</p>
+				<p className="text-muted-foreground text-sm">{t("connectedApps.empty")}</p>
 			) : (
 				<div className="space-y-2">
 					{grants.map((grant) => (
@@ -85,11 +87,13 @@ export function ConnectedAppsSection() {
 									{revoking === grant.clientId ? (
 										<Loader2 className="size-4 animate-spin" />
 									) : null}
-									Revoke
+									{t("connectedApps.revoke")}
 								</Button>
 							</CardHeader>
 							<CardContent className="text-muted-foreground text-sm">
-								Scopes: {grant.scopes.join(" ")}
+								{t("connectedApps.scopes", {
+									scopes: grant.scopes.join(" "),
+								})}
 							</CardContent>
 						</Card>
 					))}

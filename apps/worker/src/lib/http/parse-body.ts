@@ -17,7 +17,7 @@ export function contentLengthTooLarge(
 	const length = Number(header);
 	if (!Number.isFinite(length) || length < 0) {
 		return problemResponse(400, "Invalid Content-Length", {
-			code: "bad-request",
+			code: "invalid-content-length",
 			instance: requestInstance(request),
 		});
 	}

@@ -2,6 +2,7 @@ import type { NodeViewProps } from "@tiptap/react";
 import { NodeViewWrapper } from "@tiptap/react";
 import { CodeXml, Eye, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
 	applyHtmlPlaceholders,
@@ -38,6 +39,7 @@ export function HtmlBlock({
 	updateAttributes,
 	deleteNode,
 }: NodeViewProps) {
+	const { t } = useTranslation("compose");
 	const html = (node.attrs.html as string) || "";
 	const values = readValues(node.attrs.values);
 	const locked = Boolean(node.attrs.locked);
@@ -91,13 +93,13 @@ export function HtmlBlock({
 		const reader = new FileReader();
 		reader.onload = () => {
 			if (typeof reader.result !== "string") {
-				setUploadError("Could not read that file.");
+				setUploadError(t("htmlBlock.readFailed"));
 				return;
 			}
 
 			const next = htmlFromUploadedText(reader.result);
 			if (!next) {
-				setUploadError("That HTML file is empty.");
+				setUploadError(t("htmlBlock.emptyFile"));
 				return;
 			}
 
@@ -106,10 +108,14 @@ export function HtmlBlock({
 			setMode("preview");
 		};
 		reader.onerror = () => {
-			setUploadError("Could not read that file.");
+			setUploadError(t("htmlBlock.readFailed"));
 		};
 		reader.readAsText(file);
 	};
+
+	const removeLabel = locked
+		? t("htmlBlock.removeTemplate")
+		: t("htmlBlock.remove");
 
 	return (
 		<NodeViewWrapper
@@ -119,11 +125,17 @@ export function HtmlBlock({
 			contentEditable={false}
 		>
 			<div className="compose-html-toolbar">
-				<div className="compose-html-mode-toggle" role="group" aria-label="HTML block mode">
+				<div
+					className="compose-html-mode-toggle"
+					role="group"
+					aria-label={t("htmlBlock.modeAria")}
+				>
 					{locked ? (
 						<span className="text-muted-foreground flex items-center gap-1.5 px-2 text-xs font-medium">
 							<Eye className="size-3.5" aria-hidden />
-							{templateName ? `Template: ${templateName}` : "Template"}
+							{templateName
+								? t("htmlBlock.templateNamed", { name: templateName })
+								: t("htmlBlock.template")}
 						</span>
 					) : (
 						<>
@@ -140,7 +152,7 @@ export function HtmlBlock({
 								onClick={() => setMode("edit")}
 							>
 								<CodeXml className="size-3.5" />
-								Edit
+								{t("htmlBlock.edit")}
 							</Button>
 							<Button
 								type="button"
@@ -155,7 +167,7 @@ export function HtmlBlock({
 								onClick={() => setMode("preview")}
 							>
 								<Eye className="size-3.5" />
-								Preview
+								{t("htmlBlock.preview")}
 							</Button>
 							{editor.isEditable ? (
 								<>
@@ -180,7 +192,7 @@ export function HtmlBlock({
 										onClick={() => fileInputRef.current?.click()}
 									>
 										<Upload className="size-3.5" />
-										Upload
+										{t("htmlBlock.upload")}
 									</Button>
 								</>
 							) : null}
@@ -190,8 +202,8 @@ export function HtmlBlock({
 				{editor.isEditable ? (
 					<button
 						type="button"
-						aria-label={locked ? "Remove template" : "Remove HTML block"}
-						title={locked ? "Remove template" : "Remove HTML block"}
+						aria-label={removeLabel}
+						title={removeLabel}
 						className="compose-html-remove"
 						onClick={() => deleteNode()}
 					>
@@ -202,7 +214,7 @@ export function HtmlBlock({
 			{uploadError ? (
 				<Alert
 					tone="destructive"
-					title="Upload failed"
+					title={t("htmlBlock.uploadFailed")}
 					className="compose-html-vars-error"
 				>
 					<p>{uploadError}</p>
@@ -211,13 +223,14 @@ export function HtmlBlock({
 			{blank.length > 0 ? (
 				<Alert
 					tone="destructive"
-					title="Unfilled tags"
+					title={t("htmlBlock.unfilledTitle")}
 					className="compose-html-vars-error"
 				>
 					<p>
-						{blank.map((name) => `{${name}}`).join(", ")}{" "}
-						{blank.length === 1 ? "still needs" : "still need"} a value before
-						sending.
+						{t("htmlBlock.unfilledTags", {
+							tags: blank.map((name) => `{${name}}`).join(", "),
+							count: blank.length,
+						})}
 					</p>
 				</Alert>
 			) : null}
@@ -248,7 +261,7 @@ export function HtmlBlock({
 			{effectiveMode === "edit" ? (
 				<Textarea
 					value={draft}
-					placeholder="Paste or write HTML, or upload a file…"
+					placeholder={t("htmlBlock.editorPlaceholder")}
 					spellCheck={false}
 					disabled={!editor.isEditable}
 					className="compose-html-editor min-h-28 resize-y font-mono text-xs"
@@ -274,7 +287,7 @@ export function HtmlBlock({
 						/>
 					) : (
 						<p className="text-muted-foreground text-xs italic">
-							Nothing to preview yet.
+							{t("htmlBlock.emptyPreview")}
 						</p>
 					)}
 				</div>

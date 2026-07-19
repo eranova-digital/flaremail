@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { Check, Copy, Loader2, ShieldCheck } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { PageLoader } from "@/components/PageLoader";
@@ -22,12 +23,14 @@ type BootstrapState =
 	| { kind: "error"; message: string };
 
 export function BootstrapPage() {
+	const { t } = useTranslation("auth");
+	const { t: tCommon } = useTranslation("common");
 	const { isAuthenticated, isLoading, account } = useAuth();
 	const [state, setState] = useState<BootstrapState>({ kind: "idle" });
 	const [copied, setCopied] = useState(false);
 
 	if (isLoading) {
-		return <PageLoader label="Checking your session…" />;
+		return <PageLoader label={t("session.checking")} />;
 	}
 
 	if (isAuthenticated && account) {
@@ -64,8 +67,8 @@ export function BootstrapPage() {
 
 	return (
 		<AuthPageShell
-			title="Set up Flaremail"
-			description="Create the recovery account for this instance so you can sign in and configure everything else."
+			title={t("bootstrap.title", { appName: tCommon("appName") })}
+			description={t("bootstrap.description")}
 		>
 			<Card className="rounded-xl py-6 shadow-sm">
 				<CardContent className="space-y-4">
@@ -74,11 +77,14 @@ export function BootstrapPage() {
 							<div className="flex items-start gap-3">
 								<ShieldCheck className="text-muted-foreground mt-0.5 size-4 shrink-0" />
 								<p className="text-muted-foreground text-sm">
-									This runs once after deploying a new instance. It creates a
-									break-glass account (login:{" "}
-									<span className="font-mono text-xs">intendant</span>) whose
-									password is shown only at creation time — store it somewhere
-									safe.
+									<Trans
+										i18nKey="bootstrap.intro"
+										ns="auth"
+										values={{ login: INTENDANT_LOGIN }}
+										components={{
+											login: <span className="font-mono text-xs" />,
+										}}
+									/>
 								</p>
 							</div>
 							<Button
@@ -90,23 +96,20 @@ export function BootstrapPage() {
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
 								{state.kind === "loading"
-									? "Creating account…"
-									: "Create recovery account"}
+									? t("bootstrap.creating")
+									: t("bootstrap.createAccount")}
 							</Button>
 						</>
 					) : null}
 
 					{state.kind === "created" ? (
 						<div className="space-y-4">
-							<Alert tone="success" title="Recovery account created">
-								<p>
-									Copy these credentials now — the password cannot be shown
-									again.
-								</p>
+							<Alert tone="success" title={t("bootstrap.createdTitle")}>
+								<p>{t("bootstrap.createdBody")}</p>
 							</Alert>
 							<div className="space-y-2">
 								<label className="text-sm font-medium" htmlFor="bootstrap-login">
-									Login identifier
+									{t("bootstrap.loginIdentifier")}
 								</label>
 								<Input id="bootstrap-login" value={INTENDANT_LOGIN} readOnly />
 							</div>
@@ -115,7 +118,7 @@ export function BootstrapPage() {
 									className="text-sm font-medium"
 									htmlFor="bootstrap-password"
 								>
-									Password
+									{t("bootstrap.password")}
 								</label>
 								<div className="flex gap-2">
 									<Input
@@ -135,37 +138,34 @@ export function BootstrapPage() {
 										) : (
 											<Copy className="size-4" aria-hidden />
 										)}
-										{copied ? "Copied" : "Copy"}
+										{copied ? t("bootstrap.copied") : t("bootstrap.copy")}
 									</Button>
 								</div>
 							</div>
 							<Button asChild className="w-full">
-								<Link to="/login">Continue to sign in</Link>
+								<Link to="/login">{t("bootstrap.continueToSignIn")}</Link>
 							</Button>
 						</div>
 					) : null}
 
 					{state.kind === "exists" ? (
 						<div className="space-y-4">
-							<Alert tone="info" title="Already set up">
-								<p>
-									This instance already has a recovery account. Sign in with it,
-									or regenerate its password from settings after signing in.
-								</p>
+							<Alert tone="info" title={t("bootstrap.existsTitle")}>
+								<p>{t("bootstrap.existsBody")}</p>
 							</Alert>
 							<Button asChild className="w-full" variant="outline">
-								<Link to="/login">Go to sign in</Link>
+								<Link to="/login">{t("bootstrap.goToSignIn")}</Link>
 							</Button>
 						</div>
 					) : null}
 
 					{state.kind === "error" ? (
 						<div className="space-y-4">
-							<Alert tone="destructive" title="Setup failed">
+							<Alert tone="destructive" title={t("bootstrap.failedTitle")}>
 								<p>{state.message}</p>
 							</Alert>
 							<Button className="w-full" onClick={handleBootstrap}>
-								Try again
+								{t("bootstrap.tryAgain")}
 							</Button>
 						</div>
 					) : null}

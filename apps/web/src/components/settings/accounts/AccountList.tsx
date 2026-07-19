@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { AccountDetailDialog } from "@/components/settings/accounts/AccountDetailDialog";
 
 export function AccountList() {
+	const { t } = useTranslation("management");
 	const { account: actor } = useAuth();
 	const accountsQuery = useAccounts();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -70,11 +72,11 @@ export function AccountList() {
 			<div className="relative">
 				<Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
 				<Input
-					placeholder="Search people by name or address…"
+					placeholder={t("accounts.searchPlaceholder")}
 					className="pl-9"
 					value={search}
 					onChange={(event) => setSearch(event.target.value)}
-					aria-label="Search accounts"
+					aria-label={t("accounts.searchAria")}
 				/>
 			</div>
 
@@ -88,8 +90,8 @@ export function AccountList() {
 				<Card className="gap-0 rounded-lg py-0">
 					<CardContent className="text-muted-foreground px-4 py-8 text-center text-sm">
 						{search.trim()
-							? `No people match "${search.trim()}".`
-							: "No accounts yet. Invite someone to get started."}
+							? t("accounts.empty.noMatch", { query: search.trim() })
+							: t("accounts.empty.none")}
 					</CardContent>
 				</Card>
 			) : (
@@ -122,6 +124,7 @@ function AccountRow({
 	canManage: boolean;
 	onManage: () => void;
 }) {
+	const { t } = useTranslation("management");
 	const status = statusMeta(item.status);
 	const role = roleLabel(item.role, item.isIntendant);
 	const description = roleDescription(item.role, item.isIntendant);
@@ -164,7 +167,7 @@ function AccountRow({
 				<div className="flex justify-end sm:w-full">
 					{canManage ? (
 						<Button variant="outline" size="sm" onClick={onManage}>
-							Manage
+							{t("accounts.manage")}
 						</Button>
 					) : (
 						<span aria-hidden className="inline-flex h-8 w-[4.75rem]" />

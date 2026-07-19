@@ -5,6 +5,7 @@ import type { ComposeAttachment } from "@/lib/compose-attachments";
 import { composeAttachmentsToOutbound } from "@/lib/compose-attachments";
 import { isEmptyEditorHtml } from "@/lib/compose-body";
 import type { PersistDraftArgs, PersistDraftResult } from "@/lib/compose/persist-draft";
+import i18n from "@/lib/i18n";
 import type { SendResult } from "@/lib/thread-messages-cache";
 import {
 	hasComposeRecipient,
@@ -88,7 +89,7 @@ export class ComposeSendController {
 
 	async send(): Promise<SendResult> {
 		if (this.isBusy) {
-			throw new Error("Send already in progress");
+			throw new Error(i18n.t("validation.sendInProgress", { ns: "compose" }));
 		}
 
 		this.setPhase("saving");
@@ -110,17 +111,17 @@ export class ComposeSendController {
 	private async sendForward(): Promise<SendResult> {
 		const forward = this.deps.forward;
 		if (!forward) {
-			throw new Error("Forward context is required");
+			throw new Error(i18n.t("validation.forwardRequired", { ns: "compose" }));
 		}
 
 		const current = fieldsForSend(this.deps.getFields());
 		if (!hasComposeSubject(current)) {
-			throw new Error("Subject is required");
+			throw new Error(i18n.t("validation.subjectRequired", { ns: "compose" }));
 		}
 
 		const recipients = parseRecipients(current.to);
 		if (recipients.length === 0) {
-			throw new Error("Recipient is required");
+			throw new Error(i18n.t("validation.recipientRequired", { ns: "compose" }));
 		}
 
 		const outboundAttachments = await composeAttachmentsToOutbound(
@@ -149,10 +150,10 @@ export class ComposeSendController {
 	private async sendDraftPath(): Promise<SendResult> {
 		const current = fieldsForSend(this.deps.getFields());
 		if (!hasComposeSubject(current)) {
-			throw new Error("Subject is required");
+			throw new Error(i18n.t("validation.subjectRequired", { ns: "compose" }));
 		}
 		if (!this.deps.reply && !hasComposeRecipient(current)) {
-			throw new Error("Recipient is required");
+			throw new Error(i18n.t("validation.recipientRequired", { ns: "compose" }));
 		}
 
 		const currentAttachments = this.deps.getAttachments();

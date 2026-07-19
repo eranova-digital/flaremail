@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { AuthCodeInput, isAuthCodeComplete } from "@/components/auth/AuthCodeInput";
 import { Alert } from "@/components/ui/alert";
@@ -26,8 +27,10 @@ export function RecoveryEmailSetup({
 	onComplete,
 	onSkip,
 	showSkip = true,
-	submitLabel = "Verify recovery email",
+	submitLabel,
 }: RecoveryEmailSetupProps) {
+	const { t } = useTranslation("auth");
+	const resolvedSubmitLabel = submitLabel ?? t("recoveryEmail.verify");
 	const [email, setEmail] = useState(initialEmail);
 	const [code, setCode] = useState("");
 	const [codeSent, setCodeSent] = useState(false);
@@ -72,7 +75,7 @@ export function RecoveryEmailSetup({
 		<div className="space-y-4">
 			<div className="space-y-2">
 				<label htmlFor="recovery-email" className="text-sm font-medium">
-					Recovery email
+					{t("recoveryEmail.label")}
 				</label>
 				<Input
 					id="recovery-email"
@@ -85,18 +88,15 @@ export function RecoveryEmailSetup({
 						setCode("");
 					}}
 					disabled={submitting || disabled || codeSent}
-					placeholder="you@personal-email.com"
+					placeholder={t("recoveryEmail.placeholder")}
 				/>
-				<p className="text-muted-foreground text-xs">
-					We'll send a verification code to this address. You can use it to recover
-					your account if you forget your password or need to disable 2FA.
-				</p>
+				<p className="text-muted-foreground text-xs">{t("recoveryEmail.hint")}</p>
 			</div>
 
 			{codeSent ? (
 				<div className="space-y-2">
 					<label htmlFor="recovery-code" className="text-sm font-medium">
-						Verification code
+						{t("recoveryEmail.codeLabel")}
 					</label>
 					<AuthCodeInput
 						id="recovery-code"
@@ -107,7 +107,7 @@ export function RecoveryEmailSetup({
 						invalid={Boolean(error)}
 					/>
 					<p className="text-muted-foreground text-xs">
-						Enter the code we sent to your recovery email.
+						{t("recoveryEmail.codeHint")}
 					</p>
 				</div>
 			) : null}
@@ -125,7 +125,7 @@ export function RecoveryEmailSetup({
 						{submitting ? (
 							<Loader2 className="size-4 animate-spin" aria-hidden />
 						) : null}
-						{submitting ? "Verifying…" : submitLabel}
+						{submitting ? t("recoveryEmail.verifying") : resolvedSubmitLabel}
 					</Button>
 				) : (
 					<Button
@@ -137,7 +137,7 @@ export function RecoveryEmailSetup({
 						{submitting ? (
 							<Loader2 className="size-4 animate-spin" aria-hidden />
 						) : null}
-						{submitting ? "Sending…" : "Send verification code"}
+						{submitting ? t("recoveryEmail.sending") : t("recoveryEmail.sendCode")}
 					</Button>
 				)}
 				{codeSent ? (
@@ -152,7 +152,7 @@ export function RecoveryEmailSetup({
 						}}
 						disabled={submitting || disabled}
 					>
-						Use a different email
+						{t("recoveryEmail.differentEmail")}
 					</Button>
 				) : null}
 				{showSkip ? (
@@ -163,7 +163,7 @@ export function RecoveryEmailSetup({
 						onClick={onSkip}
 						disabled={submitting || disabled}
 					>
-						Skip for now
+						{t("recoveryEmail.skip")}
 					</Button>
 				) : null}
 			</div>

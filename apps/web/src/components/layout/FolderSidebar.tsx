@@ -11,6 +11,7 @@ import {
 	Trash2,
 } from 'lucide-react';
 import { useEffect, useState, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { MailboxSwitcher } from '@/components/layout/MailboxSwitcher';
@@ -71,6 +72,8 @@ function withTooltip(collapsed: boolean, label: string, trigger: ReactElement): 
 }
 
 export function FolderSidebar() {
+	const { t } = useTranslation('mail');
+	const { t: tc } = useTranslation('common');
 	const navigate = useNavigate();
 	const { account } = useAuth();
 	const showManagement = canAccessManagementPage(account);
@@ -94,6 +97,11 @@ export function FolderSidebar() {
 		return null;
 	}
 
+	const expandLabel = t('sidebar.expand');
+	const collapseLabel = t('sidebar.collapse');
+	const composeLabel = t('sidebar.compose');
+	const managementLabel = tc('management');
+
 	return (
 		<TooltipProvider delayDuration={0}>
 			<aside
@@ -109,17 +117,17 @@ export function FolderSidebar() {
 								<span className="bg-primary text-primary-foreground flex size-7 shrink-0 items-center justify-center rounded-[45%] shadow-sm">
 									<FlaremailLogo className="size-3.5" />
 								</span>
-								<h1 className="truncate text-lg font-semibold tracking-tight">Flaremail</h1>
+								<h1 className="truncate text-lg font-semibold tracking-tight">{tc('appName')}</h1>
 							</div>
 						) : null}
 						{withTooltip(
 							collapsed,
-							'Expand sidebar',
+							expandLabel,
 							<Button
 								variant="ghost"
 								size="icon"
 								className="size-8 shrink-0"
-								aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+								aria-label={collapsed ? expandLabel : collapseLabel}
 								onClick={toggleCollapsed}
 							>
 								{collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
@@ -129,14 +137,14 @@ export function FolderSidebar() {
 					{!collapsed ? <MailboxSwitcher /> : null}
 					{withTooltip(
 						collapsed,
-						'Compose',
+						composeLabel,
 						<Button
 							className={cn(collapsed ? 'size-10 p-0' : 'w-full')}
 							size={collapsed ? 'icon' : 'default'}
 							onClick={() => navigate(`/m/${mailboxId}/compose`)}
-							aria-label="Compose"
+							aria-label={composeLabel}
 						>
-							{collapsed ? <Pencil className="size-4" /> : 'Compose'}
+							{collapsed ? <Pencil className="size-4" /> : composeLabel}
 						</Button>,
 					)}
 				</div>
@@ -172,7 +180,7 @@ export function FolderSidebar() {
 					{showManagement
 						? withTooltip(
 								collapsed,
-								'Management',
+								managementLabel,
 								<NavLink
 									to="/management"
 									className={({ isActive }) =>
@@ -184,7 +192,7 @@ export function FolderSidebar() {
 									}
 								>
 									<Building2 className="size-4 shrink-0" />
-									{!collapsed ? 'Management' : null}
+									{!collapsed ? managementLabel : null}
 								</NavLink>,
 							)
 						: null}

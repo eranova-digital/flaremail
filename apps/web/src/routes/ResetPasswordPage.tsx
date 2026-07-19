@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { KeyRound, Loader2, Mail, AtSign } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -19,10 +20,8 @@ import { formatAuthCode } from "@/lib/format-auth-code";
 
 type ResetStep = "choose" | "email" | "no-recovery" | "code" | "password";
 
-const NO_RECOVERY_MESSAGE =
-	"You haven't configured a recovery email. Please ask a supervisor for a recovery code.";
-
 export function ResetPasswordPage() {
+	const { t } = useTranslation("auth");
 	const { resetPassword } = useAuth();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
@@ -52,9 +51,7 @@ export function ResetPasswordPage() {
 
 		try {
 			await requestPasswordReset(address.trim());
-			setInfo(
-				"We sent a reset code to your recovery email. Enter it below to continue.",
-			);
+			setInfo(t("resetPassword.code.sentInfo"));
 			setStep("code");
 		} catch (submitError) {
 			if (isNoRecoveryEmailError(submitError)) {
@@ -92,7 +89,7 @@ export function ResetPasswordPage() {
 		resetMessages();
 
 		if (!passwordsMatch) {
-			setError("Passwords do not match.");
+			setError(t("passwordsDoNotMatch"));
 			return;
 		}
 
@@ -102,7 +99,7 @@ export function ResetPasswordPage() {
 			await resetPassword({ code: code.trim(), password });
 			navigate("/login", {
 				replace: true,
-				state: { success: "Password reset. Sign in with your new password." },
+				state: { success: t("resetPassword.success") },
 			});
 		} catch (submitError) {
 			setError(getErrorMessage(submitError));
@@ -113,25 +110,25 @@ export function ResetPasswordPage() {
 
 	const title =
 		step === "choose"
-			? "Forgot password"
+			? t("resetPassword.choose.title")
 			: step === "email"
-				? "Reset with email"
+				? t("resetPassword.email.title")
 				: step === "no-recovery"
-					? "Recovery email required"
+					? t("resetPassword.noRecovery.title")
 					: step === "code"
-						? "Enter reset code"
-						: "Choose new password";
+						? t("resetPassword.code.title")
+						: t("resetPassword.password.title");
 
 	const description =
 		step === "choose"
-			? "Choose how you'd like to reset your password."
+			? t("resetPassword.choose.description")
 			: step === "email"
-				? "Enter your primary mailbox address."
+				? t("resetPassword.email.description")
 				: step === "no-recovery"
-					? "Self-service email reset isn't available for this account."
+					? t("resetPassword.noRecovery.description")
 					: step === "code"
-						? "Enter the reset code you received."
-						: "Choose a new password for your account.";
+						? t("resetPassword.code.description")
+						: t("resetPassword.password.description");
 
 	return (
 		<AuthPageShell title={title} description={description}>
@@ -150,9 +147,11 @@ export function ResetPasswordPage() {
 							>
 								<Mail className="text-muted-foreground size-5 shrink-0" />
 								<span className="text-left">
-									<span className="block text-sm font-medium">Enter email</span>
+									<span className="block text-sm font-medium">
+										{t("resetPassword.choose.emailTitle")}
+									</span>
 									<span className="text-muted-foreground block text-xs">
-										Send a reset code to your recovery email
+										{t("resetPassword.choose.emailDescription")}
 									</span>
 								</span>
 							</Button>
@@ -167,9 +166,11 @@ export function ResetPasswordPage() {
 							>
 								<KeyRound className="text-muted-foreground size-5 shrink-0" />
 								<span className="text-left">
-									<span className="block text-sm font-medium">Enter code</span>
+									<span className="block text-sm font-medium">
+										{t("resetPassword.choose.codeTitle")}
+									</span>
 									<span className="text-muted-foreground block text-xs">
-										Use a reset code from your supervisor
+										{t("resetPassword.choose.codeDescription")}
 									</span>
 								</span>
 							</Button>
@@ -180,21 +181,21 @@ export function ResetPasswordPage() {
 						<form onSubmit={handleRequestReset} className="space-y-4">
 							<div className="space-y-2">
 								<label htmlFor="address" className="text-sm font-medium">
-									Primary mailbox address
+									{t("resetPassword.email.addressLabel")}
 								</label>
 								<Input
 									id="address"
 									type="email"
 									autoComplete="email"
 									autoFocus
-									placeholder="you@example.com"
+									placeholder={t("resetPassword.email.placeholder")}
 									value={address}
 									onChange={(event) => setAddress(event.target.value)}
 									disabled={submitting}
 									required
 								/>
 								<p className="text-muted-foreground text-xs">
-									Use the mailbox address you sign in with.
+									{t("resetPassword.email.hint")}
 								</p>
 							</div>
 							{error ? <Alert tone="destructive">{error}</Alert> : null}
@@ -206,7 +207,9 @@ export function ResetPasswordPage() {
 								{submitting ? (
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
-								{submitting ? "Sending…" : "Send reset code"}
+								{submitting
+									? t("resetPassword.email.sending")
+									: t("resetPassword.email.sendCode")}
 							</Button>
 							<Button
 								type="button"
@@ -218,14 +221,16 @@ export function ResetPasswordPage() {
 								}}
 								disabled={submitting}
 							>
-								Back
+								{t("resetPassword.back")}
 							</Button>
 						</form>
 					) : null}
 
 					{step === "no-recovery" ? (
 						<div className="space-y-4">
-							<Alert tone="destructive">{NO_RECOVERY_MESSAGE}</Alert>
+							<Alert tone="destructive">
+								{t("resetPassword.noRecovery.message")}
+							</Alert>
 							<Button
 								type="button"
 								className="w-full"
@@ -234,7 +239,7 @@ export function ResetPasswordPage() {
 									setStep("code");
 								}}
 							>
-								I have a reset code
+								{t("resetPassword.noRecovery.haveCode")}
 							</Button>
 							<Button
 								type="button"
@@ -245,7 +250,7 @@ export function ResetPasswordPage() {
 									setStep("choose");
 								}}
 							>
-								Back
+								{t("resetPassword.back")}
 							</Button>
 						</div>
 					) : null}
@@ -255,7 +260,7 @@ export function ResetPasswordPage() {
 							{info ? <Alert tone="success">{info}</Alert> : null}
 							<div className="space-y-2">
 								<label htmlFor="code" className="text-sm font-medium">
-									Reset code
+									{t("resetPassword.code.label")}
 								</label>
 								<AuthCodeInput
 									id="code"
@@ -266,8 +271,13 @@ export function ResetPasswordPage() {
 									invalid={Boolean(error)}
 								/>
 								<p className="text-muted-foreground text-xs">
-									Codes look like <span className="font-mono">AB2C-D4EF</span> and
-									expire after a short time.
+									<Trans
+										i18nKey="resetPassword.code.hint"
+										ns="auth"
+										components={{
+											example: <span className="font-mono" />,
+										}}
+									/>
 								</p>
 							</div>
 							{error ? <Alert tone="destructive">{error}</Alert> : null}
@@ -279,7 +289,9 @@ export function ResetPasswordPage() {
 								{submitting ? (
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
-								{submitting ? "Checking…" : "Continue"}
+								{submitting
+									? t("resetPassword.code.checking")
+									: t("resetPassword.code.continue")}
 							</Button>
 							<Button
 								type="button"
@@ -291,7 +303,7 @@ export function ResetPasswordPage() {
 								}}
 								disabled={submitting}
 							>
-								Back
+								{t("resetPassword.back")}
 							</Button>
 						</form>
 					) : null}
@@ -302,14 +314,16 @@ export function ResetPasswordPage() {
 								<div className="bg-muted flex items-center gap-3 rounded-lg px-4 py-3 text-sm">
 									<AtSign className="text-muted-foreground size-4 shrink-0" />
 									<div>
-										<p className="text-muted-foreground text-xs">Your mailbox</p>
+										<p className="text-muted-foreground text-xs">
+											{t("resetPassword.password.yourMailbox")}
+										</p>
 										<p className="font-medium">{accountAddress}</p>
 									</div>
 								</div>
 							) : null}
 							<div className="space-y-2">
 								<label htmlFor="password" className="text-sm font-medium">
-									New password
+									{t("resetPassword.password.newPassword")}
 								</label>
 								<PasswordInput
 									id="password"
@@ -321,12 +335,12 @@ export function ResetPasswordPage() {
 									required
 								/>
 								<p className="text-muted-foreground text-xs">
-									Use a long, unique password you don't use anywhere else.
+									{t("resetPassword.password.passwordHint")}
 								</p>
 							</div>
 							<div className="space-y-2">
 								<label htmlFor="confirm-password" className="text-sm font-medium">
-									Confirm password
+									{t("resetPassword.password.confirmPassword")}
 								</label>
 								<PasswordInput
 									id="confirm-password"
@@ -341,7 +355,7 @@ export function ResetPasswordPage() {
 								/>
 								{confirmPassword && !passwordsMatch ? (
 									<p className="text-destructive text-xs">
-										Passwords do not match.
+										{t("passwordsDoNotMatch")}
 									</p>
 								) : null}
 							</div>
@@ -354,7 +368,9 @@ export function ResetPasswordPage() {
 								{submitting ? (
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
-								{submitting ? "Resetting…" : "Reset password"}
+								{submitting
+									? t("resetPassword.password.resetting")
+									: t("resetPassword.password.reset")}
 							</Button>
 							<Button
 								type="button"
@@ -367,16 +383,16 @@ export function ResetPasswordPage() {
 								}}
 								disabled={submitting}
 							>
-								Back
+								{t("resetPassword.back")}
 							</Button>
 						</form>
 					) : null}
 				</CardContent>
 			</Card>
 			<p className="text-muted-foreground text-center text-sm">
-				Remembered it after all?{" "}
+				{t("resetPassword.remembered")}{" "}
 				<Link to="/login" className="text-primary font-medium hover:underline">
-					Back to sign in
+					{t("resetPassword.backToSignIn")}
 				</Link>
 			</p>
 		</AuthPageShell>

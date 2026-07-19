@@ -1,6 +1,7 @@
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { ComposeEditorToolbar } from "@/components/compose/editor/editor-controls";
 import { ImageBubbleMenu } from "@/components/compose/editor/ImageBubbleMenu";
@@ -25,17 +26,19 @@ export function ComposeEditor({
 	mailboxId,
 	initialHtml,
 	signatureHtml,
-	placeholder = "Write your message…",
+	placeholder,
 	disabled = false,
 	className,
 	onChange,
 }: ComposeEditorProps) {
+	const { t } = useTranslation("compose");
+	const resolvedPlaceholder = placeholder ?? t("placeholders.body");
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
 	const [toolbarHeight, setToolbarHeight] = useState(0);
 
 	const editor = useEditor({
-		extensions: getComposeEditorExtensions(placeholder),
+		extensions: getComposeEditorExtensions(resolvedPlaceholder),
 		content: initialHtml || "<p></p>",
 		editable: !disabled,
 		immediatelyRender: false,
@@ -88,7 +91,7 @@ export function ComposeEditor({
 					className,
 				)}
 			>
-				Loading editor…
+				{t("loading.editor")}
 			</div>
 		);
 	}

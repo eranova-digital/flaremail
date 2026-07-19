@@ -1,6 +1,7 @@
 import { Paperclip, Reply, ReplyAll } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { ComposePane } from '@/components/compose/ComposePane';
 import { Badge } from '@/components/ui/badge';
@@ -58,28 +59,28 @@ function isSameCalendarDay(a: Date, b: Date): boolean {
 	);
 }
 
-function formatMessageTime(value: string): string {
-	return new Date(value).toLocaleTimeString([], {
+function formatMessageTime(value: string, locale: string): string {
+	return new Date(value).toLocaleTimeString(locale, {
 		hour: '2-digit',
 		minute: '2-digit',
 	});
 }
 
-function formatDateSeparator(value: string): string {
+function formatDateSeparator(value: string, locale: string, today: string, yesterday: string): string {
 	const date = new Date(value);
 	const now = new Date();
 
 	if (isSameCalendarDay(date, now)) {
-		return 'Today';
+		return today;
 	}
 
-	const yesterday = new Date(now);
-	yesterday.setDate(now.getDate() - 1);
-	if (isSameCalendarDay(date, yesterday)) {
-		return 'Yesterday';
+	const yesterdayDate = new Date(now);
+	yesterdayDate.setDate(now.getDate() - 1);
+	if (isSameCalendarDay(date, yesterdayDate)) {
+		return yesterday;
 	}
 
-	return date.toLocaleDateString([], {
+	return date.toLocaleDateString(locale, {
 		weekday: 'long',
 		year: 'numeric',
 		month: 'long',
@@ -87,8 +88,8 @@ function formatDateSeparator(value: string): string {
 	});
 }
 
-function formatExactDate(value: string): string {
-	return new Date(value).toLocaleDateString([], {
+function formatExactDate(value: string, locale: string): string {
+	return new Date(value).toLocaleDateString(locale, {
 		weekday: 'long',
 		year: 'numeric',
 		month: 'long',
@@ -96,9 +97,9 @@ function formatExactDate(value: string): string {
 	});
 }
 
-function PendingMessageSkeleton() {
+function PendingMessageSkeleton({ label }: { label: string }) {
 	return (
-		<div className="space-y-3" aria-busy="true" aria-label="Sending message">
+		<div className="space-y-3" aria-busy="true" aria-label={label}>
 			<div className="flex items-center justify-between gap-3">
 				<Skeleton className="h-4 w-28" />
 				<Skeleton className="h-3 w-16" />
@@ -149,9 +150,9 @@ function MessageCardSkeleton({
 	);
 }
 
-function ThreadViewSkeleton() {
+function ThreadViewSkeleton({ label }: { label: string }) {
 	return (
-		<div className="flex h-full min-w-0 flex-col" aria-busy="true" aria-label="Loading conversation">
+		<div className="flex h-full min-w-0 flex-col" aria-busy="true" aria-label={label}>
 			<div className="space-y-3 border-b p-4">
 				<div className="flex items-start justify-between gap-4">
 					<div className="min-w-0 space-y-2">
@@ -179,17 +180,19 @@ function ThreadViewSkeleton() {
 	);
 }
 
-function getShortPreview(message: ThreadMessagePreview, maxLength = 48): string {
+function getShortPreview(message: ThreadMessagePreview, noPreview: string, maxLength = 48): string {
 	const raw = message.preview?.trim() || message.text?.trim() || '';
 	const singleLine = raw.replace(/\s+/g, ' ').trim();
 	if (!singleLine) {
-		return '(no preview)';
+		return noPreview;
 	}
 
 	return singleLine.length > maxLength ? `${singleLine.slice(0, maxLength)}…` : singleLine;
 }
 
 export function ThreadView() {
+	const { t, i18n } = useTranslation('mail');
+	const { t: tc } = useTranslation('common');
 	const navigate = useNavigate();
 	const { mailboxId, threadId, labelId: labelIdParam } = useParams();
 	const [searchParams] = useSearchParams();
@@ -404,11 +407,11 @@ export function ThreadView() {
 	}, [closeReply]);
 
 	if (!mailboxId || !threadId) {
-		return <div className="text-muted-foreground flex h-full items-center justify-center p-8 text-sm">Select a thread to read</div>;
+		return <div className="text-muted-foreground flex h-full items-center justify-center p-8 text-sm">{t('threadView.selectThread')}</div>;
 	}
 
 	if (messagesQuery.isLoading) {
-		return <ThreadViewSkeleton />;
+		return <ThreadViewSkeleton label={t('threadView.loadingConversation')} />;
 	}
 
 	if (messagesQuery.isError) {
@@ -429,9 +432,9 @@ export function ThreadView() {
 				<div className="space-y-3 border-b p-4">
 					<div className="flex items-start justify-between gap-4">
 						<div className="min-w-0">
-							<h2 className="truncate text-lg font-semibold">{thread?.subject || '(no subject)'}</h2>
+							<h2 className="truncate text-lg font-semibold">{thread?.subject || t('threadView.noSubject')}</h2>
 							<p className="text-muted-foreground text-sm">
-								{messages.length} message{messages.length === 1 ? '' : 's'}
+								{t('threadView.messageCount', { count: messages.length })}
 							</p>
 						</div>
 						<ThreadActions mailboxId={mailboxId} threadId={threadId} folder={actionFolder} />
@@ -471,11 +474,11 @@ export function ThreadView() {
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<p className="text-muted-foreground cursor-default text-center text-xs font-medium">
-													{formatDateSeparator(messageDate)}
+													{formatDateSeparator(messageDate, i18n.language, t('threadView.today'), t('threadView.yesterday'))}
 												</p>
 											</TooltipTrigger>
 											<TooltipContent>
-												{formatExactDate(messageDate)}
+												{formatExactDate(messageDate, i18n.language)}
 											</TooltipContent>
 										</Tooltip>
 									) : null}
@@ -484,14 +487,14 @@ export function ThreadView() {
 											<TooltipTrigger asChild>
 												<p className="text-muted-foreground cursor-default text-center text-xs">
 													<MessageAddress address={message.from} className="font-medium" />
-													{' changed the subject to '}
+													{' '}{t('threadView.changedSubjectTo')}{' '}
 													<span className="text-foreground font-medium">
 														&ldquo;{formatSubjectForDisplay(message.subject)}&rdquo;
 													</span>
 												</p>
 											</TooltipTrigger>
 											<TooltipContent>
-												Subject changes may appear as a new thread on the recipient&apos;s emailing application.
+												{t('threadView.subjectChangeTooltip')}
 											</TooltipContent>
 										</Tooltip>
 									) : null}
@@ -500,14 +503,14 @@ export function ThreadView() {
 											<TooltipTrigger asChild>
 												<p className="text-muted-foreground cursor-default text-center text-xs">
 													<MessageAddress address={message.from} className="font-medium" />
-													{' added '}
+													{' '}{t('threadView.added')}{' '}
 													<span className="text-foreground font-medium">
 														{formatAddedCcRecipients(addedCcRecipients)}
 													</span>
 												</p>
 											</TooltipTrigger>
 											<TooltipContent>
-												Use &ldquo;Reply All&rdquo; to message everyone on the CC list, including the original recipient.
+												{t('threadView.ccAdditionTooltip')}
 											</TooltipContent>
 										</Tooltip>
 									) : null}
@@ -530,7 +533,7 @@ export function ThreadView() {
 															isOutbound ? 'mr-1 justify-end' : 'ml-1',
 														)}
 													>
-														<span className="shrink-0">Sent by</span>
+														<span className="shrink-0">{t('threadView.sentBy')}</span>
 														<span className="ring-background inline-flex shrink-0 rounded-full ring-1">
 															<ProfileAvatar
 																accountId={(message as ThreadMessagePreview).sentBy?.accountId ?? ''}
@@ -556,10 +559,9 @@ export function ThreadView() {
 													</div>
 												</TooltipTrigger>
 												<TooltipContent className="max-w-xs">
-													<p>This is an internal indicator.</p>
+													<p>{t('threadView.sentByInternal')}</p>
 													<small className="text-background/80 mt-1 block">
-														To the recipient, the message appears as sent by{' '}
-														{selfAddress ?? message.from}
+														{t('threadView.sentByExternal', { address: selfAddress ?? message.from })}
 													</small>
 												</TooltipContent>
 											</Tooltip>
@@ -581,7 +583,7 @@ export function ThreadView() {
 												<span className="truncate">
 													<MessageAddress address={parentMessage.from} className="font-medium" />
 													{': '}
-													{getShortPreview(parentMessage)}
+													{getShortPreview(parentMessage, t('threadView.noPreview'))}
 												</span>
 											</button>
 										) : null}
@@ -611,23 +613,23 @@ export function ThreadView() {
 											)}
 										>
 											{isPendingSend ? (
-												<PendingMessageSkeleton />
+												<PendingMessageSkeleton label={t('threadView.sendingMessage')} />
 											) : (
 												<>
 											<div className="mb-2 flex items-center justify-between gap-3">
 												<div className="flex min-w-0 items-center gap-2 text-sm">
 													<MessageAddress address={message.from} className="font-medium" />
-													{isDraft ? <Badge variant="secondary">Draft</Badge> : null}
+													{isDraft ? <Badge variant="secondary">{t('threadView.draft')}</Badge> : null}
 													{message.hasAttachments ? (
 														<Paperclip
 															className="text-muted-foreground size-3.5"
-															aria-label="Has attachments"
+															aria-label={t('threadView.hasAttachments')}
 														/>
 													) : null}
 												</div>
 												<div className="flex shrink-0 items-center gap-1">
 													<span className="text-muted-foreground text-xs">
-														{isDraft ? 'Not sent' : formatMessageTime(message.sentAt ?? message.receivedAt ?? '')}
+														{isDraft ? t('threadView.notSent') : formatMessageTime(message.sentAt ?? message.receivedAt ?? '', i18n.language)}
 													</span>
 													{isDraft ? (
 														<>
@@ -645,7 +647,7 @@ export function ThreadView() {
 																	)
 																}
 															>
-																Edit
+																{tc('edit')}
 															</Button>
 															<Button
 																variant="ghost"
@@ -657,14 +659,14 @@ export function ThreadView() {
 																		return;
 																	}
 
-																	if (!window.confirm('Delete this draft permanently?')) {
+																	if (!window.confirm(t('threadView.deleteDraftConfirm'))) {
 																		return;
 																	}
 
 																	deleteDraftMutation.mutate(message.id);
 																}}
 															>
-																Delete
+																{tc('delete')}
 															</Button>
 															<Button
 																size="sm"
@@ -675,7 +677,7 @@ export function ThreadView() {
 																	}
 																}}
 															>
-																Send
+																{t('threadView.send')}
 															</Button>
 														</>
 													) : (
@@ -686,7 +688,7 @@ export function ThreadView() {
 																		variant="ghost"
 																		size="icon"
 																		className="size-7"
-																		aria-label="Reply"
+																		aria-label={t('threadView.reply')}
 																		onClick={() => {
 																			if (message.id) {
 																				openReply(message.id, false);
@@ -700,7 +702,7 @@ export function ThreadView() {
 																			variant="ghost"
 																			size="icon"
 																			className="size-7"
-																			aria-label="Reply all"
+																			aria-label={t('threadView.replyAll')}
 																			onClick={() => {
 																				if (message.id) {
 																					openReply(message.id, true);
@@ -768,12 +770,12 @@ export function ThreadView() {
 									onClick={() => openReply(lastReplyableMessageId, false)}
 								>
 									<Reply className="size-4" />
-									Reply
+									{t('threadView.reply')}
 								</Button>
 								{showReplyAll ? (
 									<Button variant="outline" className="flex-1" onClick={() => openReply(lastReplyableMessageId, true)}>
 										<ReplyAll className="size-4" />
-										Reply all
+										{t('threadView.replyAll')}
 									</Button>
 								) : null}
 							</div>

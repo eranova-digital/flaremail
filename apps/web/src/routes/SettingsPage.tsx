@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
 import { ProfileSection } from "@/components/settings/ProfileSection";
@@ -37,6 +38,8 @@ function resolveActiveTab(
 }
 
 export function SettingsPage() {
+	const { t } = useTranslation("settings");
+	const { t: tc } = useTranslation("common");
 	const { account } = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tabParam = searchParams.get("tab");
@@ -57,17 +60,17 @@ export function SettingsPage() {
 	return (
 		<SettingsShell
 			backTo="/"
-			backLabel="Back to mail"
+			backLabel={tc("backToMail")}
 			actions={<LogoutButton />}
 		>
 			<Tabs value={activeTab} onValueChange={handleTabChange}>
 				<TabsList>
 					{showProfile ? (
-						<TabsTrigger value="profile">Profile</TabsTrigger>
+						<TabsTrigger value="profile">{t("tabs.profile")}</TabsTrigger>
 					) : null}
-					<TabsTrigger value="identities">Identities</TabsTrigger>
-					<TabsTrigger value="preferences">Preferences</TabsTrigger>
-					<TabsTrigger value="security">Security</TabsTrigger>
+					<TabsTrigger value="identities">{t("tabs.identities")}</TabsTrigger>
+					<TabsTrigger value="preferences">{t("tabs.preferences")}</TabsTrigger>
+					<TabsTrigger value="security">{t("tabs.security")}</TabsTrigger>
 				</TabsList>
 				{showProfile ? (
 					<TabsContent value="profile">

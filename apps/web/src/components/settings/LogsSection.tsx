@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import {
 	ChevronLeft,
@@ -50,6 +51,8 @@ function importanceVariant(
 }
 
 function LogRow({ item }: { item: LogListItem }) {
+	const { t } = useTranslation("management");
+
 	return (
 		<li className="hover:bg-muted/40 px-4 py-3.5 transition-colors sm:px-5">
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -58,7 +61,7 @@ function LogRow({ item }: { item: LogListItem }) {
 						<Badge
 							variant={importanceVariant(item.importance)}
 							className="font-mono tabular-nums"
-							title={`Importance ${item.importance} (0 = most important)`}
+							title={t("logs.importanceTitle", { n: item.importance })}
 						>
 							{item.importance}
 						</Badge>
@@ -88,6 +91,8 @@ function LogRow({ item }: { item: LogListItem }) {
 }
 
 export function LogsSection() {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const qParam = searchParams.get("q") ?? "";
@@ -248,31 +253,31 @@ export function LogsSection() {
 		<section className="space-y-5">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 				<div className="min-w-0 space-y-1">
-					<h2 className="text-lg font-medium">Logs</h2>
+					<h2 className="text-lg font-medium">{t("logs.title")}</h2>
 					<p className="text-muted-foreground text-sm">
-						Instance activity for the intendant and superadmins. Lower
-						importance is more critical.
+						{t("logs.description")}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
 					{query.data ? (
 						<Badge variant="secondary">
-							{items.length}
-							{hasNext ? "+" : ""} on this page
+							{hasNext
+								? t("logs.pageCountMore", { count: items.length })
+								: t("logs.pageCount", { count: items.length })}
 						</Badge>
 					) : null}
 					<Button
 						variant="outline"
 						size="sm"
 						className="gap-2"
-						aria-label="Refresh logs"
+						aria-label={t("logs.refreshAria")}
 						disabled={query.isFetching}
 						onClick={() => void query.refetch()}
 					>
 						<RefreshCw
 							className={cn("size-3.5", query.isFetching && "animate-spin")}
 						/>
-						Refresh
+						{t("logs.refresh")}
 					</Button>
 				</div>
 			</div>
@@ -280,12 +285,12 @@ export function LogsSection() {
 			<div className="bg-card space-y-3 rounded-xl border p-4 shadow-sm">
 				<div className="space-y-1">
 					<label className="text-muted-foreground text-xs" htmlFor="logs-q">
-						Search
+						{tc("search")}
 					</label>
 					<Input
 						id="logs-q"
 						value={searchDraft}
-						placeholder="Search summary, refs, context…"
+						placeholder={t("logs.searchPlaceholder")}
 						onChange={(event) => setSearchDraft(event.target.value)}
 					/>
 				</div>
@@ -295,7 +300,7 @@ export function LogsSection() {
 							className="text-muted-foreground text-xs"
 							htmlFor="logs-importance"
 						>
-							Max importance
+							{t("logs.maxImportance")}
 						</label>
 						<Select
 							value={String(Number.isInteger(maxImportance) ? maxImportance : 5)}
@@ -307,7 +312,7 @@ export function LogsSection() {
 							<SelectContent>
 								{Array.from({ length: 11 }, (_, i) => (
 									<SelectItem key={i} value={String(i)}>
-										≤ {i}
+										{t("logs.maxImportanceOption", { n: i })}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -315,7 +320,7 @@ export function LogsSection() {
 					</div>
 					<div className="space-y-1">
 						<label className="text-muted-foreground text-xs" htmlFor="logs-type">
-							Type
+							{t("logs.type")}
 						</label>
 						<LogTypeMultiSelect
 							id="logs-type"
@@ -328,7 +333,7 @@ export function LogsSection() {
 							className="text-muted-foreground text-xs"
 							htmlFor="logs-range"
 						>
-							Date & time range
+							{t("logs.dateRangeLabel")}
 						</label>
 						<DateTimeRangePicker
 							id="logs-range"
@@ -341,7 +346,7 @@ export function LogsSection() {
 
 			{query.isError ? (
 				<Alert tone="destructive">
-					{getErrorMessage(query.error) ?? "Could not load logs."}
+					{getErrorMessage(query.error) ?? t("logs.loadError")}
 				</Alert>
 			) : null}
 
@@ -363,11 +368,10 @@ export function LogsSection() {
 			{!query.isLoading && !query.isError && items.length === 0 ? (
 				<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-16 text-center">
 					<ScrollText className="size-8 opacity-40" aria-hidden />
-					<p className="text-sm font-medium text-foreground">No logs found</p>
-					<p className="max-w-sm text-xs">
-						Try widening max importance, clearing the date range, or choosing
-						another type.
+					<p className="text-sm font-medium text-foreground">
+						{t("logs.emptyTitle")}
 					</p>
+					<p className="max-w-sm text-xs">{t("logs.emptyHint")}</p>
 				</div>
 			) : null}
 
@@ -387,15 +391,17 @@ export function LogsSection() {
 					<div className="bg-muted/30 flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex flex-wrap items-center gap-3">
 							<p className="text-muted-foreground text-xs">
-								Page {pageNumber}
-								{hasNext ? " · more available" : " · end of results"}
+								{t("logs.page", { n: pageNumber })}
+								{hasNext
+									? t("logs.moreAvailable")
+									: t("logs.endOfResults")}
 							</p>
 							<div className="flex items-center gap-2">
 								<label
 									className="text-muted-foreground text-xs"
 									htmlFor="logs-limit"
 								>
-									Page size
+									{t("logs.pageSize")}
 								</label>
 								<Select
 									value={String(limit)}
@@ -407,7 +413,7 @@ export function LogsSection() {
 									<SelectContent>
 										{PAGE_SIZES.map((size) => (
 											<SelectItem key={size} value={String(size)}>
-												{size} / page
+												{t("logs.perPage", { n: size })}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -423,7 +429,7 @@ export function LogsSection() {
 								className="gap-1"
 							>
 								<ChevronLeft className="size-4" />
-								Previous
+								{t("logs.previous")}
 							</Button>
 							<Button
 								variant="outline"
@@ -436,7 +442,7 @@ export function LogsSection() {
 									<Loader2 className="size-4 animate-spin" />
 								) : (
 									<>
-										Next
+										{tc("next")}
 										<ChevronRight className="size-4" />
 									</>
 								)}

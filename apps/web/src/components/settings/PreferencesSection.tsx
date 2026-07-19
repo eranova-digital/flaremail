@@ -1,35 +1,24 @@
 import { Monitor, Moon, Sun } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { useLocale } from "@/lib/i18n/LocaleProvider";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import type { ThemePreference } from "@/lib/theme-preference";
 import { cn } from "@/lib/utils";
-
-const THEME_OPTIONS: {
-	value: ThemePreference;
-	label: string;
-	description: string;
-	icon: typeof Sun;
-}[] = [
-	{
-		value: "light",
-		label: "Light",
-		description: "Always use the light appearance.",
-		icon: Sun,
-	},
-	{
-		value: "dark",
-		label: "Dark",
-		description: "Always use the dark appearance.",
-		icon: Moon,
-	},
-	{
-		value: "system",
-		label: "System",
-		description: "Match your operating system setting.",
-		icon: Monitor,
-	},
-];
+import {
+	LOCALE_FLAGS,
+	LOCALE_LABELS,
+	SUPPORTED_LOCALES,
+	isAppLocale,
+} from "@test-worker/i18n";
 
 function ThemeOption({
 	value,
@@ -77,32 +66,101 @@ function ThemeOption({
 }
 
 export function PreferencesSection() {
+	const { t } = useTranslation("settings");
 	const { preference, setPreference } = useTheme();
+	const { locale, setLocale } = useLocale();
+
+	const themeOptions: {
+		value: ThemePreference;
+		label: string;
+		description: string;
+		icon: typeof Sun;
+	}[] = [
+		{
+			value: "light",
+			label: t("preferences.theme.light.label"),
+			description: t("preferences.theme.light.description"),
+			icon: Sun,
+		},
+		{
+			value: "dark",
+			label: t("preferences.theme.dark.label"),
+			description: t("preferences.theme.dark.description"),
+			icon: Moon,
+		},
+		{
+			value: "system",
+			label: t("preferences.theme.system.label"),
+			description: t("preferences.theme.system.description"),
+			icon: Monitor,
+		},
+	];
 
 	return (
 		<div className="space-y-6">
 			<div className="space-y-2">
-				<h2 className="text-lg font-semibold">Preferences</h2>
+				<h2 className="text-lg font-semibold">{t("preferences.title")}</h2>
 				<p className="text-muted-foreground max-w-prose text-sm">
-					Customize how Flaremail looks and feels on this device. These settings
-					stay in your browser and are not synced to your account.
+					{t("preferences.description")}
 				</p>
 			</div>
 
 			<Card className="rounded-xl shadow-sm">
 				<CardHeader className="pb-4">
-					<CardTitle className="text-base">Appearance</CardTitle>
+					<CardTitle className="text-base">
+						{t("preferences.language.title")}
+					</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-3">
 					<p className="text-muted-foreground text-sm">
-						Choose a theme for the web app.
+						{t("preferences.language.description")}
+					</p>
+					<Select
+						value={locale}
+						onValueChange={(value) => {
+							if (isAppLocale(value)) {
+								setLocale(value);
+							}
+						}}
+					>
+						<SelectTrigger
+							className="max-w-sm"
+							aria-label={t("preferences.language.title")}
+						>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{SUPPORTED_LOCALES.map((value) => (
+								<SelectItem key={value} value={value}>
+									<span className="flex items-center gap-2">
+										<span className="text-base leading-none" aria-hidden>
+											{LOCALE_FLAGS[value]}
+										</span>
+										<span>{LOCALE_LABELS[value]}</span>
+									</span>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</CardContent>
+			</Card>
+
+			<Card className="rounded-xl shadow-sm">
+				<CardHeader className="pb-4">
+					<CardTitle className="text-base">
+						{t("preferences.appearance.title")}
+					</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-3">
+					<p className="text-muted-foreground text-sm">
+						{t("preferences.appearance.description")}
 					</p>
 					<div
 						className="space-y-2"
 						role="radiogroup"
-						aria-label="Theme"
+						aria-label={t("preferences.appearance.title")}
 					>
-						{THEME_OPTIONS.map((option) => (
+						{themeOptions.map((option) => (
 							<ThemeOption
 								key={option.value}
 								value={option.value}

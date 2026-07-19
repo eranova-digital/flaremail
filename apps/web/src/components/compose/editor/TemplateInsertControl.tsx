@@ -1,6 +1,7 @@
 import type { Editor } from "@tiptap/react";
 import { FileStack, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
 	TemplateHtmlPreview,
@@ -33,6 +34,7 @@ export function TemplateInsertControl({
 	mailboxId,
 	disabled = false,
 }: TemplateInsertControlProps) {
+	const { t } = useTranslation("compose");
 	const templatesQuery = useComposeTemplates(mailboxId);
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
@@ -113,7 +115,7 @@ export function TemplateInsertControl({
 					size="icon-xs"
 					className="size-8"
 					disabled={disabled || insertingId !== null}
-					aria-label="Insert email template"
+					aria-label={t("templates.insertAria")}
 					tabIndex={-1}
 				>
 					<FileStack className="size-4" />
@@ -129,7 +131,7 @@ export function TemplateInsertControl({
 						<Input
 							value={query}
 							onChange={(event) => setQuery(event.target.value)}
-							placeholder="Search…"
+							placeholder={t("templates.search")}
 							className="h-8 pl-8 text-xs"
 							autoFocus
 						/>
@@ -137,13 +139,13 @@ export function TemplateInsertControl({
 					<div className="max-h-40 overflow-y-auto p-1 sm:max-h-64">
 						{!hasResults ? (
 							<p className="text-muted-foreground px-2 py-3 text-center text-xs">
-								No templates found
+								{t("templates.noneFound")}
 							</p>
 						) : (
 							<>
 								{filtered.global.length > 0 ? (
 									<TemplateGroup
-										label="Global"
+										label={t("templates.global")}
 										templates={filtered.global}
 										insertingId={insertingId}
 										previewId={previewId}
@@ -153,7 +155,7 @@ export function TemplateInsertControl({
 								) : null}
 								{filtered.mailbox.length > 0 ? (
 									<TemplateGroup
-										label="Mailbox"
+										label={t("templates.mailbox")}
 										templates={filtered.mailbox}
 										insertingId={insertingId}
 										previewId={previewId}
@@ -170,7 +172,7 @@ export function TemplateInsertControl({
 				</div>
 				<div className="bg-muted/30 flex min-h-48 min-w-0 flex-1 flex-col sm:min-h-64">
 					<div className="text-muted-foreground border-b px-3 py-1.5 text-xs font-medium">
-						{previewTemplate ? previewTemplate.name : "Preview"}
+						{previewTemplate ? previewTemplate.name : t("templates.preview")}
 					</div>
 					<div className="min-h-0 flex-1 overflow-hidden">
 						<TemplateHtmlPreview
@@ -181,7 +183,7 @@ export function TemplateInsertControl({
 									? getErrorMessage(previewQuery.error)
 									: null
 							}
-							emptyLabel="Hover a template to preview"
+							emptyLabel={t("templates.hoverToPreview")}
 							className="h-48 sm:h-64"
 						/>
 					</div>

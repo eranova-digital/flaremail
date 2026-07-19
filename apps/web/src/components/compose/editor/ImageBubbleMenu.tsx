@@ -5,6 +5,7 @@ import {
 	AlignRight,
 	Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ type ImageBubbleMenuProps = {
 };
 
 export function ImageBubbleMenu({ editor, disabled = false }: ImageBubbleMenuProps) {
+	const { t } = useTranslation("compose");
 	const currentWidth =
 		(editor.getAttributes("image").width as string | undefined) ?? "100%";
 	const currentAlign =
@@ -43,7 +45,7 @@ export function ImageBubbleMenu({ editor, disabled = false }: ImageBubbleMenuPro
 				disabled={disabled}
 			>
 				<SelectTrigger className="h-8 w-24 px-2 text-xs">
-					<SelectValue placeholder="Width" />
+					<SelectValue placeholder={t("image.width")} />
 				</SelectTrigger>
 				<SelectContent>
 					{IMAGE_WIDTHS.map((width) => (
@@ -62,7 +64,7 @@ export function ImageBubbleMenu({ editor, disabled = false }: ImageBubbleMenuPro
 					currentAlign === "left" && "bg-accent text-accent-foreground",
 				)}
 				disabled={disabled}
-				aria-label="Align image left"
+				aria-label={t("image.alignLeft")}
 				onClick={() =>
 					editor.chain().focus().updateAttributes("image", { align: "left" }).run()
 				}
@@ -78,7 +80,7 @@ export function ImageBubbleMenu({ editor, disabled = false }: ImageBubbleMenuPro
 					currentAlign === "center" && "bg-accent text-accent-foreground",
 				)}
 				disabled={disabled}
-				aria-label="Align image center"
+				aria-label={t("image.alignCenter")}
 				onClick={() =>
 					editor
 						.chain()
@@ -98,7 +100,7 @@ export function ImageBubbleMenu({ editor, disabled = false }: ImageBubbleMenuPro
 					currentAlign === "right" && "bg-accent text-accent-foreground",
 				)}
 				disabled={disabled}
-				aria-label="Align image right"
+				aria-label={t("image.alignRight")}
 				onClick={() =>
 					editor
 						.chain()
@@ -115,7 +117,7 @@ export function ImageBubbleMenu({ editor, disabled = false }: ImageBubbleMenuPro
 				size="icon-xs"
 				className="text-destructive size-8"
 				disabled={disabled}
-				aria-label="Remove image"
+				aria-label={t("image.remove")}
 				onClick={() => editor.chain().focus().deleteSelection().run()}
 			>
 				<Trash2 className="size-4" />

@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
+
 import type { DomainValidationRunSummary } from "@/lib/api/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { BADGE_META, formatValidationTimestamp } from "@/lib/domain-validation";
+import { formatValidationTimestamp } from "@/lib/domain-validation";
 import { cn } from "@/lib/utils";
 
 import { ReadinessBadge } from "./ReadinessBadge";
@@ -14,9 +16,13 @@ export function ValidationRunHistory({
 	selectedRunId: string | null;
 	onSelect: (runId: string) => void;
 }) {
+	const { t } = useTranslation("management");
+
 	if (!runs.length) {
 		return (
-			<p className="text-muted-foreground text-sm">No validation runs yet.</p>
+			<p className="text-muted-foreground text-sm">
+				{t("domainValidation.history.empty")}
+			</p>
 		);
 	}
 
@@ -52,10 +58,10 @@ export function ValidationRunHistory({
 							</div>
 							<p className="text-muted-foreground text-xs">
 								{run.status === "checking"
-									? "In progress"
+									? t("domainValidation.history.inProgress")
 									: badge
-										? BADGE_META[badge].headline
-										: "Completed"}
+										? t(`domainValidation.badges.${badge}.headline`)
+										: t("domainValidation.history.completed")}
 							</p>
 						</button>
 					</li>

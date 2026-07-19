@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Fingerprint, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -23,6 +24,8 @@ function isMfaChallenge(
 }
 
 export function LoginPage() {
+	const { t } = useTranslation("auth");
+	const { t: tCommon } = useTranslation("common");
 	const { account, isAuthenticated, isLoading, signIn, verifyMfa, signInWithPasskey } =
 		useAuth();
 	const navigate = useNavigate();
@@ -49,14 +52,14 @@ export function LoginPage() {
 	const submittingRef = useRef(false);
 
 	if (isLoading) {
-		return <PageLoader label="Checking your session…" />;
+		return <PageLoader label={t("session.checking")} />;
 	}
 
 	if (isAuthenticated) {
 		const path = getPostLoginPath(account, from);
 		if (isFullPageReturnTo(path)) {
 			window.location.replace(path);
-			return <PageLoader label="Continuing…" />;
+			return <PageLoader label={t("session.continuing")} />;
 		}
 		return <Navigate to={path} replace />;
 	}
@@ -179,11 +182,11 @@ export function LoginPage() {
 
 	return (
 		<AuthPageShell
-			title={mfaToken ? "Two-factor authentication" : "Welcome back"}
+			title={mfaToken ? t("login.mfa.title") : t("login.title")}
 			description={
 				mfaToken
-					? "Enter the 6-digit code from your authenticator app."
-					: "Sign in to your Flaremail account."
+					? t("login.mfa.description")
+					: t("login.description", { appName: tCommon("appName") })
 			}
 		>
 			{success ? <Alert tone="success">{success}</Alert> : null}
@@ -196,7 +199,7 @@ export function LoginPage() {
 									htmlFor="mfa-code"
 									className="block text-center text-sm font-medium"
 								>
-									Authenticator code
+									{t("login.mfa.codeLabel")}
 								</label>
 								<TotpCodeInput
 									id="mfa-code"
@@ -218,7 +221,7 @@ export function LoginPage() {
 								{submitting ? (
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
-								{submitting ? "Verifying…" : "Continue"}
+								{submitting ? t("login.mfa.verifying") : t("login.mfa.continue")}
 							</Button>
 							<Button
 								type="button"
@@ -227,21 +230,21 @@ export function LoginPage() {
 								onClick={handleBackToPassword}
 								disabled={submitting}
 							>
-								Back to sign in
+								{t("login.mfa.back")}
 							</Button>
 						</form>
 					) : (
 						<form onSubmit={handlePasswordSubmit} className="space-y-4">
 							<div className="space-y-2">
 								<label htmlFor="email" className="text-sm font-medium">
-									Email
+									{t("login.email")}
 								</label>
 								<Input
 									id="email"
 									type={useTextEmailInput ? "text" : "email"}
 									autoComplete="email"
 									autoFocus
-									placeholder="you@example.com"
+									placeholder={t("login.emailPlaceholder")}
 									value={email}
 									onChange={(event) => setEmail(event.target.value)}
 									disabled={submitting}
@@ -251,14 +254,14 @@ export function LoginPage() {
 							<div className="space-y-2">
 								<div className="flex items-center justify-between">
 									<label htmlFor="password" className="text-sm font-medium">
-										Password
+										{t("login.password")}
 									</label>
 									<Link
 										to="/reset-password"
 										className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
 										tabIndex={-1}
 									>
-										Forgot password?
+										{t("login.forgotPassword")}
 									</Link>
 								</div>
 								<PasswordInput
@@ -279,14 +282,14 @@ export function LoginPage() {
 								{submitting ? (
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
-								{submitting ? "Signing in…" : "Sign in"}
+								{submitting ? t("login.signingIn") : t("login.signIn")}
 							</Button>
 							{passkeySupported ? (
 								<>
 									<div className="relative py-1">
 										<div className="bg-border absolute inset-x-0 top-1/2 h-px" />
 										<p className="text-muted-foreground relative mx-auto w-fit bg-card px-2 text-xs">
-											or
+											{t("login.or")}
 										</p>
 									</div>
 									<Button
@@ -301,12 +304,12 @@ export function LoginPage() {
 										) : (
 											<Fingerprint className="size-4" aria-hidden />
 										)}
-										Sign in with passkey
+										{t("login.passkey")}
 									</Button>
 									<p className="text-muted-foreground text-center text-xs">
 										{email.trim()
-											? "Uses passkeys registered for this account."
-											: "Works with saved passkeys on this device."}
+											? t("login.passkeyHintWithEmail")
+											: t("login.passkeyHintWithoutEmail")}
 									</p>
 								</>
 							) : null}
@@ -316,12 +319,12 @@ export function LoginPage() {
 			</Card>
 			{!mfaToken ? (
 				<p className="text-muted-foreground text-center text-sm">
-					Have an invite code?{" "}
+					{t("login.haveInvite")}{" "}
 					<Link
 						to="/activate"
 						className="text-primary font-medium hover:underline"
 					>
-						Activate your account
+						{t("login.activateLink")}
 					</Link>
 				</p>
 			) : null}

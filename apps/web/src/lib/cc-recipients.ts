@@ -1,4 +1,5 @@
 import { parseEmailAddressDisplay } from "@/lib/format-email-address";
+import i18n from "@/lib/i18n";
 
 function splitAddressList(value: string): string[] {
 	const result: string[] = [];
@@ -87,7 +88,7 @@ export function formatAddedCcRecipients(recipients: string[]): string {
 }
 
 function formatAddressField(
-	label: "To" | "CC" | "BCC",
+	labelKey: "to" | "cc" | "bcc",
 	value?: string | null,
 	selfAddress?: string | null,
 ): string | null {
@@ -108,11 +109,13 @@ function formatAddressField(
 		labels.push(address);
 	}
 
-	const parts = hasMe ? ["me", ...labels] : labels;
+	const meLabel = i18n.t("recipients.me", { ns: "mail" });
+	const parts = hasMe ? [meLabel, ...labels] : labels;
 	if (parts.length === 0) {
 		return null;
 	}
 
+	const label = i18n.t(`recipients.${labelKey}`, { ns: "mail" });
 	return `${label}: ${parts.join(", ")}`;
 }
 
@@ -126,9 +129,9 @@ export function formatRecipientList(
 	selfAddress?: string | null,
 ): string {
 	return [
-		formatAddressField("To", to, selfAddress),
-		formatAddressField("CC", cc, selfAddress),
-		formatAddressField("BCC", bcc, selfAddress),
+		formatAddressField("to", to, selfAddress),
+		formatAddressField("cc", cc, selfAddress),
+		formatAddressField("bcc", bcc, selfAddress),
 	]
 		.filter((segment): segment is string => segment !== null)
 		.join(", ");

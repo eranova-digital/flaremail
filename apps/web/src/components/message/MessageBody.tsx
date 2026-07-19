@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { EmailHtmlBody } from "@/components/message/EmailHtmlBody";
 import { MessageAttachments } from "@/components/message/MessageAttachments";
@@ -32,8 +33,10 @@ export function MessageBody({
 	attachments,
 	direction,
 }: MessageBodyProps) {
+	const { t } = useTranslation("mail");
 	const [showQuote, setShowQuote] = useState(false);
 	const [displayHtml, setDisplayHtml] = useState(html ?? "");
+	const emptyMessage = t("message.empty");
 
 	useEffect(() => {
 		if (!html) {
@@ -81,7 +84,7 @@ export function MessageBody({
 	if (!text && !html && !preview) {
 		return (
 			<pre className="text-muted-foreground text-sm whitespace-pre-wrap">
-				(empty message)
+				{emptyMessage}
 			</pre>
 		);
 	}
@@ -90,11 +93,11 @@ export function MessageBody({
 		<EmailHtmlBody html={visibleHtml} />
 	) : hasQuotedReply && parsedReply ? (
 		<pre className="text-sm whitespace-pre-wrap">
-			{parsedReply.visibleText.trim() || "(empty message)"}
+			{parsedReply.visibleText.trim() || emptyMessage}
 		</pre>
 	) : (
 		<pre className="text-sm whitespace-pre-wrap">
-			{text || preview || "(empty message)"}
+			{text || preview || emptyMessage}
 		</pre>
 	);
 
@@ -107,7 +110,7 @@ export function MessageBody({
 				<div className="mt-1">
 					<button
 						type="button"
-						aria-label={showQuote ? "Hide quoted text" : "Show quoted text"}
+						aria-label={showQuote ? t("message.hideQuoted") : t("message.showQuoted")}
 						aria-expanded={showQuote}
 						onClick={() => setShowQuote((prev) => !prev)}
 						className={cn(

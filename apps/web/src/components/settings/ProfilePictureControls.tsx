@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export function ProfilePictureControls({
 	details,
 	onUpdated,
 }: ProfilePictureControlsProps) {
+	const { t } = useTranslation("settings");
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export function ProfilePictureControls({
 			);
 			if (!response.ok) {
 				const body = await response.json().catch(() => null);
-				throw new Error(getErrorMessage(body) ?? "Upload failed");
+				throw new Error(getErrorMessage(body) ?? t("profile.picture.uploadFailed"));
 			}
 			await onUpdated?.();
 		} catch (err) {
@@ -83,7 +85,7 @@ export function ProfilePictureControls({
 			);
 			if (!response.ok) {
 				const body = await response.json().catch(() => null);
-				throw new Error(getErrorMessage(body) ?? "Remove failed");
+				throw new Error(getErrorMessage(body) ?? t("profile.picture.removeFailed"));
 			}
 			await onUpdated?.();
 		} catch (err) {
@@ -128,7 +130,9 @@ export function ProfilePictureControls({
 						{busy ? (
 							<Loader2 className="size-4 animate-spin" aria-hidden />
 						) : null}
-						{profilePicture ? "Change photo" : "Upload photo"}
+						{profilePicture
+							? t("profile.picture.change")
+							: t("profile.picture.upload")}
 					</Button>
 					{profilePicture ? (
 						<Button
@@ -138,7 +142,7 @@ export function ProfilePictureControls({
 							disabled={disabled || busy}
 							onClick={() => void handleRemove()}
 						>
-							Remove photo
+							{t("profile.picture.remove")}
 						</Button>
 					) : null}
 				</div>

@@ -1,5 +1,6 @@
 import { Pencil, Tag } from "lucide-react";
 import { useState, type ReactElement } from "react";
+import { useTranslation } from "react-i18next";
 import { NavLink, useParams } from "react-router-dom";
 
 import { ManageLabelsDialog } from "@/components/layout/ManageLabelsDialog";
@@ -14,6 +15,8 @@ type LabelsSectionProps = {
 };
 
 export function LabelsSection({ collapsed, withTooltip }: LabelsSectionProps) {
+	const { t } = useTranslation("mail");
+	const { t: tc } = useTranslation("common");
 	const { mailboxId, labelId: activeLabelId } = useParams();
 	const [manageOpen, setManageOpen] = useState(false);
 	const labelsQuery = useLabels(mailboxId ?? "");
@@ -23,16 +26,18 @@ export function LabelsSection({ collapsed, withTooltip }: LabelsSectionProps) {
 		return null;
 	}
 
+	const manageLabel = t("labels.manage");
+
 	const header = collapsed ? null : (
 		<div className="flex items-center justify-between px-3 pb-1 pt-2">
 			<span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-				Labels
+				{t("labels.title")}
 			</span>
 			<Button
 				variant="ghost"
 				size="icon"
 				className="size-6"
-				aria-label="Manage labels"
+				aria-label={manageLabel}
 				onClick={() => setManageOpen(true)}
 			>
 				<Pencil className="size-3" />
@@ -42,12 +47,12 @@ export function LabelsSection({ collapsed, withTooltip }: LabelsSectionProps) {
 
 	const manageButton = collapsed
 		? withTooltip(
-				"Manage labels",
+				manageLabel,
 				<Button
 					variant="ghost"
 					size="icon"
 					className="mx-auto size-9"
-					aria-label="Manage labels"
+					aria-label={manageLabel}
 					onClick={() => setManageOpen(true)}
 				>
 					<Tag className="size-4" />
@@ -60,7 +65,7 @@ export function LabelsSection({ collapsed, withTooltip }: LabelsSectionProps) {
 			{header}
 			{manageButton}
 			{labelsQuery.isLoading && !collapsed ? (
-				<p className="text-muted-foreground px-3 py-1 text-xs">Loading…</p>
+				<p className="text-muted-foreground px-3 py-1 text-xs">{tc("loading")}</p>
 			) : null}
 			{labels.map((label) => {
 				if (!label.id) {
@@ -90,7 +95,7 @@ export function LabelsSection({ collapsed, withTooltip }: LabelsSectionProps) {
 				return (
 					<div key={label.id}>
 						{collapsed
-							? withTooltip(label.name ?? "Label", link)
+							? withTooltip(label.name ?? t("labels.fallback"), link)
 							: link}
 					</div>
 				);
@@ -101,7 +106,7 @@ export function LabelsSection({ collapsed, withTooltip }: LabelsSectionProps) {
 					className="text-muted-foreground hover:text-foreground px-3 py-1 text-left text-xs"
 					onClick={() => setManageOpen(true)}
 				>
-					Add your first label
+					{t("labels.addFirst")}
 				</button>
 			) : null}
 			<ManageLabelsDialog

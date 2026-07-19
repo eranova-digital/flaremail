@@ -1,5 +1,6 @@
 import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { DomainSection } from "@/components/settings/DomainSection";
 import { MailboxSection } from "@/components/settings/MailboxSection";
@@ -122,6 +123,8 @@ function resolveActiveTab(
 }
 
 export function ManagementPage() {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const { account } = useAuth();
 	const location = useLocation();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -189,31 +192,33 @@ export function ManagementPage() {
 
 	return (
 		<SettingsShell
-			rootLabel="Management"
+			rootLabel={tc("management")}
 			rootTo="/management"
 			backTo="/"
-			backLabel="Back to mail"
+			backLabel={tc("backToMail")}
 			actions={<LogoutButton />}
 		>
 			<Tabs value={activeTab} onValueChange={handleTabChange}>
 				<TabsList>
 					{showDomains ? (
-						<TabsTrigger value="domains">Domains</TabsTrigger>
+						<TabsTrigger value="domains">{t("tabs.domains")}</TabsTrigger>
 					) : null}
 					{showMailboxes ? (
-						<TabsTrigger value="mailboxes">Mailboxes</TabsTrigger>
+						<TabsTrigger value="mailboxes">{t("tabs.mailboxes")}</TabsTrigger>
 					) : null}
 					{showAccounts ? (
-						<TabsTrigger value="accounts">People & access</TabsTrigger>
+						<TabsTrigger value="accounts">{t("tabs.accounts")}</TabsTrigger>
 					) : null}
 					{showTemplates ? (
-						<TabsTrigger value="templates">Templates</TabsTrigger>
+						<TabsTrigger value="templates">{t("tabs.templates")}</TabsTrigger>
 					) : null}
 					{showOrganization ? (
-						<TabsTrigger value="organization">Organization</TabsTrigger>
+						<TabsTrigger value="organization">{t("tabs.organization")}</TabsTrigger>
 					) : null}
-					{showOidc ? <TabsTrigger value="oidc">OIDC clients</TabsTrigger> : null}
-					{showLogs ? <TabsTrigger value="logs">Logs</TabsTrigger> : null}
+					{showOidc ? (
+						<TabsTrigger value="oidc">{t("tabs.oidc")}</TabsTrigger>
+					) : null}
+					{showLogs ? <TabsTrigger value="logs">{t("tabs.logs")}</TabsTrigger> : null}
 				</TabsList>
 				{showDomains ? (
 					<TabsContent value="domains">

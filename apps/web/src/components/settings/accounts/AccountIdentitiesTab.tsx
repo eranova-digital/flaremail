@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { IdentityCard } from "@/components/settings/IdentityCard";
 import { IdentityForm } from "@/components/settings/IdentityForm";
@@ -29,6 +30,7 @@ export function AccountIdentitiesTab({
 	mailboxAddress,
 	displayName,
 }: AccountIdentitiesTabProps) {
+	const { t } = useTranslation("management");
 	const overviewQuery = useAccountIdentitiesForAccount(accountId);
 	const createMutation = useCreateMailboxIdentity(mailboxId);
 	const updateMutation = useUpdateMailboxIdentity(mailboxId);
@@ -42,7 +44,7 @@ export function AccountIdentitiesTab({
 		return (
 			<div className="text-muted-foreground flex items-center gap-2 text-sm">
 				<Loader2 className="size-4 animate-spin" aria-hidden />
-				Loading identities…
+				{t("accounts.identities.loading")}
 			</div>
 		);
 	}
@@ -50,8 +52,7 @@ export function AccountIdentitiesTab({
 	if (overviewQuery.isError || !overviewQuery.data) {
 		return (
 			<Alert tone="destructive">
-				{getErrorMessage(overviewQuery.error) ??
-					"Could not load identities."}
+				{getErrorMessage(overviewQuery.error) ?? t("accounts.identities.loadError")}
 			</Alert>
 		);
 	}
@@ -77,32 +78,28 @@ export function AccountIdentitiesTab({
 	return (
 		<div className="space-y-8">
 			<div>
-				<h3 className="text-sm font-medium">Identities</h3>
+				<h3 className="text-sm font-medium">{t("accounts.identities.title")}</h3>
 				<p className="text-muted-foreground text-xs">
-					Send personas {displayName} can use. Own identities can be edited
-					here; default and shared identities are managed elsewhere.
+					{t("accounts.identities.description", { name: displayName })}
 				</p>
 			</div>
 
 			{error ? <Alert tone="destructive">{error}</Alert> : null}
 
 			{!canManage ? (
-				<Alert>
-					You can view these identities but cannot create or edit this
-					account&apos;s own identities.
-				</Alert>
+				<Alert>{t("accounts.identities.viewOnly")}</Alert>
 			) : null}
 
 			<div className="space-y-3">
 				<div>
-					<h4 className="text-sm font-medium">Own identities</h4>
+					<h4 className="text-sm font-medium">{t("accounts.identities.ownTitle")}</h4>
 					<p className="text-muted-foreground text-xs">
-						Owned by {displayName}&apos;s primary mailbox.
+						{t("accounts.identities.ownDesc", { name: displayName })}
 					</p>
 				</div>
 				{own.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
-						No personal identities yet.
+						{t("accounts.identities.ownEmpty")}
 					</p>
 				) : (
 					own.map((identity) => (
@@ -116,7 +113,7 @@ export function AccountIdentitiesTab({
 										<Button
 											size="icon"
 											variant="ghost"
-											aria-label="Edit identity"
+											aria-label={t("accounts.identities.editAria")}
 											disabled={busy}
 											onClick={() => {
 												setCreating(false);
@@ -128,7 +125,7 @@ export function AccountIdentitiesTab({
 										<Button
 											size="icon"
 											variant="ghost"
-											aria-label="Delete identity"
+											aria-label={t("accounts.identities.deleteAria")}
 											disabled={busy}
 											onClick={() => {
 												setError(null);
@@ -182,7 +179,7 @@ export function AccountIdentitiesTab({
 						}}
 					>
 						<Plus className="size-4" aria-hidden />
-						Add identity
+						{t("accounts.identities.add")}
 					</Button>
 				) : null}
 			</div>
@@ -190,20 +187,22 @@ export function AccountIdentitiesTab({
 			{defaultIdentity ? (
 				<div className="space-y-3">
 					<div>
-						<h4 className="text-sm font-medium">Default identity</h4>
+						<h4 className="text-sm font-medium">
+							{t("accounts.identities.defaultTitle")}
+						</h4>
 						<p className="text-muted-foreground text-xs">
-							Instance-wide template used when sending from a primary mailbox.
+							{t("accounts.identities.defaultDesc")}
 						</p>
 					</div>
 					<IdentityCard
 						identity={defaultIdentity}
 						mailboxAddress={primaryAddress}
 						disabled
-						description="Managed in Organization settings."
+						description={t("accounts.identities.managedInOrg")}
 						actions={
 							<Button variant="outline" size="sm" asChild>
 								<Link to="/management?tab=organization#default-identity">
-									Organization
+									{t("accounts.identities.organizationLink")}
 									<ArrowUpRight className="size-3.5" aria-hidden />
 								</Link>
 							</Button>
@@ -214,14 +213,14 @@ export function AccountIdentitiesTab({
 
 			<div className="space-y-3">
 				<div>
-					<h4 className="text-sm font-medium">Shared mailbox identities</h4>
+					<h4 className="text-sm font-medium">{t("accounts.identities.sharedTitle")}</h4>
 					<p className="text-muted-foreground text-xs">
-						Identities from shared mailboxes this account can access.
+						{t("accounts.identities.sharedDesc")}
 					</p>
 				</div>
 				{shared.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
-						No shared mailbox identities.
+						{t("accounts.identities.sharedEmpty")}
 					</p>
 				) : (
 					shared.map((group) => (
@@ -236,21 +235,23 @@ export function AccountIdentitiesTab({
 									badges={
 										group.identityExport ? (
 											<Badge variant="outline">
-												Usable outside this mailbox
+												{t("accounts.identities.usableOutside")}
 											</Badge>
 										) : undefined
 									}
 									description={
 										group.identityExport
-											? "Managed on the shared mailbox."
-											: `Only when sending from ${group.mailboxAddress}`
+											? t("accounts.identities.managedOnShared")
+											: t("accounts.identities.onlyWhenSending", {
+													address: group.mailboxAddress,
+												})
 									}
 									actions={
 										<Button variant="outline" size="sm" asChild>
 											<Link
 												to={`/management/mailboxes/${group.mailboxId}/users?tab=identities`}
 											>
-												Manage
+												{t("accounts.identities.manage")}
 												<ArrowUpRight className="size-3.5" aria-hidden />
 											</Link>
 										</Button>

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ export function MessageOriginalDialog({
 	messageId,
 	mailboxId,
 }: MessageOriginalDialogProps) {
+	const { t } = useTranslation("mail");
 	const [downloading, setDownloading] = useState(false);
 	const [downloadError, setDownloadError] = useState<string | null>(null);
 
@@ -55,9 +57,9 @@ export function MessageOriginalDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex max-h-[85vh] flex-col sm:max-w-3xl">
 				<DialogHeader>
-					<DialogTitle>Original message</DialogTitle>
+					<DialogTitle>{t("message.originalTitle")}</DialogTitle>
 					<DialogDescription>
-						Raw EML source as stored for this message.
+						{t("message.originalDescription")}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -94,7 +96,7 @@ export function MessageOriginalDialog({
 						) : (
 							<Download className="size-4" />
 						)}
-						Download .eml
+						{t("message.downloadEml")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -44,9 +45,11 @@ export function TemplateHtmlPreview({
 	html,
 	isLoading = false,
 	error = null,
-	emptyLabel = "Select a template to preview",
+	emptyLabel,
 	className,
 }: TemplateHtmlPreviewProps) {
+	const { t } = useTranslation("management");
+	const resolvedEmptyLabel = emptyLabel ?? t("templates.previewEmpty");
 	const srcDoc = useMemo(
 		() => (html?.trim() ? buildTemplatePreviewSrcDoc(html) : null),
 		[html],
@@ -72,14 +75,14 @@ export function TemplateHtmlPreview({
 	if (!srcDoc) {
 		return (
 			<p className={cn("text-muted-foreground p-3 text-xs", className)}>
-				{emptyLabel}
+				{resolvedEmptyLabel}
 			</p>
 		);
 	}
 
 	return (
 		<iframe
-			title="Template preview"
+			title={t("templates.previewIframeTitle")}
 			sandbox=""
 			srcDoc={srcDoc}
 			className={cn("bg-background h-full w-full border-0", className)}

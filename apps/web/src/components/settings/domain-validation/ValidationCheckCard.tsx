@@ -1,8 +1,7 @@
+import { useTranslation } from "react-i18next";
+
 import type { DomainValidationCheck } from "@/lib/api/client";
-import {
-	getValidationCheckMeta,
-	type ValidationCheckKey,
-} from "@/lib/domain-validation";
+import { type ValidationCheckKey } from "@/lib/domain-validation";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -15,16 +14,22 @@ export function ValidationCheckCard({
 	check: DomainValidationCheck;
 	domainName: string;
 }) {
+	const { t } = useTranslation("management");
 	const key = (check.checkKey ?? "mx") as ValidationCheckKey;
-	const meta = getValidationCheckMeta(key, domainName);
+	const postmaster = `postmaster@${domainName}`;
+	const noreply = `noreply@${domainName}`;
+	const vars = { postmaster, noreply, domainName };
+	const tier = check.tier ?? "critical";
+	const tierKey = tier === "advisory" ? "advisory" : "required";
+
 	const hint =
 		check.status === "passed"
-			? meta.passHint
+			? t(`domainValidation.checks.${key}.passHint`, vars)
 			: check.status === "failed"
-				? check.message ?? meta.failHint
+				? check.message ?? t(`domainValidation.checks.${key}.failHint`, vars)
 				: check.status === "skipped"
-					? "Skipped because an earlier critical check failed."
-					: "Waiting for this step to run.";
+					? t("domainValidation.hint.skipped")
+					: t("domainValidation.status.pending");
 
 	return (
 		<Card
@@ -38,18 +43,22 @@ export function ValidationCheckCard({
 			<div className="flex items-start justify-between gap-3">
 				<div className="space-y-1">
 					<div className="flex flex-wrap items-center gap-2">
-						<h3 className="font-medium">{meta.title}</h3>
+						<h3 className="font-medium">
+							{t(`domainValidation.checks.${key}.title`)}
+						</h3>
 						<span className="text-muted-foreground text-xs uppercase tracking-wide">
-							{meta.tier === "critical" ? "Required" : "Advisory"}
+							{t(`domainValidation.tier.${tierKey}`)}
 						</span>
 					</div>
-					<p className="text-muted-foreground text-sm">{meta.summary}</p>
+					<p className="text-muted-foreground text-sm">
+						{t(`domainValidation.checks.${key}.summary`, vars)}
+					</p>
 				</div>
 				<CheckStatusBadge status={check.status} tier={check.tier} />
 			</div>
 
 			<p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-				{meta.description}
+				{t(`domainValidation.checks.${key}.description`, vars)}
 			</p>
 
 			<p

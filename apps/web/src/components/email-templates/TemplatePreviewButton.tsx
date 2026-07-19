@@ -1,5 +1,6 @@
 import { Eye } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
 	TemplateHtmlPreview,
@@ -29,9 +30,11 @@ type ComposeTemplatePreviewButtonProps = {
 export function ComposeTemplatePreviewButton({
 	templateId,
 	mailboxId,
-	label = "Preview",
+	label,
 }: ComposeTemplatePreviewButtonProps) {
+	const { t } = useTranslation("management");
 	const [open, setOpen] = useState(false);
+	const displayLabel = label ?? t("templates.preview");
 	const previewQuery = useTemplateHtml(
 		queryKeys.templateContent(templateId, mailboxId),
 		() => fetchTemplateContent(templateId, mailboxId ?? undefined),
@@ -43,12 +46,12 @@ export function ComposeTemplatePreviewButton({
 			<PopoverTrigger asChild>
 				<Button type="button" variant="ghost" size="sm" className="gap-1.5">
 					<Eye className="size-3.5" aria-hidden />
-					{label}
+					{displayLabel}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[min(28rem,calc(100vw-2rem))] p-0" align="end">
 				<div className="text-muted-foreground border-b px-3 py-1.5 text-xs font-medium">
-					Preview
+					{t("templates.previewTitle")}
 				</div>
 				<div className="h-72 overflow-hidden">
 					<TemplateHtmlPreview
@@ -74,9 +77,11 @@ type SystemTemplatePreviewButtonProps = {
 export function SystemTemplatePreviewButton({
 	templateKey,
 	disabled = false,
-	label = "Preview",
+	label,
 }: SystemTemplatePreviewButtonProps) {
+	const { t } = useTranslation("management");
 	const [open, setOpen] = useState(false);
+	const displayLabel = label ?? t("templates.preview");
 	const previewQuery = useTemplateHtml(
 		queryKeys.systemTemplateContent(templateKey),
 		() => fetchSystemTemplateContent(templateKey),
@@ -94,12 +99,12 @@ export function SystemTemplatePreviewButton({
 					disabled={disabled}
 				>
 					<Eye className="size-3.5" aria-hidden />
-					{label}
+					{displayLabel}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[min(28rem,calc(100vw-2rem))] p-0" align="end">
 				<div className="text-muted-foreground border-b px-3 py-1.5 text-xs font-medium">
-					Preview
+					{t("templates.previewTitle")}
 				</div>
 				<div className="h-72 overflow-hidden">
 					<TemplateHtmlPreview

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { MfaSetupPanel } from "@/components/auth/MfaSetupPanel";
 import { RecoveryEmailSetup } from "@/components/auth/RecoveryEmailSetup";
@@ -24,6 +25,7 @@ function resolveComplianceStep(account: {
 }
 
 export function SecurityCompliancePage() {
+	const { t } = useTranslation("auth");
 	const { account, isLoading, refresh } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -39,7 +41,7 @@ export function SecurityCompliancePage() {
 	);
 
 	if (isLoading) {
-		return <PageLoader label="Checking your session…" />;
+		return <PageLoader label={t("session.checking")} />;
 	}
 
 	if (!account) {
@@ -55,14 +57,14 @@ export function SecurityCompliancePage() {
 	};
 
 	return (
-		<SettingsShell backTo={from} backLabel="Back">
+		<SettingsShell backTo={from} backLabel={t("securityCompliance.back")}>
 			<div className="mx-auto w-full max-w-lg space-y-4">
 				<div>
-					<h1 className="text-xl font-semibold">Complete required security setup</h1>
+					<h1 className="text-xl font-semibold">{t("securityCompliance.title")}</h1>
 					<p className="text-muted-foreground mt-1 text-sm">
 						{step === "recovery"
-							? "Your organization requires a verified recovery email for every account."
-							: "Your organization requires two-factor authentication for your account."}
+							? t("securityCompliance.descriptionRecovery")
+							: t("securityCompliance.descriptionMfa")}
 					</p>
 				</div>
 
@@ -72,12 +74,12 @@ export function SecurityCompliancePage() {
 							<RecoveryEmailSetup
 								initialEmail={account.profile?.recoveryAddress ?? ""}
 								showSkip={false}
-								submitLabel="Verify recovery email"
+								submitLabel={t("securityCompliance.verifyRecovery")}
 								onComplete={handleComplete}
 							/>
 						) : (
 							<MfaSetupPanel
-								submitLabel="Enable two-factor authentication"
+								submitLabel={t("securityCompliance.enableMfa")}
 								onComplete={async () => {
 									await handleComplete();
 									navigate(from ?? "/", { replace: true });

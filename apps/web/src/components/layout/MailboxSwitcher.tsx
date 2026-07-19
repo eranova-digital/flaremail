@@ -1,5 +1,6 @@
 import { ChevronDown, Mail, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +105,9 @@ function SystemMailboxesFooter({
 	onCheckedChange: (checked: boolean) => void;
 	hasMailboxesAbove: boolean;
 }) {
+	const { t } = useTranslation("mail");
+	const showSystemLabel = t("mailboxSwitcher.showSystem");
+
 	return (
 		<div
 			className={cn(
@@ -113,17 +117,18 @@ function SystemMailboxesFooter({
 			onPointerDown={(event) => event.preventDefault()}
 			onClick={(event) => event.stopPropagation()}
 		>
-			<span className="text-muted-foreground text-xs">Show system mailboxes</span>
+			<span className="text-muted-foreground text-xs">{showSystemLabel}</span>
 			<Switch
 				checked={checked}
 				onCheckedChange={onCheckedChange}
-				aria-label="Show system mailboxes"
+				aria-label={showSystemLabel}
 			/>
 		</div>
 	);
 }
 
 function MailboxOptionLabel({ mailbox }: { mailbox: Mailbox }) {
+	const { t } = useTranslation("mail");
 	const isSystem = isSystemMailbox(mailbox);
 
 	return (
@@ -139,7 +144,7 @@ function MailboxOptionLabel({ mailbox }: { mailbox: Mailbox }) {
 					variant="secondary"
 					className="ml-auto shrink-0 px-1.5 py-0 text-[10px] font-medium"
 				>
-					System
+					{t("mailboxSwitcher.system")}
 				</Badge>
 			) : null}
 		</span>
@@ -147,6 +152,7 @@ function MailboxOptionLabel({ mailbox }: { mailbox: Mailbox }) {
 }
 
 export function MailboxSwitcher() {
+	const { t } = useTranslation("mail");
 	const navigate = useNavigate();
 	const { mailboxId, folder: folderParam, threadId } = useParams();
 	const [searchParams] = useSearchParams();
@@ -195,7 +201,7 @@ export function MailboxSwitcher() {
 	if (!active?.id) {
 		return (
 			<div className="text-muted-foreground px-2 text-xs">
-				No mailboxes found
+				{t("mailboxSwitcher.empty")}
 			</div>
 		);
 	}

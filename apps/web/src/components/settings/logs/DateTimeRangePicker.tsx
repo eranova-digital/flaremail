@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, XIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
@@ -38,12 +39,18 @@ function withTime(date: Date, time: string): Date {
 	return next;
 }
 
-function formatRangeLabel(value: DateTimeRangeValue | undefined): string | null {
+function formatRangeLabel(
+	value: DateTimeRangeValue | undefined,
+	incompleteSuffix: string,
+): string | null {
 	if (!value?.from) return null;
 	if (value.to) {
 		return `${format(value.from, "MMM d, yyyy HH:mm")} – ${format(value.to, "MMM d, yyyy HH:mm")}`;
 	}
-	return `${format(value.from, "MMM d, yyyy HH:mm")} – …`;
+	return incompleteSuffix.replace(
+		"{{from}}",
+		format(value.from, "MMM d, yyyy HH:mm"),
+	);
 }
 
 export function DateTimeRangePicker({
@@ -51,9 +58,11 @@ export function DateTimeRangePicker({
 	onChange,
 	id,
 	className,
-	placeholder = "Pick a date & time range",
+	placeholder,
 }: DateTimeRangePickerProps) {
+	const { t } = useTranslation("management");
 	const [open, setOpen] = useState(false);
+	const resolvedPlaceholder = placeholder ?? t("logs.dateRange.placeholder");
 
 	const selected: DateRange | undefined = useMemo(() => {
 		if (!value?.from) return undefined;
@@ -62,7 +71,7 @@ export function DateTimeRangePicker({
 
 	const fromTime = timeInputValue(value?.from, "00:00:00");
 	const toTime = timeInputValue(value?.to, "23:59:59");
-	const label = formatRangeLabel(value);
+	const label = formatRangeLabel(value, t("logs.dateRange.placeholder"));
 
 	const handleSelect = (range: DateRange | undefined) => {
 		if (!range?.from) {
@@ -103,14 +112,14 @@ export function DateTimeRangePicker({
 					<Button
 						id={id}
 						variant="outline"
-						aria-label="Date and time range"
+						aria-label={t("logs.dateRange.aria")}
 						className={cn(
 							"h-9 min-w-0 flex-1 justify-start gap-2 px-3 font-normal",
 							!label && "text-muted-foreground",
 						)}
 					>
 						<CalendarIcon className="size-4 shrink-0 opacity-70" />
-						<span className="truncate">{label ?? placeholder}</span>
+						<span className="truncate">{label ?? resolvedPlaceholder}</span>
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="start">
@@ -127,7 +136,7 @@ export function DateTimeRangePicker({
 								htmlFor={`${id ?? "range"}-from-time`}
 								className="text-muted-foreground text-xs"
 							>
-								From time
+								{t("logs.dateRange.fromTime")}
 							</label>
 							<Input
 								id={`${id ?? "range"}-from-time`}
@@ -144,7 +153,7 @@ export function DateTimeRangePicker({
 								htmlFor={`${id ?? "range"}-to-time`}
 								className="text-muted-foreground text-xs"
 							>
-								To time
+								{t("logs.dateRange.toTime")}
 							</label>
 							<Input
 								id={`${id ?? "range"}-to-time`}
@@ -165,7 +174,7 @@ export function DateTimeRangePicker({
 					variant="outline"
 					size="icon"
 					className="size-9 shrink-0"
-					aria-label="Clear date range"
+					aria-label={t("logs.dateRange.clearAria")}
 					onClick={clear}
 				>
 					<XIcon className="size-4" />

@@ -1,5 +1,6 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ function ColorSwatches({
 	value: string | null | undefined;
 	onChange: (color: string) => void;
 }) {
+	const { t } = useTranslation("mail");
 	const selected = value ?? DEFAULT_LABEL_COLOR;
 
 	return (
@@ -48,7 +50,7 @@ function ColorSwatches({
 						selected === color ? "border-foreground scale-110" : "border-transparent",
 					)}
 					style={{ backgroundColor: color }}
-					aria-label={`Color ${color}`}
+					aria-label={t("labels.colorAria", { color })}
 					onClick={() => onChange(color)}
 				/>
 			))}
@@ -63,6 +65,8 @@ function LabelRow({
 	mailboxId: string;
 	label: Label;
 }) {
+	const { t } = useTranslation("mail");
+	const { t: tc } = useTranslation("common");
 	const [editing, setEditing] = useState(false);
 	const [name, setName] = useState(label.name ?? "");
 	const [color, setColor] = useState(label.color ?? DEFAULT_LABEL_COLOR);
@@ -84,7 +88,7 @@ function LabelRow({
 		if (!label.id) {
 			return;
 		}
-		if (!window.confirm(`Delete label "${label.name}"?`)) {
+		if (!window.confirm(t("labels.deleteConfirm", { name: label.name }))) {
 			return;
 		}
 		deleteMutation.mutate(label.id);
@@ -96,13 +100,13 @@ function LabelRow({
 				<Input
 					value={name}
 					onChange={(event) => setName(event.target.value)}
-					placeholder="Label name"
+					placeholder={t("labels.namePlaceholder")}
 					autoFocus
 				/>
 				<ColorSwatches value={color} onChange={setColor} />
 				<div className="flex gap-2">
 					<Button size="sm" onClick={save} disabled={updateMutation.isPending || !name.trim()}>
-						Save
+						{tc("save")}
 					</Button>
 					<Button
 						size="sm"
@@ -113,7 +117,7 @@ function LabelRow({
 							setEditing(false);
 						}}
 					>
-						Cancel
+						{tc("cancel")}
 					</Button>
 				</div>
 				{updateMutation.isError ? (
@@ -134,7 +138,7 @@ function LabelRow({
 				variant="ghost"
 				size="icon"
 				className="size-7"
-				aria-label={`Edit ${label.name}`}
+				aria-label={t("labels.editAria", { name: label.name })}
 				onClick={() => setEditing(true)}
 			>
 				<Pencil className="size-3.5" />
@@ -143,7 +147,7 @@ function LabelRow({
 				variant="ghost"
 				size="icon"
 				className="text-destructive hover:text-destructive size-7"
-				aria-label={`Delete ${label.name}`}
+				aria-label={t("labels.deleteAria", { name: label.name })}
 				disabled={deleteMutation.isPending}
 				onClick={remove}
 			>
@@ -154,6 +158,7 @@ function LabelRow({
 }
 
 function AddLabelForm({ mailboxId }: { mailboxId: string }) {
+	const { t } = useTranslation("mail");
 	const [name, setName] = useState("");
 	const [color, setColor] = useState<string>(DEFAULT_LABEL_COLOR);
 	const createMutation = useCreateLabel(mailboxId);
@@ -177,16 +182,16 @@ function AddLabelForm({ mailboxId }: { mailboxId: string }) {
 
 	return (
 		<form onSubmit={submit} className="space-y-2 border-t pt-4">
-			<p className="text-sm font-medium">Add label</p>
+			<p className="text-sm font-medium">{t("labels.add")}</p>
 			<Input
 				value={name}
 				onChange={(event) => setName(event.target.value)}
-				placeholder="New label name"
+				placeholder={t("labels.newNamePlaceholder")}
 			/>
 			<ColorSwatches value={color} onChange={setColor} />
 			<Button type="submit" size="sm" disabled={createMutation.isPending || !name.trim()}>
 				<Plus className="size-3.5" />
-				Add label
+				{t("labels.add")}
 			</Button>
 			{createMutation.isError ? (
 				<p className="text-destructive text-xs">{getErrorMessage(createMutation.error)}</p>
@@ -200,6 +205,7 @@ export function ManageLabelsDialog({
 	open,
 	onOpenChange,
 }: ManageLabelsDialogProps) {
+	const { t } = useTranslation("mail");
 	const labelsQuery = useLabels(mailboxId);
 	const labels = labelsQuery.data ?? [];
 
@@ -207,17 +213,17 @@ export function ManageLabelsDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-h-[min(32rem,90vh)] overflow-y-auto sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Manage labels</DialogTitle>
+					<DialogTitle>{t("labels.manage")}</DialogTitle>
 					<DialogDescription>
-						Create, rename, recolor, or delete labels for this mailbox.
+						{t("labels.manageDescription")}
 					</DialogDescription>
 				</DialogHeader>
 				{labelsQuery.isLoading ? (
-					<p className="text-muted-foreground text-sm">Loading labels…</p>
+					<p className="text-muted-foreground text-sm">{t("labels.loading")}</p>
 				) : labelsQuery.isError ? (
 					<p className="text-destructive text-sm">{getErrorMessage(labelsQuery.error)}</p>
 				) : labels.length === 0 ? (
-					<p className="text-muted-foreground text-sm">No labels yet.</p>
+					<p className="text-muted-foreground text-sm">{t("labels.empty")}</p>
 				) : (
 					<div className="space-y-1">
 						{labels.map((label) => (

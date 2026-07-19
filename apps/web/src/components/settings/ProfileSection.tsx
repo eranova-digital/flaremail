@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { HelpCircle, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { apiUrl } from "@/lib/api";
 import { getAccountDisplayName } from "@/components/ProfileAvatar";
@@ -22,27 +23,28 @@ import { roleLabel } from "@/lib/accounts/roles";
 import type { AccountRole } from "@/lib/accounts/api";
 import { useQueryClient } from "@tanstack/react-query";
 
-const LOCKED_FIELD_TOOLTIP =
-	"This information has been locked by your organization.";
-
 function LockedFieldHelp() {
+	const { t } = useTranslation("settings");
+	const tooltip = t("profile.lockedFieldTooltip");
+
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
 				<button
 					type="button"
 					className="text-muted-foreground hover:text-foreground inline-flex shrink-0"
-					aria-label={LOCKED_FIELD_TOOLTIP}
+					aria-label={tooltip}
 				>
 					<HelpCircle className="size-3.5" aria-hidden />
 				</button>
 			</TooltipTrigger>
-			<TooltipContent>{LOCKED_FIELD_TOOLTIP}</TooltipContent>
+			<TooltipContent>{tooltip}</TooltipContent>
 		</Tooltip>
 	);
 }
 
 export function ProfileSection() {
+	const { t } = useTranslation("settings");
 	const { account, refresh } = useAuth();
 	const queryClient = useQueryClient();
 	const [values, setValues] = useState<Record<string, string>>({});
@@ -108,7 +110,7 @@ export function ProfileSection() {
 			});
 			if (!response.ok) {
 				const body = await response.json().catch(() => null);
-				throw new Error(getErrorMessage(body) ?? "Save failed");
+				throw new Error(getErrorMessage(body) ?? t("profile.saveFailed"));
 			}
 			await refresh();
 			setSaved(true);
@@ -145,7 +147,7 @@ export function ProfileSection() {
 			/>
 			<Card>
 				<CardHeader>
-					<CardTitle>Personal details</CardTitle>
+					<CardTitle>{t("profile.personalDetails")}</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<ProfileFieldsGrid
@@ -160,30 +162,30 @@ export function ProfileSection() {
 						hiddenFields={hiddenFields}
 					/>
 					{error ? (
-						<Alert tone="destructive" title="Couldn't save profile">
+						<Alert tone="destructive" title={t("profile.saveErrorTitle")}>
 							<p>{error}</p>
 						</Alert>
 					) : null}
 					{saved ? (
-						<Alert tone="success">Profile saved.</Alert>
+						<Alert tone="success">{t("profile.saved")}</Alert>
 					) : null}
 					<Button onClick={handleSave} disabled={saving}>
 						{saving ? (
 							<Loader2 className="size-4 animate-spin" aria-hidden />
 						) : null}
-						{saving ? "Saving…" : "Save profile"}
+						{saving ? t("profile.saving") : t("profile.save")}
 					</Button>
 				</CardContent>
 			</Card>
 			<Card>
 				<CardHeader>
-					<CardTitle>Recovery email</CardTitle>
+					<CardTitle>{t("profile.recoveryEmailTitle")}</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-3">
 					{recoveryLocked ? (
 						<>
 							<p className="text-muted-foreground text-sm">
-								Your organization has set a recovery email for this account.
+								{t("profile.recoveryLockedBody")}
 							</p>
 							<Input
 								value={account.profile?.recoveryAddress ?? ""}
@@ -194,14 +196,14 @@ export function ProfileSection() {
 					) : account.profile?.recoveryAddress ? (
 						<>
 							<p className="text-muted-foreground text-sm">
-								Current recovery email:{" "}
+								{t("profile.currentRecoveryEmail")}{" "}
 								<span className="text-foreground font-medium">
 									{account.profile.recoveryAddress}
 								</span>
 							</p>
 							<RecoveryEmailSetup
 								showSkip={false}
-								submitLabel="Update recovery email"
+								submitLabel={t("profile.updateRecoveryEmail")}
 								onComplete={async () => {
 									await refresh();
 									setSaved(true);
@@ -211,7 +213,7 @@ export function ProfileSection() {
 					) : (
 						<RecoveryEmailSetup
 							showSkip={false}
-							submitLabel="Add recovery email"
+							submitLabel={t("profile.addRecoveryEmail")}
 							onComplete={async () => {
 								await refresh();
 								setSaved(true);

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import { Alert } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { MailboxIdentitiesManager } from "@/components/settings/MailboxIdentitiesManager";
@@ -12,6 +14,7 @@ type SharedMailboxIdentitiesEditorProps = {
 export function SharedMailboxIdentitiesEditor({
 	mailbox,
 }: SharedMailboxIdentitiesEditorProps) {
+	const { t } = useTranslation("management");
 	const mailboxId = mailbox.id;
 	const policyMutation = useUpdateMailboxIdentityPolicy(mailboxId ?? "");
 
@@ -23,10 +26,11 @@ export function SharedMailboxIdentitiesEditor({
 		<div className="space-y-8">
 			<section className="space-y-4">
 				<div>
-					<h2 className="text-base font-medium">Identity policy</h2>
+					<h2 className="text-base font-medium">
+						{t("sharedMailboxUsers.identityPolicy.title")}
+					</h2>
 					<p className="text-muted-foreground text-sm">
-						Control which send personas appear when composing from this mailbox
-						or elsewhere. From address always stays the active mailbox.
+						{t("sharedMailboxUsers.identityPolicy.description")}
 					</p>
 				</div>
 				{policyMutation.isError ? (
@@ -37,10 +41,11 @@ export function SharedMailboxIdentitiesEditor({
 				<div className="space-y-4 rounded-xl border p-4">
 					<div className="flex items-start justify-between gap-4">
 						<div className="space-y-1">
-							<p className="text-sm font-medium">Allow personal identities</p>
+							<p className="text-sm font-medium">
+								{t("sharedMailboxUsers.identityPolicy.allowPersonal")}
+							</p>
 							<p className="text-muted-foreground text-sm">
-								When sending from this mailbox, offer identities from the
-								sender&apos;s primary mailbox.
+								{t("sharedMailboxUsers.identityPolicy.allowPersonalDesc")}
 							</p>
 						</div>
 						<Switch
@@ -49,15 +54,16 @@ export function SharedMailboxIdentitiesEditor({
 							onCheckedChange={(checked) =>
 								policyMutation.mutate({ personalIdentityAllowance: checked })
 							}
-							aria-label="Allow personal identities"
+							aria-label={t("sharedMailboxUsers.identityPolicy.allowPersonal")}
 						/>
 					</div>
 					<div className="flex items-start justify-between gap-4">
 						<div className="space-y-1">
-							<p className="text-sm font-medium">Export identities</p>
+							<p className="text-sm font-medium">
+								{t("sharedMailboxUsers.identityPolicy.export")}
+							</p>
 							<p className="text-muted-foreground text-sm">
-								Allow this mailbox&apos;s identities to be selected when
-								sending from other mailboxes the account can access.
+								{t("sharedMailboxUsers.identityPolicy.exportDesc")}
 							</p>
 						</div>
 						<Switch
@@ -66,7 +72,7 @@ export function SharedMailboxIdentitiesEditor({
 							onCheckedChange={(checked) =>
 								policyMutation.mutate({ identityExport: checked })
 							}
-							aria-label="Export identities"
+							aria-label={t("sharedMailboxUsers.identityPolicy.export")}
 						/>
 					</div>
 				</div>
@@ -75,8 +81,8 @@ export function SharedMailboxIdentitiesEditor({
 			<MailboxIdentitiesManager
 				mailboxId={mailboxId}
 				mailboxAddress={mailbox.address}
-				title="Mailbox identities"
-				description="Name patterns and signatures owned by this shared mailbox."
+				title={t("sharedMailboxUsers.mailboxIdentities.title")}
+				description={t("sharedMailboxUsers.mailboxIdentities.description")}
 				hideDefault
 			/>
 		</div>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -21,23 +23,26 @@ export function EmailLinkDialog({
 	onOpenChange,
 	onConfirm,
 }: EmailLinkDialogProps) {
+	const { t } = useTranslation("mail");
+	const { t: tc } = useTranslation("common");
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Open external link?</DialogTitle>
+					<DialogTitle>{t("linkDialog.title")}</DialogTitle>
 					<DialogDescription asChild>
 						<div className="text-muted-foreground space-y-2 text-sm">
-							<p>You are about to leave Flaremail and open this link in a new tab:</p>
+							<p>{t("linkDialog.description")}</p>
 							<p className="text-foreground break-all font-medium">{href}</p>
 						</div>
 					</DialogDescription>
 				</DialogHeader>
 				<DialogFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
-						Cancel
+						{tc("cancel")}
 					</Button>
-					<Button onClick={onConfirm}>Open link</Button>
+					<Button onClick={onConfirm}>{t("linkDialog.open")}</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

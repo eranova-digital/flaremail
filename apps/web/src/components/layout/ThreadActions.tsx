@@ -7,6 +7,7 @@ import {
 	Star,
 	Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ThreadLabelPicker } from "@/components/layout/ThreadLabelPicker";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function ThreadActions({
 	threadId,
 	folder,
 }: ThreadActionsProps) {
+	const { t } = useTranslation("mail");
 	const threadQuery = useThread(mailboxId, threadId);
 	const actionMutation = useThreadAction(mailboxId, threadId);
 	const thread = threadQuery.data;
@@ -55,7 +57,7 @@ export function ThreadActions({
 								<Mail className="size-4" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Mark unread</TooltipContent>
+						<TooltipContent>{t("threadActions.markUnread")}</TooltipContent>
 					</Tooltip>
 				) : (
 					<Tooltip>
@@ -69,7 +71,7 @@ export function ThreadActions({
 								<MailOpen className="size-4" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Mark read</TooltipContent>
+						<TooltipContent>{t("threadActions.markRead")}</TooltipContent>
 					</Tooltip>
 				)}
 
@@ -89,7 +91,7 @@ export function ThreadActions({
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>
-						{thread.isStarred ? "Unstar" : "Star"}
+						{thread.isStarred ? t("threadActions.unstar") : t("threadActions.star")}
 					</TooltipContent>
 				</Tooltip>
 
@@ -107,7 +109,7 @@ export function ThreadActions({
 								<Archive className="size-4" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Archive</TooltipContent>
+						<TooltipContent>{t("threadActions.archive")}</TooltipContent>
 					</Tooltip>
 				) : null}
 
@@ -123,7 +125,7 @@ export function ThreadActions({
 								<Trash2 className="size-4" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Trash</TooltipContent>
+						<TooltipContent>{t("threadActions.trash")}</TooltipContent>
 					</Tooltip>
 				) : null}
 
@@ -139,7 +141,7 @@ export function ThreadActions({
 								<ShieldAlert className="size-4" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Spam</TooltipContent>
+						<TooltipContent>{t("threadActions.spam")}</TooltipContent>
 					</Tooltip>
 				) : null}
 
@@ -155,7 +157,7 @@ export function ThreadActions({
 								<ArchiveRestore className="size-4" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Restore</TooltipContent>
+						<TooltipContent>{t("threadActions.restore")}</TooltipContent>
 					</Tooltip>
 				) : null}
 			</div>

@@ -1,8 +1,12 @@
 import type { NodeViewProps } from "@tiptap/react";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function SignatureBlock({ editor, deleteNode }: NodeViewProps) {
+	const { t } = useTranslation("compose");
+	const removeLabel = t("signature.remove");
+
 	return (
 		<NodeViewWrapper
 			as="div"
@@ -14,8 +18,8 @@ export function SignatureBlock({ editor, deleteNode }: NodeViewProps) {
 			{editor.isEditable ? (
 				<button
 					type="button"
-					aria-label="Remove signature"
-					title="Remove signature"
+					aria-label={removeLabel}
+					title={removeLabel}
 					className="compose-signature-remove"
 					onClick={(event) => {
 						event.preventDefault();

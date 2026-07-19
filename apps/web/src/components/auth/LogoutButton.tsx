@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/AuthProvider";
@@ -10,6 +11,7 @@ type LogoutButtonProps = {
 };
 
 export function LogoutButton({ className }: LogoutButtonProps) {
+	const { t } = useTranslation("auth");
 	const { signOut } = useAuth();
 	const navigate = useNavigate();
 	const [submitting, setSubmitting] = useState(false);
@@ -33,7 +35,7 @@ export function LogoutButton({ className }: LogoutButtonProps) {
 			className={className}
 		>
 			<LogOut className="size-4" />
-			Sign out
+			{t("logout.signOut")}
 		</Button>
 	);
 }

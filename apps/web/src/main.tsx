@@ -9,6 +9,8 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import "./lib/api/client";
 import { getApiUrl } from "./lib/api";
 import { AuthProvider } from "./lib/auth/AuthProvider";
+import i18n from "./lib/i18n";
+import { LocaleProvider } from "./lib/i18n/LocaleProvider";
 import { ThemeProvider } from "./lib/theme/ThemeProvider";
 import "./index.css";
 
@@ -27,7 +29,9 @@ function Root() {
 			getApiUrl();
 			return null;
 		} catch (error) {
-			return error instanceof Error ? error.message : "Invalid configuration";
+			return error instanceof Error
+				? error.message
+				: i18n.t("configError.invalid", { ns: "auth" });
 		}
 	}, []);
 
@@ -37,15 +41,17 @@ function Root() {
 
 	return (
 		<QueryClientProvider client={queryClient}>
-			<ThemeProvider>
-				<TooltipProvider delayDuration={300}>
-					<BrowserRouter>
-						<AuthProvider>
-							<App />
-						</AuthProvider>
-					</BrowserRouter>
-				</TooltipProvider>
-			</ThemeProvider>
+			<LocaleProvider>
+				<ThemeProvider>
+					<TooltipProvider delayDuration={300}>
+						<BrowserRouter>
+							<AuthProvider>
+								<App />
+							</AuthProvider>
+						</BrowserRouter>
+					</TooltipProvider>
+				</ThemeProvider>
+			</LocaleProvider>
 		</QueryClientProvider>
 	);
 }

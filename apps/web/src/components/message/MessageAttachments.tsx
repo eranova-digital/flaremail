@@ -1,5 +1,6 @@
 import { Download, FileIcon, Loader2 } from 'lucide-react';
 import { useEffect, useState, type MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
 	AttachmentPreviewDialog,
@@ -71,11 +72,12 @@ function AttachmentImagePreview({ attachmentId, alt }: { attachmentId: string; a
 }
 
 function MessageAttachmentCard({ attachment }: { attachment: Attachment }) {
+	const { t } = useTranslation('mail');
 	const [previewOpen, setPreviewOpen] = useState(false);
 	const [downloading, setDownloading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const filename = attachment.filename?.trim() || 'attachment';
+	const filename = attachment.filename?.trim() || t('attachments.fallbackName');
 	const description = formatAttachmentDescription(
 		filename,
 		attachment.mimeType,
@@ -132,7 +134,7 @@ function MessageAttachmentCard({ attachment }: { attachment: Attachment }) {
 				</AttachmentContent>
 				<AttachmentActions>
 					<AttachmentAction
-						aria-label={`Download ${filename}`}
+						aria-label={t('attachments.downloadAria', { filename })}
 						disabled={downloading || !attachment.id}
 						onClick={(event) => void handleDownload(event)}
 					>
@@ -144,7 +146,7 @@ function MessageAttachmentCard({ attachment }: { attachment: Attachment }) {
 					</AttachmentAction>
 				</AttachmentActions>
 				<AttachmentTrigger
-					aria-label={`Preview ${filename}`}
+					aria-label={t('attachments.previewAria', { filename })}
 					disabled={!attachment.id}
 					onClick={() => setPreviewOpen(true)}
 				/>
@@ -165,6 +167,8 @@ export function MessageAttachments({
 	attachments?: MessageFull['attachments'];
 	direction?: MessageFull['direction'];
 }) {
+	const { t } = useTranslation('mail');
+
 	if (direction !== 'inbound' && direction !== 'outbound') {
 		return null;
 	}
@@ -187,7 +191,7 @@ export function MessageAttachments({
 	return (
 		<div className="mt-4 space-y-2">
 			<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-				{items.length} attachment{items.length === 1 ? '' : 's'}
+				{t('attachments.count', { count: items.length })}
 			</p>
 			{imageItems.length > 0 ? (
 				<AttachmentGroup>

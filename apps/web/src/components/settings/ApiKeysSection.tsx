@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, Copy, KeyRound, Loader2, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +39,9 @@ type ApiKeysSectionProps = {
 	revokeKey: (keyId: string) => Promise<{ ok: true }>;
 };
 
-function formatDateTime(value: string | null): string {
+function formatDateTime(value: string | null, neverUsed: string): string {
 	if (!value) {
-		return "Never used";
+		return neverUsed;
 	}
 	return new Date(value).toLocaleString(undefined, {
 		year: "numeric",
@@ -71,6 +72,7 @@ function ScopeGroup({
 	onToggle: (scope: string, checked: boolean) => void;
 	disabled: boolean;
 }) {
+	const { t } = useTranslation("settings");
 	const [open, setOpen] = useState(false);
 	const matchesSearch = search.trim().length > 0;
 	const selectedCount = scopes.filter((scope) => selectedScopes.includes(scope)).length;
@@ -89,8 +91,8 @@ function ScopeGroup({
 					</p>
 					<p className="text-muted-foreground text-xs">
 						{selectedCount > 0
-							? `${selectedCount} selected`
-							: `${scopes.length} available scope${scopes.length === 1 ? "" : "s"}`}
+							? t("apiKeys.selectedCount", { count: selectedCount })
+							: t("apiKeys.availableScopes", { count: scopes.length })}
 					</p>
 				</div>
 				<ChevronDown
@@ -141,6 +143,7 @@ function CreateApiKeyDialog({
 	availableScopes: string[];
 	onCreate: (input: { name: string; scopes: string[] }) => Promise<void>;
 }) {
+	const { t } = useTranslation("settings");
 	const [name, setName] = useState("");
 	const [search, setSearch] = useState("");
 	const [selectedScopes, setSelectedScopes] = useState<string[]>([]);
@@ -208,7 +211,7 @@ function CreateApiKeyDialog({
 
 					<div className="space-y-2">
 						<label htmlFor="api-key-name" className="text-sm font-medium">
-							Name
+							{t("apiKeys.nameLabel")}
 						</label>
 						<Input
 							id="api-key-name"
@@ -221,9 +224,9 @@ function CreateApiKeyDialog({
 
 					<div className="flex min-h-0 flex-1 flex-col space-y-3 overflow-hidden">
 						<div className="space-y-1">
-							<p className="text-sm font-medium">Scopes</p>
+							<p className="text-sm font-medium">{t("apiKeys.scopesLabel")}</p>
 							<p className="text-muted-foreground text-xs">
-								Start with search, then expand only the groups you need.
+								{t("apiKeys.scopesHelp")}
 							</p>
 						</div>
 						<div className="relative">
@@ -231,7 +234,7 @@ function CreateApiKeyDialog({
 							<Input
 								value={search}
 								onChange={(event) => setSearch(event.target.value)}
-								placeholder="Search scopes"
+								placeholder={t("apiKeys.searchScopes")}
 								className="pl-9"
 								disabled={submitting}
 							/>
@@ -239,7 +242,7 @@ function CreateApiKeyDialog({
 						<div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
 							{groupedScopes.length === 0 ? (
 								<p className="text-muted-foreground text-sm">
-									No scopes match your search.
+									{t("apiKeys.noScopesMatch")}
 								</p>
 							) : (
 								groupedScopes.map(([group, scopes]) => (
@@ -286,6 +289,9 @@ export function ApiKeysSection({
 	createKey,
 	revokeKey,
 }: ApiKeysSectionProps) {
+	const { t } = useTranslation("settings");
+	const { t: tc } = useTranslation("common");
+	const neverUsed = t("apiKeys.neverUsed");
 	const [items, setItems] = useState<ApiKeySummary[]>([]);
 	const [availableScopes, setAvailableScopes] = useState<string[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -367,13 +373,13 @@ export function ApiKeysSection({
 					{successSecret ? (
 						<Alert tone="success" title={secretTitle}>
 							<div className="space-y-3">
-								<p>Save this secret now. You will not be able to see it again.</p>
+								<p>{t("apiKeys.secretBody")}</p>
 								<code className="bg-background/70 block rounded-md px-3 py-2 font-mono text-xs break-all">
 									{successSecret}
 								</code>
 								<Button type="button" variant="outline" size="sm" onClick={handleCopySecret}>
 									{copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
-									{copied ? "Copied" : "Copy secret"}
+									{copied ? tc("copied") : t("apiKeys.copySecret")}
 								</Button>
 							</div>
 						</Alert>
@@ -408,9 +414,10 @@ export function ApiKeysSection({
 													<Badge variant="secondary">{item.prefix}</Badge>
 												</div>
 												<p className="text-muted-foreground text-xs">
-													Created {formatDateTime(item.createdAt)}
-													{" · "}
-													Last used {formatDateTime(item.lastUsedAt)}
+													{t("apiKeys.createdLastUsed", {
+														createdAt: formatDateTime(item.createdAt, neverUsed),
+														lastUsedAt: formatDateTime(item.lastUsedAt, neverUsed),
+													})}
 												</p>
 												<div className="flex flex-wrap gap-1">
 													{item.scopes.map((scope) => (
@@ -427,7 +434,7 @@ export function ApiKeysSection({
 												disabled={Boolean(revokingId)}
 												className="shrink-0"
 											>
-												Revoke
+												{t("apiKeys.revoke")}
 											</Button>
 										</li>
 									))}
@@ -452,14 +459,15 @@ export function ApiKeysSection({
 			<ConfirmDialog
 				open={pendingRevoke !== null}
 				onOpenChange={(open) => !open && !revokingId && setPendingRevoke(null)}
-				title="Revoke API key?"
+				title={t("apiKeys.revokeConfirmTitle")}
 				description={
 					<p>
-						This will immediately disable
-						{pendingRevoke ? ` '${pendingRevoke.name}'` : " this API key"}.
+						{pendingRevoke
+							? t("apiKeys.revokeConfirmBody", { name: pendingRevoke.name })
+							: t("apiKeys.revokeConfirmBodyFallback")}
 					</p>
 				}
-				confirmLabel="Revoke key"
+				confirmLabel={t("apiKeys.revokeConfirmLabel")}
 				pending={Boolean(revokingId)}
 				onConfirm={handleRevoke}
 			/>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { PenLine } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { SandboxedHtml } from "@/components/html/SandboxedHtml";
 import { Badge } from "@/components/ui/badge";
@@ -7,9 +8,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Identity } from "@/lib/identities/api";
 import { cn } from "@/lib/utils";
 
-export function identityDisplayName(identity: Identity): string {
+export function identityDisplayName(
+	identity: Identity,
+	noNameLabel = "(no name)",
+): string {
 	const name = identity.fromNamePreview.trim();
-	return name.length > 0 ? name : "(no name)";
+	return name.length > 0 ? name : noNameLabel;
 }
 
 type IdentityCardProps = {
@@ -39,7 +43,8 @@ export function IdentityCard({
 	disabled = false,
 	className,
 }: IdentityCardProps) {
-	const displayName = identityDisplayName(identity);
+	const { t } = useTranslation("settings");
+	const displayName = identityDisplayName(identity, t("identities.noName"));
 	const hasSignature = Boolean(identity.signatureHtml?.trim());
 	const address = mailboxAddress?.trim() || null;
 
@@ -59,7 +64,7 @@ export function IdentityCard({
 								{displayName}
 							</h3>
 							{identity.isDefault ? (
-								<Badge variant="secondary">Default</Badge>
+								<Badge variant="secondary">{t("identities.badgeDefault")}</Badge>
 							) : null}
 							{badges}
 						</div>
@@ -87,17 +92,19 @@ export function IdentityCard({
 				>
 					<div className="text-muted-foreground mb-1.5 flex items-center gap-1.5 text-[11px] font-medium tracking-wide uppercase">
 						<PenLine className="size-3" aria-hidden />
-						Signature
+						{t("identities.signatureLabel")}
 					</div>
 					{hasSignature ? (
 						<SandboxedHtml
-							title="Identity signature"
+							title={t("identities.signatureTitle")}
 							html={identity.signatureHtml ?? ""}
 							className="text-muted-foreground min-h-[3rem] text-xs"
 							bodyCss="body { font-size: 0.75rem; line-height: 1.4; color: #525252; } p { margin: 0 0 0.35em; }"
 						/>
 					) : (
-						<p className="text-muted-foreground text-xs">No signature</p>
+						<p className="text-muted-foreground text-xs">
+							{t("identities.noSignature")}
+						</p>
 					)}
 				</div>
 

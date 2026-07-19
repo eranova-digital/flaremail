@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ComposeEditor } from "@/components/compose/ComposeEditor";
 import { Alert } from "@/components/ui/alert";
@@ -14,9 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-	LOG_RETENTION_DAY_OPTIONS,
-	ORGANIZATION_TAB_ACCESS_OPTIONS,
-	REQUIRE_MFA_SCOPE_OPTIONS,
+	getLogRetentionDayOptions,
+	getOrganizationTabAccessOptions,
+	getRequireMfaScopeOptions,
 	type LogRetentionDays,
 	type OrganizationTabAccess,
 	type RequireMfaScope,
@@ -59,6 +60,7 @@ function SettingRow({
 }
 
 export function OrganizationSection() {
+	const { t } = useTranslation("management");
 	const { account } = useAuth();
 	const settingsQuery = useInstanceSettings();
 	const updateMutation = useUpdateInstanceSettings();
@@ -113,7 +115,7 @@ export function OrganizationSection() {
 		return (
 			<div className="text-muted-foreground flex items-center gap-2 text-sm">
 				<Loader2 className="size-4 animate-spin" aria-hidden />
-				Loading organization settings…
+				{t("organization.loading")}
 			</div>
 		);
 	}
@@ -121,8 +123,7 @@ export function OrganizationSection() {
 	if (settingsQuery.isError || !settingsQuery.data) {
 		return (
 			<Alert tone="destructive">
-				{getErrorMessage(settingsQuery.error) ??
-					"Could not load organization settings."}
+				{getErrorMessage(settingsQuery.error) ?? t("organization.loadError")}
 			</Alert>
 		);
 	}
@@ -179,29 +180,25 @@ export function OrganizationSection() {
 	return (
 		<section className="space-y-6">
 			<div>
-				<h2 className="text-lg font-medium">Organization</h2>
-				<p className="text-muted-foreground text-sm">
-					Configure instance-wide security policies for every account.
-				</p>
+				<h2 className="text-lg font-medium">{t("organization.title")}</h2>
+				<p className="text-muted-foreground text-sm">{t("organization.description")}</p>
 			</div>
 
 			{error ? <Alert tone="destructive">{error}</Alert> : null}
-			{saved ? (
-				<Alert tone="success">Organization settings saved.</Alert>
-			) : null}
+			{saved ? <Alert tone="success">{t("organization.saved")}</Alert> : null}
 
 			<Card className="rounded-xl shadow-sm">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base">Access & security</CardTitle>
+					<CardTitle className="text-base">{t("organization.accessSecurity")}</CardTitle>
 				</CardHeader>
 				<CardContent className="divide-y p-0">
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Organization tab access"
+							label={t("organization.tabAccess.label")}
 							description={
 								isIntendant
-									? "Who can view this Organization tab in Management. Only you can change this setting."
-									: "Who can view this Organization tab in Management. Only the recovery account can change this setting."
+									? t("organization.tabAccess.descIntendant")
+									: t("organization.tabAccess.descOther")
 							}
 							control={
 								<Select
@@ -212,11 +209,11 @@ export function OrganizationSection() {
 										markDirty();
 									}}
 								>
-									<SelectTrigger aria-label="Organization tab access">
+									<SelectTrigger aria-label={t("organization.tabAccess.label")}>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{ORGANIZATION_TAB_ACCESS_OPTIONS.map((option) => (
+										{getOrganizationTabAccessOptions().map((option) => (
 											<SelectItem key={option.value} value={option.value}>
 												{option.label}
 											</SelectItem>
@@ -228,8 +225,8 @@ export function OrganizationSection() {
 					</div>
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Require two-factor authentication"
-							description="Accounts in scope must enable 2FA during activation or on their next sign-in."
+							label={t("organization.requireMfa.label")}
+							description={t("organization.requireMfa.description")}
 							control={
 								<Select
 									value={requireMfaScope}
@@ -239,11 +236,11 @@ export function OrganizationSection() {
 										markDirty();
 									}}
 								>
-									<SelectTrigger aria-label="Require two-factor authentication">
+									<SelectTrigger aria-label={t("organization.requireMfa.label")}>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{REQUIRE_MFA_SCOPE_OPTIONS.map((option) => (
+										{getRequireMfaScopeOptions().map((option) => (
 											<SelectItem key={option.value} value={option.value}>
 												{option.label}
 											</SelectItem>
@@ -255,8 +252,8 @@ export function OrganizationSection() {
 					</div>
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Require recovery email"
-							description="Every account must verify a recovery email during activation or on their next sign-in."
+							label={t("organization.requireRecoveryEmail.label")}
+							description={t("organization.requireRecoveryEmail.description")}
 							control={
 								<div className="flex h-9 items-center justify-end">
 									<Switch
@@ -266,7 +263,7 @@ export function OrganizationSection() {
 											setRequireRecoveryEmail(checked);
 											markDirty();
 										}}
-										aria-label="Require recovery email"
+										aria-label={t("organization.requireRecoveryEmail.label")}
 									/>
 								</div>
 							}
@@ -274,14 +271,8 @@ export function OrganizationSection() {
 					</div>
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Persist noreply outbound emails"
-							description={
-								<>
-									Keep copies of transactional emails from{" "}
-									<code className="text-[11px]">noreply@</code> in each
-									domain&apos;s noreply Sent folder.
-								</>
-							}
+							label={t("organization.persistNoreply.label")}
+							description={t("organization.persistNoreply.description")}
 							control={
 								<div className="flex h-9 items-center justify-end">
 									<Switch
@@ -291,7 +282,7 @@ export function OrganizationSection() {
 											setPersistNoreplyOutboundEmails(checked);
 											markDirty();
 										}}
-										aria-label="Persist noreply outbound emails"
+										aria-label={t("organization.persistNoreply.label")}
 									/>
 								</div>
 							}
@@ -302,13 +293,13 @@ export function OrganizationSection() {
 
 			<Card className="rounded-xl shadow-sm">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base">Identities</CardTitle>
+					<CardTitle className="text-base">{t("organization.identitiesCard")}</CardTitle>
 				</CardHeader>
 				<CardContent className="divide-y p-0">
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Identity self-serve"
-							description="Allow accounts to create and edit identities on their primary mailbox. The organization default identity stays locked."
+							label={t("organization.identitySelfServe.label")}
+							description={t("organization.identitySelfServe.description")}
 							control={
 								<div className="flex h-9 items-center justify-end">
 									<Switch
@@ -318,7 +309,7 @@ export function OrganizationSection() {
 											setIdentitySelfServe(checked);
 											markDirty();
 										}}
-										aria-label="Identity self-serve"
+										aria-label={t("organization.identitySelfServe.label")}
 									/>
 								</div>
 							}
@@ -326,8 +317,8 @@ export function OrganizationSection() {
 					</div>
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Allow custom names"
-							description="Let users and managers choose a free-form From name. Admins and above can always use custom names."
+							label={t("organization.customNames.label")}
+							description={t("organization.customNames.description")}
 							control={
 								<div className="flex h-9 items-center justify-end">
 									<Switch
@@ -337,7 +328,7 @@ export function OrganizationSection() {
 											setCustomNameAllowance(checked);
 											markDirty();
 										}}
-										aria-label="Allow custom names"
+										aria-label={t("organization.customNames.label")}
 									/>
 								</div>
 							}
@@ -345,10 +336,9 @@ export function OrganizationSection() {
 					</div>
 					<div id="default-identity" className="space-y-4 px-6 py-4 scroll-mt-4">
 						<div className="space-y-1">
-							<p className="text-sm font-medium">Default identity</p>
+							<p className="text-sm font-medium">{t("organization.defaultIdentity.label")}</p>
 							<p className="text-muted-foreground text-xs leading-relaxed">
-								Live-linked template offered on every primary mailbox. Changes
-								apply immediately for all accounts.
+								{t("organization.defaultIdentity.description")}
 							</p>
 						</div>
 						<div className="grid gap-4 sm:grid-cols-2">
@@ -357,7 +347,7 @@ export function OrganizationSection() {
 									htmlFor="default-identity-pattern"
 									className="text-sm font-medium"
 								>
-									Name pattern
+									{t("organization.defaultIdentity.namePattern")}
 								</label>
 								<Select
 									value={defaultIdentityNamePattern}
@@ -369,33 +359,41 @@ export function OrganizationSection() {
 								>
 									<SelectTrigger
 										id="default-identity-pattern"
-										aria-label="Name pattern"
+										aria-label={t("organization.defaultIdentity.namePattern")}
 									>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="none">No name (address only)</SelectItem>
-										<SelectItem value="first_name">First name</SelectItem>
-										<SelectItem value="last_name">Last name</SelectItem>
+										<SelectItem value="none">
+											{t("identities.namePatterns.none")}
+										</SelectItem>
+										<SelectItem value="first_name">
+											{t("identities.namePatterns.first_name")}
+										</SelectItem>
+										<SelectItem value="last_name">
+											{t("identities.namePatterns.last_name")}
+										</SelectItem>
 										<SelectItem value="first_name_last_name">
-											First name Last name
+											{t("identities.namePatterns.first_name_last_name")}
 										</SelectItem>
 										<SelectItem value="last_name_first_name">
-											Last name First name
+											{t("identities.namePatterns.last_name_first_name")}
 										</SelectItem>
 										<SelectItem value="first_initial_last_name">
-											F. Last name
+											{t("identities.namePatterns.first_initial_last_name")}
 										</SelectItem>
 										<SelectItem value="last_name_first_initial">
-											Last name F.
+											{t("identities.namePatterns.last_name_first_initial")}
 										</SelectItem>
 										<SelectItem value="first_name_last_initial">
-											First name L.
+											{t("identities.namePatterns.first_name_last_initial")}
 										</SelectItem>
 										<SelectItem value="last_initial_first_name">
-											L. First name
+											{t("identities.namePatterns.last_initial_first_name")}
 										</SelectItem>
-										<SelectItem value="custom">Custom name</SelectItem>
+										<SelectItem value="custom">
+											{t("identities.namePatterns.custom")}
+										</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>
@@ -405,7 +403,7 @@ export function OrganizationSection() {
 										htmlFor="default-identity-custom"
 										className="text-sm font-medium"
 									>
-										Custom name
+										{t("organization.defaultIdentity.customName")}
 									</label>
 									<input
 										id="default-identity-custom"
@@ -421,13 +419,13 @@ export function OrganizationSection() {
 							) : null}
 						</div>
 						<div className="space-y-2">
-							<label className="text-sm font-medium">Signature</label>
+							<label className="text-sm font-medium">{t("organization.defaultIdentity.signature")}</label>
 							<ComposeEditor
 								key={baseline.updatedAt}
 								initialHtml={
 									baseline.defaultIdentitySignatureHtml || "<p></p>"
 								}
-								placeholder="Optional default signature…"
+								placeholder={t("organization.defaultIdentity.signaturePlaceholder")}
 								disabled={updateMutation.isPending}
 								className="min-h-[120px]"
 								onChange={({ html }) => {
@@ -442,13 +440,13 @@ export function OrganizationSection() {
 
 			<Card className="rounded-xl shadow-sm">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base">Logs</CardTitle>
+					<CardTitle className="text-base">{t("organization.logsCard")}</CardTitle>
 				</CardHeader>
 				<CardContent className="divide-y p-0">
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Logs enabled"
-							description="When off, new logs are not stored. Existing logs remain readable until retention deletes them."
+							label={t("organization.logsEnabled.label")}
+							description={t("organization.logsEnabled.description")}
 							control={
 								<div className="flex h-9 items-center justify-end">
 									<Switch
@@ -458,7 +456,7 @@ export function OrganizationSection() {
 											setLogsEnabled(checked);
 											markDirty();
 										}}
-										aria-label="Logs enabled"
+										aria-label={t("organization.logsEnabled.label")}
 									/>
 								</div>
 							}
@@ -466,8 +464,8 @@ export function OrganizationSection() {
 					</div>
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Max importance stored"
-							description="Only logs with importance at or below this value are stored (0 is most important)."
+							label={t("organization.maxImportance.label")}
+							description={t("organization.maxImportance.description")}
 							control={
 								<Select
 									value={String(maxImportanceStored)}
@@ -477,13 +475,13 @@ export function OrganizationSection() {
 										markDirty();
 									}}
 								>
-									<SelectTrigger aria-label="Max importance stored">
+									<SelectTrigger aria-label={t("organization.maxImportance.label")}>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
 										{Array.from({ length: 11 }, (_, i) => (
 											<SelectItem key={i} value={String(i)}>
-												≤ {i}
+												{t("organization.maxImportance.option", { n: i })}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -493,8 +491,8 @@ export function OrganizationSection() {
 					</div>
 					<div className="px-6 py-4">
 						<SettingRow
-							label="Log retention"
-							description="How long logs are kept before the scheduled purge removes them."
+							label={t("organization.retention.label")}
+							description={t("organization.retention.description")}
 							control={
 								<Select
 									value={String(logRetentionDays)}
@@ -504,11 +502,11 @@ export function OrganizationSection() {
 										markDirty();
 									}}
 								>
-									<SelectTrigger aria-label="Log retention">
+									<SelectTrigger aria-label={t("organization.retention.label")}>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{LOG_RETENTION_DAY_OPTIONS.map((option) => (
+										{getLogRetentionDayOptions().map((option) => (
 											<SelectItem
 												key={option.value}
 												value={String(option.value)}
@@ -528,7 +526,7 @@ export function OrganizationSection() {
 				{updateMutation.isPending ? (
 					<Loader2 className="size-4 animate-spin" aria-hidden />
 				) : null}
-				Save organization settings
+				{t("organization.save")}
 			</Button>
 		</section>
 	);

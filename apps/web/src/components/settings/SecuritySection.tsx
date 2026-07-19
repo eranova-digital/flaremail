@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, Loader2, ShieldCheck, ShieldOff } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useTranslation } from "react-i18next";
 
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { AuthCodeInput, isAuthCodeComplete } from "@/components/auth/AuthCodeInput";
@@ -42,6 +43,8 @@ function formatEnabledDate(value: string | null | undefined): string | null {
 }
 
 export function SecuritySection() {
+	const { t } = useTranslation("settings");
+	const { t: tc } = useTranslation("common");
 	const { account, refresh } = useAuth();
 	const [status, setStatus] = useState<MfaStatus | null>(null);
 	const [setup, setSetup] = useState<MfaSetup | null>(null);
@@ -125,7 +128,7 @@ export function SecuritySection() {
 			setSetup(null);
 			setSetupStep("idle");
 			setConfirmCode("");
-			setSuccess("Two-factor authentication is now enabled.");
+			setSuccess(t("security.mfa.enabledSuccess"));
 			await refresh();
 		} catch (confirmError) {
 			setError(getErrorMessage(confirmError));
@@ -148,7 +151,7 @@ export function SecuritySection() {
 			setDisablePassword("");
 			setDisableCode("");
 			setRecoveryCodeSent(false);
-			setSuccess("Two-factor authentication has been disabled.");
+			setSuccess(t("security.mfa.disabledSuccess"));
 			await refresh();
 		} catch (disableError) {
 			setError(getErrorMessage(disableError));
@@ -164,7 +167,7 @@ export function SecuritySection() {
 			await sendMfaDisableRecoveryCode();
 			setRecoveryCodeSent(true);
 			setDisableCode("");
-			setSuccess("We sent a verification code to your recovery email.");
+			setSuccess(t("security.mfa.recoveryCodeSent"));
 		} catch (sendError) {
 			setError(getErrorMessage(sendError));
 		} finally {
@@ -182,10 +185,9 @@ export function SecuritySection() {
 	return (
 		<div className="space-y-6">
 			<div className="space-y-2">
-				<h2 className="text-lg font-semibold">Security</h2>
+				<h2 className="text-lg font-semibold">{t("security.title")}</h2>
 				<p className="text-muted-foreground max-w-prose text-sm">
-					Protect your account with an authenticator app or passkey, review active
-					sessions, and manage sign-in security settings.
+					{t("security.description")}
 				</p>
 			</div>
 
@@ -200,23 +202,24 @@ export function SecuritySection() {
 						) : (
 							<ShieldOff className="text-muted-foreground size-4" aria-hidden />
 						)}
-						Two-factor authentication
+						{t("security.mfa.title")}
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					{loading ? (
-						<p className="text-muted-foreground text-sm">Loading security settings…</p>
+						<p className="text-muted-foreground text-sm">{t("security.mfa.loading")}</p>
 					) : enabled ? (
 						<>
 							<p className="text-sm">
-								Two-factor authentication is enabled
-								{enabledAt ? ` since ${enabledAt}` : ""}. You will be asked for a
-								code from your authenticator app when signing in.
+								{t("security.mfa.enabled", {
+									since: enabledAt
+										? t("security.mfa.since", { enabledAt })
+										: "",
+								})}
 							</p>
 							{mfaRequiredByOrganization ? (
 								<p className="text-muted-foreground text-sm">
-									Your organization requires two-factor authentication for your
-									account, so it cannot be disabled.
+									{t("security.mfa.orgRequired")}
 								</p>
 							) : (
 							<div className="rounded-md border">
@@ -237,12 +240,12 @@ export function SecuritySection() {
 								>
 									<div>
 										<p className="text-sm font-medium">
-											Disable two-factor authentication
+											{t("security.mfa.disableTitle")}
 										</p>
 										<p className="text-muted-foreground text-xs">
 											{usesRecoveryCodeForDisable
-												? "Requires your password and a code sent to your recovery email."
-												: "Requires your password and a current authenticator code."}
+												? t("security.mfa.disableHintRecovery")
+												: t("security.mfa.disableHintTotp")}
 										</p>
 									</div>
 									<ChevronDown
@@ -256,8 +259,8 @@ export function SecuritySection() {
 									<div className="space-y-3 border-t px-3 py-3">
 										<p className="text-muted-foreground text-sm">
 											{usesRecoveryCodeForDisable
-												? "Enter your password and the verification code we send to your recovery email."
-												: "Enter your password and a current authenticator code to turn off 2FA."}
+												? t("security.mfa.disableBodyRecovery")
+												: t("security.mfa.disableBodyTotp")}
 										</p>
 										<div className="grid gap-3 sm:max-w-sm">
 											<div className="space-y-2">
@@ -265,7 +268,7 @@ export function SecuritySection() {
 													htmlFor="disable-password"
 													className="text-sm font-medium"
 												>
-													Password
+													{t("security.mfa.password")}
 												</label>
 												<PasswordInput
 													id="disable-password"
@@ -280,8 +283,8 @@ export function SecuritySection() {
 											<div className="space-y-2">
 												<label htmlFor="disable-code" className="text-sm font-medium">
 													{usesRecoveryCodeForDisable
-														? "Recovery email code"
-														: "Authenticator code"}
+														? t("security.mfa.recoveryEmailCode")
+														: t("security.mfa.authenticatorCode")}
 												</label>
 												{usesRecoveryCodeForDisable ? (
 													<>
@@ -310,8 +313,8 @@ export function SecuritySection() {
 																/>
 															) : null}
 															{recoveryCodeSent
-																? "Resend code"
-																: "Send code to recovery email"}
+																? t("security.mfa.resendCode")
+																: t("security.mfa.sendCode")}
 														</Button>
 													</>
 												) : (
@@ -338,7 +341,7 @@ export function SecuritySection() {
 												{submitting ? (
 													<Loader2 className="size-4 animate-spin" aria-hidden />
 												) : null}
-												Disable 2FA
+												{t("security.mfa.disableButton")}
 											</Button>
 										</div>
 									</div>
@@ -348,18 +351,15 @@ export function SecuritySection() {
 						</>
 					) : setupStep === "scan" && setup ? (
 						<div className="space-y-4">
-							<p className="text-sm">
-								Scan this QR code with your authenticator app, then enter the
-								6-digit code to finish setup.
-							</p>
+							<p className="text-sm">{t("security.mfa.scanBody")}</p>
 							<div className="flex flex-col gap-4 sm:flex-row sm:items-start">
 								<div className="bg-background inline-flex rounded-lg border p-3">
 									<QRCodeSVG value={setup.otpauthUrl} size={160} />
 								</div>
 								<div className="space-y-2 text-sm">
-									<p className="font-medium">Can&apos;t scan the code?</p>
+									<p className="font-medium">{t("security.mfa.cantScan")}</p>
 									<p className="text-muted-foreground">
-										Enter this key manually in your authenticator app:
+										{t("security.mfa.manualKey")}
 									</p>
 									<code className="bg-muted block rounded px-2 py-1 font-mono text-xs break-all">
 										{setup.secret}
@@ -369,7 +369,7 @@ export function SecuritySection() {
 							<div className="grid gap-3 sm:max-w-xs">
 								<div className="space-y-2">
 									<label htmlFor="confirm-code" className="text-sm font-medium">
-										Verification code
+										{t("security.mfa.verificationCode")}
 									</label>
 									<TotpCodeInput
 										id="confirm-code"
@@ -389,14 +389,14 @@ export function SecuritySection() {
 										{submitting ? (
 											<Loader2 className="size-4 animate-spin" aria-hidden />
 										) : null}
-										Enable 2FA
+										{t("security.mfa.enableButton")}
 									</Button>
 									<Button
 										variant="outline"
 										onClick={handleCancelSetup}
 										disabled={submitting}
 									>
-										Cancel
+										{tc("cancel")}
 									</Button>
 								</div>
 							</div>
@@ -404,14 +404,13 @@ export function SecuritySection() {
 					) : (
 						<>
 							<p className="text-muted-foreground text-sm">
-								Add a second step to sign-in using an app like Google Authenticator,
-								1Password, or Authy.
+								{t("security.mfa.setupIdleBody")}
 							</p>
 							<Button onClick={handleStartSetup} disabled={submitting}>
 								{submitting ? (
 									<Loader2 className="size-4 animate-spin" aria-hidden />
 								) : null}
-								Set up authenticator app
+								{t("security.mfa.setupButton")}
 							</Button>
 						</>
 					)}
@@ -427,14 +426,14 @@ export function SecuritySection() {
 			<ConnectedAppsSection />
 
 			<ApiKeysSection
-				title="API keys"
-				description="Create scoped API keys for scripts and integrations. Effective access is your account permissions intersected with the scopes you choose."
-				emptyState="No API keys created yet."
-				createLabel="Create API key"
-				dialogTitle="Create API key"
-				dialogDescription="Choose a name and the narrowest scopes this key needs."
-				namePlaceholder="Mailbox sync script"
-				secretTitle="New API key created"
+				title={t("apiKeys.title")}
+				description={t("apiKeys.description")}
+				emptyState={t("apiKeys.empty")}
+				createLabel={t("apiKeys.create")}
+				dialogTitle={t("apiKeys.dialogTitle")}
+				dialogDescription={t("apiKeys.dialogDescription")}
+				namePlaceholder={t("apiKeys.namePlaceholder")}
+				secretTitle={t("apiKeys.secretTitle")}
 				loadKeys={fetchApiKeys}
 				createKey={createApiKey}
 				revokeKey={revokeApiKey}

@@ -1,5 +1,6 @@
 import { Download } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { getErrorMessage } from "@/lib/api/errors";
@@ -25,6 +26,8 @@ export function ComposeTemplateDownloadButton({
 	templateName,
 	mailboxId,
 }: ComposeTemplateDownloadButtonProps) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const [pending, setPending] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -52,12 +55,14 @@ export function ComposeTemplateDownloadButton({
 				size="sm"
 				className="gap-1.5"
 				disabled={pending}
-				aria-label={`Download ${templateName}`}
-				title={error ?? `Download ${templateName}`}
+				aria-label={t("templates.downloadAria", { name: templateName })}
+				title={
+					error ?? t("templates.downloadAria", { name: templateName })
+				}
 				onClick={() => void onDownload()}
 			>
 				<Download className="size-3.5" aria-hidden />
-				{pending ? "Downloading…" : "Download"}
+				{pending ? t("templates.downloading") : tc("download")}
 			</Button>
 			{error ? (
 				<span className="text-destructive sr-only" role="alert">
@@ -79,6 +84,8 @@ export function SystemTemplateDownloadButton({
 	templateLabel,
 	disabled = false,
 }: SystemTemplateDownloadButtonProps) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const [pending, setPending] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -103,12 +110,14 @@ export function SystemTemplateDownloadButton({
 				size="sm"
 				className="gap-1.5"
 				disabled={disabled || pending}
-				aria-label={`Download ${templateLabel}`}
-				title={error ?? `Download ${templateLabel}`}
+				aria-label={t("templates.downloadAria", { name: templateLabel })}
+				title={
+					error ?? t("templates.downloadAria", { name: templateLabel })
+				}
 				onClick={() => void onDownload()}
 			>
 				<Download className="size-3.5" aria-hidden />
-				{pending ? "Downloading…" : "Download"}
+				{pending ? t("templates.downloading") : tc("download")}
 			</Button>
 			{error ? (
 				<span className="text-destructive sr-only" role="alert">

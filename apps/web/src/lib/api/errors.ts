@@ -1,3 +1,4 @@
+import i18n from "@/lib/i18n";
 import type { ProblemDetails } from "@/lib/api/client";
 
 export class ApiError extends Error {
@@ -31,23 +32,46 @@ export function isNoRecoveryEmailError(error: unknown): boolean {
 	);
 }
 
+/**
+ * Resolve a user-facing error message.
+ * Prefers `ProblemDetails.code` → i18n `errors:<code>`; falls back to English
+ * `detail` / Error.message for unknown codes (e.g. external API clients).
+ */
 export function getErrorMessage(error: unknown): string {
-	if (error instanceof ApiError) {
-		return error.problem?.detail ?? error.message;
+	const problem = extractProblem(error);
+	if (problem?.code) {
+		const key = problem.code;
+		if (i18n.exists(key, { ns: "errors" })) {
+			return i18n.t(key, { ns: "errors" });
+		}
 	}
 
-	if (error && typeof error === "object" && "detail" in error) {
-		const detail = (error as ProblemDetails).detail;
-		if (typeof detail === "string") {
-			return detail;
-		}
+	if (problem?.detail) {
+		return problem.detail;
+	}
+
+	if (error instanceof ApiError) {
+		return error.message;
 	}
 
 	if (error instanceof Error) {
 		return error.message;
 	}
 
-	return "Something went wrong";
+	return i18n.t("something-went-wrong", {
+		ns: "errors",
+		defaultValue: "Something went wrong",
+	});
+}
+
+function extractProblem(error: unknown): ProblemDetails | undefined {
+	if (error instanceof ApiError) {
+		return error.problem;
+	}
+	if (error && typeof error === "object" && "detail" in error) {
+		return error as ProblemDetails;
+	}
+	return undefined;
 }
 
 export function assertData<T>(data: T | undefined, label: string): T {

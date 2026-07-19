@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Loader2, MoreHorizontal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { AccountIdentitiesTab } from "@/components/settings/accounts/AccountIdentitiesTab";
 import { AccountSecurityTab } from "@/components/settings/accounts/AccountSecurityTab";
@@ -99,6 +100,8 @@ export function AccountDetailDialog({
 	accountId,
 	onClose,
 }: AccountDetailDialogProps) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const { account: actor } = useAuth();
 	const queryClient = useQueryClient();
 	const pictureInputRef = useRef<HTMLInputElement>(null);
@@ -350,7 +353,7 @@ export function AccountDetailDialog({
 			});
 			if (!response.ok) {
 				const body = await response.json().catch(() => null);
-				throw new Error(getErrorMessage(body) ?? "Upload failed");
+				throw new Error(getErrorMessage(body) ?? t("accounts.detail.uploadFailed"));
 			}
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: accountQueryKeys.detail(accountId) }),
@@ -376,7 +379,7 @@ export function AccountDetailDialog({
 			});
 			if (!response.ok) {
 				const body = await response.json().catch(() => null);
-				throw new Error(getErrorMessage(body) ?? "Remove failed");
+				throw new Error(getErrorMessage(body) ?? t("accounts.detail.removeFailed"));
 			}
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: accountQueryKeys.detail(accountId) }),
@@ -415,7 +418,7 @@ export function AccountDetailDialog({
 											type="button"
 											disabled={isBusy}
 											className="group relative cursor-pointer rounded-full outline-none disabled:cursor-not-allowed"
-											aria-label="Profile picture actions"
+											aria-label={t("accounts.detail.pictureActionsAria")}
 										>
 											<ProfileAvatar
 												accountId={target.id}
@@ -435,14 +438,16 @@ export function AccountDetailDialog({
 											disabled={isBusy}
 											onSelect={() => pictureInputRef.current?.click()}
 										>
-											{target.profilePicture ? "Change photo" : "Upload photo"}
+											{target.profilePicture
+												? t("accounts.detail.changePhoto")
+												: t("accounts.detail.uploadPhoto")}
 										</DropdownMenuItem>
 										{target.profilePicture ? (
 											<DropdownMenuItem
 												disabled={isBusy}
 												onSelect={() => void handlePictureRemove(target.id)}
 											>
-												Remove photo
+												{t("accounts.detail.removePhoto")}
 											</DropdownMenuItem>
 										) : null}
 									</DropdownMenuContent>
@@ -480,12 +485,14 @@ export function AccountDetailDialog({
 							</div>
 						</div>
 					) : (
-						<DialogTitle>Account</DialogTitle>
+						<DialogTitle>{t("accounts.detail.fallbackTitle")}</DialogTitle>
 					)}
 				</DialogHeader>
 
 				{detailQuery.isLoading ? (
-					<div className="text-muted-foreground px-6 py-8 text-sm">Loading…</div>
+					<div className="text-muted-foreground px-6 py-8 text-sm">
+						{t("accounts.detail.loading")}
+					</div>
 				) : detailQuery.isError ? (
 					<div className="px-6 py-4">
 						<Alert tone="destructive">
@@ -495,7 +502,7 @@ export function AccountDetailDialog({
 				) : !target ? (
 					<div className="px-6 py-4">
 						<Alert tone="warning">
-							<p>Account not found.</p>
+							<p>{t("accounts.detail.notFound")}</p>
 						</Alert>
 					</div>
 				) : (
@@ -509,21 +516,21 @@ export function AccountDetailDialog({
 								<div className="border-b px-6 py-3">
 									<TabsList className="h-10 w-fit gap-1 p-1.5">
 										<TabsTrigger className="h-7 px-4" value="profile">
-											Profile
+											{t("accounts.detail.tab.profile")}
 										</TabsTrigger>
 										{showAccessTab ? (
 											<TabsTrigger className="h-7 px-4" value="access">
-												Access
+												{t("accounts.detail.tab.access")}
 											</TabsTrigger>
 										) : null}
 										{showIdentitiesTab ? (
 											<TabsTrigger className="h-7 px-4" value="identities">
-												Identities
+												{t("accounts.detail.tab.identities")}
 											</TabsTrigger>
 										) : null}
 										{showSecurityTab ? (
 											<TabsTrigger className="h-7 px-4" value="security">
-												Security
+												{t("accounts.detail.tab.security")}
 											</TabsTrigger>
 										) : null}
 									</TabsList>
@@ -571,7 +578,7 @@ export function AccountDetailDialog({
 											) {
 												return (
 													<span className="text-muted-foreground text-xs">
-														Locked
+														{t("accounts.detail.locked")}
 													</span>
 												);
 											}
@@ -584,8 +591,8 @@ export function AccountDetailDialog({
 									<TabsContent value="access" className="mt-0 space-y-4">
 										{canAssignRoles(actor) && target.role ? (
 											<AccessSection
-												title="Role"
-												description="What this person can do in Flaremail."
+												title={t("accounts.detail.role")}
+												description={t("accounts.detail.roleDesc")}
 											>
 												<Select
 													value={role}
@@ -610,7 +617,7 @@ export function AccountDetailDialog({
 												</p>
 												{role !== target.role ? (
 													<p className="text-muted-foreground text-xs">
-														Role change is applied when you save.
+														{t("accounts.detail.roleChangeHint")}
 													</p>
 												) : null}
 											</AccessSection>
@@ -619,11 +626,11 @@ export function AccountDetailDialog({
 										{canManageAssignments(actor) &&
 										(role === "admin" || role === "manager") ? (
 											<AccessSection
-												title="Managed domains"
+												title={t("accounts.detail.managedDomains")}
 												description={
 													role === "admin"
-														? "Domains this admin can manage."
-														: "Domains this manager is assigned to."
+														? t("accounts.detail.managedDomainsAdmin")
+														: t("accounts.detail.managedDomainsManager")
 												}
 											>
 												<div className="grid gap-2 sm:grid-cols-2">
@@ -658,8 +665,8 @@ export function AccountDetailDialog({
 
 										{canManageAssignments(actor) && role === "manager" ? (
 											<AccessSection
-												title="Shared mailbox administration"
-												description="Shared mailboxes this manager can administer."
+												title={t("accounts.detail.sharedAdmin")}
+												description={t("accounts.detail.sharedAdminDesc")}
 											>
 												<div className="flex items-center gap-2 text-sm">
 													<Checkbox
@@ -677,14 +684,14 @@ export function AccountDetailDialog({
 														htmlFor="all-shared-mailboxes"
 														className="cursor-pointer"
 													>
-														All shared mailboxes on assigned domains
+														{t("accounts.detail.allShared")}
 													</label>
 												</div>
 												{!allSharedMailboxes ? (
 													<div className="grid gap-2 sm:grid-cols-2">
 														{sharedMailboxes.length === 0 ? (
 															<p className="text-muted-foreground col-span-full text-sm">
-																No shared mailboxes on the selected domains.
+																{t("accounts.detail.noSharedOnDomains")}
 															</p>
 														) : (
 															sharedMailboxes.map((mailbox) =>
@@ -720,13 +727,13 @@ export function AccountDetailDialog({
 
 										{canManageUserMailboxGrants(actor) && role ? (
 											<AccessSection
-												title="Shared mailbox access"
-												description="Shared mailboxes this account can read and send from."
+												title={t("accounts.detail.sharedAccess")}
+												description={t("accounts.detail.sharedAccessDesc")}
 											>
 												<div className="grid gap-2 sm:grid-cols-2">
 													{grantableSharedMailboxes.length === 0 ? (
 														<p className="text-muted-foreground col-span-full text-sm">
-															No shared mailboxes available.
+															{t("accounts.detail.noSharedAvailable")}
 														</p>
 													) : (
 														grantableSharedMailboxes.map((mailbox) =>
@@ -782,38 +789,36 @@ export function AccountDetailDialog({
 								) : null}
 
 								{resetCode ? (
-									<Alert tone="success" title="Password reset code issued">
+									<Alert tone="success" title={t("accounts.detail.resetCodeTitle")}>
 										<p>
 											<code className="font-mono font-semibold tracking-wider">
 												{resetCode}
 											</code>
 										</p>
 										<p className="text-muted-foreground mt-1 text-xs">
-											Share this code with the person so they can set a new
-											password. It is shown only once.
+											{t("accounts.detail.resetCodeHint")}
 										</p>
 									</Alert>
 								) : null}
 								{inviteCode ? (
-									<Alert tone="success" title="New invite code">
+									<Alert tone="success" title={t("accounts.detail.newInviteTitle")}>
 										<p>
 											<code className="font-mono font-semibold tracking-wider">
 												{inviteCode}
 											</code>
 										</p>
 										<p className="text-muted-foreground mt-1 text-xs">
-											Share this code with the person to complete activation.
-											Previous unused codes were invalidated.
+											{t("accounts.detail.newInviteHint")}
 										</p>
 									</Alert>
 								) : null}
 								{error ? (
-									<Alert tone="destructive" title="Couldn't save changes">
+									<Alert tone="destructive" title={t("accounts.detail.saveErrorTitle")}>
 										<p>{error}</p>
 									</Alert>
 								) : null}
 								{pictureError ? (
-									<Alert tone="destructive" title="Couldn't update photo">
+									<Alert tone="destructive" title={t("accounts.detail.photoErrorTitle")}>
 										<p>{pictureError}</p>
 									</Alert>
 								) : null}
@@ -825,7 +830,7 @@ export function AccountDetailDialog({
 								<DropdownMenuTrigger asChild>
 									<Button variant="outline" size="sm" disabled={isBusy}>
 										<MoreHorizontal className="size-4" />
-										Account actions
+										{t("accounts.detail.accountActions")}
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="start">
@@ -839,7 +844,7 @@ export function AccountDetailDialog({
 											}
 											disabled={regenerateInviteMutation.isPending}
 										>
-											Show invite code
+											{t("accounts.detail.showInviteCode")}
 										</DropdownMenuItem>
 									) : null}
 									<DropdownMenuItem
@@ -851,7 +856,7 @@ export function AccountDetailDialog({
 										}
 										disabled={resetCodeMutation.isPending}
 									>
-										Issue reset code
+										{t("accounts.detail.issueResetCode")}
 									</DropdownMenuItem>
 									{canSuspendTarget(actor, target) &&
 									target.status !== "suspended" ? (
@@ -863,7 +868,7 @@ export function AccountDetailDialog({
 												})
 											}
 										>
-											Suspend account
+											{t("accounts.detail.suspend")}
 										</DropdownMenuItem>
 									) : null}
 									{canSuspendTarget(actor, target) &&
@@ -876,7 +881,7 @@ export function AccountDetailDialog({
 												})
 											}
 										>
-											Unsuspend account
+											{t("accounts.detail.unsuspend")}
 										</DropdownMenuItem>
 									) : null}
 									{canRemoveTarget(actor, target) ? (
@@ -886,7 +891,7 @@ export function AccountDetailDialog({
 												className="text-destructive focus:text-destructive"
 												onClick={() => setConfirmingRemove(true)}
 											>
-												Remove account
+												{t("accounts.detail.remove")}
 											</DropdownMenuItem>
 										</>
 									) : null}
@@ -895,13 +900,13 @@ export function AccountDetailDialog({
 
 							<div className="flex gap-2">
 								<Button variant="outline" onClick={onClose} disabled={isBusy}>
-									Cancel
+									{tc("cancel")}
 								</Button>
 								<Button onClick={handleSaveAll} disabled={isBusy}>
 									{saving ? (
 										<Loader2 className="size-4 animate-spin" aria-hidden />
 									) : null}
-									{saving ? "Saving…" : "Save changes"}
+									{saving ? t("accounts.detail.saving") : t("accounts.detail.save")}
 								</Button>
 							</div>
 						</DialogFooter>
@@ -909,17 +914,16 @@ export function AccountDetailDialog({
 						<ConfirmDialog
 							open={confirmingRemove}
 							onOpenChange={setConfirmingRemove}
-							title={`Remove ${target.displayName}?`}
+							title={t("accounts.detail.removeConfirm.title", {
+								name: target.displayName,
+							})}
 							description={
 								<>
-									<p>
-										This permanently removes the account and its mailbox
-										access.
-									</p>
-									<p>This cannot be undone.</p>
+									<p>{t("accounts.detail.removeConfirm.description")}</p>
+									<p>{t("accounts.detail.removeConfirm.cannotUndo")}</p>
 								</>
 							}
-							confirmLabel="Remove account"
+							confirmLabel={t("accounts.detail.remove")}
 							onConfirm={() =>
 								removeMutation.mutate(target.id, {
 									onSuccess: () => {

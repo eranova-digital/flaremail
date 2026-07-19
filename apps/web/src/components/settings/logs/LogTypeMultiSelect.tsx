@@ -1,4 +1,5 @@
 import { Check, ChevronsUpDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,13 +26,14 @@ export function LogTypeMultiSelect({
 	id,
 	className,
 }: LogTypeMultiSelectProps) {
+	const { t } = useTranslation("management");
 	const selected = new Set(value);
 	const label =
 		value.length === 0
-			? "All types"
+			? t("logs.types.all")
 			: value.length <= 2
 				? value.join(", ")
-				: `${value.length} types`;
+				: t("logs.types.count", { count: value.length });
 
 	const toggle = (type: LogType, checked: boolean) => {
 		if (checked) {
@@ -50,7 +52,7 @@ export function LogTypeMultiSelect({
 					id={id}
 					variant="outline"
 					role="combobox"
-					aria-label="Log types"
+					aria-label={t("logs.types.aria")}
 					className={cn(
 						"h-9 w-full justify-between font-normal",
 						value.length === 0 && "text-muted-foreground",
@@ -62,7 +64,7 @@ export function LogTypeMultiSelect({
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-56">
-				<DropdownMenuLabel>Types</DropdownMenuLabel>
+				<DropdownMenuLabel>{t("logs.types.label")}</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<button
 					type="button"
@@ -77,7 +79,7 @@ export function LogTypeMultiSelect({
 					>
 						<Check className="size-3.5" />
 					</span>
-					All types
+					{t("logs.types.all")}
 				</button>
 				<DropdownMenuSeparator />
 				{LOG_TYPES.map((type) => (

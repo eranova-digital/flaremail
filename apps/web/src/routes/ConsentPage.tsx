@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Loader2, Mail, Shield, UserRound } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import {
@@ -21,45 +22,25 @@ import {
 	type OidcPending,
 } from "@/lib/oidc/api";
 
-const SCOPE_COPY: Record<string, { title: string; description: string; icon: typeof UserRound }> = {
-	openid: {
-		title: "Verify your identity",
-		description: "Confirm who you are when signing in.",
-		icon: Shield,
-	},
-	profile: {
-		title: "Profile",
-		description: "Name and profile picture.",
-		icon: UserRound,
-	},
-	email: {
-		title: "Email address",
-		description: "Your Flaremail login address.",
-		icon: Mail,
-	},
-	"mail:read": {
-		title: "Read mail",
-		description: "View messages and threads you can access.",
-		icon: Mail,
-	},
-	"mail:send": {
-		title: "Send mail",
-		description: "Send, reply, and forward on your behalf.",
-		icon: Mail,
-	},
+const SCOPE_ICONS: Record<string, typeof UserRound> = {
+	openid: Shield,
+	profile: UserRound,
+	email: Mail,
+	"mail:read": Mail,
+	"mail:send": Mail,
 };
 
-function scopeMeta(scope: string) {
-	return (
-		SCOPE_COPY[scope] ?? {
-			title: scope,
-			description: "Additional permission requested by this app.",
-			icon: Shield,
-		}
-	);
-}
+const SCOPE_KEYS: Record<string, "openid" | "profile" | "email" | "mailRead" | "mailSend"> = {
+	openid: "openid",
+	profile: "profile",
+	email: "email",
+	"mail:read": "mailRead",
+	"mail:send": "mailSend",
+};
 
 export function ConsentPage() {
+	const { t } = useTranslation("auth");
+	const { t: tCommon } = useTranslation("common");
 	const { account, isAuthenticated, isLoading } = useAuth();
 	const [searchParams] = useSearchParams();
 	const pendingId = searchParams.get("pending");
@@ -90,7 +71,7 @@ export function ConsentPage() {
 	}, [pendingId, isAuthenticated]);
 
 	if (isLoading) {
-		return <PageLoader label="Checking your session…" />;
+		return <PageLoader label={t("session.checking")} />;
 	}
 
 	if (!isAuthenticated) {
@@ -102,18 +83,16 @@ export function ConsentPage() {
 
 	if (account?.isIntendant) {
 		return (
-			<AuthPageShell title="Cannot authorize">
-				<Alert tone="destructive">
-					The intendant account cannot authorize OIDC clients.
-				</Alert>
+			<AuthPageShell title={t("consent.cannotAuthorizeTitle")}>
+				<Alert tone="destructive">{t("consent.cannotAuthorizeBody")}</Alert>
 			</AuthPageShell>
 		);
 	}
 
 	if (!pendingId) {
 		return (
-			<AuthPageShell title="Invalid request">
-				<Alert tone="destructive">Missing pending authorization.</Alert>
+			<AuthPageShell title={t("consent.invalidRequestTitle")}>
+				<Alert tone="destructive">{t("consent.missingPending")}</Alert>
 			</AuthPageShell>
 		);
 	}
@@ -143,21 +122,43 @@ export function ConsentPage() {
 	const logoUrl = pending
 		? oidcClientLogoUrl(pending.clientRecordId, pending.logo, "large")
 		: null;
+	const appName = tCommon("appName");
+
+	const scopeMeta = (scope: string) => {
+		const key = SCOPE_KEYS[scope];
+		const Icon = SCOPE_ICONS[scope] ?? Shield;
+		if (!key) {
+			return {
+				title: scope,
+				description: t("consent.scopes.fallbackDescription"),
+				icon: Icon,
+			};
+		}
+		return {
+			title: t(`consent.scopes.${key}.title`),
+			description: t(`consent.scopes.${key}.description`, { appName }),
+			icon: Icon,
+		};
+	};
 
 	return (
 		<AuthPageShell
-			title={pending ? `Sign in to ${pending.clientName}` : "Authorize application"}
+			title={
+				pending
+					? t("consent.titleWithClient", { clientName: pending.clientName })
+					: t("consent.titleFallback")
+			}
 			description={
 				pending
-					? "This app is requesting access to your Flaremail account."
-					: "Review the requested permissions."
+					? t("consent.descriptionWithClient", { appName })
+					: t("consent.descriptionFallback")
 			}
 		>
 			{error ? <Alert tone="destructive">{error}</Alert> : null}
 			{!pending && !error ? (
 				<p className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
 					<Loader2 className="size-4 animate-spin" />
-					Loading…
+					{t("consent.loading")}
 				</p>
 			) : null}
 			{pending && account ? (
@@ -176,7 +177,7 @@ export function ConsentPage() {
 									{pending.clientName}
 								</p>
 								<p className="text-muted-foreground text-xs">
-									wants to access your account
+									{t("consent.wantsAccess")}
 								</p>
 							</div>
 						</div>
@@ -191,7 +192,7 @@ export function ConsentPage() {
 							/>
 							<div className="min-w-0 flex-1 text-left">
 								<p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-									Signed in as
+									{t("consent.signedInAs")}
 								</p>
 								<p className="truncate text-sm font-medium">{displayName}</p>
 								<p className="text-muted-foreground truncate text-xs">
@@ -203,7 +204,9 @@ export function ConsentPage() {
 						<Separator />
 
 						<div className="space-y-3">
-							<p className="text-sm font-medium">This will allow {pending.clientName} to</p>
+							<p className="text-sm font-medium">
+								{t("consent.willAllow", { clientName: pending.clientName })}
+							</p>
 							<ul className="space-y-3">
 								{pending.scopes.map((scope) => {
 									const meta = scopeMeta(scope);
@@ -237,7 +240,7 @@ export function ConsentPage() {
 								{submitting ? (
 									<Loader2 className="size-4 animate-spin" />
 								) : null}
-								Continue to {pending.clientName}
+								{t("consent.continueTo", { clientName: pending.clientName })}
 							</Button>
 							<Button
 								type="button"
@@ -246,7 +249,7 @@ export function ConsentPage() {
 								disabled={submitting}
 								onClick={() => void decide("deny")}
 							>
-								Deny
+								{t("consent.deny")}
 							</Button>
 							<Button
 								type="button"
@@ -255,7 +258,9 @@ export function ConsentPage() {
 								disabled={submitting}
 								onClick={cancel}
 							>
-								{pending.homescreenUrl ? "Cancel and go back" : "Cancel"}
+								{pending.homescreenUrl
+									? t("consent.cancelAndGoBack")
+									: t("consent.cancel")}
 							</Button>
 						</div>
 					</CardContent>
