@@ -1102,7 +1102,7 @@
 			},
 			"badge": {
 				"disabled": "已禁用",
-				"catchAll": "Catch-all"
+				"catchAll": "全部接收"
 			},
 			"readiness": "就绪状态",
 			"viewReadinessAria": "查看 {{domain}} 的就绪状态",
@@ -1114,7 +1114,7 @@
 				"confirm": "删除域名"
 			},
 			"catchAll": {
-				"title": "Catch-all",
+				"title": "全部接收",
 				"description": "将未匹配的地址路由到此域名上的邮箱。",
 				"enabled": "已启用",
 				"mailboxLabel": "Catch-all 邮箱",

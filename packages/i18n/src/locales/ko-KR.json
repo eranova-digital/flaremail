@@ -1102,9 +1102,9 @@
 			},
 			"badge": {
 				"disabled": "비활성",
-				"catchAll": "Catch-all"
-			},
-			"readiness": "준비 상태",
+			"catchAll": "캐치올"
+		},
+		"readiness": "준비 상태",
 			"viewReadinessAria": "{{domain}} 준비 상태 보기",
 			"deleteAria": "{{domain}} 삭제",
 			"deleteConfirm": {
@@ -1114,7 +1114,7 @@
 				"confirm": "도메인 삭제"
 			},
 			"catchAll": {
-				"title": "Catch-all",
+				"title": "캐치올",
 				"description": "일치하지 않는 주소를 이 도메인의 사서함으로 라우팅합니다.",
 				"enabled": "사용",
 				"mailboxLabel": "Catch-all 사서함",
