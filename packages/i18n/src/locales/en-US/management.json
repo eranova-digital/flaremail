@@ -426,16 +426,23 @@
 			"descIntendant": "Who can view this Organization tab in Management. Only you can change this setting.",
 			"descOther": "Who can view this Organization tab in Management. Only the recovery account can change this setting.",
 			"intendant_only": "Only me",
-			"intendant_and_superadmins": "Me & owners"
+			"intendant_onlyDescription": "Only the recovery account can view and manage organization settings.",
+			"intendant_and_superadmins": "Me & owners",
+			"intendant_and_superadminsDescription": "Owners (superadmins) can also view and manage organization security policies."
 		},
 		"requireMfa": {
 			"label": "Require two-factor authentication",
 			"description": "Accounts in scope must enable 2FA during activation or on their next sign-in.",
 			"none": "Not required",
+			"noneDescription": "Two-factor authentication remains optional for everyone.",
 			"all": "All accounts",
+			"allDescription": "Every account must enable 2FA on activation or next sign-in.",
 			"manager_and_above": "Managers and above",
+			"manager_and_aboveDescription": "Managers, admins, and owners must enable 2FA.",
 			"admin_and_above": "Admins and above",
-			"superadmin_and_above": "Owners and above"
+			"admin_and_aboveDescription": "Admins and owners must enable 2FA.",
+			"superadmin_and_above": "Owners and above",
+			"superadmin_and_aboveDescription": "Only owner accounts must enable 2FA."
 		},
 		"requireRecoveryEmail": {
 			"label": "Require recovery email",
@@ -648,7 +655,7 @@
 			"dmarc_rua": {
 				"title": "DMARC aggregate reports",
 				"summary": "DMARC rua should include mailto:{{postmaster}}.",
-				"description": "DMARC lives at _dmarc.{{domain}}. The rua tag tells receivers where to send aggregate authentication reports. Pointing rua at {{postmaster}} keeps reports inside your platform.",
+				"description": "DMARC lives at _dmarc.{{domainName}}. The rua tag tells receivers where to send aggregate authentication reports. Pointing rua at {{postmaster}} keeps reports inside your platform.",
 				"passHint": "A DMARC TXT record includes mailto:{{postmaster}} in its rua tag.",
 				"failHint": "DMARC is missing or its rua tag does not include the postmaster address. Mail still flows; this is a best-practice recommendation."
 			},

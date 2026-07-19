@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, Navigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 } from "@/lib/selectable-mailbox";
 
 export function HomeRedirect() {
+	const { t } = useTranslation("mail");
 	const { account } = useAuth();
 	const mailboxesQuery = useMailboxes();
 
@@ -31,13 +33,15 @@ export function HomeRedirect() {
 	if (mailboxesQuery.isError) {
 		return (
 			<div className="flex min-h-svh flex-col items-center justify-center gap-4 p-8 text-center">
-				<h1 className="text-xl font-semibold">Could not load mailboxes</h1>
+				<h1 className="text-xl font-semibold">{t("empty.loadMailboxesTitle")}</h1>
 				<p className="text-muted-foreground max-w-md text-sm">
 					{mailboxesQuery.error instanceof Error
 						? mailboxesQuery.error.message
-						: "Try signing in again."}
+						: t("empty.loadMailboxesFallback")}
 				</p>
-				<Button onClick={() => void mailboxesQuery.refetch()}>Retry</Button>
+				<Button onClick={() => void mailboxesQuery.refetch()}>
+					{t("empty.retry")}
+				</Button>
 			</div>
 		);
 	}
@@ -46,16 +50,16 @@ export function HomeRedirect() {
 	if (selectableMailboxes.length === 0) {
 		const setupPath = canAccessManagementPage(account) ? "/management" : "/settings";
 		const setupLabel = canAccessManagementPage(account)
-			? "Open management"
-			: "Open settings";
+			? t("empty.openManagement")
+			: t("empty.openSettings");
 
 		return (
 			<div className="flex min-h-svh flex-col items-center justify-center gap-4 p-8 text-center">
-				<h1 className="text-xl font-semibold">No mailboxes yet</h1>
+				<h1 className="text-xl font-semibold">{t("empty.noMailboxesTitle")}</h1>
 				<p className="text-muted-foreground max-w-md text-sm">
 					{account?.isIntendant
-						? "Register a domain to provision system mailboxes such as postmaster@."
-						: "Add a domain and mailbox to start receiving mail in Flaremail."}
+						? t("empty.noMailboxesIntendant")
+						: t("empty.noMailboxesUser")}
 				</p>
 				<Button asChild>
 					<Link to={setupPath}>{setupLabel}</Link>

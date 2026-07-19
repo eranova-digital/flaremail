@@ -13,7 +13,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	IDENTITY_NAME_PATTERN_OPTIONS,
+	getIdentityNamePatternOptions,
 	type Identity,
 	type IdentityInput,
 } from "@/lib/identities/api";
@@ -44,7 +44,7 @@ export function IdentityForm({
 		initial?.signatureHtml ?? "",
 	);
 
-	const patternOptions = IDENTITY_NAME_PATTERN_OPTIONS.filter(
+	const patternOptions = getIdentityNamePatternOptions().filter(
 		(option) => allowCustom || option.value !== "custom",
 	);
 
@@ -67,7 +67,7 @@ export function IdentityForm({
 					<SelectContent>
 						{patternOptions.map((option) => (
 							<SelectItem key={option.value} value={option.value}>
-								{t(`identities.patterns.${option.value}`)}
+								{option.label}
 							</SelectItem>
 						))}
 					</SelectContent>

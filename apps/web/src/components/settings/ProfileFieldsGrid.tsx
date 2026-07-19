@@ -7,9 +7,9 @@ import {
 	InputGroupInput,
 } from "@/components/ui/input-group";
 import { Input } from "@/components/ui/input";
-import { PROFILE_FIELDS } from "@/lib/accounts/api";
+import { type ProfileFieldKey } from "@/lib/accounts/api";
 
-export type ProfileFieldKey = (typeof PROFILE_FIELDS)[number]["key"];
+export type { ProfileFieldKey };
 
 const AUTOCOMPLETE: Partial<Record<ProfileFieldKey, string>> = {
 	firstName: "given-name",

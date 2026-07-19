@@ -18,7 +18,7 @@ export function ValidationCheckCard({
 	const key = (check.checkKey ?? "mx") as ValidationCheckKey;
 	const postmaster = `postmaster@${domainName}`;
 	const noreply = `noreply@${domainName}`;
-	const vars = { postmaster, noreply, domain: domainName };
+	const vars = { postmaster, noreply, domainName };
 	const tier = check.tier ?? "critical";
 	const tierKey = tier === "advisory" ? "advisory" : "required";
 

@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api/request";
+import i18n from "@/lib/i18n";
 import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
 import { IDENTITY_NAME_PATTERNS } from "@test-worker/identity-name-pattern";
 
@@ -20,27 +21,45 @@ export type IdentityInput = {
 	signatureHtml?: string | null;
 };
 
+const IDENTITY_NAME_PATTERN_VALUES = [
+	"none",
+	"first_name",
+	"last_name",
+	"first_name_last_name",
+	"last_name_first_name",
+	"first_initial_last_name",
+	"last_name_first_initial",
+	"first_name_last_initial",
+	"last_initial_first_name",
+	"custom",
+] as const satisfies readonly IdentityNamePattern[];
+
+export function getIdentityNamePatternOptions(): {
+	value: IdentityNamePattern;
+	label: string;
+}[] {
+	return IDENTITY_NAME_PATTERN_VALUES.map((value) => ({
+		value,
+		label: identityNamePatternLabel(value),
+	}));
+}
+
+/** Locale-aware options; prefer getIdentityNamePatternOptions() at call sites. */
 export const IDENTITY_NAME_PATTERN_OPTIONS: {
 	value: IdentityNamePattern;
 	label: string;
-}[] = [
-	{ value: "none", label: "No name (address only)" },
-	{ value: "first_name", label: "First name" },
-	{ value: "last_name", label: "Last name" },
-	{ value: "first_name_last_name", label: "First name Last name" },
-	{ value: "last_name_first_name", label: "Last name First name" },
-	{ value: "first_initial_last_name", label: "F. Last name" },
-	{ value: "last_name_first_initial", label: "Last name F." },
-	{ value: "first_name_last_initial", label: "First name L." },
-	{ value: "last_initial_first_name", label: "L. First name" },
-	{ value: "custom", label: "Custom name" },
-];
+}[] = IDENTITY_NAME_PATTERN_VALUES.map((value) => ({
+	value,
+	get label() {
+		return identityNamePatternLabel(value);
+	},
+}));
 
 export function identityNamePatternLabel(pattern: IdentityNamePattern): string {
-	return (
-		IDENTITY_NAME_PATTERN_OPTIONS.find((option) => option.value === pattern)
-			?.label ?? pattern
-	);
+	if (!isKnownIdentityNamePattern(pattern)) {
+		return pattern;
+	}
+	return i18n.t(`identities.patterns.${pattern}`, { ns: "settings" });
 }
 
 export function isKnownIdentityNamePattern(

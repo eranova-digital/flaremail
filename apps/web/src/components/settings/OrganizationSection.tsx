@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-	LOG_RETENTION_DAY_OPTIONS,
-	ORGANIZATION_TAB_ACCESS_OPTIONS,
-	REQUIRE_MFA_SCOPE_OPTIONS,
+	getLogRetentionDayOptions,
+	getOrganizationTabAccessOptions,
+	getRequireMfaScopeOptions,
 	type LogRetentionDays,
 	type OrganizationTabAccess,
 	type RequireMfaScope,
@@ -213,9 +213,9 @@ export function OrganizationSection() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{ORGANIZATION_TAB_ACCESS_OPTIONS.map((option) => (
+										{getOrganizationTabAccessOptions().map((option) => (
 											<SelectItem key={option.value} value={option.value}>
-												{t(`organization.tabAccess.${option.value}`)}
+												{option.label}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -240,9 +240,9 @@ export function OrganizationSection() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{REQUIRE_MFA_SCOPE_OPTIONS.map((option) => (
+										{getRequireMfaScopeOptions().map((option) => (
 											<SelectItem key={option.value} value={option.value}>
-												{t(`organization.requireMfa.${option.value}`)}
+												{option.label}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -506,14 +506,12 @@ export function OrganizationSection() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{LOG_RETENTION_DAY_OPTIONS.map((option) => (
+										{getLogRetentionDayOptions().map((option) => (
 											<SelectItem
 												key={option.value}
 												value={String(option.value)}
 											>
-												{t("organization.retention.days", {
-													count: option.value,
-												})}
+												{option.label}
 											</SelectItem>
 										))}
 									</SelectContent>

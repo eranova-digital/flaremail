@@ -1,5 +1,6 @@
 import { apiRequest } from "@/lib/api/request";
 import type { AuthSession, MfaStatus } from "@/lib/auth/types";
+import i18n from "@/lib/i18n";
 
 import type { ProfilePicture } from "@/lib/profile-picture";
 
@@ -326,14 +327,41 @@ export async function disableAccountMfa(accountId: string): Promise<MfaStatus> {
 	});
 }
 
-export const PROFILE_FIELDS = [
-	{ key: "firstName", label: "First name" },
-	{ key: "lastName", label: "Last name" },
-	{ key: "recoveryAddress", label: "Recovery address" },
-	{ key: "phone", label: "Phone" },
-	{ key: "addressCountry", label: "Country" },
-	{ key: "addressState", label: "State" },
-	{ key: "addressCity", label: "City" },
-	{ key: "addressLine1", label: "Address line 1" },
-	{ key: "addressLine2", label: "Address line 2" },
+const PROFILE_FIELD_KEYS = [
+	"firstName",
+	"lastName",
+	"recoveryAddress",
+	"phone",
+	"addressCountry",
+	"addressState",
+	"addressCity",
+	"addressLine1",
+	"addressLine2",
 ] as const;
+
+export type ProfileFieldKey = (typeof PROFILE_FIELD_KEYS)[number];
+
+export function profileFieldLabel(key: ProfileFieldKey): string {
+	return i18n.t(`profile.fields.${key}`, { ns: "settings" });
+}
+
+export function getProfileFields(): {
+	key: ProfileFieldKey;
+	label: string;
+}[] {
+	return PROFILE_FIELD_KEYS.map((key) => ({
+		key,
+		label: profileFieldLabel(key),
+	}));
+}
+
+/** Locale-aware; prefer getProfileFields() / profileFieldLabel() at call sites. */
+export const PROFILE_FIELDS: {
+	key: ProfileFieldKey;
+	label: string;
+}[] = PROFILE_FIELD_KEYS.map((key) => ({
+	key,
+	get label() {
+		return profileFieldLabel(key);
+	},
+}));

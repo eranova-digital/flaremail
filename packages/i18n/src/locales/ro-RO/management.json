@@ -426,16 +426,23 @@
 			"descIntendant": "Cine poate vedea fila Organizație în Administrare. Doar tu poți modifica această setare.",
 			"descOther": "Cine poate vedea fila Organizație în Administrare. Doar contul de recuperare poate modifica această setare.",
 			"intendant_only": "Doar eu",
-			"intendant_and_superadmins": "Eu și proprietarii"
+			"intendant_onlyDescription": "Doar contul de recuperare poate vedea și gestiona setările organizației.",
+			"intendant_and_superadmins": "Eu și proprietarii",
+			"intendant_and_superadminsDescription": "Proprietarii (superadministratori) pot, de asemenea, vedea și gestiona politicile de securitate ale organizației."
 		},
 		"requireMfa": {
 			"label": "Autentificare în doi pași obligatorie",
 			"description": "Conturile din domeniul de aplicare trebuie să activeze 2FA la activare sau la următoarea conectare.",
 			"none": "Nu este obligatoriu",
+			"noneDescription": "Autentificarea în doi pași rămâne opțională pentru toată lumea.",
 			"all": "Toate conturile",
+			"allDescription": "Fiecare cont trebuie să activeze 2FA la activare sau la următoarea conectare.",
 			"manager_and_above": "Manageri și superiori",
+			"manager_and_aboveDescription": "Managerii, administratorii și proprietarii trebuie să activeze 2FA.",
 			"admin_and_above": "Administratori și superiori",
-			"superadmin_and_above": "Proprietari și superiori"
+			"admin_and_aboveDescription": "Administratorii și proprietarii trebuie să activeze 2FA.",
+			"superadmin_and_above": "Proprietari și superiori",
+			"superadmin_and_aboveDescription": "Doar conturile de proprietar trebuie să activeze 2FA."
 		},
 		"requireRecoveryEmail": {
 			"label": "E-mail de recuperare obligatoriu",
@@ -648,7 +655,7 @@
 			"dmarc_rua": {
 				"title": "Rapoarte agregate DMARC",
 				"summary": "DMARC rua ar trebui să includă mailto:{{postmaster}}.",
-				"description": "DMARC se află la _dmarc.{{domain}}. Eticheta rua spune destinatarilor unde să trimită rapoartele agregate de autentificare. Direcționarea rua către {{postmaster}} păstrează rapoartele în platforma ta.",
+				"description": "DMARC se află la _dmarc.{{domainName}}. Eticheta rua spune destinatarilor unde să trimită rapoartele agregate de autentificare. Direcționarea rua către {{postmaster}} păstrează rapoartele în platforma ta.",
 				"passHint": "O înregistrare TXT DMARC include mailto:{{postmaster}} în eticheta rua.",
 				"failHint": "DMARC lipsește sau eticheta rua nu include adresa postmaster. E-mailul circulă în continuare; aceasta este o recomandare de bune practici."
 			},
