@@ -37,6 +37,65 @@ function isPrivateIpv6(hostname: string): boolean {
 	);
 }
 
+function isBlockedResolvedAddress(address: string): boolean {
+	const lower = address.toLowerCase().replace(/^\[|\]$/g, "");
+	if (isPrivateIpv4(lower) || isPrivateIpv6(lower)) {
+		return true;
+	}
+	const v4Mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+	if (v4Mapped && isPrivateIpv4(v4Mapped[1])) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Resolve hostname via Cloudflare DNS-over-HTTPS and reject private answers
+ * to reduce DNS-rebinding risk before fetching remote images.
+ */
+export async function assertHostnameResolvesPublicly(
+	hostname: string,
+): Promise<void> {
+	const lower = hostname.toLowerCase();
+	if (isBlockedResolvedAddress(lower)) {
+		throw new RemoteImageFetchError("Remote image host is not allowed");
+	}
+	// Literal IPs already validated by isAllowedRemoteImageUrl.
+	if (/^\d+\.\d+\.\d+\.\d+$/.test(lower) || lower.includes(":")) {
+		return;
+	}
+
+	const types = ["A", "AAAA"] as const;
+	let sawAnswer = false;
+	for (const type of types) {
+		const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(lower)}&type=${type}`;
+		const response = await fetch(url, {
+			headers: { Accept: "application/dns-json" },
+			signal: AbortSignal.timeout(REMOTE_IMAGE_FETCH_TIMEOUT_MS),
+		});
+		if (!response.ok) {
+			continue;
+		}
+		const data = (await response.json()) as {
+			Answer?: Array<{ data?: string }>;
+		};
+		for (const answer of data.Answer ?? []) {
+			const address = answer.data?.trim();
+			if (!address) {
+				continue;
+			}
+			sawAnswer = true;
+			if (isBlockedResolvedAddress(address)) {
+				throw new RemoteImageFetchError("Remote image host resolves privately");
+			}
+		}
+	}
+
+	if (!sawAnswer) {
+		throw new RemoteImageFetchError("Remote image host could not be resolved");
+	}
+}
+
 export function normalizeImageUrl(rawUrl: string): string | null {
 	const trimmed = rawUrl.trim();
 	if (!trimmed) {
@@ -234,6 +293,9 @@ export async function fetchRemoteImage(
 		if (!isAllowedRemoteImageUrl(currentUrl)) {
 			throw new RemoteImageFetchError("Redirect target is not allowed");
 		}
+
+		const { hostname } = new URL(currentUrl);
+		await assertHostnameResolvesPublicly(hostname);
 
 		const response = await fetch(currentUrl, {
 			method: "GET",
