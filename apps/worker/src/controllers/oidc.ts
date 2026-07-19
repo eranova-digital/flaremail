@@ -10,6 +10,7 @@ import {
 	requestInstance,
 	validationError,
 } from "../lib/http/problem";
+import { rejectIfAuthFailureLimited } from "../lib/http/rate-limit";
 import type { RouteContext } from "../lib/http/router";
 import {
 	adminRevokeClientGrant,
@@ -252,6 +253,14 @@ export async function handleOidcToken(context: RouteContext) {
 		}
 		return validationError(context.request, "Unsupported grant_type");
 	} catch (error) {
+		const limited = await rejectIfAuthFailureLimited(
+			context.env,
+			context.request,
+			params.client_id,
+		);
+		if (limited) {
+			return limited;
+		}
 		return oidcErrorResponse(error, context.request);
 	}
 }

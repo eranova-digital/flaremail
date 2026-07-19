@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import type { Database } from "../db/client";
 import { accountTotp, accounts } from "../db/schema";
 import { decryptSecret, encryptSecret } from "../lib/auth/secret-encryption";
+import { assertChallengeJtiFresh } from "../lib/auth/challenge-jti";
 import {
 	buildOtpAuthUrl,
 	generateTotpSecret,
@@ -226,8 +227,10 @@ export async function createMfaChallengeToken(
 	encryptionKey: string,
 ): Promise<string> {
 	const secret = new TextEncoder().encode(encryptionKey);
+	const jti = crypto.randomUUID();
 	return new SignJWT({ accountId, typ: "mfa_challenge" })
 		.setProtectedHeader({ alg: "HS256" })
+		.setJti(jti)
 		.setIssuedAt()
 		.setExpirationTime(Math.floor((Date.now() + MFA_CHALLENGE_TTL_MS) / 1000))
 		.sign(secret);
@@ -242,6 +245,13 @@ export async function verifyMfaChallengeToken(
 	if (payload.typ !== "mfa_challenge" || typeof payload.accountId !== "string") {
 		throw new Error("Invalid MFA challenge");
 	}
+	if (typeof payload.jti !== "string" || !payload.jti) {
+		throw new Error("Invalid MFA challenge");
+	}
+	await assertChallengeJtiFresh(
+		payload.jti,
+		Math.ceil(MFA_CHALLENGE_TTL_MS / 1000),
+	);
 	return payload.accountId;
 }
 

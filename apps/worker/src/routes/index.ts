@@ -13,7 +13,7 @@ export const apiRouter = createRouter(
 		{
 			method: "GET",
 			path: "/api/v1/openapi.json",
-			auth: false,
+			action: "platform",
 			handler: handleOpenApiJson,
 		},
 		...bootstrapRoutes,

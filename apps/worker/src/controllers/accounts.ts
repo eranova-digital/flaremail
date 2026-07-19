@@ -3,6 +3,10 @@ import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
+import {
+	clientIpFromRequest,
+	consumeRateLimit,
+} from "../lib/http/rate-limit";
 import type { RouteContext } from "../lib/http/router";
 import type { AccountRole } from "../lib/auth/types";
 import {
@@ -35,6 +39,20 @@ import {
 } from "../services/accounts";
 import { parseLogContextFromRequest } from "../services/logs";
 import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
+
+async function enforceInviteRateLimit(
+	context: RouteContext,
+): Promise<Response | null> {
+	const accountId = context.principal.accountId;
+	const key = accountId
+		? `account:${accountId}`
+		: `ip:${clientIpFromRequest(context.request)}`;
+	return consumeRateLimit(
+		context.env.RATE_LIMIT_INVITE,
+		key,
+		context.request,
+	);
+}
 
 export async function handleListAccounts(context: RouteContext) {
 	try {
@@ -93,6 +111,10 @@ export async function handleUpdateAccount(context: RouteContext) {
 }
 
 export async function handleInviteAccount(context: RouteContext) {
+	const limited = await enforceInviteRateLimit(context);
+	if (limited) {
+		return limited;
+	}
 	const body = await parseJsonBody(context.request);
 	if (body instanceof Response) {
 		return body;
@@ -334,6 +356,10 @@ export async function handleUpdateAccountAssignments(context: RouteContext) {
 }
 
 export async function handleRegenerateInviteCode(context: RouteContext) {
+	const limited = await enforceInviteRateLimit(context);
+	if (limited) {
+		return limited;
+	}
 	try {
 		const result = await withDb(context.env, (db) =>
 			regenerateInviteCode(

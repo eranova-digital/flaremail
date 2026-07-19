@@ -1012,6 +1012,7 @@ async function issueUserTokens(
 		: undefined;
 
 	const accessClaims: Record<string, unknown> = {
+		typ: "access",
 		sub: account.id,
 		client_id: input.clientId,
 		scope,
@@ -1034,6 +1035,7 @@ async function issueUserTokens(
 	});
 
 	const idClaims: Record<string, unknown> = {
+		typ: "id",
 		sub: account.id,
 	};
 	if (scopeSet.has("email")) {

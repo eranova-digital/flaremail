@@ -121,6 +121,13 @@ async function tryOidcBearer(
 						instance: requestInstance(request),
 					});
 				}
+				const tokenScopes = String(payload.scope ?? "")
+					.split(/\s+/)
+					.filter(Boolean);
+				const allowed = new Set(client.m2mPermissions);
+				const m2mPermissions = tokenScopes.filter((scope) =>
+					allowed.has(scope),
+				);
 				return {
 					kind: "oidc_client" as const,
 					accountId: null,
@@ -133,8 +140,15 @@ async function tryOidcBearer(
 					grantMailboxIds: [],
 					sharedMailboxAssignment: [],
 					oidcClientId: client.clientId,
-					m2mPermissions: client.m2mPermissions,
+					m2mPermissions,
 				};
+			});
+		}
+
+		if (payload.typ !== "access") {
+			return problemResponse(401, "Invalid token", {
+				code: "unauthorized",
+				instance: requestInstance(request),
 			});
 		}
 
@@ -162,7 +176,10 @@ async function tryOidcBearer(
 			return principal;
 		});
 	} catch {
-		return null;
+		return problemResponse(401, "Invalid token", {
+			code: "unauthorized",
+			instance: requestInstance(request),
+		});
 	}
 }
 

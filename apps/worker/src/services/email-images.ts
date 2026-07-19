@@ -42,9 +42,14 @@ export async function serveMessageExternalImage(
 	}
 
 	const headers = new Headers();
+	const mime = cached.mimeType.toLowerCase();
+	if (mime.includes("svg")) {
+		throw new Error("Image not found");
+	}
 	headers.set("Content-Type", cached.mimeType);
 	headers.set("Cache-Control", "private, max-age=86400");
-	headers.set("Content-Disposition", "inline");
+	headers.set("Content-Disposition", "attachment");
+	headers.set("X-Content-Type-Options", "nosniff");
 
 	return new Response(cached.body.body, { headers });
 }

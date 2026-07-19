@@ -4,15 +4,32 @@ export type EmailAddressInput = string | { email: string; name?: string };
 
 export function formatEmailAddress(input: EmailAddressInput): string {
 	if (typeof input === "string") {
-		return input.trim();
+		const trimmed = input.trim();
+		if (/[\r\n]/.test(trimmed)) {
+			throw new Error("Invalid email address");
+		}
+		return normalizeEmailAddress(trimmed);
 	}
 
 	const email = normalizeEmailAddress(input.email);
+	if (/[\r\n]/.test(email) || email.includes(",") || email.includes("<")) {
+		throw new Error("Invalid email address");
+	}
 	if (!input.name?.trim()) {
 		return email;
 	}
 
-	return `"${input.name.trim()}" <${email}>`;
+	const name = input.name
+		.trim()
+		.replace(/[\r\n\u0000-\u001f\u007f]/g, "")
+		.replace(/\\/g, "\\\\")
+		.replace(/"/g, '\\"')
+		.slice(0, 200);
+	if (!name) {
+		return email;
+	}
+
+	return `"${name}" <${email}>`;
 }
 
 export function formatEmailAddressList(inputs: EmailAddressInput[]): string {

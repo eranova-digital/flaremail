@@ -13,6 +13,7 @@ import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import type { Database } from "../db/client";
 import { accountPasskeys, accounts } from "../db/schema";
 import type { WebAuthnConfig } from "../lib/auth/webauthn-config";
+import { assertChallengeJtiFresh } from "../lib/auth/challenge-jti";
 import { verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { createSession, type SessionMetadata } from "./auth-session";
@@ -40,8 +41,10 @@ async function signChallengeToken(
 	encryptionKey: string,
 ): Promise<string> {
 	const secret = new TextEncoder().encode(encryptionKey);
+	const jti = crypto.randomUUID();
 	return new SignJWT(payload)
 		.setProtectedHeader({ alg: "HS256" })
+		.setJti(jti)
 		.setIssuedAt()
 		.setExpirationTime(Math.floor((Date.now() + CHALLENGE_TTL_MS) / 1000))
 		.sign(secret);
@@ -57,7 +60,14 @@ async function verifyChallengeToken(
 	if (payload.typ !== expectedType) {
 		throw new Error("Invalid passkey challenge");
 	}
-	return payload;
+	if (typeof payload.jti !== "string" || !payload.jti) {
+		throw new Error("Invalid passkey challenge");
+	}
+	await assertChallengeJtiFresh(
+		payload.jti,
+		Math.ceil(CHALLENGE_TTL_MS / 1000),
+	);
+	return payload as Record<string, unknown>;
 }
 
 function parseTransports(value: string | null): AuthenticatorTransportFuture[] {

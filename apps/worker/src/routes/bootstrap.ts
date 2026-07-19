@@ -8,6 +8,7 @@ export const bootstrapRoutes: RouteDefinition[] = [
 		method: "POST",
 		path: `${prefix}/bootstrap`,
 		auth: false,
+		authRateLimit: true,
 		handler: handleBootstrapPost,
 	},
 ];

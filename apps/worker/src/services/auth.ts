@@ -26,7 +26,12 @@ import type {
 	AccountProfileInput,
 	ProfileLockableField,
 } from "./accounts/shared";
-import { createSession, signOutSession, type SessionMetadata } from "./auth-session";
+import {
+	createSession,
+	revokeAllSessions,
+	signOutSession,
+	type SessionMetadata,
+} from "./auth-session";
 import {
 	createMfaChallengeToken,
 	getMfaStatus,
@@ -87,11 +92,8 @@ export async function signIn(
 	if (!account?.passwordHash) {
 		throw new Error("Invalid credentials");
 	}
-	if (account.status === "suspended") {
-		throw new Error("Account is suspended");
-	}
-	if (account.status === "pending") {
-		throw new Error("Account is not activated");
+	if (account.status === "suspended" || account.status === "pending") {
+		throw new Error("Invalid credentials");
 	}
 
 	const valid = await verifyPassword(input.password, account.passwordHash);
@@ -328,6 +330,7 @@ export async function regenerateIntendantPassword(
 			updatedAt: new Date(),
 		})
 		.where(eq(accounts.id, input.accountId));
+	await revokeAllSessions(db, input.accountId, { includeCurrent: true });
 	await safeEmitLog(db, {
 		importance: 1,
 		type: "auth",
@@ -345,6 +348,15 @@ export async function createPasswordResetCode(
 ) {
 	const code = formatCode();
 	const now = new Date();
+	await db
+		.update(passwordResetCodes)
+		.set({ usedAt: now })
+		.where(
+			and(
+				eq(passwordResetCodes.accountId, input.accountId),
+				gt(passwordResetCodes.expiresAt, now),
+			),
+		);
 	await db.insert(passwordResetCodes).values({
 		id: crypto.randomUUID(),
 		accountId: input.accountId,
@@ -387,20 +399,19 @@ export async function requestPasswordReset(
 		}
 	}
 
-	if (!account) {
-		throw new Error("No account found with that address");
-	}
-	if (account.status === "pending") {
-		throw new Error("This account has not been activated yet");
-	}
-	if (account.status === "suspended") {
-		throw new Error("Account is suspended");
+	// Always return the same shape to avoid account enumeration.
+	if (
+		!account ||
+		account.status === "pending" ||
+		account.status === "suspended"
+	) {
+		return { ok: true as const };
 	}
 
 	const profile = await loadAccountProfile(db, account.id);
 	const recoveryAddress = profile?.recoveryAddress?.trim();
 	if (!recoveryAddress) {
-		throw new NoRecoveryEmailError();
+		return { ok: true as const };
 	}
 
 	const code = await createPasswordResetCode(db, {
@@ -410,14 +421,18 @@ export async function requestPasswordReset(
 
 	const domainName = await resolveAccountSenderDomain(db, account.id);
 	if (!domainName) {
-		throw new Error("Could not determine sender domain for this account");
+		return { ok: true as const };
 	}
 
-	await sendPasswordResetTransactionalEmail(db, deps, {
-		domainName,
-		to: recoveryAddress,
-		code,
-	});
+	try {
+		await sendPasswordResetTransactionalEmail(db, deps, {
+			domainName,
+			to: recoveryAddress,
+			code,
+		});
+	} catch (error) {
+		console.error("Password reset email failed:", error);
+	}
 
 	return { ok: true as const };
 }
@@ -494,6 +509,7 @@ export async function resetPasswordWithCode(
 		.update(passwordResetCodes)
 		.set({ usedAt: now })
 		.where(eq(passwordResetCodes.id, row.id));
+	await revokeAllSessions(db, row.accountId, { includeCurrent: true });
 	await safeEmitLog(db, {
 		importance: 3,
 		type: "auth",

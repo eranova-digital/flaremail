@@ -17,7 +17,7 @@ export async function adminCreatePasswordResetCode(
 	if (!principal.accountId) {
 		throw new Error("Authentication required");
 	}
-	await authorizeAccount(db, principal, accountId, "manage");
+	await authorizeAccount(db, principal, accountId, "manage_security");
 	return createPasswordResetCode(db, {
 		accountId,
 		createdByAccountId: principal.accountId,

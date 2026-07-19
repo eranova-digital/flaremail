@@ -32,6 +32,20 @@ export async function updateAccountAssignments(
 ) {
 	await authorizeAccount(db, principal, accountId, "manage");
 
+	if (principal.accountId === accountId) {
+		throw new Error("Cannot modify your own assignments");
+	}
+
+	if (
+		!isPlatformPrincipal(principal) &&
+		principal.role !== "admin" &&
+		(input.allSharedMailboxes === true ||
+			input.domainIds !== undefined ||
+			input.sharedMailboxIds !== undefined)
+	) {
+		throw new Error("Only admins can change manager domain or shared-mailbox scope");
+	}
+
 	const [target] = await db
 		.select()
 		.from(accounts)

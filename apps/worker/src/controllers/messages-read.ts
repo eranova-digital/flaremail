@@ -123,10 +123,11 @@ export async function handleDownloadAttachment({
 	request,
 	env,
 	params,
+	principal,
 }: RouteContext): Promise<Response> {
 	try {
 		return await withDb(env, (db) =>
-			downloadAttachment(db, env.BUCKET, params.id),
+			downloadAttachment(db, env.BUCKET, principal, params.id),
 		);
 	} catch (error) {
 		return handleRouteError(error, request);

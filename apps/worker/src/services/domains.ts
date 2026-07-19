@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import type { Database } from "../db/client";
-import { domains } from "../db/schema";
+import { domains, mailboxes } from "../db/schema";
 import { isSchemaMismatchError, isUniqueViolation, schemaMismatchMessage } from "../lib/db/postgres-error";
 import { normalizeEmailAddress } from "../lib/normalize-email-address";
 import { provisionSystemMailboxes } from "../lib/system-mailboxes";
@@ -81,7 +81,7 @@ export async function createDomain(
 			await tx.insert(domains).values({
 				id,
 				name: normalized,
-				isActive: true,
+				isActive: false,
 				catchAllEnabled: false,
 				createdAt: now,
 				updatedAt: now,
@@ -159,15 +159,41 @@ export async function updateDomain(
 	const existing = await getDomain(db, id);
 	const now = new Date();
 
+	let catchAllMailboxId =
+		patch.catchAllMailboxId !== undefined
+			? patch.catchAllMailboxId
+			: existing.catchAllMailboxId;
+
+	if (catchAllMailboxId) {
+		const [mailbox] = await db
+			.select({
+				id: mailboxes.id,
+				domainId: mailboxes.domainId,
+				type: mailboxes.type,
+				isActive: mailboxes.isActive,
+			})
+			.from(mailboxes)
+			.where(eq(mailboxes.id, catchAllMailboxId))
+			.limit(1);
+		if (
+			!mailbox ||
+			mailbox.domainId !== id ||
+			mailbox.type === "alias" ||
+			!mailbox.isActive
+		) {
+			throw new Error(
+				"Catch-all mailbox must be an active receiving mailbox on this domain",
+			);
+		}
+		catchAllMailboxId = mailbox.id;
+	}
+
 	const [row] = await db
 		.update(domains)
 		.set({
 			isActive: patch.isActive ?? existing.isActive,
 			catchAllEnabled: patch.catchAllEnabled ?? existing.catchAllEnabled,
-			catchAllMailboxId:
-				patch.catchAllMailboxId !== undefined
-					? patch.catchAllMailboxId
-					: existing.catchAllMailboxId,
+			catchAllMailboxId,
 			updatedAt: now,
 		})
 		.where(eq(domains.id, id))

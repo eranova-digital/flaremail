@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { PenLine } from "lucide-react";
 
+import { SandboxedHtml } from "@/components/html/SandboxedHtml";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Identity } from "@/lib/identities/api";
@@ -89,11 +90,11 @@ export function IdentityCard({
 						Signature
 					</div>
 					{hasSignature ? (
-						<div
-							className="text-muted-foreground prose prose-sm max-w-none text-xs [&_p]:my-0 [&_p+p]:mt-1.5"
-							dangerouslySetInnerHTML={{
-								__html: identity.signatureHtml ?? "",
-							}}
+						<SandboxedHtml
+							title="Identity signature"
+							html={identity.signatureHtml ?? ""}
+							className="text-muted-foreground min-h-[3rem] text-xs"
+							bodyCss="body { font-size: 0.75rem; line-height: 1.4; color: #525252; } p { margin: 0 0 0.35em; }"
 						/>
 					) : (
 						<p className="text-muted-foreground text-xs">No signature</p>

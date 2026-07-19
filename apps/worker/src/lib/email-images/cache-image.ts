@@ -37,6 +37,65 @@ function isPrivateIpv6(hostname: string): boolean {
 	);
 }
 
+function isBlockedResolvedAddress(address: string): boolean {
+	const lower = address.toLowerCase().replace(/^\[|\]$/g, "");
+	if (isPrivateIpv4(lower) || isPrivateIpv6(lower)) {
+		return true;
+	}
+	const v4Mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+	if (v4Mapped && isPrivateIpv4(v4Mapped[1])) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Resolve hostname via Cloudflare DNS-over-HTTPS and reject private answers
+ * to reduce DNS-rebinding risk before fetching remote images.
+ */
+export async function assertHostnameResolvesPublicly(
+	hostname: string,
+): Promise<void> {
+	const lower = hostname.toLowerCase();
+	if (isBlockedResolvedAddress(lower)) {
+		throw new RemoteImageFetchError("Remote image host is not allowed");
+	}
+	// Literal IPs already validated by isAllowedRemoteImageUrl.
+	if (/^\d+\.\d+\.\d+\.\d+$/.test(lower) || lower.includes(":")) {
+		return;
+	}
+
+	const types = ["A", "AAAA"] as const;
+	let sawAnswer = false;
+	for (const type of types) {
+		const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(lower)}&type=${type}`;
+		const response = await fetch(url, {
+			headers: { Accept: "application/dns-json" },
+			signal: AbortSignal.timeout(REMOTE_IMAGE_FETCH_TIMEOUT_MS),
+		});
+		if (!response.ok) {
+			continue;
+		}
+		const data = (await response.json()) as {
+			Answer?: Array<{ data?: string }>;
+		};
+		for (const answer of data.Answer ?? []) {
+			const address = answer.data?.trim();
+			if (!address) {
+				continue;
+			}
+			sawAnswer = true;
+			if (isBlockedResolvedAddress(address)) {
+				throw new RemoteImageFetchError("Remote image host resolves privately");
+			}
+		}
+	}
+
+	if (!sawAnswer) {
+		throw new RemoteImageFetchError("Remote image host could not be resolved");
+	}
+}
+
 export function normalizeImageUrl(rawUrl: string): string | null {
 	const trimmed = rawUrl.trim();
 	if (!trimmed) {
@@ -84,11 +143,14 @@ export function isAllowedRemoteImageUrl(rawUrl: string): boolean {
 		return false;
 	}
 
+	// IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1)
+	const v4Mapped = lowerHost.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+	if (v4Mapped && isPrivateIpv4(v4Mapped[1])) {
+		return false;
+	}
+
 	if (port && port !== "80" && port !== "443") {
-		const portNumber = Number(port);
-		if (!Number.isFinite(portNumber) || portNumber <= 0 || portNumber > 65535) {
-			return false;
-		}
+		return false;
 	}
 
 	return true;
@@ -163,13 +225,22 @@ export class RemoteImageFetchError extends Error {
 	}
 }
 
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+	"image/png",
+	"image/jpeg",
+	"image/jpg",
+	"image/gif",
+	"image/webp",
+	"image/avif",
+]);
+
 function isImageContentType(contentType: string | null): boolean {
 	if (!contentType) {
 		return false;
 	}
 
 	const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
-	return mimeType.startsWith("image/");
+	return ALLOWED_IMAGE_MIME_TYPES.has(mimeType);
 }
 
 async function readResponseBytes(response: Response): Promise<ArrayBuffer> {
@@ -222,6 +293,9 @@ export async function fetchRemoteImage(
 		if (!isAllowedRemoteImageUrl(currentUrl)) {
 			throw new RemoteImageFetchError("Redirect target is not allowed");
 		}
+
+		const { hostname } = new URL(currentUrl);
+		await assertHostnameResolvesPublicly(hostname);
 
 		const response = await fetch(currentUrl, {
 			method: "GET",

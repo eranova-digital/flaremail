@@ -5,6 +5,7 @@ import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
 import { validationError } from "../lib/http/problem";
+import { rejectIfAuthFailureLimited } from "../lib/http/rate-limit";
 import type { RouteContext } from "../lib/http/router";
 import { updateAccountProfile } from "../services/accounts";
 import {
@@ -22,6 +23,22 @@ import {
 } from "../services/auth";
 import { parseLogContextFromRequest } from "../services/logs";
 import { createTransactionalEmailDeps } from "../services/transactional-email-deps";
+
+async function authFailureOrRouteError(
+	context: RouteContext,
+	error: unknown,
+	identifier?: string | null,
+): Promise<Response> {
+	const limited = await rejectIfAuthFailureLimited(
+		context.env,
+		context.request,
+		identifier,
+	);
+	if (limited) {
+		return limited;
+	}
+	return handleRouteError(error, context.request);
+}
 
 function jsonWithCookie(data: unknown, cookieHeader: string): Response {
 	return Response.json(data, {
@@ -71,7 +88,7 @@ export async function handleSignIn(context: RouteContext) {
 		).catch((emitError) => {
 			console.error("Failed to emit auth log", emitError);
 		});
-		return handleRouteError(error, context.request);
+		return authFailureOrRouteError(context, error, identifier);
 	}
 }
 
@@ -225,7 +242,11 @@ export async function handleActivateInvite(context: RouteContext) {
 		);
 		return jsonWithCookie({ ok: true }, result.cookieHeader);
 	} catch (error) {
-		return handleRouteError(error, context.request);
+		return authFailureOrRouteError(
+			context,
+			error,
+			typeof value.code === "string" ? value.code : null,
+		);
 	}
 }
 
@@ -250,7 +271,7 @@ export async function handleForgotPassword(context: RouteContext) {
 		);
 		return jsonResponse(result);
 	} catch (error) {
-		return handleRouteError(error, context.request);
+		return authFailureOrRouteError(context, error, value.address);
 	}
 }
 
@@ -276,7 +297,7 @@ export async function handleResetPassword(context: RouteContext) {
 		);
 		return jsonResponse({ ok: true });
 	} catch (error) {
-		return handleRouteError(error, context.request);
+		return authFailureOrRouteError(context, error, value.code);
 	}
 }
 
