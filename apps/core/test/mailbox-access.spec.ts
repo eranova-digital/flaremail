@@ -233,6 +233,25 @@ describe("filterMailboxesForPrincipal", () => {
 		);
 	});
 
+	it("returns primary and granted shared mailboxes for manager user-access grants", async () => {
+		const rows = [userMailbox, otherUserMailbox, sharedMailbox, sharedMailboxB];
+		const result = await filterMailboxesForPrincipal(
+			mockDb(allMailboxRows),
+			principal({
+				role: "manager",
+				primaryMailboxId: "mb-other",
+				grantMailboxIds: [sharedMailbox.id],
+				sharedMailboxAssignment: [],
+			}),
+			rows,
+			"mail",
+		);
+
+		expect(result.map((row) => row.id).sort()).toEqual(
+			[otherUserMailbox.id, sharedMailbox.id].sort(),
+		);
+	});
+
 	it("returns primary and granted shared mailboxes for user", async () => {
 		const rows = [userMailbox, otherUserMailbox, sharedMailbox, sharedMailboxB];
 		const result = await filterMailboxesForPrincipal(
