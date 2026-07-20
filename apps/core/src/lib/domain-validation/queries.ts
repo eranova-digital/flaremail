@@ -21,6 +21,7 @@ import {
 	getActiveValidationRun,
 	getLatestValidationRunForDomain,
 	loadRunChecks,
+	cancelValidationRun,
 } from "./run-engine";
 
 export async function getDomainReadinessSummary(db: Database, domainId: string) {
@@ -138,4 +139,13 @@ export async function startOrReturnValidationRun(
 	}
 
 	return startDomainValidation(db, email, domainId, domainName, logMeta);
+}
+
+export async function cancelDomainValidationRun(
+	db: Database,
+	domainId: string,
+	runId: string,
+) {
+	await cancelValidationRun(db, domainId, runId);
+	return getValidationRunDetail(db, domainId, runId);
 }

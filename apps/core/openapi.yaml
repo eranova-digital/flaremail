@@ -187,6 +187,29 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /domains/{id}/validation-runs/{runId}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Domains]
+      summary: Cancel an in-progress domain validation run
+      operationId: cancelDomainValidationRun
+      responses:
+        "200":
+          description: Cancelled validation run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DomainValidationRunDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /mailboxes:
     get:
       tags: [Mailboxes]
@@ -1214,7 +1237,7 @@ components:
           format: uuid
         status:
           type: string
-          enum: [checking, completed]
+          enum: [checking, completed, cancelled]
         badge:
           type: string
           enum: [checking, fail, healthy, unhealthy]

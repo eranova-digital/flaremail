@@ -1102,9 +1102,9 @@
 			},
 			"badge": {
 				"disabled": "비활성",
-			"catchAll": "캐치올"
-		},
-		"readiness": "준비 상태",
+				"catchAll": "캐치올"
+			},
+			"readiness": "준비 상태",
 			"viewReadinessAria": "{{domain}} 준비 상태 보기",
 			"deleteAria": "{{domain}} 삭제",
 			"deleteConfirm": {
@@ -1662,6 +1662,8 @@
 			"unavailableTitle": "이 도메인은 계정에서 사용할 수 없습니다",
 			"checking": "확인 중…",
 			"recheck": "다시 확인",
+			"cancel": "취소",
+			"cancelFailed": "취소 실패",
 			"overallStatus": "전체 상태",
 			"noRunYet": "아직 검증 실행이 없습니다. 다시 확인을 클릭하여 시작하세요.",
 			"lastChecked": "마지막 확인 {{when}}",
@@ -1753,6 +1755,7 @@
 			"history": {
 				"empty": "아직 검증 실행이 없습니다.",
 				"inProgress": "진행 중",
+				"cancelled": "취소됨",
 				"completed": "완료됨"
 			}
 		},

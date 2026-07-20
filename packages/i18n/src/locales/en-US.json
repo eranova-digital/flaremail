@@ -1283,7 +1283,12 @@
 				"addressCity": "City",
 				"addressLine1": "Address line 1",
 				"addressLine2": "Address line 2",
-				"addressHeading": "Address"
+				"addressHeading": "Address",
+				"selectCountry": "Select country…",
+				"selectState": "Select state/province…",
+				"selectCity": "Select city…",
+				"locationSearchPlaceholder": "Search…",
+				"locationEmpty": "No results found."
 			},
 			"lockField": "Lock field",
 			"unlockField": "Unlock field",
@@ -1673,6 +1678,8 @@
 			"unavailableTitle": "This domain is unavailable to your account",
 			"checking": "Checking…",
 			"recheck": "Recheck",
+			"cancel": "Cancel",
+			"cancelFailed": "Cancel failed",
 			"overallStatus": "Overall status",
 			"noRunYet": "No validation run yet. Click Recheck to start one.",
 			"lastChecked": "Last checked {{when}}",
@@ -1764,6 +1771,7 @@
 			"history": {
 				"empty": "No validation runs yet.",
 				"inProgress": "In progress",
+				"cancelled": "Cancelled",
 				"completed": "Completed"
 			}
 		},

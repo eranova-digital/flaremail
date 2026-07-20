@@ -253,6 +253,13 @@
       "when": 1782795000000,
       "tag": "0035_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1782796000000,
+      "tag": "0036_domain_validation_cancelled",
+      "breakpoints": true
     }
   ]
 }

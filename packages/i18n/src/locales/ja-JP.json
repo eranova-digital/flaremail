@@ -1662,6 +1662,8 @@
 			"unavailableTitle": "このドメインはアカウントで利用できません",
 			"checking": "確認中…",
 			"recheck": "再確認",
+			"cancel": "キャンセル",
+			"cancelFailed": "キャンセルに失敗しました",
 			"overallStatus": "全体ステータス",
 			"noRunYet": "検証がまだ実行されていません。再確認をクリックして開始してください。",
 			"lastChecked": "最終確認 {{when}}",
@@ -1753,6 +1755,7 @@
 			"history": {
 				"empty": "検証実行がまだありません。",
 				"inProgress": "実行中",
+				"cancelled": "キャンセル済み",
 				"completed": "完了"
 			}
 		},

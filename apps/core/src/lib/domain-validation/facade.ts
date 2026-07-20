@@ -6,6 +6,7 @@ import {
 	listValidationRuns,
 	startDomainValidation,
 	startOrReturnValidationRun,
+	cancelDomainValidationRun,
 } from "./queries";
 import {
 	createValidationRun,
@@ -13,6 +14,7 @@ import {
 	getActiveValidationRun,
 	getLatestValidationRunForDomain,
 	processTimedOutValidationRuns,
+	cancelValidationRun,
 } from "./run-engine";
 
 /**
@@ -26,11 +28,13 @@ export const DomainValidationRun = {
 	getLatestRun: getLatestValidationRunForDomain,
 	createRun: createValidationRun,
 	executeRun: executeValidationRun,
+	cancelRun: cancelValidationRun,
 	getReadinessSummary: getDomainReadinessSummary,
 	listRuns: listValidationRuns,
 	getRunDetail: getValidationRunDetail,
 	startRun: startDomainValidation,
 	startOrReturnRun: startOrReturnValidationRun,
+	cancel: cancelDomainValidationRun,
 };
 
 export type DomainValidationDb = Database;

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+	useCancelDomainValidation,
 	useDomain,
 	useDomainValidationRun,
 	useDomainValidationRuns,
@@ -33,6 +34,7 @@ export function DomainValidationPage() {
 	const domainQuery = useDomain(domainId, canAccess);
 	const runsQuery = useDomainValidationRuns(domainId, canAccess && domainQuery.isSuccess);
 	const recheckDomain = useRecheckDomain();
+	const cancelValidation = useCancelDomainValidation();
 	const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
 	const domain = domainQuery.data;
@@ -56,6 +58,11 @@ export function DomainValidationPage() {
 	const badge = selectedRun?.badge ?? domain?.readiness?.badge;
 	const isChecking = badge === "checking" || selectedRun?.status === "checking";
 	const isPending = recheckDomain.isPending;
+	const isCancelling = cancelValidation.isPending;
+	const activeCheckingRunId =
+		selectedRun?.status === "checking"
+			? selectedRun.id
+			: (runs.find((run) => run.status === "checking")?.id ?? null);
 
 	if (!domainId || !canAccess) {
 		return <Navigate to="/management?tab=domains" replace />;
@@ -92,17 +99,33 @@ export function DomainValidationPage() {
 			backLabel={t("shell.backToDomains")}
 			widthClassName="max-w-5xl"
 			actions={
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => recheckDomain.mutate(domainId)}
-					disabled={isPending || isChecking || domainQuery.isLoading}
-				>
-					<RefreshCw className={cn("size-4", isChecking && "animate-spin")} />
-					{isChecking
-						? t("domainValidation.checking")
-						: t("domainValidation.recheck")}
-				</Button>
+				isChecking && activeCheckingRunId ? (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() =>
+							cancelValidation.mutate({
+								domainId,
+								runId: activeCheckingRunId,
+							})
+						}
+						disabled={isCancelling || domainQuery.isLoading}
+					>
+						{t("domainValidation.cancel")}
+					</Button>
+				) : (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => recheckDomain.mutate(domainId)}
+						disabled={isPending || isChecking || domainQuery.isLoading}
+					>
+						<RefreshCw className={cn("size-4", isChecking && "animate-spin")} />
+						{isChecking
+							? t("domainValidation.checking")
+							: t("domainValidation.recheck")}
+					</Button>
+				)
 			}
 		>
 			<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -214,6 +237,14 @@ export function DomainValidationPage() {
 							title={t("domainValidation.recheckFailed")}
 						>
 							<p>{getErrorMessage(recheckDomain.error)}</p>
+						</Alert>
+					) : null}
+					{cancelValidation.isError ? (
+						<Alert
+							tone="destructive"
+							title={t("domainValidation.cancelFailed")}
+						>
+							<p>{getErrorMessage(cancelValidation.error)}</p>
 						</Alert>
 					) : null}
 				</div>

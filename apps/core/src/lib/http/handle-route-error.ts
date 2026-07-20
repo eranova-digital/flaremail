@@ -32,6 +32,8 @@ const SAFE_CLIENT_MESSAGES = new Set([
 	"Cannot modify your own assignments",
 	"Only admins can change manager domain or shared-mailbox scope",
 	"Catch-all mailbox must be an active receiving mailbox on this domain",
+	"Validation run not found",
+	"Validation run is not in progress",
 	"Domain already exists",
 	"Domain not found",
 	"Account not found",

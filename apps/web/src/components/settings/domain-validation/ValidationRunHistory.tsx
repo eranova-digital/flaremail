@@ -59,9 +59,11 @@ export function ValidationRunHistory({
 							<p className="text-muted-foreground text-xs">
 								{run.status === "checking"
 									? t("domainValidation.history.inProgress")
-									: badge
-										? t(`domainValidation.badges.${badge}.headline`)
-										: t("domainValidation.history.completed")}
+									: run.status === "cancelled"
+										? t("domainValidation.history.cancelled")
+										: badge
+											? t(`domainValidation.badges.${badge}.headline`)
+											: t("domainValidation.history.completed")}
 							</p>
 						</button>
 					</li>

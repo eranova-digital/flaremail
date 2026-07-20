@@ -8,6 +8,7 @@ import {
 } from "../../controllers/domains";
 import {
 	handleCreateValidationRun,
+	handleCancelValidationRun,
 	handleGetValidationRun,
 	handleListValidationRuns,
 } from "../../controllers/domain-validation";
@@ -130,6 +131,13 @@ export const v1Routes: RouteDefinition[] = [
 		action: "domain_admin",
 		scopes: ["domain_validation_runs:read"],
 		handler: handleGetValidationRun,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/domains/:id/validation-runs/:runId/cancel`,
+		action: "domain_admin",
+		scopes: ["domain_validation_runs:cancel"],
+		handler: handleCancelValidationRun,
 	},
 
 	{

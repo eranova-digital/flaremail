@@ -54,7 +54,7 @@ export const domainReadinessBadgeEnum = pgEnum("domain_readiness_badge", [
 ]);
 export const domainValidationRunStatusEnum = pgEnum(
 	"domain_validation_run_status",
-	["checking", "completed"],
+	["checking", "completed", "cancelled"],
 );
 export const validationCheckKeyEnum = pgEnum("validation_check_key", [
 	"mx",

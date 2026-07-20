@@ -33,7 +33,7 @@ export type DomainReadinessSummary = {
 
 export type DomainValidationRunSummary = {
     id?: string;
-    status?: 'checking' | 'completed';
+    status?: 'checking' | 'completed' | 'cancelled';
     badge?: 'checking' | 'fail' | 'healthy' | 'unhealthy';
     startedAt?: string;
     finishedAt?: string | null;
@@ -636,6 +636,34 @@ export type GetDomainValidationRunResponses = {
 };
 
 export type GetDomainValidationRunResponse = GetDomainValidationRunResponses[keyof GetDomainValidationRunResponses];
+
+export type CancelDomainValidationRunData = {
+    body?: never;
+    path: {
+        id: string;
+        runId: string;
+    };
+    query?: never;
+    url: '/domains/{id}/validation-runs/{runId}/cancel';
+};
+
+export type CancelDomainValidationRunErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CancelDomainValidationRunError = CancelDomainValidationRunErrors[keyof CancelDomainValidationRunErrors];
+
+export type CancelDomainValidationRunResponses = {
+    /**
+     * Cancelled validation run
+     */
+    200: DomainValidationRunDetail;
+};
+
+export type CancelDomainValidationRunResponse = CancelDomainValidationRunResponses[keyof CancelDomainValidationRunResponses];
 
 export type ListMailboxesData = {
     body?: never;

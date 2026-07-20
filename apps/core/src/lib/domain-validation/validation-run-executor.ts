@@ -84,6 +84,7 @@ async function setCheckOutcome(
 			and(
 				eq(domainValidationChecks.runId, runId),
 				eq(domainValidationChecks.checkKey, checkKey),
+				eq(domainValidationChecks.status, "pending"),
 			),
 		);
 }
@@ -121,8 +122,17 @@ async function completeRun(db: RunDb, runId: string): Promise<void> {
 	const [run] = await db
 		.select({ domainId: domainValidationRuns.domainId })
 		.from(domainValidationRuns)
-		.where(eq(domainValidationRuns.id, runId))
+		.where(
+			and(
+				eq(domainValidationRuns.id, runId),
+				eq(domainValidationRuns.status, "checking"),
+			),
+		)
 		.limit(1);
+
+	if (!run) {
+		return;
+	}
 
 	await db
 		.update(domainValidationRuns)
@@ -132,9 +142,14 @@ async function completeRun(db: RunDb, runId: string): Promise<void> {
 			finishedAt: now,
 			updatedAt: now,
 		})
-		.where(eq(domainValidationRuns.id, runId));
+		.where(
+			and(
+				eq(domainValidationRuns.id, runId),
+				eq(domainValidationRuns.status, "checking"),
+			),
+		);
 
-	if (badge === "healthy" && run?.domainId) {
+	if (badge === "healthy" && run.domainId) {
 		await db
 			.update(domains)
 			.set({ isActive: true, updatedAt: now })
@@ -158,11 +173,28 @@ export class ValidationRunExecutor {
 		private readonly runId: string,
 	) {}
 
+	private async isStillChecking(): Promise<boolean> {
+		const [run] = await this.db
+			.select({ status: domainValidationRuns.status })
+			.from(domainValidationRuns)
+			.where(eq(domainValidationRuns.id, this.runId))
+			.limit(1);
+
+		return run?.status === "checking";
+	}
+
 	async executeChecks(email: SendEmail, domainName: string, token: string) {
+		if (!(await this.isStillChecking())) {
+			return;
+		}
+
 		let mxPassed = false;
 
 		try {
 			const mxResult = await checkMxRecordsExist(domainName);
+			if (!(await this.isStillChecking())) {
+				return;
+			}
 			mxPassed = mxResult.passed;
 			await setCheckOutcome(this.db, this.runId, "mx", {
 				status: mxResult.passed ? "passed" : "failed",
@@ -176,6 +208,9 @@ export class ValidationRunExecutor {
 				message: mxResult.message ?? "MX check completed",
 			});
 		} catch (error) {
+			if (!(await this.isStillChecking())) {
+				return;
+			}
 			await setCheckOutcome(this.db, this.runId, "mx", {
 				status: "failed",
 				code: "mx_lookup_error",
@@ -189,8 +224,15 @@ export class ValidationRunExecutor {
 			});
 		}
 
+		if (!(await this.isStillChecking())) {
+			return;
+		}
+
 		try {
 			const dmarcResult = await checkDmarcRuaPostmaster(domainName);
+			if (!(await this.isStillChecking())) {
+				return;
+			}
 			await setCheckOutcome(this.db, this.runId, "dmarc_rua", {
 				status: dmarcResult.passed ? "passed" : "failed",
 				code: dmarcResult.code,
@@ -203,6 +245,9 @@ export class ValidationRunExecutor {
 				message: dmarcResult.message ?? "DMARC rua check completed",
 			});
 		} catch (error) {
+			if (!(await this.isStillChecking())) {
+				return;
+			}
 			await setCheckOutcome(this.db, this.runId, "dmarc_rua", {
 				status: "failed",
 				code: "dmarc_lookup_error",
@@ -214,6 +259,10 @@ export class ValidationRunExecutor {
 				code: "dmarc_lookup_error",
 				message: error instanceof Error ? error.message : "DMARC lookup failed",
 			});
+		}
+
+		if (!(await this.isStillChecking())) {
+			return;
 		}
 
 		if (!mxPassed) {
@@ -238,6 +287,10 @@ export class ValidationRunExecutor {
 				},
 			});
 
+			if (!(await this.isStillChecking())) {
+				return;
+			}
+
 			await setCheckOutcome(this.db, this.runId, "loop_send", {
 				status: "passed",
 				code: "loop_send_ok",
@@ -251,6 +304,9 @@ export class ValidationRunExecutor {
 				createdAt: sendStartedAt,
 			});
 		} catch (error) {
+			if (!(await this.isStillChecking())) {
+				return;
+			}
 			const code =
 				error instanceof EmailSendError ? error.code : "loop_send_failed";
 			const message =
@@ -272,6 +328,10 @@ export class ValidationRunExecutor {
 			return;
 		}
 
+		if (!(await this.isStillChecking())) {
+			return;
+		}
+
 		const deadline = new Date(Date.now() + RECEIVE_TIMEOUT_MS);
 		await this.db
 			.update(domainValidationRuns)
@@ -279,7 +339,12 @@ export class ValidationRunExecutor {
 				receiveDeadlineAt: deadline,
 				updatedAt: new Date(),
 			})
-			.where(eq(domainValidationRuns.id, this.runId));
+			.where(
+				and(
+					eq(domainValidationRuns.id, this.runId),
+					eq(domainValidationRuns.status, "checking"),
+				),
+			);
 
 		await appendLog(this.db, this.runId, {
 			level: "info",
@@ -336,6 +401,10 @@ export class ValidationRunExecutor {
 	}
 
 	private async failReceiveTimeout(): Promise<void> {
+		if (!(await this.isStillChecking())) {
+			return;
+		}
+
 		const checks = await loadRunChecks(this.db, this.runId);
 		const receive = checks.find((check) => check.checkKey === "loop_receive");
 		if (receive?.status !== "pending") {
