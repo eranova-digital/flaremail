@@ -1,5 +1,5 @@
 {
-	"name": "@test-worker/identity-name-pattern",
+	"name": "@flaremail/identity-name-pattern",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",

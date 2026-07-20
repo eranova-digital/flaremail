@@ -18,7 +18,7 @@ import {
 	LOCALE_LABELS,
 	SUPPORTED_LOCALES,
 	isAppLocale,
-} from "@test-worker/i18n";
+} from "@flaremail/i18n";
 
 function ThemeOption({
 	value,

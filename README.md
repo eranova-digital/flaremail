@@ -91,14 +91,14 @@ npm install
 Create a Neon project. Use the **direct** Postgres connection string (not the serverless HTTP endpoint).
 
 ```bash
-cp apps/worker/.env.example apps/worker/.env
+cp apps/core/.env.example apps/core/.env
 # Edit DATABASE_URL
 npm run db:migrate
 ```
 
 ### 3. Worker secrets and bindings
 
-In `apps/worker/.env`:
+In `apps/core/.env`:
 
 | Variable | Purpose |
 |----------|---------|
@@ -106,7 +106,7 @@ In `apps/worker/.env`:
 | `SESSION_SECRET` | Session cookie signing secret |
 | `OIDC_SIGNING_JWK` | ES256 private JWK JSON for OIDC access/ID tokens (ADR-0007) |
 
-**Deployed Workers** use Hyperdrive (configured in `apps/worker/wrangler.jsonc`), not `DATABASE_URL`. Set secrets in production:
+**Deployed Workers** use Hyperdrive (configured in `apps/core/wrangler.jsonc`), not `DATABASE_URL`. Set secrets in production:
 
 ```bash
 npx wrangler secret put SESSION_SECRET
@@ -140,7 +140,7 @@ npx wrangler hyperdrive update <HYPERDRIVE_ID> --caching-disabled true
 
 #### Local database access
 
-Hyperdrive does not run during `wrangler dev`. Wrangler still exposes the `HYPERDRIVE` binding, but routes it to your direct Neon URL via `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`. `npm run worker:dev` runs `scripts/sync-local-db-env.mjs`, which sets that from `DATABASE_URL`. Maintain only the direct URL in `.env`. Worker Vitest must not write to Postgres.
+Hyperdrive does not run during `wrangler dev`. Wrangler still exposes the `HYPERDRIVE` binding, but routes it to your direct Neon URL via `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`. `npm run core:dev` runs `scripts/sync-local-db-env.mjs`, which sets that from `DATABASE_URL`. Maintain only the direct URL in `.env`. Worker Vitest must not write to Postgres.
 
 ### 4. R2 and Email Sending
 
@@ -149,10 +149,10 @@ Hyperdrive does not run during `wrangler dev`. Wrangler still exposes the `HYPER
 ### 5. Deploy the Worker
 
 ```bash
-npm run worker:deploy
+npm run core:deploy
 ```
 
-The Worker name defaults to `test-worker` in `wrangler.jsonc` — change `"name"` before deploying if you prefer a different hostname.
+The core Worker name is `flaremail-core` in `apps/core/wrangler.jsonc`.
 
 #### `API_BEARER_TOKEN` already in use (error 10053)
 
@@ -204,7 +204,7 @@ For production, serve the built `apps/web/dist` behind any static host and point
 Terminal 1 — Worker (API + email handler on port 8787):
 
 ```bash
-npm run worker:dev
+npm run core:dev
 ```
 
 Terminal 2 — Web app (port 5173, proxies `/api` to the Worker):
@@ -234,7 +234,7 @@ Human-readable: [`api.md`](./api.md)
 
 Machine-readable:
 
-- OpenAPI YAML: [`apps/worker/openapi.yaml`](./apps/worker/openapi.yaml)
+- OpenAPI YAML: [`apps/core/openapi.yaml`](./apps/core/openapi.yaml)
 - Live JSON: `GET /api/v1/openapi.json` (no auth)
 
 All protected routes require either a signed-in web session or an API key:
@@ -256,14 +256,14 @@ Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) Problem Details (`
 After changing `openapi.yaml`:
 
 ```bash
-npm run worker:apigen   # YAML → apps/worker/src/openapi/spec.json
+npm run core:apigen   # YAML → apps/core/src/openapi/spec.json
 npm run web:apigen      # OpenAPI → apps/web/src/lib/api/generated/
 ```
 
 ### Tests
 
 ```bash
-npm run worker:test
+npm run core:test
 npm run web:test
 ```
 
@@ -341,11 +341,11 @@ Use the terms in [`CONTEXT.md`](./CONTEXT.md) when writing code or docs — **Do
 
 | Command | Description |
 |---------|-------------|
-| `npm run worker:dev` | Local Worker + email handler |
-| `npm run worker:deploy` | Deploy Worker to Cloudflare |
-| `npm run worker:test` | Worker tests (Vitest + Workers pool) |
-| `npm run worker:typegen` | Regenerate Worker binding types |
-| `npm run worker:apigen` | Regenerate OpenAPI JSON from YAML |
+| `npm run core:dev` | Local Worker + email handler |
+| `npm run core:deploy` | Deploy Worker to Cloudflare |
+| `npm run core:test` | Worker tests (Vitest + Workers pool) |
+| `npm run core:typegen` | Regenerate Worker binding types |
+| `npm run core:apigen` | Regenerate OpenAPI JSON from YAML |
 | `npm run db:generate` | Generate SQL migrations from schema |
 | `npm run db:migrate` | Apply migrations to Neon |
 | `npm run db:push` | Push schema directly (dev only) |

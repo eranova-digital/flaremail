@@ -1,4 +1,4 @@
-import { normalizeSubjectForComparison } from "@test-worker/mail-quoting";
+import { normalizeSubjectForComparison } from "@flaremail/mail-quoting";
 
 export { normalizeSubjectForComparison };
 

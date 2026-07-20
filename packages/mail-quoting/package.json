@@ -1,5 +1,5 @@
 {
-	"name": "@test-worker/mail-quoting",
+	"name": "@flaremail/mail-quoting",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",

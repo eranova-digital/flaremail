@@ -1,5 +1,5 @@
 {
-	"name": "@test-worker/local-part-policy",
+	"name": "@flaremail/local-part-policy",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",

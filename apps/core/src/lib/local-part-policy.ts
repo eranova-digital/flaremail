@@ -7,7 +7,7 @@ export {
 	type LocalPartProfileInput,
 	type PatternRandomValues,
 	type PolicyProfileField,
-} from "@test-worker/local-part-policy";
+} from "@flaremail/local-part-policy";
 
 import {
 	applyLocalPartPattern,
@@ -15,7 +15,7 @@ import {
 	isValidMailboxLocalPart,
 	type LocalPartProfileInput,
 	type PatternRandomValues,
-} from "@test-worker/local-part-policy";
+} from "@flaremail/local-part-policy";
 
 export function resolveLocalPartForInvite(input: {
 	pattern: string | null;

@@ -1,5 +1,5 @@
 {
-	"name": "@test-worker/web",
+	"name": "@flaremail/web",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
@@ -12,8 +12,8 @@
 		"api:generate": "openapi-ts"
 	},
 	"dependencies": {
-		"@test-worker/api-errors": "*",
-		"@test-worker/i18n": "*",
+		"@flaremail/api-errors": "*",
+		"@flaremail/i18n": "*",
 		"@base-ui/react": "^1.6.0",
 		"@floating-ui/dom": "^1.7.6",
 		"@hey-api/client-fetch": "^0.13.1",
@@ -27,10 +27,10 @@
 		"@radix-ui/react-tooltip": "^1.2.7",
 		"@simplewebauthn/browser": "^13.3.0",
 		"@tanstack/react-query": "^5.83.0",
-		"@test-worker/email-html-prepare": "*",
-		"@test-worker/identity-name-pattern": "*",
-		"@test-worker/local-part-policy": "*",
-		"@test-worker/mail-quoting": "*",
+		"@flaremail/email-html-prepare": "*",
+		"@flaremail/identity-name-pattern": "*",
+		"@flaremail/local-part-policy": "*",
+		"@flaremail/mail-quoting": "*",
 		"@tiptap/extension-emoji": "^3.27.1",
 		"@tiptap/extension-highlight": "^3.27.1",
 		"@tiptap/extension-image": "^3.27.1",

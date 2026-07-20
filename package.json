@@ -1,5 +1,5 @@
 {
-	"name": "test-worker",
+	"name": "flaremail",
 	"version": "0.6.0",
 	"private": true,
 	"workspaces": [
@@ -7,25 +7,25 @@
 		"packages/*"
 	],
 	"scripts": {
-		"worker:dev": "npm run dev -w @test-worker/worker",
-		"worker:deploy": "npm run deploy -w @test-worker/worker",
-		"worker:test": "npm run test -w @test-worker/worker",
-		"worker:typegen": "npm run typegen -w @test-worker/worker",
-		"worker:cf-typegen": "npm run cf-typegen -w @test-worker/worker",
-		"worker:apigen": "npm run apigen -w @test-worker/worker",
-		"db:generate": "npm run db:generate -w @test-worker/worker",
-		"db:migrate": "npm run db:migrate -w @test-worker/worker",
-		"db:push": "npm run db:push -w @test-worker/worker",
-		"db:pull": "npm run db:pull -w @test-worker/worker",
-		"db:studio": "npm run db:studio -w @test-worker/worker",
-		"web:dev": "npm run dev -w @test-worker/web",
-		"web:build": "npm run build -w @test-worker/web",
-		"web:start": "npm run start -w @test-worker/web",
-		"web:test": "npm run test -w @test-worker/web",
-		"web:apigen": "npm run api:generate -w @test-worker/web",
-		"3p-demo:dev": "npm run dev -w @test-worker/3p-demo",
-		"3p-demo:build": "npm run build -w @test-worker/3p-demo",
-		"3p-demo:db:push": "npm run db:push -w @test-worker/3p-demo",
-		"3p-demo:db:studio": "npm run db:studio -w @test-worker/3p-demo"
+		"core:dev": "npm run dev -w @flaremail/core",
+		"core:deploy": "npm run deploy -w @flaremail/core",
+		"core:test": "npm run test -w @flaremail/core",
+		"core:typegen": "npm run typegen -w @flaremail/core",
+		"core:cf-typegen": "npm run cf-typegen -w @flaremail/core",
+		"core:apigen": "npm run apigen -w @flaremail/core",
+		"db:generate": "npm run db:generate -w @flaremail/core",
+		"db:migrate": "npm run db:migrate -w @flaremail/core",
+		"db:push": "npm run db:push -w @flaremail/core",
+		"db:pull": "npm run db:pull -w @flaremail/core",
+		"db:studio": "npm run db:studio -w @flaremail/core",
+		"web:dev": "npm run dev -w @flaremail/web",
+		"web:build": "npm run build -w @flaremail/web",
+		"web:start": "npm run start -w @flaremail/web",
+		"web:test": "npm run test -w @flaremail/web",
+		"web:apigen": "npm run api:generate -w @flaremail/web",
+		"3p-demo:dev": "npm run dev -w @flaremail/3p-demo",
+		"3p-demo:build": "npm run build -w @flaremail/3p-demo",
+		"3p-demo:db:push": "npm run db:push -w @flaremail/3p-demo",
+		"3p-demo:db:studio": "npm run db:studio -w @flaremail/3p-demo"
 	}
 }

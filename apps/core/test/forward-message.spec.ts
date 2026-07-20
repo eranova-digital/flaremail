@@ -4,7 +4,7 @@ import {
 	buildForwardBodyText,
 	buildForwardQuotedText,
 	forwardSubject,
-} from "@test-worker/mail-quoting";
+} from "@flaremail/mail-quoting";
 import { parseForwardBody } from "../src/lib/messages/outbound-payload";
 
 describe("forwardSubject", () => {

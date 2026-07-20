@@ -6,7 +6,7 @@ import type { AccountRole } from "../lib/auth/types";
 import type { Principal } from "../lib/auth/types";
 import type { LogContext } from "../lib/logs/context";
 import { safeEmitLog } from "../lib/logs/emit";
-import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
+import type { IdentityNamePattern } from "@flaremail/identity-name-pattern";
 
 export type OrganizationTabAccess =
 	| "intendant_only"

@@ -13,7 +13,7 @@ import {
 	isAppLocale,
 	setStoredLocale,
 	type AppLocale,
-} from "@test-worker/i18n";
+} from "@flaremail/i18n";
 
 import { applyDocumentLocale } from "@/lib/i18n";
 

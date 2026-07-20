@@ -308,4 +308,4 @@ export function formatRecipients(payload: OutboundMessageBody): {
 	};
 }
 
-export { replySubject } from "@test-worker/mail-quoting";
+export { replySubject } from "@flaremail/mail-quoting";

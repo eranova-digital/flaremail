@@ -7,7 +7,7 @@ import {
 	isAppLocale,
 	resolveInitialLocale,
 	type AppLocale,
-} from "@test-worker/i18n";
+} from "@flaremail/i18n";
 import { describe, expect, it } from "vitest";
 
 describe("locale resolution", () => {

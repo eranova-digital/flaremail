@@ -12,7 +12,7 @@ import { isPlatformPrincipal } from "../../lib/auth/principal";
 import type { Principal } from "../../lib/auth/types";
 import type { LogContext } from "../../lib/logs/context";
 import { safeEmitLog } from "../../lib/logs/emit";
-import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
+import type { IdentityNamePattern } from "@flaremail/identity-name-pattern";
 import { loadAccountMailboxGrants } from "../accounts/shared";
 import { getInstanceSettings } from "../instance-settings";
 import {

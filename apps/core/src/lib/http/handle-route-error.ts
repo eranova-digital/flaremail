@@ -1,4 +1,4 @@
-import { resolveErrorCode } from "@test-worker/api-errors";
+import { resolveErrorCode } from "@flaremail/api-errors";
 import { AuthorizationDeniedError } from "../auth/actions";
 import {
 	AccountAccessDeniedError,

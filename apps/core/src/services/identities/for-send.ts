@@ -4,7 +4,7 @@ import type { Database } from "../../db/client";
 import { identities, mailboxes } from "../../db/schema";
 import { authorizeMailbox } from "../../lib/auth/access";
 import type { Principal } from "../../lib/auth/types";
-import { resolveFromName, type IdentityNamePattern } from "@test-worker/identity-name-pattern";
+import { resolveFromName, type IdentityNamePattern } from "@flaremail/identity-name-pattern";
 import { getInstanceSettings } from "../instance-settings";
 import {
 	type IdentityDto,

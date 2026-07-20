@@ -5,7 +5,7 @@ import {
 	generatePatternRandomValues,
 	getProfileFieldsUsedByPattern,
 	isValidMailboxLocalPart,
-} from "@test-worker/local-part-policy";
+} from "@flaremail/local-part-policy";
 import { resolveLocalPartForInvite } from "../src/lib/local-part-policy";
 
 describe("applyLocalPartPattern", () => {

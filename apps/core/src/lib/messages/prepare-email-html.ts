@@ -9,7 +9,7 @@ import {
 	setStyleIfMissing,
 	WORKER_COMPOSE_HTML_PREPARE_RULES,
 	imageStyle,
-} from "@test-worker/email-html-prepare";
+} from "@flaremail/email-html-prepare";
 
 import type { OutboundAttachmentInput } from "./outbound-attachments";
 import type { OutboundMessageBody } from "./outbound-payload";

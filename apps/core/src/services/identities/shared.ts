@@ -8,7 +8,7 @@ import {
 	type IdentityNamePattern,
 	isIdentityNamePattern,
 	resolveFromName,
-} from "@test-worker/identity-name-pattern";
+} from "@flaremail/identity-name-pattern";
 import { getInstanceSettings, type InstanceSettings } from "../instance-settings";
 
 export const DEFAULT_IDENTITY_ID = "default";

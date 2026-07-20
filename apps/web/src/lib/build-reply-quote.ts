@@ -4,7 +4,7 @@ import {
 	formatReplyQuotePlainText,
 	type ReplyQuoteContent,
 	type ReplyQuoteParent,
-} from "@test-worker/mail-quoting";
+} from "@flaremail/mail-quoting";
 
 import { getPlainTextSource, parseReplyBody } from "@/lib/parse-reply-body";
 

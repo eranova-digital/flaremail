@@ -1,5 +1,5 @@
 {
-	"name": "@test-worker/api-errors",
+	"name": "@flaremail/api-errors",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",

@@ -1,5 +1,5 @@
 {
-	"name": "@test-worker/email-html-prepare",
+	"name": "@flaremail/email-html-prepare",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",

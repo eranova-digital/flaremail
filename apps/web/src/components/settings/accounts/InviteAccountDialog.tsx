@@ -38,7 +38,7 @@ import {
 import {
 	applyLocalPartPattern,
 	getProfileFieldsUsedByPattern,
-} from "@test-worker/local-part-policy";
+} from "@flaremail/local-part-policy";
 import {
 	canLockProfileFields,
 	inviteableRoles,

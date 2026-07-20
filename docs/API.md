@@ -4,7 +4,7 @@ Human-readable reference for the HTTP API exposed by the Worker.
 
 **Machine-readable spec:**
 
-- OpenAPI 3.1 (YAML): [`apps/worker/openapi.yaml`](./apps/worker/openapi.yaml)
+- OpenAPI 3.1 (YAML): [`apps/core/openapi.yaml`](./apps/core/openapi.yaml)
 - OpenAPI 3.1 (JSON, live): `GET /api/v1/openapi.json` (no auth)
 
 **Domain terms:** [`CONTEXT.md`](./CONTEXT.md)

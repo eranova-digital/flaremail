@@ -14,7 +14,7 @@ import {
 	buildForwardQuotedHtml,
 	buildForwardQuotedText,
 	forwardSubject,
-} from "@test-worker/mail-quoting";
+} from "@flaremail/mail-quoting";
 import { buildReplyThreading } from "../../lib/messages/build-reply-threading";
 import { findMessageById } from "../../lib/messages/message-queries";
 import {

@@ -1,4 +1,4 @@
-import { resolveErrorCode } from "@test-worker/api-errors";
+import { resolveErrorCode } from "@flaremail/api-errors";
 
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";
 
