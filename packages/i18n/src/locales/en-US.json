@@ -862,6 +862,10 @@
 				"addressCountry": "Country",
 				"addressState": "State",
 				"addressCity": "City",
+				"addressCountryPlaceholder": "Select country",
+				"addressStatePlaceholder": "Select state",
+				"addressCityPlaceholder": "Select city",
+				"clearLocation": "Clear",
 				"addressLine1": "Address line 1",
 				"addressLine2": "Address line 2",
 				"addressHeading": "Address"
