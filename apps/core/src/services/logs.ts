@@ -278,6 +278,7 @@ export async function listLogs(
  */
 export function buildLogsSearchCondition(q: string): SQL {
 	const pattern = `%${q}%`;
+	// Join on text, not ::uuid — refs can be non-UUID (e.g. external-address emails).
 	return or(
 		ilike(logs.summary, pattern),
 		ilike(logs.refs, pattern),
@@ -285,56 +286,60 @@ export function buildLogsSearchCondition(q: string): SQL {
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${mailboxes} ON ${mailboxes.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${mailboxes} ON ${mailboxes.id}::text = ref.value->>'id'
 			WHERE ref.value->>'kind' = 'mailbox'
 				AND ${mailboxes.address} ILIKE ${pattern}
 		)`,
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${domains} ON ${domains.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${domains} ON ${domains.id}::text = ref.value->>'id'
 			WHERE ref.value->>'kind' = 'domain'
 				AND ${domains.name} ILIKE ${pattern}
 		)`,
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${threads} ON ${threads.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${threads} ON ${threads.id}::text = ref.value->>'id'
 			WHERE ref.value->>'kind' = 'thread'
 				AND ${threads.subject} ILIKE ${pattern}
 		)`,
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${messages} ON ${messages.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${messages} ON ${messages.id}::text = ref.value->>'id'
 			WHERE ref.value->>'kind' = 'message'
 				AND ${messages.subject} ILIKE ${pattern}
 		)`,
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${identities} ON ${identities.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${identities} ON ${identities.id}::text = ref.value->>'id'
 			WHERE ref.value->>'kind' = 'identity'
-				AND COALESCE(NULLIF(TRIM(${identities.customName}), ''), ${identities.namePattern}, ${identities.id}::text) ILIKE ${pattern}
+				AND COALESCE(
+					NULLIF(TRIM(${identities.customName}), ''),
+					${identities.namePattern}::text,
+					${identities.id}::text
+				) ILIKE ${pattern}
 		)`,
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${oidcClients} ON ${oidcClients.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${oidcClients} ON ${oidcClients.id}::text = ref.value->>'id'
 			WHERE ref.value->>'kind' = 'oidc-client'
 				AND ${oidcClients.name} ILIKE ${pattern}
 		)`,
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${apiKeys} ON ${apiKeys.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${apiKeys} ON ${apiKeys.id}::text = ref.value->>'id'
 			WHERE ref.value->>'kind' = 'api-key'
 				AND COALESCE(${apiKeys.name}, ${apiKeys.id}::text) ILIKE ${pattern}
 		)`,
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${invites} ON ${invites.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${invites} ON ${invites.id}::text = ref.value->>'id'
 			INNER JOIN ${accounts} ON ${accounts.id} = ${invites.accountId}
 			WHERE ref.value->>'kind' = 'invite'
 				AND ${accounts.loginIdentifier} ILIKE ${pattern}
@@ -342,13 +347,19 @@ export function buildLogsSearchCondition(q: string): SQL {
 		sql`EXISTS (
 			SELECT 1
 			FROM jsonb_each((${logs.refs})::jsonb) AS ref
-			INNER JOIN ${accounts} ON ${accounts.id} = (ref.value->>'id')::uuid
+			INNER JOIN ${accounts} ON ${accounts.id}::text = ref.value->>'id'
 			LEFT JOIN ${accountProfiles} ON ${accountProfiles.accountId} = ${accounts.id}
 			WHERE ref.value->>'kind' = 'account'
 				AND (
 					${accounts.loginIdentifier} ILIKE ${pattern}
 					OR CONCAT_WS(' ', ${accountProfiles.firstName}, ${accountProfiles.lastName}) ILIKE ${pattern}
 				)
+		)`,
+		sql`EXISTS (
+			SELECT 1
+			FROM jsonb_each((${logs.refs})::jsonb) AS ref
+			WHERE ref.value->>'kind' = 'external-address'
+				AND ref.value->>'id' ILIKE ${pattern}
 		)`,
 		sql`EXISTS (
 			SELECT 1
