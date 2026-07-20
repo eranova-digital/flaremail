@@ -2,6 +2,8 @@
 
 Flaremail is self-hosted email on Cloudflare: a public **gate** serves the web app and proxies `/api/*` to a private **core** Worker that receives inbound mail, stores messages in Postgres and R2, and owns the HTTP API, crons, and bindings.
 
+This file is a **glossary** only. Implementation and deploy steps live in the [root README](../README.md) and app READMEs. Hard decisions live in [adr/](./adr/).
+
 ## Language
 
 **Domain**:

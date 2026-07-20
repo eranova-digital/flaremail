@@ -1,3 +1,26 @@
-# Gate and private core
+# ADR-0010: Gate and private core
 
-Browser traffic hits a public **gate** Worker (SPA + `/api/*` proxy). Mail, the HTTP API, crons, and platform bindings live on a private **core** Worker reached from the browser only via a service binding — not a public workers.dev URL. Assets stay on gate so email/API and UI can deploy on independent cadences. Rejected alternatives: public core HTTP (CORS/cookie dual-origin), and merging the SPA onto core.
+## Status
+
+Accepted
+
+## Context
+
+Flaremail needs a browser UI and a Worker that handles Email Routing, outbound send, Postgres/R2, and the HTTP API. Putting the SPA on the same Worker as mail couples deploy cadence. Exposing the API on a public host separate from the UI forces CORS and splits the cookie origin.
+
+## Decision
+
+- **gate** (`flaremail-gate`) is the only public HTTP Worker: static assets from `apps/web/dist`, SPA fallback, blanket `/api/*` proxy to core via service binding.
+- **core** (`flaremail-core`) owns email, API, crons, and bindings. `workers_dev` and Preview URLs are off; Email Routing and gate reach it by Worker name / binding.
+- Browser and `/api` share the **gate hostname** (same-origin sessions).
+
+## Considered options
+
+- **Public core HTTP + separate UI host** — rejected; CORS and dual-origin cookies.
+- **SPA assets on core** — rejected; independent deploy cadence for email/API vs UI.
+
+## Consequences
+
+- Deploy order: core, then gate.
+- Installing operators attach the **gate hostname** to gate and Email Routing to core.
+- Gate stays thin — no auth or business logic at the edge.
