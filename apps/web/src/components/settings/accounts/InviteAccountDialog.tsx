@@ -211,19 +211,6 @@ export function InviteAccountDialog({
 	}, [domainId]);
 
 	useEffect(() => {
-		if (!policyEnforced || !policyPattern) {
-			return;
-		}
-		setLockedFields((current) => {
-			const next = new Set(current);
-			for (const field of policyRequiredFields) {
-				next.add(field);
-			}
-			return next;
-		});
-	}, [policyEnforced, policyPattern, policyRequiredFields]);
-
-	useEffect(() => {
 		if (!policyHasPattern || !policyPattern) {
 			return;
 		}
@@ -566,21 +553,14 @@ export function InviteAccountDialog({
 									setProfile((current) => ({ ...current, [key]: value }))
 								}
 								requiredFields={new Set(policyRequiredFields)}
-								isFieldDisabled={(key) => {
-									const policyLocked =
-										policyEnforced &&
-										policyRequiredFields.includes(
-											key as "firstName" | "lastName",
-										);
-									return policyLocked || lockedFields.has(key);
-								}}
+								isFieldDisabled={(key) => lockedFields.has(key)}
 								inputExtra={(key) => {
-									const policyLocked =
+									const policyRequired =
 										policyEnforced &&
 										policyRequiredFields.includes(
 											key as "firstName" | "lastName",
 										);
-									if (canLock && !policyLocked) {
+									if (canLock && !policyRequired) {
 										return (
 											<ProfileFieldLockToggle
 												locked={lockedFields.has(key)}
@@ -591,12 +571,12 @@ export function InviteAccountDialog({
 									return null;
 								}}
 								labelExtra={(key) => {
-									const policyLocked =
+									const policyRequired =
 										policyEnforced &&
 										policyRequiredFields.includes(
 											key as "firstName" | "lastName",
 										);
-									if (policyLocked) {
+									if (policyRequired) {
 										return (
 											<span className="text-muted-foreground text-xs">
 												{t("accounts.inviteDialog.requiredByPolicy")}
