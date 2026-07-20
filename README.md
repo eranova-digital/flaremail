@@ -1,95 +1,124 @@
+<div align="center">
+
+<img src="docs/media/logo-badge.svg" alt="Flaremail" width="96" height="96" />
+
 # Flaremail
 
-Self-hosted email for your domains. Receive catch-all mail, read and send from shared mailboxes, and manage everything through a web UI or HTTP API.
+**Self-hosted email for your domains**
 
-Flaremail runs on **Cloudflare** (Email Routing, Email Sending, Workers, R2, Hyperdrive) with **Neon Postgres** for metadata. You keep the data; Cloudflare carries the mail and edge compute.
+Receive catch-all mail · shared mailboxes · web UI · versioned HTTP API
 
----
+[![Version](https://img.shields.io/badge/version-0.6.0-00aeef?style=flat-square)](./package.json)
+[![Runtime](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/workers/)
+[![Database](https://img.shields.io/badge/Postgres-Neon-00E699?style=flat-square&logo=postgresql&logoColor=white)](https://neon.tech/)
+[![UI](https://img.shields.io/badge/UI-React%20%2B%20Vite-149ECA?style=flat-square&logo=react&logoColor=white)](./apps/web)
 
-## What it is
+[Docs](./docs/README.md) · [API](./docs/API.md) · [Glossary](./docs/CONTEXT.md) · [Core](./apps/core/README.md) · [Gate](./apps/gate/README.md) · [Web](./apps/web/README.md)
 
-| Capability | How |
-|------------|-----|
-| Inbound mail | Cloudflare Email Routing invokes the private **core** Worker’s `email()` handler |
-| Storage | Message metadata in Neon; raw `.eml` and attachments in R2 |
-| Outbound mail | Cloudflare Email Sending from core |
-| HTTP API | Versioned REST at `/api/v1` (auth, domains, mailboxes, threads, send/reply, …) |
-| Web UI | React SPA served by the public **gate** Worker |
-
-**Audience**
-
-- **Installing operators** (IT / self-hosters) — deploy and maintain an instance
-- **Day-to-day operators** — accounts who use mail and settings in the UI
-- **Developers / maintainers** — change the product and ship updates
-
-Domain language (Domain, mailbox, gate, core, intendant, …) lives in [`docs/CONTEXT.md`](./docs/CONTEXT.md).
+</div>
 
 ---
 
-## How the pieces fit
+## Why Flaremail
 
+You keep the mailbox data. Cloudflare carries inbound/outbound mail and edge compute. Neon holds metadata. One `npm run deploy` ships a private **core** Worker and a public **gate** that serves the UI and proxies `/api`.
+
+| You get | Built on |
+|---------|----------|
+| Catch-all inbound + send/reply/forward | Email Routing + Email Sending |
+| Threads, labels, shared mailboxes | Neon + R2 |
+| Session, API keys, OIDC IdP | Workers |
+| Day-to-day mail UI | React SPA on **gate** |
+
+**Who this README is for**
+
+| Role | Jump to |
+|------|---------|
+| IT / installing operator | [Install](#for-installing-operators) · [Update](#updating-an-existing-install) |
+| Developer / maintainer | [Develop](#for-developers--maintainers) |
+| Everyone | [Architecture](#architecture) · [Glossary](./docs/CONTEXT.md) |
+
+---
+
+## Table of contents
+
+- [Architecture](#architecture)
+- [For installing operators](#for-installing-operators)
+  - [First-time setup](#first-time-setup)
+  - [Updating an existing install](#updating-an-existing-install)
+- [For developers & maintainers](#for-developers--maintainers)
+  - [Development flow](#development-flow)
+  - [Deployment flow](#deployment-flow)
+  - [Scripts](#scripts-reference)
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph Public
+    B[Browser]
+    G[flaremail-gate]
+  end
+  subgraph Private
+    C[flaremail-core]
+    DB[(Neon via Hyperdrive)]
+    R2[(R2)]
+  end
+  ER[Email Routing]
+  ES[Email Sending]
+
+  B -->|SPA + /api| G
+  G -->|static assets| G
+  G -->|service binding /api/*| C
+  ER -->|email handler| C
+  C --> DB
+  C --> R2
+  C --> ES
 ```
-Browser ──► flaremail-gate (public)
-              ├─ static SPA (built from apps/web)
-              └─ /api/*  ──service binding──►  flaremail-core (private)
 
-Email Routing / crons / R2 / Hyperdrive ──► flaremail-core only
-```
-
-| Package | CF Worker | Role |
-|---------|-----------|------|
-| [`apps/web`](./apps/web) | *(source only)* | React/Vite UI |
-| [`apps/gate`](./apps/gate) | `flaremail-gate` | Public edge: assets + `/api` proxy |
+| Package | Cloudflare | Role |
+|---------|------------|------|
+| [`apps/web`](./apps/web) | *(source only)* | React / Vite UI |
+| [`apps/gate`](./apps/gate) | `flaremail-gate` | Public edge — SPA + `/api` proxy |
 | [`apps/core`](./apps/core) | `flaremail-core` | Email, API, crons, bindings |
 
-- **Domain** — a mail-accepting domain in Flaremail (e.g. `acme.com`)
-- **Gate hostname** — the public host attached to gate (e.g. `mail.acme.com`)
+**Domain** = mail domain in Flaremail (e.g. `acme.com`).  
+**Gate hostname** = public host on gate (e.g. `mail.acme.com`).
 
-Same-origin cookies: the browser talks only to the gate hostname; `/api` is proxied to core. See [ADR-0010](./docs/adr/0010-gate-and-private-core.md).
+Browsers talk only to the gate hostname; `/api` is proxied to core (same-origin cookies). Details: [ADR-0010](./docs/adr/0010-gate-and-private-core.md).
 
----
+<details>
+<summary><strong>Request paths</strong></summary>
 
-## Quick links
-
-| Doc | Contents |
-|-----|----------|
-| [docs/README.md](./docs/README.md) | Index of glossary, ADRs, API, auth specs |
-| [docs/CONTEXT.md](./docs/CONTEXT.md) | Ubiquitous language |
-| [docs/API.md](./docs/API.md) | Human API reference |
-| [apps/core/README.md](./apps/core/README.md) | Core architecture |
-| [apps/gate/README.md](./apps/gate/README.md) | Gate architecture |
-| [apps/web/README.md](./apps/web/README.md) | Web app architecture |
-
----
-
-## Architecture (overview)
-
-### Request paths
-
-**Web + API (browser)**
+**Web + API**
 
 1. User opens the **gate hostname**.
-2. Gate serves the SPA (or SPA fallback for client routes).
+2. Gate serves the SPA (SPA fallback for client routes).
 3. SPA calls `/api/v1/...` on the same origin.
-4. Gate forwards `/api/*` to core via `env.CORE.fetch(request)`.
-5. Core authenticates (session cookie or API key / OIDC) and runs the handler.
+4. Gate forwards `/api/*` → `env.CORE.fetch(request)`.
+5. Core authenticates and handles the request.
 
 **Inbound mail**
 
-1. MX / Email Routing delivers to Cloudflare.
-2. Catch-all (or address rule) targets Worker **`flaremail-core`** by name.
-3. Core `email()` resolves mailbox (exact / alias / catch-all), stores Postgres + R2, updates threads.
+1. Email Routing delivers to Cloudflare.
+2. Catch-all (or address rule) → Worker **`flaremail-core`**.
+3. Core resolves mailbox, stores Postgres + R2, updates threads.
 
 **Outbound mail**
 
-1. UI or API issues send/reply/forward (or draft send) on `/api/v1`.
-2. Core builds MIME and sends via the `EMAIL` binding; persists the sent message.
+1. UI/API send, reply, forward, or draft-send on `/api/v1`.
+2. Core builds MIME → Email Sending; persists the sent message.
 
-**Scheduled work**
+**Scheduled**
 
-Core cron (`*/2 * * * *`) handles domain-validation timeouts and log retention purge.
+Core cron (`*/2 * * * *`) — domain-validation timeouts, log retention.
 
-### Monorepo layout
+</details>
+
+<details>
+<summary><strong>Monorepo layout</strong></summary>
 
 ```
 apps/
@@ -101,8 +130,6 @@ packages/   Shared libraries (i18n, mail quoting, …)
 docs/       Glossary, ADRs, API, auth specs
 ```
 
-### Stack
-
 | Layer | Technology |
 |-------|------------|
 | Edge | Cloudflare Workers (gate + core) |
@@ -111,28 +138,30 @@ docs/       Glossary, ADRs, API, auth specs
 | Blobs | R2 |
 | UI | React, Vite, TanStack Query, TipTap |
 
+</details>
+
 ---
 
-# For installing operators
+## For installing operators
 
-Deploy and keep an instance running. You need a Cloudflare account, a Neon project, and Node.js 20+.
+Deploy and run an instance. You need a **Cloudflare** account, a **Neon** project, and **Node.js 20+**.
 
-## First-time setup
+### First-time setup
 
-### 1. Clone and install
+#### 1. Clone and install
 
 ```bash
-git clone <repo-url> flaremail
+git clone https://github.com/pxtrickb/flaremail.git
 cd flaremail
 npm install
 npx wrangler login
 ```
 
-### 2. Neon database
+#### 2. Neon database
 
 1. Create a Neon project.
-2. Copy the **direct** Postgres connection string (not the serverless HTTP endpoint).
-3. Create env from the example:
+2. Copy the **direct** Postgres URL (not the serverless HTTP endpoint).
+3. Create env:
 
 ```bash
 cp apps/core/.env.example apps/core/.env
@@ -140,11 +169,10 @@ cp apps/core/.env.example apps/core/.env
 
 4. Set `DATABASE_URL` in `apps/core/.env`.
 
-There is **no root `.env`**. Only `apps/core/.env` holds secrets and `DATABASE_URL`. Never commit `.env`.
+> [!IMPORTANT]
+> There is **no root `.env`**. Secrets and `DATABASE_URL` live only in `apps/core/.env`. Never commit `.env`.
 
-### 3. Hyperdrive
-
-Create Hyperdrive against the same Neon database, then **disable query caching** (cached `SELECT`s make the UI look stale after writes):
+#### 3. Hyperdrive
 
 ```bash
 npx wrangler hyperdrive create flaremail-db \
@@ -153,64 +181,63 @@ npx wrangler hyperdrive create flaremail-db \
 npx wrangler hyperdrive update <HYPERDRIVE_ID> --caching-disabled true
 ```
 
-Put the Hyperdrive **id** into `apps/core/wrangler.jsonc` (replace the sample id). The id is account-specific, not a secret — anyone still needs your Cloudflare account to use it.
+Put the Hyperdrive **id** in `apps/core/wrangler.jsonc` (replace the sample). The id is account-specific, not a secret — using it still requires your Cloudflare account.
 
-### 4. Configure secrets and vars
+> [!TIP]
+> Disable query caching. Cached `SELECT`s make list views look stale after writes.
+
+#### 4. Secrets and vars
 
 In `apps/core/.env`:
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | Direct Neon URL — migrations + local core only (never uploaded to CF) |
+| `DATABASE_URL` | Direct Neon URL — migrations + local core only (**never** uploaded to CF) |
 | `SESSION_SECRET` | Long random secret for session cookies |
-| `OIDC_SIGNING_JWK` | One-line ES256 private JWK JSON ([ADR-0007](./docs/adr/0007-oidc-token-signing-es256.md)) |
-
-Generate a signing JWK:
+| `OIDC_SIGNING_JWK` | One-line ES256 private JWK ([ADR-0007](./docs/adr/0007-oidc-token-signing-es256.md)) |
 
 ```bash
 node -e "const {generateKeyPairSync}=require('crypto');const {exportJWK}=require('jose');(async()=>{const {privateKey}=generateKeyPairSync('ec',{namedCurve:'P-256'});const jwk=await exportJWK(privateKey);jwk.kid='flaremail';jwk.alg='ES256';jwk.use='sig';console.log(JSON.stringify(jwk))})()"
 ```
 
-In `apps/core/wrangler.jsonc` → `vars.WEB_ORIGIN`, set the final **gate hostname** URL (e.g. `https://mail.example.com`). That origin must match what browsers use for the SPA and `/api` (cookies + OIDC redirects).
+In `apps/core/wrangler.jsonc` → `vars.WEB_ORIGIN`, set your final **gate hostname** URL (e.g. `https://mail.example.com`).
 
-### 5. Deploy Workers
+#### 5. Deploy
 
 ```bash
 npm run deploy
 ```
 
-What this does:
+1. **core** — migrate DB → upload only `SESSION_SECRET` + `OIDC_SIGNING_JWK` → deploy `flaremail-core` (no public `workers.dev` / Preview URLs)
+2. **gate** — build `apps/web` → deploy `flaremail-gate` with assets + service binding to core
 
-1. **core:** run DB migrations → upload only `secrets.required` (`SESSION_SECRET`, `OIDC_SIGNING_JWK`) via a temporary secrets file → `wrangler deploy` as `flaremail-core` (no public `workers.dev` / Preview URLs)
-2. **gate:** `vite build` for `apps/web` → deploy `flaremail-gate` with assets from `apps/web/dist` and a service binding to core
+Core must exist before gate (binding target). R2 can be provisioned from core’s wrangler config.
 
-Deploy **core before gate** (the binding target must exist). R2 can be provisioned from the core wrangler config.
+#### 6. Gate hostname
 
-### 6. Attach the gate hostname
+Cloudflare dashboard → Workers → **flaremail-gate** → add your custom domain.
 
-In the Cloudflare dashboard → Workers → **flaremail-gate** → add your custom domain (**gate hostname**).
-
-Confirm `WEB_ORIGIN` matches that URL, then redeploy core if you changed it:
+If you change `WEB_ORIGIN`, redeploy core:
 
 ```bash
 npm run core:deploy
 ```
 
-### 7. Email Routing and Sending
+#### 7. Email Routing and Sending
 
 For each mail **Domain** (e.g. `acme.com`):
 
-1. Enable **Email Routing** on the zone.
-2. Catch-all (or address rules) → **Send to a Worker** → **`flaremail-core`**.
+1. Enable **Email Routing**.
+2. Catch-all → **Send to a Worker** → **`flaremail-core`**.
 3. Configure **Email Sending** DNS for outbound.
 
-Order: Workers deployed first, then Email Routing → core, then (or in parallel) gate hostname on gate.
+Deploy Workers first, then point Email Routing at core, then attach the gate hostname (or in parallel once gate exists).
 
-### 8. First sign-in
+#### 8. First sign-in
 
-Open the **gate hostname**. Complete intendant bootstrap if prompted (break-glass account — see [ADR-0005](./docs/adr/0005-intendant-break-glass-account.md)). Add domains and mailboxes in Settings.
+Open the **gate hostname**. Complete intendant bootstrap if prompted ([ADR-0005](./docs/adr/0005-intendant-break-glass-account.md)). Add domains and mailboxes in Settings.
 
-Optional local UI tooling:
+Optional local UI against the deployed stack:
 
 ```bash
 cp apps/web/.env.example apps/web/.env
@@ -218,91 +245,89 @@ cp apps/web/.env.example apps/web/.env
 # API_PROXY_TARGET=https://your-gate-hostname
 ```
 
-Production does not need a separate static host — gate serves the SPA.
+Production does not need a separate static host — **gate** serves the SPA.
 
----
-
-## Updating an existing install
-
-When `main` (or your tracked release branch) moves forward:
+### Updating an existing install
 
 ```bash
 cd flaremail
-git pull
-npm install          # if package-lock.json changed
-npm run deploy       # migrate + core + web build + gate
+git pull origin main   # or your tracked branch
+npm install            # if package-lock.json changed
+npm run deploy         # migrate + core + web build + gate
 ```
 
-Notes:
+| Situation | What to do |
+|-----------|------------|
+| Schema / API release | `npm run deploy` (migrations run in `core:deploy`) |
+| Only secrets / `WEB_ORIGIN` | Edit `.env` or wrangler → `npm run core:deploy` |
+| Only UI | `npm run gate:deploy` |
+| Upstream wrangler / Hyperdrive edits | Merge, keep your Hyperdrive id + secrets, redeploy |
+| Emergency code revert | Redeploy an older git SHA, or CF Worker version rollback |
 
-- Migrations run as part of `core:deploy`. Read release notes / commit messages if a migration needs downtime.
-- If Hyperdrive, R2, or wrangler binding names change upstream, merge those config edits and re-apply any local ids (Hyperdrive id, `WEB_ORIGIN`, secrets in `.env`).
-- Re-attach Email Routing only if the **core** Worker name changes (it should stay `flaremail-core`).
-- After changing `WEB_ORIGIN` or secrets in `.env`, `npm run core:deploy` is enough; UI-only changes are covered by full `npm run deploy` or `npm run gate:deploy`.
-
-Rollback: redeploy a previous git revision with the same `npm run deploy` flow, or use Cloudflare Worker version rollback for a single Worker if you only need an emergency revert of that Worker’s code.
+Email Routing only needs a change if the **core** Worker name changes (it should stay `flaremail-core`).
 
 ---
 
-# For developers and maintainers
+## For developers & maintainers
 
-## Development flow
+### Development flow
 
-**Preferred day-to-day:** iterate the UI against a **deployed** stack.
+**Recommended:** UI against a **deployed** gate.
 
 ```bash
 cp apps/web/.env.example apps/web/.env
 # API_PROXY_TARGET=https://your-gate-hostname
-npm run web:dev      # Vite :5173, proxies /api to the gate
+npm run web:dev
 ```
 
-Local email is unreliable; use the deployed core for mail-path testing.
+Local email is unreliable — use deployed core for mail-path tests.
 
-**Optional full local Workers:**
+<details>
+<summary><strong>Optional full local Workers</strong></summary>
 
 ```bash
-npm run dev          # core:dev + gate:dev (concurrently)
-# Service binding connects when both sessions are up
-npm run web:dev      # point API_PROXY_TARGET at http://localhost:8787
+npm run dev          # core:dev + gate:dev
+npm run web:dev      # API_PROXY_TARGET=http://localhost:8787
 ```
 
 | Command | Purpose |
 |---------|---------|
-| `npm run core:dev` | Core with local Hyperdrive stub from `DATABASE_URL` |
+| `npm run core:dev` | Core + local Hyperdrive stub from `DATABASE_URL` |
 | `npm run gate:dev` | Gate on `:8787` |
 | `npm run core:test` / `web:test` | Vitest |
-| `npm run apigen` | Regenerate OpenAPI JSON + web client |
-| `npm run typegen` | Regenerate core Wrangler types |
-| `npm run db:*` | Drizzle against Neon via `apps/core` |
+| `npm run apigen` | OpenAPI JSON + web client |
+| `npm run typegen` | Core Wrangler types |
+| `npm run db:*` | Drizzle via `apps/core` |
 
-After schema changes: edit `apps/core/src/db/schema.ts` → `npm run db:generate` → review SQL → `npm run db:migrate` (or rely on deploy).
+Schema: edit `apps/core/src/db/schema.ts` → `npm run db:generate` → review → migrate (or deploy).  
+OpenAPI: edit `apps/core/openapi.yaml` → `npm run apigen`.
 
-After OpenAPI changes: edit `apps/core/openapi.yaml` → `npm run apigen`.
+</details>
 
-## Deployment flow
+### Deployment flow
 
 ```bash
-npm run deploy                 # production path (core then gate)
-npm run core:deploy            # migrate + secrets filter + core only
-npm run gate:deploy            # web build + gate only
+npm run deploy                 # core then gate
+npm run core:deploy            # migrate + filtered secrets + core
+npm run gate:deploy            # web build + gate
 ```
 
-Secrets: `apps/core/scripts/deploy-with-secrets.mjs` reads `secrets.required` from wrangler, fails if any key is missing/empty in `.env`, writes a temp JSON secrets file, deploys, deletes the file. `DATABASE_URL` is never uploaded.
+Secrets file is filtered to `secrets.required` only — never `DATABASE_URL`. See `apps/core/scripts/deploy-with-secrets.mjs`.
 
-## Where to change what
+### Where to change what
 
 | Concern | Start here |
 |---------|------------|
-| HTTP routes / OpenAPI | `apps/core` — see [core README](./apps/core/README.md) |
-| Inbound/outbound mail | `apps/core` email handler + `services/outbound-mail` |
-| Public edge / SPA hosting | `apps/gate` — see [gate README](./apps/gate/README.md) |
-| UI routes / compose / settings | `apps/web` — see [web README](./apps/web/README.md) |
-| Shared terms | `docs/CONTEXT.md` |
-| Hard decisions | `docs/adr/` |
+| HTTP / OpenAPI | [`apps/core`](./apps/core/README.md) |
+| Mail in/out | `apps/core` — `email()` + `services/outbound-mail` |
+| Public edge | [`apps/gate`](./apps/gate/README.md) |
+| UI | [`apps/web`](./apps/web/README.md) |
+| Terms | [`docs/CONTEXT.md`](./docs/CONTEXT.md) |
+| Decisions | [`docs/adr/`](./docs/adr/) |
 
-Auth design history: `docs/specs/auth/`. Cloudflare API details for agents: `AGENTS.md` (always fetch current Workers docs).
+Auth design: [`docs/specs/auth/`](./docs/specs/auth/). Agents: [`AGENTS.md`](./AGENTS.md) (fetch current Cloudflare docs).
 
-## Scripts reference
+### Scripts reference
 
 | Command | Description |
 |---------|-------------|
@@ -313,3 +338,11 @@ Auth design history: `docs/specs/auth/`. Cloudflare API details for agents: `AGE
 | `npm run web:dev` / `web:build` / `web:test` | Web lifecycle |
 | `npm run db:migrate` / `db:generate` / `db:studio` | Database |
 | `npm run apigen` / `typegen` | Codegen |
+
+---
+
+<div align="center">
+
+<sub>Built for operators who want mail on their own domains — without giving up the data.</sub>
+
+</div>
