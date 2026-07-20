@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { AddressLocationFields } from "@/components/settings/AddressLocationFields";
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -122,11 +123,16 @@ export function ProfileFieldsGrid({
 					{field("addressLine1")}
 					{field("addressLine2")}
 				</div>
-				<div className="grid gap-3 sm:grid-cols-3">
-					{field("addressCity")}
-					{field("addressState")}
-					{field("addressCountry")}
-				</div>
+				<AddressLocationFields
+					values={values}
+					onChange={onChange}
+					idPrefix={idPrefix}
+					disabled={disabled}
+					isFieldDisabled={isFieldDisabled}
+					labelExtra={labelExtra}
+					requiredFields={requiredFields}
+					hiddenFields={hiddenFields}
+				/>
 			</div>
 		</div>
 	);
