@@ -3,10 +3,8 @@ import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import type { RouteContext } from "../lib/http/router";
 import {
-	getDomainReadinessSummary,
 	getValidationRunDetail,
 	listValidationRuns,
-	startDomainValidation,
 	startOrReturnValidationRun,
 	cancelDomainValidationRun,
 } from "../lib/domain-validation";

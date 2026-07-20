@@ -236,6 +236,9 @@ export function AddressLocationFields({
 
 	const canLoadCities =
 		Boolean(countryCode) && (!hasStates || Boolean(stateCode));
+	/** Allow editing city when country is set and state is N/A or filled (incl. legacy free-form). */
+	const cityReady =
+		Boolean(countryCode) && (!hasStates || Boolean(stateValue.trim()));
 
 	useEffect(() => {
 		let cancelled = false;
@@ -308,9 +311,10 @@ export function AddressLocationFields({
 		[cities, cityValue],
 	);
 
-	/** Dataset has no cities for this place — keep free-form so users aren't stuck. */
+	/** Free-form when dataset has no cities, or state is legacy text that doesn't match. */
 	const cityNeedsFallback =
-		canLoadCities && !citiesLoading && cities.length === 0;
+		cityReady &&
+		(!canLoadCities || (!citiesLoading && cities.length === 0));
 
 	const setCountry = (next: string) => {
 		onChange("addressCountry", next);
@@ -411,8 +415,8 @@ export function AddressLocationFields({
 						onValueChange={(next) => onChange("addressCity", next)}
 						disabled={
 							city.isInputDisabled ||
-							!canLoadCities ||
-							citiesLoading
+							!cityReady ||
+							(citiesLoading && canLoadCities)
 						}
 						required={city.isRequired}
 						placeholder={t("profile.fields.selectCity")}
