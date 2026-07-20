@@ -1,0 +1,26 @@
+/**
+ * Public edge: SPA assets from apps/web + /api/* proxy to flaremail-core.
+ * https://developers.cloudflare.com/workers/static-assets/binding/
+ * https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/
+ */
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "flaremail-gate",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-06-29",
+	"observability": {
+		"enabled": true,
+	},
+	"upload_source_maps": true,
+	"assets": {
+		"directory": "../web/dist",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*"],
+	},
+	"services": [
+		{
+			"binding": "CORE",
+			"service": "flaremail-core",
+		},
+	],
+}

@@ -30,8 +30,8 @@
 		"required": ["SESSION_SECRET", "OIDC_SIGNING_JWK"],
 	},
 	"vars": {
-		// SPA origin for OIDC login/consent redirects (API host may differ).
-		"WEB_ORIGIN": "http://localhost:5173",
+		// Public gate hostname URL (OIDC redirects / cookie origin). Same origin as /api in production.
+		"WEB_ORIGIN": "http://localhost:8787",
 	},
 	"send_email": [
 		{

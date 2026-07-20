@@ -1,0 +1,15 @@
+{
+	"name": "@flaremail/gate",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"typegen": "wrangler types",
+		"cf-typegen": "wrangler types"
+	},
+	"devDependencies": {
+		"typescript": "^5.5.2",
+		"wrangler": "^4.105.0"
+	}
+}
