@@ -13,6 +13,7 @@ import {
 import { formatCode, randomToken } from "../lib/auth/crypto";
 import { NoRecoveryEmailError } from "../lib/auth/errors";
 import { hashPassword, hashSecret, verifyPassword } from "../lib/auth/password";
+import { assertStrongPassword } from "../lib/auth/password-strength";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { toProfilePicturePayload } from "../lib/profile-picture/payload";
 import { requireSessionSecret } from "../lib/auth/resolve-principal";
@@ -208,6 +209,8 @@ export async function activateInvite(
 	if (!invite || invite.usedAt) {
 		throw new Error("Invalid or expired invite code");
 	}
+
+	assertStrongPassword(input.password);
 
 	const [account] = await db
 		.select()
@@ -499,6 +502,7 @@ export async function resetPasswordWithCode(
 	if (!row || row.usedAt) {
 		throw new Error("Invalid or expired reset code");
 	}
+	assertStrongPassword(input.password);
 	await db
 		.update(accounts)
 		.set({

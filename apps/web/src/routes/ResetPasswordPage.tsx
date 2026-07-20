@@ -17,6 +17,7 @@ import {
 	isNoRecoveryEmailError,
 } from "@/lib/api/errors";
 import { formatAuthCode } from "@/lib/format-auth-code";
+import { isStrongPassword } from "@/lib/password-strength";
 
 type ResetStep = "choose" | "email" | "no-recovery" | "code" | "password";
 
@@ -65,8 +66,12 @@ export function ResetPasswordPage() {
 	};
 
 	const passwordsMatch = password === confirmPassword;
+	const passwordStrong = isStrongPassword(password);
 	const canSubmitPassword =
-		Boolean(password) && Boolean(confirmPassword) && passwordsMatch;
+		Boolean(password) &&
+		Boolean(confirmPassword) &&
+		passwordsMatch &&
+		passwordStrong;
 
 	const handleContinueFromCode = async (event: React.FormEvent) => {
 		event.preventDefault();
@@ -90,6 +95,10 @@ export function ResetPasswordPage() {
 
 		if (!passwordsMatch) {
 			setError(t("passwordsDoNotMatch"));
+			return;
+		}
+		if (!passwordStrong) {
+			setError(t("passwordTooWeak"));
 			return;
 		}
 

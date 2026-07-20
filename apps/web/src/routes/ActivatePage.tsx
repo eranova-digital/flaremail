@@ -20,6 +20,8 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import type { Account } from "@/lib/auth/types";
 import { getErrorMessage } from "@/lib/api/errors";
 import { formatAuthCode } from "@/lib/format-auth-code";
+import { isStrongPassword } from "@/lib/password-strength";
+import { isValidPhoneNumber, normalizePhoneInput } from "@/lib/validate-phone";
 import { setLastMailboxId } from "@/lib/mailbox-preference";
 
 type ProfileFormState = {
@@ -231,8 +233,12 @@ export function ActivatePage() {
 	};
 
 	const passwordsMatch = password === confirmPassword;
+	const passwordStrong = isStrongPassword(password);
 	const canSubmitProfile =
-		Boolean(password) && Boolean(confirmPassword) && passwordsMatch;
+		Boolean(password) &&
+		Boolean(confirmPassword) &&
+		passwordsMatch &&
+		passwordStrong;
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
@@ -240,6 +246,16 @@ export function ActivatePage() {
 
 		if (!passwordsMatch) {
 			setError(t("passwordsDoNotMatch"));
+			return;
+		}
+		if (!passwordStrong) {
+			setError(t("passwordTooWeak"));
+			return;
+		}
+
+		const phone = normalizePhoneInput(profile.phone);
+		if (phone && !isValidPhoneNumber(phone)) {
+			setError(t("invalidPhone", { defaultValue: "Enter a valid phone number in international format (e.g. +14155552671)." }));
 			return;
 		}
 
@@ -252,7 +268,7 @@ export function ActivatePage() {
 				profile: {
 					firstName: profile.firstName.trim() || undefined,
 					lastName: profile.lastName.trim() || undefined,
-					phone: profile.phone.trim() || null,
+					phone,
 					addressCountry: profile.addressCountry.trim() || null,
 					addressState: profile.addressState.trim() || null,
 					addressCity: profile.addressCity.trim() || null,
