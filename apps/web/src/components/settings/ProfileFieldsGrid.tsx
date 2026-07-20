@@ -17,9 +17,6 @@ const AUTOCOMPLETE: Partial<Record<ProfileFieldKey, string>> = {
 	lastName: "family-name",
 	recoveryAddress: "email",
 	phone: "tel",
-	addressCountry: "country-name",
-	addressState: "address-level1",
-	addressCity: "address-level2",
 	addressLine1: "address-line1",
 	addressLine2: "address-line2",
 };
@@ -130,6 +127,7 @@ export function ProfileFieldsGrid({
 					disabled={disabled}
 					isFieldDisabled={isFieldDisabled}
 					labelExtra={labelExtra}
+					inputExtra={inputExtra}
 					requiredFields={requiredFields}
 					hiddenFields={hiddenFields}
 				/>

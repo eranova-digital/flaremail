@@ -1,17 +1,20 @@
-import { useMemo } from "react";
-import { City, Country, State } from "country-state-city";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Country from "country-state-city/lib/country.js";
+import State from "country-state-city/lib/state.js";
+import type { ICity } from "country-state-city";
 import { useTranslation } from "react-i18next";
 
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+} from "@/components/ui/input-group";
+import { Input } from "@/components/ui/input";
+import {
+	LegacyCombobox,
+	type ComboboxOption,
+} from "@/components/ui/legacy-combobox";
 import type { ProfileFieldKey } from "@/lib/accounts/api";
-
-const CLEAR_VALUE = "__clear__";
 
 type AddressLocationFieldsProps = {
 	values: Record<string, string>;
@@ -19,52 +22,182 @@ type AddressLocationFieldsProps = {
 	idPrefix: string;
 	disabled?: boolean;
 	isFieldDisabled?: (key: ProfileFieldKey) => boolean;
-	labelExtra?: (key: ProfileFieldKey) => React.ReactNode;
+	labelExtra?: (key: ProfileFieldKey) => ReactNode;
+	inputExtra?: (key: ProfileFieldKey) => ReactNode;
 	requiredFields?: ReadonlySet<string>;
 	hiddenFields?: ReadonlySet<string>;
 };
 
-function ensureOption(
-	options: Array<{ value: string; label: string }>,
+const COUNTRIES = Country.getAllCountries();
+
+function findCountry(value: string) {
+	const trimmed = value.trim();
+	if (!trimmed) {
+		return undefined;
+	}
+	const lower = trimmed.toLowerCase();
+	return (
+		COUNTRIES.find((country) => country.name === trimmed) ??
+		COUNTRIES.find((country) => country.isoCode.toLowerCase() === lower) ??
+		COUNTRIES.find((country) => country.name.toLowerCase() === lower)
+	);
+}
+
+function findState(countryCode: string, value: string) {
+	const trimmed = value.trim();
+	if (!trimmed) {
+		return undefined;
+	}
+	const states = State.getStatesOfCountry(countryCode);
+	const lower = trimmed.toLowerCase();
+	return (
+		states.find((state) => state.name === trimmed) ??
+		states.find((state) => state.isoCode.toLowerCase() === lower) ??
+		states.find((state) => state.name.toLowerCase() === lower)
+	);
+}
+
+function withCurrentOption(
+	options: ComboboxOption[],
 	current: string,
-): Array<{ value: string; label: string }> {
+): ComboboxOption[] {
 	const trimmed = current.trim();
 	if (!trimmed) {
 		return options;
 	}
-	if (options.some((option) => option.value === trimmed)) {
+	const lower = trimmed.toLowerCase();
+	const exists = options.some(
+		(option) =>
+			option.value === trimmed ||
+			option.label.toLowerCase() === lower ||
+			option.value.toLowerCase() === lower,
+	);
+	if (exists) {
 		return options;
 	}
 	return [{ value: trimmed, label: trimmed }, ...options];
 }
 
-function countryIsoFromName(name: string): string | undefined {
-	const trimmed = name.trim();
-	if (!trimmed) {
-		return undefined;
-	}
-	const byIso = Country.getCountryByCode(trimmed);
-	if (byIso) {
-		return byIso.isoCode;
-	}
-	return Country.getAllCountries().find(
-		(country) => country.name.toLowerCase() === trimmed.toLowerCase(),
-	)?.isoCode;
+function FieldShell({
+	inputId,
+	label,
+	isRequired,
+	labelExtra,
+	children,
+}: {
+	inputId: string;
+	label: string;
+	isRequired: boolean;
+	labelExtra?: ReactNode;
+	children: ReactNode;
+}) {
+	return (
+		<div className="space-y-1">
+			<div className="flex min-h-5 items-center justify-between gap-2">
+				<label htmlFor={inputId} className="text-sm font-medium">
+					{label}
+					{isRequired ? <span className="text-destructive ml-1">*</span> : null}
+				</label>
+				{labelExtra}
+			</div>
+			{children}
+		</div>
+	);
 }
 
-function stateIsoFromName(countryIso: string, name: string): string | undefined {
-	const trimmed = name.trim();
-	if (!trimmed || !countryIso) {
-		return undefined;
+function LocationControl({
+	inputId,
+	value,
+	options,
+	onValueChange,
+	disabled,
+	required,
+	placeholder,
+	searchPlaceholder,
+	emptyText,
+	trailing,
+	fallbackInput = false,
+	autoComplete,
+}: {
+	inputId: string;
+	value: string;
+	options: ComboboxOption[];
+	onValueChange: (value: string) => void;
+	disabled: boolean;
+	required: boolean;
+	placeholder: string;
+	searchPlaceholder: string;
+	emptyText: string;
+	trailing?: ReactNode;
+	fallbackInput?: boolean;
+	autoComplete?: string;
+}) {
+	if (fallbackInput) {
+		const input = (
+			<Input
+				id={inputId}
+				type="text"
+				value={value}
+				autoComplete={autoComplete}
+				onChange={(event) => onValueChange(event.target.value)}
+				disabled={disabled}
+				required={required}
+			/>
+		);
+		if (!trailing) {
+			return input;
+		}
+		return (
+			<InputGroup>
+				<InputGroupInput
+					id={inputId}
+					value={value}
+					autoComplete={autoComplete}
+					onChange={(event) => onValueChange(event.target.value)}
+					disabled={disabled}
+					required={required}
+				/>
+				<InputGroupAddon align="inline-end">{trailing}</InputGroupAddon>
+			</InputGroup>
+		);
 	}
-	const states = State.getStatesOfCountry(countryIso);
-	const byIso = states.find((state) => state.isoCode === trimmed);
-	if (byIso) {
-		return byIso.isoCode;
+
+	const combobox = (
+		<>
+			<LegacyCombobox
+				id={inputId}
+				value={value}
+				onValueChange={onValueChange}
+				options={options}
+				placeholder={placeholder}
+				searchPlaceholder={searchPlaceholder}
+				emptyText={emptyText}
+				disabled={disabled}
+				className="h-9"
+			/>
+			{required ? (
+				<input
+					tabIndex={-1}
+					aria-hidden
+					className="sr-only"
+					value={value}
+					required
+					readOnly
+				/>
+			) : null}
+		</>
+	);
+
+	if (!trailing) {
+		return combobox;
 	}
-	return states.find(
-		(state) => state.name.toLowerCase() === trimmed.toLowerCase(),
-	)?.isoCode;
+
+	return (
+		<div className="flex items-center gap-1">
+			<div className="min-w-0 flex-1">{combobox}</div>
+			{trailing}
+		</div>
+	);
 }
 
 export function AddressLocationFields({
@@ -74,151 +207,222 @@ export function AddressLocationFields({
 	disabled = false,
 	isFieldDisabled,
 	labelExtra,
+	inputExtra,
 	requiredFields,
 	hiddenFields,
 }: AddressLocationFieldsProps) {
 	const { t } = useTranslation("settings");
 
-	const countryName = values.addressCountry ?? "";
-	const stateName = values.addressState ?? "";
-	const cityName = values.addressCity ?? "";
+	const countryValue = values.addressCountry ?? "";
+	const stateValue = values.addressState ?? "";
+	const cityValue = values.addressCity ?? "";
 
-	const countryIso = useMemo(
-		() => countryIsoFromName(countryName),
-		[countryName],
+	const matchedCountry = useMemo(() => findCountry(countryValue), [countryValue]);
+	const countryCode = matchedCountry?.isoCode;
+
+	const states = useMemo(
+		() => (countryCode ? State.getStatesOfCountry(countryCode) : []),
+		[countryCode],
 	);
-	const stateIso = useMemo(
-		() => (countryIso ? stateIsoFromName(countryIso, stateName) : undefined),
-		[countryIso, stateName],
+	const hasStates = states.length > 0;
+	const matchedState = useMemo(
+		() => (countryCode ? findState(countryCode, stateValue) : undefined),
+		[countryCode, stateValue],
 	);
+	const stateCode = matchedState?.isoCode;
+
+	const [cities, setCities] = useState<ICity[]>([]);
+	const [citiesLoading, setCitiesLoading] = useState(false);
+
+	const canLoadCities =
+		Boolean(countryCode) && (!hasStates || Boolean(stateCode));
+
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadCities() {
+			if (!canLoadCities || !countryCode) {
+				setCities([]);
+				setCitiesLoading(false);
+				return;
+			}
+
+			setCitiesLoading(true);
+			try {
+				const { default: City } = await import(
+					"country-state-city/lib/city.js"
+				);
+				if (cancelled) {
+					return;
+				}
+				const next = hasStates
+					? City.getCitiesOfState(countryCode, stateCode!)
+					: (City.getCitiesOfCountry(countryCode) ?? []);
+				setCities(next);
+			} finally {
+				if (!cancelled) {
+					setCitiesLoading(false);
+				}
+			}
+		}
+
+		void loadCities();
+		return () => {
+			cancelled = true;
+		};
+	}, [canLoadCities, countryCode, hasStates, stateCode]);
 
 	const countryOptions = useMemo(
 		() =>
-			ensureOption(
-				Country.getAllCountries().map((country) => ({
+			withCurrentOption(
+				COUNTRIES.map((country) => ({
 					value: country.name,
 					label: country.name,
 				})),
-				countryName,
+				countryValue,
 			),
-		[countryName],
+		[countryValue],
 	);
 
-	const stateOptions = useMemo(() => {
-		if (!countryIso) {
-			return ensureOption([], stateName);
-		}
-		return ensureOption(
-			State.getStatesOfCountry(countryIso).map((state) => ({
-				value: state.name,
-				label: state.name,
-			})),
-			stateName,
-		);
-	}, [countryIso, stateName]);
+	const stateOptions = useMemo(
+		() =>
+			withCurrentOption(
+				states.map((state) => ({
+					value: state.name,
+					label: state.name,
+				})),
+				stateValue,
+			),
+		[states, stateValue],
+	);
 
-	const cityOptions = useMemo(() => {
-		if (!countryIso || !stateIso) {
-			return ensureOption([], cityName);
-		}
-		return ensureOption(
-			City.getCitiesOfState(countryIso, stateIso).map((city) => ({
-				value: city.name,
-				label: city.name,
-			})),
-			cityName,
-		);
-	}, [cityName, countryIso, stateIso]);
+	const cityOptions = useMemo(
+		() =>
+			withCurrentOption(
+				cities.map((city) => ({
+					value: city.name,
+					label: city.name,
+				})),
+				cityValue,
+			),
+		[cities, cityValue],
+	);
 
-	const renderSelect = (
-		key: "addressCountry" | "addressState" | "addressCity",
-		options: Array<{ value: string; label: string }>,
-		onSelect: (value: string) => void,
-		enabled: boolean,
-	) => {
-		if (hiddenFields?.has(key)) {
-			return null;
-		}
-		const inputId = `${idPrefix}-${key}`;
-		const isRequired = requiredFields?.has(key) ?? false;
-		const isInputDisabled =
-			disabled || !enabled || (isFieldDisabled?.(key) ?? false);
-		const current = values[key] ?? "";
+	/** Dataset has no cities for this place — keep free-form so users aren't stuck. */
+	const cityNeedsFallback =
+		canLoadCities && !citiesLoading && cities.length === 0;
 
-		return (
-			<div className="space-y-1">
-				<div className="flex min-h-5 items-center justify-between gap-2">
-					<label htmlFor={inputId} className="text-sm font-medium">
-						{t(`profile.fields.${key}`)}
-						{isRequired ? (
-							<span className="text-destructive ml-1">*</span>
-						) : null}
-					</label>
-					{labelExtra?.(key)}
-				</div>
-				<Select
-					value={current || undefined}
-					onValueChange={(value) => {
-						if (value === CLEAR_VALUE) {
-							onSelect("");
-							return;
-						}
-						onSelect(value);
-					}}
-					disabled={isInputDisabled}
-				>
-					<SelectTrigger id={inputId} className="w-full">
-						<SelectValue
-							placeholder={t(`profile.fields.${key}Placeholder`, {
-								defaultValue: t(`profile.fields.${key}`),
-							})}
-						/>
-					</SelectTrigger>
-					<SelectContent className="max-h-72">
-						{!isRequired ? (
-							<SelectItem value={CLEAR_VALUE}>
-								{t("profile.fields.clearLocation", {
-									defaultValue: "Clear",
-								})}
-							</SelectItem>
-						) : null}
-						{options.map((option) => (
-							<SelectItem key={`${key}-${option.value}`} value={option.value}>
-								{option.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
-		);
+	const setCountry = (next: string) => {
+		onChange("addressCountry", next);
+		if (next !== countryValue) {
+			onChange("addressState", "");
+			onChange("addressCity", "");
+		}
 	};
+
+	const setState = (next: string) => {
+		onChange("addressState", next);
+		if (next !== stateValue) {
+			onChange("addressCity", "");
+		}
+	};
+
+	const fieldMeta = (key: ProfileFieldKey) => {
+		const hidden = hiddenFields?.has(key) ?? false;
+		const isRequired = requiredFields?.has(key) ?? false;
+		const isInputDisabled = disabled || (isFieldDisabled?.(key) ?? false);
+		return {
+			hidden,
+			isRequired,
+			isInputDisabled,
+			inputId: `${idPrefix}-${key}`,
+			label: t(`profile.fields.${key}`),
+			extra: labelExtra?.(key),
+			trailing: inputExtra?.(key),
+		};
+	};
+
+	const country = fieldMeta("addressCountry");
+	const state = fieldMeta("addressState");
+	const city = fieldMeta("addressCity");
+
+	const searchPlaceholder = t("profile.fields.locationSearchPlaceholder");
+	const emptyText = t("profile.fields.locationEmpty");
 
 	return (
 		<div className="grid gap-3 sm:grid-cols-3">
-			{renderSelect(
-				"addressCountry",
-				countryOptions,
-				(value) => {
-					onChange("addressCountry", value);
-					onChange("addressState", "");
-					onChange("addressCity", "");
-				},
-				true,
+			{country.hidden ? null : (
+				<FieldShell
+					inputId={country.inputId}
+					label={country.label}
+					isRequired={country.isRequired}
+					labelExtra={country.extra}
+				>
+					<LocationControl
+						inputId={country.inputId}
+						value={countryValue}
+						options={countryOptions}
+						onValueChange={setCountry}
+						disabled={country.isInputDisabled}
+						required={country.isRequired}
+						placeholder={t("profile.fields.selectCountry")}
+						searchPlaceholder={searchPlaceholder}
+						emptyText={emptyText}
+						trailing={country.trailing}
+						autoComplete="country-name"
+					/>
+				</FieldShell>
 			)}
-			{renderSelect(
-				"addressState",
-				stateOptions,
-				(value) => {
-					onChange("addressState", value);
-					onChange("addressCity", "");
-				},
-				Boolean(countryIso),
+			{state.hidden ? null : (
+				<FieldShell
+					inputId={state.inputId}
+					label={state.label}
+					isRequired={state.isRequired}
+					labelExtra={state.extra}
+				>
+					<LocationControl
+						inputId={state.inputId}
+						value={stateValue}
+						options={stateOptions}
+						onValueChange={setState}
+						disabled={
+							state.isInputDisabled || !countryCode || !hasStates
+						}
+						required={state.isRequired && hasStates}
+						placeholder={t("profile.fields.selectState")}
+						searchPlaceholder={searchPlaceholder}
+						emptyText={emptyText}
+						trailing={state.trailing}
+						autoComplete="address-level1"
+					/>
+				</FieldShell>
 			)}
-			{renderSelect(
-				"addressCity",
-				cityOptions,
-				(value) => onChange("addressCity", value),
-				Boolean(countryIso && stateIso),
+			{city.hidden ? null : (
+				<FieldShell
+					inputId={city.inputId}
+					label={city.label}
+					isRequired={city.isRequired}
+					labelExtra={city.extra}
+				>
+					<LocationControl
+						inputId={city.inputId}
+						value={cityValue}
+						options={cityOptions}
+						onValueChange={(next) => onChange("addressCity", next)}
+						disabled={
+							city.isInputDisabled ||
+							!canLoadCities ||
+							citiesLoading
+						}
+						required={city.isRequired}
+						placeholder={t("profile.fields.selectCity")}
+						searchPlaceholder={searchPlaceholder}
+						emptyText={emptyText}
+						trailing={city.trailing}
+						fallbackInput={cityNeedsFallback}
+						autoComplete="address-level2"
+					/>
+				</FieldShell>
 			)}
 		</div>
 	);
