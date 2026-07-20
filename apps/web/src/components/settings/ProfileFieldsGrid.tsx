@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import type { Value as PhoneValue } from "react-phone-number-input";
 
 import { AddressLocationFields } from "@/components/settings/AddressLocationFields";
 import {
@@ -8,6 +9,7 @@ import {
 	InputGroupInput,
 } from "@/components/ui/input-group";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { type ProfileFieldKey } from "@/lib/accounts/api";
 
 export type { ProfileFieldKey };
@@ -73,7 +75,19 @@ export function ProfileFieldsGrid({
 					</label>
 					{extra}
 				</div>
-				{trailing ? (
+				{key === "phone" ? (
+					<PhoneInput
+						id={inputId}
+						international
+						defaultCountry="US"
+						countryCallingCodeEditable={false}
+						value={(values[key] || undefined) as PhoneValue | undefined}
+						onChange={(value) => onChange(key, value ?? "")}
+						disabled={isInputDisabled}
+						required={isRequired}
+						autoComplete={AUTOCOMPLETE.phone}
+					/>
+				) : trailing ? (
 					<InputGroup>
 						<InputGroupInput
 							id={inputId}
@@ -88,11 +102,7 @@ export function ProfileFieldsGrid({
 				) : (
 					<Input
 						id={inputId}
-						type={key === "phone" ? "tel" : "text"}
-						inputMode={key === "phone" ? "tel" : undefined}
-						placeholder={
-							key === "phone" ? t("profile.fields.phonePlaceholder") : undefined
-						}
+						type="text"
 						value={values[key] ?? ""}
 						autoComplete={AUTOCOMPLETE[key]}
 						onChange={(event) => onChange(key, event.target.value)}
