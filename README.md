@@ -13,7 +13,7 @@ Built on Cloudflare (Email Routing, Email Sending, Workers, R2) with Postgres (N
 3. **Exposes** a versioned REST API for domains, mailboxes, threads, drafts, send/reply/forward, search, and labels.
 4. **Provides** a React web app for day-to-day mail operations.
 
-Inbound mail never hits HTTP; Cloudflare invokes the Worker's `email()` handler directly. Everything else goes through `/api/v1`.
+Inbound mail never hits HTTP; Cloudflare invokes core's `email()` handler directly. Browser API calls go through the **gate** at `/api/v1` (proxied to core).
 
 ---
 
@@ -23,7 +23,7 @@ Inbound mail never hits HTTP; Cloudflare invokes the Worker's `email()` handler 
 
 ### Getting started
 
-1. Open the web app (your deployment URL or `http://localhost:5173` in local dev).
+1. Open the web app (your **gate hostname**, or `http://localhost:5173` with `web:dev`).
 2. Go to **Settings → Domains** and add a domain.
 3. Configure Cloudflare Email Routing for that domain (see [Self-hosting](#self-hosting) below).
 4. Add mailboxes under **Settings → Mailboxes**.
@@ -68,7 +68,7 @@ The web app authenticates to the Worker API with a single **Bearer token** (`API
 
 ## Self-hosting
 
-*For admins deploying their own instance.*
+*For the installing operator deploying an instance.*
 
 ### Prerequisites
 
@@ -76,7 +76,21 @@ The web app authenticates to the Worker API with a single **Bearer token** (`API
 |---------|---------|
 | [Cloudflare](https://dash.cloudflare.com) account | Workers, Email Routing, Email Sending, R2, Hyperdrive |
 | [Neon](https://neon.tech) Postgres | Message metadata, threads, domains |
-| Node.js 20+ | Build and local development |
+| Node.js 20+ | Build and deploy |
+
+### First-time checklist
+
+1. `npm install` and `npx wrangler login`
+2. Create a Neon project; put the **direct** Postgres URL in `apps/core/.env` as `DATABASE_URL`
+3. Create Hyperdrive pointing at Neon, **disable query caching**, put the Hyperdrive id in `apps/core/wrangler.jsonc` (replace the sample id with yours — it is not a secret, but it is account-specific)
+4. Configure `apps/core/.env` secrets (`SESSION_SECRET`, `OIDC_SIGNING_JWK`) and `WEB_ORIGIN` in `apps/core/wrangler.jsonc` to your final **gate hostname** URL (e.g. `https://mail.example.com`)
+5. `npm run deploy` (migrates DB, deploys **core**, builds the web app, deploys **gate**)
+6. Attach the **gate hostname** to `flaremail-gate` in Cloudflare
+7. For each mail **Domain**: enable Email Routing catch-all → Worker **`flaremail-core`**, plus Email Sending DNS
+
+Subsequent deploys: `npm run deploy` (and `npm install` if the lockfile changed).
+
+There is **no root `.env`**. Secrets and `DATABASE_URL` live in `apps/core/.env` only. `DATABASE_URL` is never uploaded to Cloudflare — production uses Hyperdrive.
 
 ### 1. Clone and install
 
@@ -84,97 +98,61 @@ The web app authenticates to the Worker API with a single **Bearer token** (`API
 git clone <repo-url> flaremail
 cd flaremail
 npm install
+npx wrangler login
 ```
 
-### 2. Database
-
-Create a Neon project. Use the **direct** Postgres connection string (not the serverless HTTP endpoint).
+### 2. Database and secrets
 
 ```bash
 cp apps/core/.env.example apps/core/.env
-# Edit DATABASE_URL
-npm run db:migrate
+# Edit DATABASE_URL, SESSION_SECRET, OIDC_SIGNING_JWK
 ```
-
-### 3. Worker secrets and bindings
-
-In `apps/core/.env`:
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | Direct Neon URL — local dev and migrations only |
-| `SESSION_SECRET` | Session cookie signing secret |
-| `OIDC_SIGNING_JWK` | ES256 private JWK JSON for OIDC access/ID tokens (ADR-0007) |
+| `DATABASE_URL` | Direct Neon URL — migrations and local `core:dev` only |
+| `SESSION_SECRET` | Session cookie signing (uploaded as a Worker secret on deploy) |
+| `OIDC_SIGNING_JWK` | ES256 private JWK JSON for OIDC (ADR-0007) |
 
-**Deployed Workers** use Hyperdrive (configured in `apps/core/wrangler.jsonc`), not `DATABASE_URL`. Set secrets in production:
-
-```bash
-npx wrangler secret put SESSION_SECRET
-npx wrangler secret put OIDC_SIGNING_JWK
-```
-
-Generate an ES256 signing JWK (local or CI):
+Generate an ES256 signing JWK:
 
 ```bash
 node -e "const {generateKeyPairSync}=require('crypto');const {exportJWK}=require('jose');(async()=>{const {privateKey}=generateKeyPairSync('ec',{namedCurve:'P-256'});const jwk=await exportJWK(privateKey);jwk.kid='flaremail';jwk.alg='ES256';jwk.use='sig';console.log(JSON.stringify(jwk))})()"
 ```
 
-Paste the JSON into `OIDC_SIGNING_JWK` (`.dev.vars` locally, or pipe into `wrangler secret put OIDC_SIGNING_JWK`).
+Paste the one-line JSON into `OIDC_SIGNING_JWK` in `apps/core/.env`.
 
-#### Hyperdrive
-
-Create a Hyperdrive config pointing at Neon:
+### 3. Hyperdrive
 
 ```bash
 npx wrangler hyperdrive create flaremail-db \
   --connection-string="postgres://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require"
-```
-
-Put the returned ID in `wrangler.jsonc` under `hyperdrive`. Do **not** put connection strings in `wrangler.jsonc`.
-
-**Disable query caching** — Hyperdrive caches read-only `SELECT` results by default, which makes list/get endpoints look stale after writes:
-
-```bash
 npx wrangler hyperdrive update <HYPERDRIVE_ID> --caching-disabled true
 ```
 
-#### Local database access
+Put the returned id in `apps/core/wrangler.jsonc` under `hyperdrive`. Do **not** put connection strings in wrangler config.
 
-Hyperdrive does not run during `wrangler dev`. Wrangler still exposes the `HYPERDRIVE` binding, but routes it to your direct Neon URL via `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`. `npm run core:dev` runs `scripts/sync-local-db-env.mjs`, which sets that from `DATABASE_URL`. Maintain only the direct URL in `.env`. Worker Vitest must not write to Postgres.
+### 4. Deploy
 
-### 4. R2 and Email Sending
-
-`wrangler.jsonc` binds an R2 bucket (`BUCKET`) for raw `.eml` files and attachment bytes, and an `EMAIL` binding for outbound send via Cloudflare Email Sending. Create the R2 bucket name to match your config before deploying.
-
-### 5. Deploy the Worker
+Set `WEB_ORIGIN` in `apps/core/wrangler.jsonc` to the public **gate hostname** URL you will attach (same origin as the SPA and `/api`).
 
 ```bash
-npm run core:deploy
+npm run deploy
 ```
 
-The core Worker name is `flaremail-core` in `apps/core/wrangler.jsonc`.
+This runs migrations, deploys `flaremail-core` with a filtered secrets file (`secrets.required` only — never `DATABASE_URL`), builds `apps/web`, then deploys `flaremail-gate`. Core has `workers_dev` and Preview URLs disabled; Email Routing and the gate service binding reach it by Worker name.
 
-#### `API_BEARER_TOKEN` already in use (error 10053)
+R2: Wrangler can provision the bucket from `r2_buckets` in core wrangler config.
 
-This means the token exists as a **plain environment variable** on the Worker, blocking `wrangler secret put`. In the Cloudflare dashboard → your Worker → **Settings → Variables and Secrets**, remove `API_BEARER_TOKEN` or convert it to an encrypted secret, redeploy, then:
+### 5. Gate hostname and Email Routing
 
-```bash
-npx wrangler secret put API_BEARER_TOKEN
-```
+1. In Cloudflare → Workers → `flaremail-gate` → add your **gate hostname** (custom domain).
+2. For each mail **Domain**: Email Routing → catch-all → **Send to a Worker** → `flaremail-core`.
+3. Configure Email Sending DNS for outbound.
 
-Rotate the token if it was previously stored as plain text.
+Order matters: deploy Workers before pointing Email Routing at core; attach the **gate hostname** after gate exists.
 
-### 6. Route inbound mail
-
-For each domain in Cloudflare:
-
-1. Enable **Email Routing**.
-2. Add a rule: **Catch-all address** (or specific addresses) → **Send to a Worker** → your deployed Worker.
-3. In Flaremail **Settings**, add the domain and configure catch-all if desired (`catchAllEnabled` + `catchAllMailboxId`).
-
-Repeat for every domain whose mail should land in this database.
-
-### 7. Web app
+### 6. Web app env (optional local UI)
 
 ```bash
 cp apps/web/.env.example apps/web/.env
@@ -182,16 +160,10 @@ cp apps/web/.env.example apps/web/.env
 
 | Variable | Purpose |
 |----------|---------|
-| `API_URL` | API base path — `/api/v1` for same-origin proxy (recommended locally) |
-| `API_PROXY_TARGET` | Where Vite proxies `/api` in dev (`http://localhost:8787`) |
-| `API_BEARER_TOKEN` | Must match the Worker's `API_BEARER_TOKEN` |
+| `API_URL` | `/api/v1` (same-origin via gate) |
+| `API_PROXY_TARGET` | Where Vite proxies `/api` in `web:dev` — prefer your deployed **gate hostname** |
 
-```bash
-npm run web:dev    # http://localhost:5173
-npm run web:build  # production static build
-```
-
-For production, serve the built `apps/web/dist` behind any static host and point `/api` at your Worker (or set `API_URL` to the Worker's full `/api/v1` URL).
+Production UI is served by gate from `apps/web/dist`; you do not host the SPA separately.
 
 ---
 
@@ -199,38 +171,31 @@ For production, serve the built `apps/web/dist` behind any static host and point
 
 *For developers integrating with or extending Flaremail.*
 
-### Local stack
+### Recommended DX
 
-Terminal 1 — Worker (API + email handler on port 8787):
+Prefer `web:dev` against a **deployed** gate (set `API_PROXY_TARGET` to the **gate hostname**). Local email cannot be tested reliably.
 
-```bash
-npm run core:dev
-```
-
-Terminal 2 — Web app (port 5173, proxies `/api` to the Worker):
+### Full local Workers (optional)
 
 ```bash
-npm run web:dev
+npm run dev          # core:dev + gate:dev (concurrently)
+# or separately:
+npm run core:dev     # private core (bindings / email handler)
+npm run gate:dev     # public edge on :8787 — proxies /api/* to core when connected
+npm run web:dev      # Vite on :5173, proxies /api to API_PROXY_TARGET
 ```
 
-Health check:
+Health via gate (when both Workers are running locally):
 
 ```bash
-curl http://localhost:8787/health
+curl http://localhost:8787/api/v1/openapi.json
 ```
 
-Simulate inbound email locally:
-
-```bash
-curl --request POST 'http://localhost:8787/cdn-cgi/handler/email' \
-  --url-query 'from=sender@example.com' \
-  --url-query 'to=anything@yourdomain.com' \
-  --data-raw $'From: sender@example.com\r\nTo: anything@yourdomain.com\r\nSubject: Test\r\nMessage-ID: <test-local-1@example.com>\r\nDate: Tue, 30 Jun 2026 12:00:00 +0000\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nHello from local dev'
-```
+Simulate inbound email only works against a running core with Email Routing tooling; prefer a deployed stack for mail path testing.
 
 ### API reference
 
-Human-readable: [`api.md`](./api.md)
+Human-readable: [`docs/API.md`](./docs/API.md)
 
 Machine-readable:
 
@@ -256,8 +221,10 @@ Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) Problem Details (`
 After changing `openapi.yaml`:
 
 ```bash
-npm run core:apigen   # YAML → apps/core/src/openapi/spec.json
-npm run web:apigen      # OpenAPI → apps/web/src/lib/api/generated/
+npm run apigen        # core OpenAPI JSON + web typed client
+# or:
+npm run core:apigen
+npm run web:apigen
 ```
 
 ### Tests
@@ -277,25 +244,30 @@ npm run web:test
 
 | Layer | Technology |
 |-------|------------|
-| Inbound mail | Cloudflare Email Routing → Worker `email()` handler |
-| Outbound mail | Cloudflare Email Sending (`send_email` binding) |
+| Public edge | `flaremail-gate` — SPA assets + `/api/*` → core |
+| Inbound mail | Cloudflare Email Routing → **core** `email()` handler |
+| Outbound mail | Cloudflare Email Sending (`send_email` on core) |
 | MIME parsing | [postal-mime](https://github.com/postalsys/postal-mime) |
-| HTTP API | Cloudflare Worker `fetch` handler |
+| HTTP API | **core** `fetch` handler (private; via gate service binding) |
 | Metadata | Neon Postgres via Drizzle ORM + Hyperdrive |
 | Blob storage | Cloudflare R2 (raw `.eml`, attachment bytes) |
-| Web UI | React, Vite, TanStack Query, TipTap |
-| Scheduled jobs | Worker cron (`*/2 * * * *`) — validation receive timeouts |
+| Web UI | React, Vite, TanStack Query, TipTap (built into gate) |
+| Scheduled jobs | Core cron (`*/2 * * * *`) — validation receive timeouts |
+
+Packaging decision: [`docs/adr/0010-gate-and-private-core.md`](./docs/adr/0010-gate-and-private-core.md).
 
 ### Data flow
 
 ```
-Inbound SMTP → Email Routing → Worker email()
+Browser → gate (SPA + /api/*) → service binding → core API
+
+Inbound SMTP → Email Routing → core email()
   → resolve mailbox (exact | alias | catch_all)
   → alias: forward via CF or store on target mailbox
   → persist message (Postgres) + raw EML & attachments (R2)
   → sync thread_mailboxes (folder, read, starred, preview)
 
-Outbound → POST /api/v1/messages/send (or reply/forward/draft send)
+Outbound → POST /api/v1/messages/send (via gate)
   → build MIME → Email Sending → persist sent message + thread update
 ```
 
@@ -303,7 +275,7 @@ Outbound → POST /api/v1/messages/send (or reply/forward/draft send)
 
 ```
 apps/
-  worker/          Cloudflare Worker — email handler, HTTP API, cron
+  core/            Private Worker — email, HTTP API, cron, bindings
     src/
       controllers/   HTTP adapters
       services/      Read orchestration, cascade deletes
@@ -311,14 +283,15 @@ apps/
       db/            Drizzle schema + client
     drizzle/       SQL migrations
     openapi.yaml   API contract (source of truth)
-  web/             React SPA
+  gate/            Public Worker — SPA assets + /api proxy to core
+  web/             React SPA source (built into gate; not a Worker)
 docs/
   adr/             Architecture decision records
-CONTEXT.md         Domain glossary and terminology
-api.md             Human-readable API reference
+  CONTEXT.md       Domain glossary and terminology
+  API.md           Human-readable API reference
 ```
 
-Worker layering is documented in [`docs/adr/0001-worker-layering.md`](./docs/adr/0001-worker-layering.md). Domain readiness validation in [`docs/adr/0002-domain-readiness-validation.md`](./docs/adr/0002-domain-readiness-validation.md).
+Core layering is documented in [`docs/adr/0001-worker-layering.md`](./docs/adr/0001-worker-layering.md). Domain readiness validation in [`docs/adr/0002-domain-readiness-validation.md`](./docs/adr/0002-domain-readiness-validation.md).
 
 ### Stored data (inbound)
 
@@ -333,7 +306,7 @@ Attachment metadata is in the `attachments` table. Visibility across mailboxes i
 
 ### Domain language
 
-Use the terms in [`CONTEXT.md`](./CONTEXT.md) when writing code or docs — **Domain**, **Mailbox**, **Thread**, **Folder**, **Label**, **Draft**, **Command**, etc. The glossary there is canonical.
+Use the terms in [`docs/CONTEXT.md`](./docs/CONTEXT.md) when writing code or docs — **Domain**, **gate hostname**, **gate**, **core**, **Mailbox**, **Thread**, **Folder**, **Label**, **Draft**, **Command**, etc. The glossary there is canonical.
 
 ---
 
@@ -341,18 +314,24 @@ Use the terms in [`CONTEXT.md`](./CONTEXT.md) when writing code or docs — **Do
 
 | Command | Description |
 |---------|-------------|
-| `npm run core:dev` | Local Worker + email handler |
-| `npm run core:deploy` | Deploy Worker to Cloudflare |
-| `npm run core:test` | Worker tests (Vitest + Workers pool) |
-| `npm run core:typegen` | Regenerate Worker binding types |
+| `npm run deploy` | Migrate + deploy core, then build web + deploy gate |
+| `npm run dev` | Local core + gate (concurrently) |
+| `npm run core:dev` | Local core Worker |
+| `npm run core:deploy` | Migrate + deploy core with filtered secrets |
+| `npm run core:test` | Core tests (Vitest + Workers pool) |
+| `npm run core:typegen` | Regenerate core binding types |
 | `npm run core:apigen` | Regenerate OpenAPI JSON from YAML |
+| `npm run gate:dev` | Local gate Worker |
+| `npm run gate:deploy` | Build web + deploy gate |
 | `npm run db:generate` | Generate SQL migrations from schema |
 | `npm run db:migrate` | Apply migrations to Neon |
 | `npm run db:push` | Push schema directly (dev only) |
 | `npm run db:pull` | Pull schema from Neon |
 | `npm run db:studio` | Open Drizzle Studio |
-| `npm run web:dev` | Web app dev server |
+| `npm run web:dev` | Web app Vite server (proxy to gate) |
 | `npm run web:build` | Production web build |
 | `npm run web:start` | Preview production build |
 | `npm run web:test` | Web unit tests |
 | `npm run web:apigen` | Regenerate typed API client |
+| `npm run apigen` | core + web API codegen |
+| `npm run typegen` | Regenerate core types |
