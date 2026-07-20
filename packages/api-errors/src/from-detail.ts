@@ -100,8 +100,14 @@ const DETAIL_TO_CODE: Record<string, ApiErrorCode> = {
 	"Passkey registration could not be verified": "passkey-registration-failed",
 	"Passkey sign-in could not be verified": "passkey-sign-in-failed",
 	"Invalid passkey response": "invalid-passkey-response",
+	"Password must be at least 8 characters and include a letter and a number":
+		"password-too-weak",
 	"Invalid password": "invalid-password",
 	"Invalid recovery email address": "invalid-recovery-email",
+	"Recovery email cannot use a mailbox domain hosted by this instance":
+		"recovery-email-hosted-domain",
+	"Recovery email cannot use a mailbox hosted by this instance":
+		"recovery-email-hosted-mailbox",
 	"Phone number must be a valid international number in E.164 format (e.g. +14155552671)":
 		"invalid-phone-number",
 	"This recovery email is already in use by another account":
