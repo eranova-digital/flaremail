@@ -21,6 +21,7 @@ import {
 } from "../../lib/local-part-policy";
 import { createInviteRecord } from "../auth";
 import { normalizeEmailAddress, parseEmailAddress } from "../../lib/normalize-email-address";
+import { assertValidPhoneNumber } from "../../lib/validate-phone";
 import {
 	sendInviteTransactionalEmail,
 	type TransactionalEmailDeps,
@@ -63,6 +64,8 @@ export async function inviteAccount(
 	if (principal.role === "manager" && !principal.domainIds.includes(input.domainId)) {
 		throw new Error("Forbidden");
 	}
+
+	const phone = assertValidPhoneNumber(input.phone);
 
 	const role = input.role ?? "user";
 	await authorizeAccount(db, principal, "", "assign_invite_role", { inviteRole: role });
@@ -157,7 +160,7 @@ export async function inviteAccount(
 			firstName: input.firstName ?? "",
 			lastName: input.lastName ?? "",
 			recoveryAddress: input.recoveryAddress ?? null,
-			phone: input.phone ?? null,
+			phone: phone,
 			addressCountry: input.addressCountry ?? null,
 			addressState: input.addressState ?? null,
 			addressCity: input.addressCity ?? null,

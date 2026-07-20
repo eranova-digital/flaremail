@@ -98,6 +98,7 @@ export const API_ERROR_CODES = [
 	"passkey-sign-in-failed",
 	"invalid-passkey-response",
 	"invalid-password",
+	"invalid-phone-number",
 	"invalid-recovery-email",
 	"recovery-email-in-use",
 	"no-recovery-email-configured",

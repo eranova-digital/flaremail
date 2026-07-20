@@ -15,6 +15,7 @@ import {
 	authorizeMailbox,
 } from "../../lib/auth/access";
 import type { Principal } from "../../lib/auth/types";
+import { assertValidPhoneNumber } from "../../lib/validate-phone";
 
 export const PROFILE_LOCKABLE_FIELDS = [
 	"firstName",
@@ -131,7 +132,7 @@ export function parseProfileInput(value: Record<string, unknown>) {
 			value.phone === null
 				? null
 				: typeof value.phone === "string"
-					? value.phone
+					? assertValidPhoneNumber(value.phone)
 					: undefined,
 		addressCountry:
 			address?.country === null

@@ -102,6 +102,8 @@ const DETAIL_TO_CODE: Record<string, ApiErrorCode> = {
 	"Invalid passkey response": "invalid-passkey-response",
 	"Invalid password": "invalid-password",
 	"Invalid recovery email address": "invalid-recovery-email",
+	"Phone number must be a valid international number in E.164 format (e.g. +14155552671)":
+		"invalid-phone-number",
 	"This recovery email is already in use by another account":
 		"recovery-email-in-use",
 	"No recovery email configured": "no-recovery-email-configured",

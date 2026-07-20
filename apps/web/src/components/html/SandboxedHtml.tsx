@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -8,18 +8,33 @@ type SandboxedHtmlProps = {
 	className?: string;
 	/** Extra CSS injected into the iframe document. */
 	bodyCss?: string;
+	/**
+	 * When true, inherit the host theme (transparent canvas + foreground color).
+	 * When false, use a light paper surface for structured HTML emails.
+	 */
+	adaptToTheme?: boolean;
 };
 
 /**
- * Renders untrusted HTML in a sandboxed iframe (no scripts, no same-origin).
+ * Renders untrusted HTML in a sandboxed iframe (no scripts).
  * Popups are allowed so http(s) links can open in a new tab.
+ * `allow-same-origin` is required only to measure content height.
  */
 export function buildSandboxedHtmlSrcDoc(
 	html: string,
 	bodyCss = "",
+	adaptToTheme = true,
 ): string {
+	const themeCss = adaptToTheme
+		? [
+				"html, body { margin: 0; padding: 0; background: transparent; color: inherit; font: inherit; color-scheme: inherit; }",
+			].join("\n")
+		: [
+				"html, body { margin: 0; padding: 0; background: #ffffff; color: #0a0a0a; font: inherit; color-scheme: light; }",
+			].join("\n");
+
 	const resetCss = [
-		"html, body { margin: 0; padding: 0; background: transparent; color: inherit; font: inherit; }",
+		themeCss,
 		'table[role="presentation"], table[border="0"] { border: none !important; }',
 		"a { color: #2563eb; }",
 		"img { max-width: 100%; height: auto; }",
@@ -30,10 +45,10 @@ export function buildSandboxedHtmlSrcDoc(
 
 	return [
 		"<!DOCTYPE html>",
-		"<html><head>",
+		'<html><head>',
 		'<meta charset="utf-8" />',
 		'<meta name="viewport" content="width=device-width, initial-scale=1" />',
-		'<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https: http: data: blob:; style-src \'unsafe-inline\'; font-src data:; base-uri \'none\'; form-action \'none\'" />',
+		`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data: blob:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'" />`,
 		`<style>${resetCss}</style>`,
 		"</head><body>",
 		html,
@@ -41,16 +56,89 @@ export function buildSandboxedHtmlSrcDoc(
 	].join("");
 }
 
+function measureIframeHeight(iframe: HTMLIFrameElement): number {
+	try {
+		const doc = iframe.contentDocument;
+		if (!doc?.documentElement) {
+			return 0;
+		}
+		const body = doc.body;
+		const root = doc.documentElement;
+		return Math.ceil(
+			Math.max(
+				body?.scrollHeight ?? 0,
+				body?.offsetHeight ?? 0,
+				root.scrollHeight,
+				root.offsetHeight,
+			),
+		);
+	} catch {
+		return 0;
+	}
+}
+
 export function SandboxedHtml({
 	html,
 	title,
 	className,
 	bodyCss,
+	adaptToTheme = true,
 }: SandboxedHtmlProps) {
+	const iframeRef = useRef<HTMLIFrameElement>(null);
+	const [height, setHeight] = useState(128);
+
 	const srcDoc = useMemo(
-		() => (html.trim() ? buildSandboxedHtmlSrcDoc(html, bodyCss) : ""),
-		[html, bodyCss],
+		() =>
+			html.trim()
+				? buildSandboxedHtmlSrcDoc(html, bodyCss, adaptToTheme)
+				: "",
+		[html, bodyCss, adaptToTheme],
 	);
+
+	useEffect(() => {
+		const iframe = iframeRef.current;
+		if (!iframe || !srcDoc) {
+			return;
+		}
+
+		const syncHeight = () => {
+			const next = measureIframeHeight(iframe);
+			if (next > 0) {
+				setHeight(next);
+			}
+		};
+
+		const onLoad = () => {
+			syncHeight();
+			const doc = iframe.contentDocument;
+			if (!doc?.body) {
+				return;
+			}
+			const observer = new ResizeObserver(() => syncHeight());
+			observer.observe(doc.body);
+			observer.observe(doc.documentElement);
+			iframe.dataset.resizeObserver = "1";
+			(
+				iframe as HTMLIFrameElement & {
+					_sandboxedResizeObserver?: ResizeObserver;
+				}
+			)._sandboxedResizeObserver = observer;
+		};
+
+		iframe.addEventListener("load", onLoad);
+		if (iframe.contentDocument?.readyState === "complete") {
+			onLoad();
+		}
+
+		return () => {
+			iframe.removeEventListener("load", onLoad);
+			const typed = iframe as HTMLIFrameElement & {
+				_sandboxedResizeObserver?: ResizeObserver;
+			};
+			typed._sandboxedResizeObserver?.disconnect();
+			delete typed._sandboxedResizeObserver;
+		};
+	}, [srcDoc]);
 
 	if (!srcDoc) {
 		return null;
@@ -58,10 +146,12 @@ export function SandboxedHtml({
 
 	return (
 		<iframe
+			ref={iframeRef}
 			title={title}
-			sandbox="allow-popups allow-popups-to-escape-sandbox"
+			sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
 			referrerPolicy="no-referrer"
 			srcDoc={srcDoc}
+			style={{ height }}
 			className={cn("bg-transparent w-full border-0", className)}
 		/>
 	);

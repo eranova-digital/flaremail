@@ -90,6 +90,11 @@ export function ProfileFieldsGrid({
 				) : (
 					<Input
 						id={inputId}
+						type={key === "phone" ? "tel" : "text"}
+						inputMode={key === "phone" ? "tel" : undefined}
+						placeholder={
+							key === "phone" ? t("profile.fields.phonePlaceholder") : undefined
+						}
 						value={values[key] ?? ""}
 						autoComplete={AUTOCOMPLETE[key]}
 						onChange={(event) => onChange(key, event.target.value)}

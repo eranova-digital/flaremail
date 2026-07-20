@@ -16,6 +16,7 @@ import { hashPassword, hashSecret, verifyPassword } from "../lib/auth/password";
 import { loadAccountProfile } from "../lib/auth/principal";
 import { toProfilePicturePayload } from "../lib/profile-picture/payload";
 import { requireSessionSecret } from "../lib/auth/resolve-principal";
+import { assertValidPhoneNumber } from "../lib/validate-phone";
 import {
 	resolveAccountSenderDomain,
 	sendPasswordResetTransactionalEmail,
@@ -618,7 +619,12 @@ function buildActivationProfilePatch(
 		["firstName", input.firstName],
 		["lastName", input.lastName],
 		["recoveryAddress", input.recoveryAddress],
-		["phone", input.phone],
+		[
+			"phone",
+			input.phone === undefined
+				? undefined
+				: assertValidPhoneNumber(input.phone),
+		],
 		["addressCountry", input.addressCountry],
 		["addressState", input.addressState],
 		["addressCity", input.addressCity],
