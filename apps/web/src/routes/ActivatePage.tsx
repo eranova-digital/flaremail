@@ -5,6 +5,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
+import { PasswordStrengthHints } from "@/components/auth/PasswordStrengthHints";
 import { RecoveryEmailSetup } from "@/components/auth/RecoveryEmailSetup";
 import { AuthCodeInput, isAuthCodeComplete } from "@/components/auth/AuthCodeInput";
 import { PageLoader } from "@/components/PageLoader";
@@ -403,10 +404,9 @@ export function ActivatePage() {
 									onChange={(event) => setPassword(event.target.value)}
 									disabled={submitting}
 									required
+									aria-invalid={Boolean(password) && !passwordStrong}
 								/>
-								<p className="text-muted-foreground text-xs">
-									{t("activate.passwordHint")}
-								</p>
+								<PasswordStrengthHints password={password} />
 							</div>
 
 							<div className="space-y-2">

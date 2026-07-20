@@ -285,6 +285,12 @@
 		"loading": "Loading…",
 		"passwordsDoNotMatch": "Passwords do not match.",
 		"passwordTooWeak": "Password must be at least 8 characters and include a letter and a number.",
+		"passwordStrength": {
+			"hint": "At least 8 characters, including a letter and a number. Prefer a unique password you don't use elsewhere.",
+			"minLength": "At least 8 characters",
+			"hasLetter": "Contains a letter",
+			"hasNumber": "Contains a number"
+		},
 		"password-too-weak": "Password must be at least 8 characters and include a letter and a number.",
 		"login": {
 			"title": "Welcome back",

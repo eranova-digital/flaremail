@@ -5,6 +5,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
+import { PasswordStrengthHints } from "@/components/auth/PasswordStrengthHints";
 import { AuthCodeInput } from "@/components/auth/AuthCodeInput";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -342,10 +343,9 @@ export function ResetPasswordPage() {
 									disabled={submitting}
 									autoFocus
 									required
+									aria-invalid={Boolean(password) && !passwordStrong}
 								/>
-								<p className="text-muted-foreground text-xs">
-									{t("resetPassword.password.passwordHint")}
-								</p>
+								<PasswordStrengthHints password={password} />
 							</div>
 							<div className="space-y-2">
 								<label htmlFor="confirm-password" className="text-sm font-medium">
