@@ -3,6 +3,9 @@ import { problemResponse, requestInstance } from "./problem";
 /** Default max JSON body size for API requests (256 KiB). */
 export const MAX_JSON_BODY_BYTES = 256 * 1024;
 
+/** Larger limit for draft/send payloads that embed base64 attachments. */
+export const MAX_OUTBOUND_JSON_BODY_BYTES = 12 * 1024 * 1024;
+
 /** Stricter limit for auth endpoints that are cloned for rate-limit peeks. */
 export const MAX_AUTH_JSON_BODY_BYTES = 16 * 1024;
 
