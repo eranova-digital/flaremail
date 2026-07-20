@@ -14,9 +14,7 @@ import { config } from "dotenv";
 
 const coreRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-/**
- * Parse wrangler.jsonc enough to read secrets.required (strip // and /* */ comments).
- */
+/** Parse wrangler.jsonc enough to read secrets.required (strips line and block comments). */
 function readRequiredSecrets() {
 	const raw = readFileSync(resolve(coreRoot, "wrangler.jsonc"), "utf8");
 	const json = raw
