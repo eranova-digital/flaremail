@@ -89,8 +89,14 @@ export function MfaSetupPanel({
 		<div className="space-y-4">
 			<p className="text-sm">{t("mfaSetup.instructions")}</p>
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-				<div className="bg-background inline-flex rounded-lg border p-3">
-					<QRCodeSVG value={setup.otpauthUrl} size={160} />
+				<div className="inline-flex rounded-lg border bg-white p-3">
+					<QRCodeSVG
+						value={setup.otpauthUrl}
+						size={160}
+						bgColor="#FFFFFF"
+						fgColor="#000000"
+						includeMargin
+					/>
 				</div>
 				<div className="space-y-2 text-sm">
 					<p className="font-medium">{t("mfaSetup.cantScan")}</p>
