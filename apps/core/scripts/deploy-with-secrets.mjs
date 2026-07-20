@@ -21,7 +21,8 @@ function readRequiredSecrets() {
 	const raw = readFileSync(resolve(coreRoot, "wrangler.jsonc"), "utf8");
 	const json = raw
 		.replace(/\/\*[\s\S]*?\*\//g, "")
-		.replace(/^\s*\/\/.*$/gm, "");
+		.replace(/^\s*\/\/.*$/gm, "")
+		.replace(/,\s*([}\]])/g, "$1");
 	const parsed = JSON.parse(json);
 	const required = parsed?.secrets?.required;
 	if (!Array.isArray(required) || required.length === 0) {
