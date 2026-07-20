@@ -48,7 +48,7 @@ export async function serveMessageExternalImage(
 	}
 	headers.set("Content-Type", cached.mimeType);
 	headers.set("Cache-Control", "private, max-age=86400");
-	headers.set("Content-Disposition", "attachment");
+	headers.set("Content-Disposition", "inline");
 	headers.set("X-Content-Type-Options", "nosniff");
 
 	return new Response(cached.body.body, { headers });
