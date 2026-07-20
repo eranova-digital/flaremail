@@ -221,7 +221,7 @@ export const v1Routes: RouteDefinition[] = [
 	{
 		method: "POST",
 		path: `${prefix}/mailboxes/:mailboxId/labels`,
-		action: "domain_admin",
+		action: "mail_write",
 		scopes: ["labels:create"],
 		handler: handleCreateLabel,
 	},
@@ -235,14 +235,14 @@ export const v1Routes: RouteDefinition[] = [
 	{
 		method: "PATCH",
 		path: `${prefix}/mailboxes/:mailboxId/labels/:id`,
-		action: "domain_admin",
+		action: "mail_write",
 		scopes: ["labels:update"],
 		handler: handleUpdateLabel,
 	},
 	{
 		method: "DELETE",
 		path: `${prefix}/mailboxes/:mailboxId/labels/:id`,
-		action: "domain_admin",
+		action: "mail_write",
 		scopes: ["labels:delete"],
 		handler: handleDeleteLabel,
 	},
