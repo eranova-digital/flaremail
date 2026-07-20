@@ -17,7 +17,7 @@
 	"hyperdrive": [
 		{
 			"binding": "HYPERDRIVE",
-			"id": "88a7f85b887e47c3a991f55ba3c36f0e",
+			"id": "b8a1e003fcab453e9258ee6576d94302",
 		},
 	],
 	"r2_buckets": [
@@ -31,7 +31,7 @@
 	},
 	"vars": {
 		// Public gate hostname URL (OIDC redirects / cookie origin). Same origin as /api in production.
-		"WEB_ORIGIN": "http://localhost:8787",
+		"WEB_ORIGIN": "https://mail.eranova.ro",
 	},
 	"send_email": [
 		{
