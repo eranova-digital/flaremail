@@ -8,7 +8,7 @@ import {
 	setStyleIfMissing,
 	WEB_COMPOSE_HTML_PREPARE_RULES,
 	imageStyle,
-} from "@test-worker/email-html-prepare";
+} from "@flaremail/email-html-prepare";
 import type { OutboundAttachmentInput } from "@/lib/api/client";
 import { fetchAttachmentBlob } from "@/lib/attachments";
 

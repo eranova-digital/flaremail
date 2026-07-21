@@ -1,0 +1,48 @@
+{
+	"name": "@flaremail/core",
+	"version": "0.9.0",
+	"private": true,
+	"scripts": {
+		"deploy": "npm run db:migrate && node scripts/deploy-with-secrets.mjs",
+		"dev": "node scripts/with-env.mjs wrangler dev",
+		"start": "node scripts/with-env.mjs wrangler dev",
+		"typegen": "wrangler types",
+		"test": "vitest",
+		"apigen": "node -e \"const fs=require('fs');const YAML=require('yaml');fs.mkdirSync('src/openapi',{recursive:true});fs.writeFileSync('src/openapi/spec.json',JSON.stringify(YAML.parse(fs.readFileSync('openapi.yaml','utf8')),null,2));\"",
+		"cf-typegen": "wrangler types",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:pull": "drizzle-kit pull",
+		"db:studio": "drizzle-kit studio"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.12.4",
+		"@types/node": "^26.0.1",
+		"@types/pg": "^8.20.0",
+		"dotenv": "^17.4.2",
+		"drizzle-kit": "^0.31.10",
+		"typescript": "^5.5.2",
+		"vitest": "~3.2.0",
+		"wrangler": "^4.105.0",
+		"yaml": "^2.9.0"
+	},
+	"dependencies": {
+		"@jsquash/jpeg": "^1.6.0",
+		"@jsquash/png": "^3.1.1",
+		"@jsquash/resize": "^2.1.1",
+		"@jsquash/webp": "^1.5.0",
+		"@simplewebauthn/server": "^13.3.2",
+		"@flaremail/api-errors": "*",
+		"@flaremail/email-html-prepare": "*",
+		"@flaremail/identity-name-pattern": "*",
+		"@flaremail/local-part-policy": "*",
+		"@flaremail/mail-quoting": "*",
+		"drizzle-orm": "^0.45.2",
+		"jose": "^6.2.3",
+		"mimetext": "^3.0.28",
+		"pg": "^8.22.0",
+		"postal-mime": "^2.7.5",
+		"wasm-feature-detect": "^1.8.0"
+	}
+}

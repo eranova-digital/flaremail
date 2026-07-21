@@ -17,7 +17,7 @@ import {
 	type Identity,
 	type IdentityInput,
 } from "@/lib/identities/api";
-import type { IdentityNamePattern } from "@test-worker/identity-name-pattern";
+import type { IdentityNamePattern } from "@flaremail/identity-name-pattern";
 
 type IdentityFormProps = {
 	initial?: Identity;

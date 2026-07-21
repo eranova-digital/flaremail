@@ -5,7 +5,7 @@ import {
 	resolveInitialLocale,
 	resources,
 	type AppLocale,
-} from "@test-worker/i18n";
+} from "@flaremail/i18n";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 

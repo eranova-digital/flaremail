@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+	cancelDomainValidationRun,
 	createDomainValidationRun,
 	getDomain,
 	getDomainValidationRun,
@@ -61,6 +62,23 @@ export function useDomainValidationRun(
 	});
 }
 
+function invalidateDomainValidationQueries(
+	queryClient: ReturnType<typeof useQueryClient>,
+	domainId: string,
+	runId?: string | null,
+) {
+	queryClient.invalidateQueries({ queryKey: queryKeys.domains });
+	queryClient.invalidateQueries({ queryKey: queryKeys.domain(domainId) });
+	queryClient.invalidateQueries({
+		queryKey: queryKeys.domainValidationRuns(domainId),
+	});
+	if (runId) {
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.domainValidationRun(domainId, runId),
+		});
+	}
+}
+
 export function useRecheckDomain() {
 	const queryClient = useQueryClient();
 
@@ -73,16 +91,30 @@ export function useRecheckDomain() {
 			return assertData(data, "createDomainValidationRun");
 		},
 		onSuccess: (run, domainId) => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.domains });
-			queryClient.invalidateQueries({ queryKey: queryKeys.domain(domainId) });
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.domainValidationRuns(domainId),
+			invalidateDomainValidationQueries(queryClient, domainId, run.id);
+		},
+	});
+}
+
+export function useCancelDomainValidation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async ({
+			domainId,
+			runId,
+		}: {
+			domainId: string;
+			runId: string;
+		}) => {
+			const { data } = await cancelDomainValidationRun({
+				throwOnError: true,
+				path: { id: domainId, runId },
 			});
-			if (run.id) {
-				queryClient.invalidateQueries({
-					queryKey: queryKeys.domainValidationRun(domainId, run.id),
-				});
-			}
+			return assertData(data, "cancelDomainValidationRun");
+		},
+		onSuccess: (run, { domainId }) => {
+			invalidateDomainValidationQueries(queryClient, domainId, run.id);
 		},
 	});
 }

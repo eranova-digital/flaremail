@@ -1,12 +1,26 @@
 # Email Platform
 
-A Cloudflare Worker that receives inbound mail, stores messages in Postgres and R2, and exposes a versioned HTTP API for mailbox management and outbound operations.
+Flaremail is self-hosted email on Cloudflare: a public **gate** serves the web app and proxies `/api/*` to a private **core** Worker that receives inbound mail, stores messages in Postgres and R2, and owns the HTTP API, crons, and bindings.
+
+This file is a **glossary** only. Implementation and deploy steps live in the [root README](../README.md) and app READMEs. Hard decisions live in [adr/](./adr/).
 
 ## Language
 
 **Domain**:
-A registered internet domain the platform accepts mail for and can send from.
-_Avoid_: zone, site
+A registered internet domain the platform accepts mail for and can send from. Distinct from the **gate hostname** (web/API front door).
+_Avoid_: zone, site, gate hostname
+
+**Gate hostname**:
+The public host attached to the **gate** Worker (web UI + `/api` proxy). Not a Flaremail **Domain** record; may share a zone with mail **Domains** or live on a different host (e.g. `mail.acme.com` vs `acme.com`).
+_Avoid_: Domain Y, web domain, app domain, front door domain
+
+**Gate**:
+The public edge Worker that serves the web SPA and proxies `/api/*` to **core**. Not the mail/API Worker.
+_Avoid_: edge, CDN, frontend worker, web worker
+
+**Core**:
+The private Worker that owns email, the HTTP API, crons, and platform bindings (R2, Hyperdrive, Email Routing). Reached from the browser only via the **gate** proxy.
+_Avoid_: worker (as the product name for this role), API worker, backend, Mode A
 
 **Account**:
 An authentication identity in the platform. Most **accounts** have exactly one **primary mailbox** that uniquely identifies them. An **account** may be granted access to additional **mailboxes** beyond its primary. The **intendant** is the sole exception: it has no **primary mailbox** and cannot hold **mailbox grants**.
@@ -224,8 +238,12 @@ A long-lived credential any **account** can create and manage for non-interactiv
 _Avoid_: bearer token, personal access token, service token
 
 **Operator**:
-Someone using Flaremail to manage platform **mailboxes** via the Worker API. An **operator** is an authenticated **account** acting through the web UI, an **API key**, or an OIDC session.
+Someone who runs or uses a Flaremail instance. Includes authenticated **accounts** acting through the web UI, an **API key**, or an OIDC session, and the person who deploys/configures the instance.
 _Avoid_: user, admin account
+
+**Installing operator**:
+The **operator** who deploys and configures Flaremail (Cloudflare, Neon/Hyperdrive, env, **gate hostname**, Email Routing). Not necessarily a signed-in **account** yet.
+_Avoid_: IT person, self-hoster, deployer, sysadmin (as the product term)
 
 **Domain readiness**:
 Advisory health of a **domain**'s mail configuration and flow (DNS checks and a loop email). Does not affect whether mail is accepted or sent.

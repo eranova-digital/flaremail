@@ -45,7 +45,7 @@ export function SharedMailboxGrantEditor({
 		);
 		return (accountsQuery.data ?? []).filter(
 			(account) =>
-				account.role === "user" &&
+				(account.role === "user" || account.role === "manager") &&
 				account.status === "active" &&
 				!grantedIds.has(account.id),
 		);

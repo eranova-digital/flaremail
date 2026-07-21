@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Flaremail">
+  <rect width="128" height="128" rx="28" fill="#0b1220"/>
+  <path
+    fill="#00aeef"
+    transform="translate(18 18) scale(0.092)"
+    d="M665.63,14.32q-72.88,403.5,242.68,503.22-376.53,13.51-574.63,468.05,100.54-410.99-242.24-468.05Q455.14,440.47,665.63,14.32Z"
+  />
+</svg>

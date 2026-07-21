@@ -188,7 +188,10 @@
 		"passkey-sign-in-failed": "Passkey sign-in could not be verified",
 		"invalid-passkey-response": "Invalid passkey response",
 		"invalid-password": "Invalid password",
+		"invalid-phone-number": "Phone number must be a valid international number in E.164 format (e.g. +14155552671)",
 		"invalid-recovery-email": "Invalid recovery email address",
+		"recovery-email-hosted-domain": "Recovery email cannot use a domain hosted by this mail server",
+		"recovery-email-hosted-mailbox": "Recovery email cannot use a mailbox on this mail server",
 		"recovery-email-in-use": "This recovery email is already in use by another account",
 		"no-recovery-email-configured": "No recovery email configured",
 		"eligible-account-required": "Eligible account required",
@@ -281,6 +284,14 @@
 		},
 		"loading": "Loading…",
 		"passwordsDoNotMatch": "Passwords do not match.",
+		"passwordTooWeak": "Password must be at least 8 characters and include a letter and a number.",
+		"passwordStrength": {
+			"hint": "At least 8 characters, including a letter and a number. Prefer a unique password you don't use elsewhere.",
+			"minLength": "At least 8 characters",
+			"hasLetter": "Contains a letter",
+			"hasNumber": "Contains a number"
+		},
+		"password-too-weak": "Password must be at least 8 characters and include a letter and a number.",
 		"login": {
 			"title": "Welcome back",
 			"description": "Sign in to your {{appName}} account.",
@@ -319,7 +330,7 @@
 			"profileHint": "Add or update your details. Locked fields were set by your administrator.",
 			"lockedByAdmin": "Locked by your administrator",
 			"choosePassword": "Choose a password",
-			"passwordHint": "Use a long, unique password you don't use anywhere else.",
+			"passwordHint": "At least 8 characters, including a letter and a number. Prefer a unique password you don't use elsewhere.",
 			"confirmPassword": "Confirm password",
 			"activating": "Activating…",
 			"activateAccount": "Activate account",
@@ -384,7 +395,7 @@
 				"description": "Choose a new password for your account.",
 				"yourMailbox": "Your mailbox",
 				"newPassword": "New password",
-				"passwordHint": "Use a long, unique password you don't use anywhere else.",
+				"passwordHint": "At least 8 characters, including a letter and a number. Prefer a unique password you don't use elsewhere.",
 				"confirmPassword": "Confirm password",
 				"resetting": "Resetting…",
 				"reset": "Reset password"
@@ -839,6 +850,7 @@
 			"personalDetails": "Personal details",
 			"saveFailed": "Save failed",
 			"saveErrorTitle": "Couldn't save profile",
+			"invalidPhone": "Enter a valid phone number in international format (e.g. +14155552671).",
 			"saved": "Profile saved.",
 			"saving": "Saving…",
 			"save": "Save profile",
@@ -852,12 +864,18 @@
 				"lastName": "Last name",
 				"recoveryAddress": "Recovery address",
 				"phone": "Phone",
+				"phonePlaceholder": "+14155552671",
 				"addressCountry": "Country",
 				"addressState": "State",
 				"addressCity": "City",
 				"addressLine1": "Address line 1",
 				"addressLine2": "Address line 2",
-				"addressHeading": "Address"
+				"addressHeading": "Address",
+				"selectCountry": "Select country…",
+				"selectState": "Select state/province…",
+				"selectCity": "Select city…",
+				"locationSearchPlaceholder": "Search…",
+				"locationEmpty": "No results found."
 			},
 			"picture": {
 				"change": "Change photo",
@@ -1662,6 +1680,8 @@
 			"unavailableTitle": "This domain is unavailable to your account",
 			"checking": "Checking…",
 			"recheck": "Recheck",
+			"cancel": "Cancel",
+			"cancelFailed": "Cancel failed",
 			"overallStatus": "Overall status",
 			"noRunYet": "No validation run yet. Click Recheck to start one.",
 			"lastChecked": "Last checked {{when}}",
@@ -1753,6 +1773,7 @@
 			"history": {
 				"empty": "No validation runs yet.",
 				"inProgress": "In progress",
+				"cancelled": "Cancelled",
 				"completed": "Completed"
 			}
 		},

@@ -1,0 +1,265 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1782771349381,
+      "tag": "0000_wild_zemo",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782772059728,
+      "tag": "0001_free_cable",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782772800000,
+      "tag": "0002_message_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782773400000,
+      "tag": "0003_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782774000000,
+      "tag": "0004_operational_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782774600000,
+      "tag": "0005_domains_mailboxes",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782775200000,
+      "tag": "0006_threads_labels_mailbox_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782775800000,
+      "tag": "0007_outbound_schema_prep",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782776400000,
+      "tag": "0008_restore_folder",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782777000000,
+      "tag": "0009_mailbox_scoped_threads",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782777600000,
+      "tag": "0010_drop_cf_email_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1782778200000,
+      "tag": "0011_alias_target_address",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1782778800000,
+      "tag": "0012_deletion_matrix_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1782779400000,
+      "tag": "0013_system_mailbox_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1782780000000,
+      "tag": "0014_domain_validation",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1782780600000,
+      "tag": "0015_blackhole_mailbox_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1782781200000,
+      "tag": "0016_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1782781800000,
+      "tag": "0017_ensure_blackhole_mailbox_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1782782400000,
+      "tag": "0018_account_totp",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1782783000000,
+      "tag": "0019_session_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1782783600000,
+      "tag": "0020_email_verification_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1782784200000,
+      "tag": "0021_instance_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1782784800000,
+      "tag": "0022_persist_noreply_outbound",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1782785400000,
+      "tag": "0023_account_passkeys",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1782786000000,
+      "tag": "0024_profile_picture",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1782786600000,
+      "tag": "0025_thread_seen_by_and_message_sent_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1782787200000,
+      "tag": "0026_message_seen_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1782787800000,
+      "tag": "0027_message_external_images",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1782788400000,
+      "tag": "0028_api_key_kinds_and_scopes",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1782789000000,
+      "tag": "0029_api_keys_user_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1782790000000,
+      "tag": "0030_oidc_production",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1782791000000,
+      "tag": "0031_oidc_client_branding",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1782792000000,
+      "tag": "0032_identities",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1782793000000,
+      "tag": "0033_email_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1782794000000,
+      "tag": "0034_system_email_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1782795000000,
+      "tag": "0035_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1782796000000,
+      "tag": "0036_domain_validation_cancelled",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,30 +1,36 @@
 # Flaremail API (v1)
 
-Human-readable reference for the HTTP API exposed by the Worker.
+Human-readable reference for the HTTP API implemented by **core** and reached in production through **gate** at the same origin (`/api/v1`).
 
 **Machine-readable spec:**
 
-- OpenAPI 3.1 (YAML): [`apps/worker/openapi.yaml`](./apps/worker/openapi.yaml)
+- OpenAPI 3.1 (YAML): [`apps/core/openapi.yaml`](../apps/core/openapi.yaml)
 - OpenAPI 3.1 (JSON, live): `GET /api/v1/openapi.json` (no auth)
 
-**Domain terms:** [`CONTEXT.md`](./CONTEXT.md)
+**Domain terms:** [`CONTEXT.md`](./CONTEXT.md) · **Packaging:** [ADR-0010](./adr/0010-gate-and-private-core.md)
 
 ---
 
 ## Base URL
 
-Versioned endpoints:
+In production, clients use the **gate hostname** (same origin as the SPA):
+
+```
+https://<gate-hostname>/api/v1
+```
+
+Gate proxies `/api/*` to core. Paths outside `/api` on gate are SPA/static only — they do **not** reach core.
+
+Versioned API:
 
 ```
 /api/v1
 ```
 
-Unversioned:
-
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/health` | No | Liveness check |
 | GET | `/api/v1/openapi.json` | No | OpenAPI document |
+| GET | `/health` | No | Core liveness (local `core:dev` or service-binding only — not exposed via gate) |
 
 ---
 
@@ -60,7 +66,7 @@ Example:
 ```bash
 curl \
   -H "Authorization: Bearer fmu_xxx" \
-  "https://your-host/api/v1/threads?mailboxId=<mailbox-uuid>"
+  "https://<gate-hostname>/api/v1/threads?mailboxId=<mailbox-uuid>"
 ```
 
 ### Managing keys over HTTP
@@ -201,7 +207,7 @@ Creating a domain provisions system mailboxes: `postmaster@` (system), `noreply@
 
 **Badge derivation:** `checking` while running; `fail` if any critical check fails; `healthy` if all pass; `unhealthy` if critical pass but advisory fails.
 
-Loop validation emails carry a per-run token and are **consumed** by the inbound handler — they are not stored as mailbox messages. Receive timeouts are processed by the Worker cron (`*/2 * * * *`).
+Loop validation emails carry a per-run token and are **consumed** by the inbound handler — they are not stored as mailbox messages. Receive timeouts are processed by the core cron (`*/2 * * * *`).
 
 ---
 
@@ -504,7 +510,7 @@ Hard deletes preserve database integrity first. R2 object deletion runs after th
 
 ## Inbound email
 
-Inbound mail is **not** exposed over HTTP. Cloudflare Email Routing invokes the Worker's `email()` handler directly.
+Inbound mail is **not** exposed over HTTP. Cloudflare Email Routing invokes **core**'s `email()` handler directly.
 
 **Routing resolution** (in order):
 

@@ -38,7 +38,7 @@ import {
 import {
 	applyLocalPartPattern,
 	getProfileFieldsUsedByPattern,
-} from "@test-worker/local-part-policy";
+} from "@flaremail/local-part-policy";
 import {
 	canLockProfileFields,
 	inviteableRoles,
@@ -46,6 +46,7 @@ import {
 import { ROLE_META } from "@/lib/accounts/roles";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
+import { isValidPhoneNumber, normalizePhoneInput } from "@/lib/validate-phone";
 import { cn } from "@/lib/utils";
 
 type ProfileFormState = {
@@ -211,19 +212,6 @@ export function InviteAccountDialog({
 	}, [domainId]);
 
 	useEffect(() => {
-		if (!policyEnforced || !policyPattern) {
-			return;
-		}
-		setLockedFields((current) => {
-			const next = new Set(current);
-			for (const field of policyRequiredFields) {
-				next.add(field);
-			}
-			return next;
-		});
-	}, [policyEnforced, policyPattern, policyRequiredFields]);
-
-	useEffect(() => {
 		if (!policyHasPattern || !policyPattern) {
 			return;
 		}
@@ -363,6 +351,18 @@ export function InviteAccountDialog({
 		setError(null);
 		setInviteCode(null);
 		setCodeCopied(false);
+
+		const phone = normalizePhoneInput(profile.phone);
+		if (phone && !isValidPhoneNumber(phone)) {
+			setError(
+				t("accounts.inviteDialog.invalidPhone", {
+					defaultValue:
+						"Enter a valid phone number in international format (e.g. +14155552671).",
+				}),
+			);
+			return;
+		}
+
 		inviteMutation.mutate(
 			{
 				domainId,
@@ -371,7 +371,7 @@ export function InviteAccountDialog({
 				firstName: profile.firstName,
 				lastName: profile.lastName,
 				recoveryAddress: profile.recoveryAddress || undefined,
-				phone: profile.phone || undefined,
+				phone: phone ?? undefined,
 				addressCountry: profile.addressCountry || undefined,
 				addressState: profile.addressState || undefined,
 				addressCity: profile.addressCity || undefined,
@@ -566,21 +566,14 @@ export function InviteAccountDialog({
 									setProfile((current) => ({ ...current, [key]: value }))
 								}
 								requiredFields={new Set(policyRequiredFields)}
-								isFieldDisabled={(key) => {
-									const policyLocked =
-										policyEnforced &&
-										policyRequiredFields.includes(
-											key as "firstName" | "lastName",
-										);
-									return policyLocked || lockedFields.has(key);
-								}}
+								isFieldDisabled={(key) => lockedFields.has(key)}
 								inputExtra={(key) => {
-									const policyLocked =
+									const policyRequired =
 										policyEnforced &&
 										policyRequiredFields.includes(
 											key as "firstName" | "lastName",
 										);
-									if (canLock && !policyLocked) {
+									if (canLock && !policyRequired) {
 										return (
 											<ProfileFieldLockToggle
 												locked={lockedFields.has(key)}
@@ -591,12 +584,12 @@ export function InviteAccountDialog({
 									return null;
 								}}
 								labelExtra={(key) => {
-									const policyLocked =
+									const policyRequired =
 										policyEnforced &&
 										policyRequiredFields.includes(
 											key as "firstName" | "lastName",
 										);
-									if (policyLocked) {
+									if (policyRequired) {
 										return (
 											<span className="text-muted-foreground text-xs">
 												{t("accounts.inviteDialog.requiredByPolicy")}
