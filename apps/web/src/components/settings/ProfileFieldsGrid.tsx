@@ -76,17 +76,19 @@ export function ProfileFieldsGrid({
 					{extra}
 				</div>
 				{key === "phone" ? (
-					<PhoneInput
-						id={inputId}
-						international
-						defaultCountry="US"
-						countryCallingCodeEditable={false}
-						value={(values[key] || undefined) as PhoneValue | undefined}
-						onChange={(value) => onChange(key, value ?? "")}
-						disabled={isInputDisabled}
-						required={isRequired}
-						autoComplete={AUTOCOMPLETE.phone}
-					/>
+					<div className="flex items-center gap-1">
+						<PhoneInput
+							id={inputId}
+							defaultCountry="US"
+							value={(values[key] || undefined) as PhoneValue | undefined}
+							onChange={(value) => onChange(key, value ?? "")}
+							disabled={isInputDisabled}
+							required={isRequired}
+							autoComplete={AUTOCOMPLETE.phone}
+							className="min-w-0 flex-1"
+						/>
+						{trailing}
+					</div>
 				) : trailing ? (
 					<InputGroup>
 						<InputGroupInput

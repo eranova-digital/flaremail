@@ -14,10 +14,18 @@ describe("validate-phone", () => {
 		expect(normalizePhoneInput("   ")).toBeNull();
 	});
 
+	it("treats country-calling-code-only values as empty", () => {
+		expect(normalizePhoneInput("+1")).toBeNull();
+		expect(normalizePhoneInput("+40")).toBeNull();
+		expect(normalizePhoneInput("+44")).toBeNull();
+		expect(assertValidPhoneNumber("+1")).toBeNull();
+	});
+
 	it("accepts E.164 numbers", () => {
 		expect(isValidPhoneNumber("+14155552671")).toBe(true);
 		expect(isValidPhoneNumber("+442071838750")).toBe(true);
 		expect(isValidPhoneNumber("+8613812345678")).toBe(true);
+		expect(normalizePhoneInput("+14155552671")).toBe("+14155552671");
 	});
 
 	it("rejects non-E.164 values", () => {
@@ -32,5 +40,6 @@ describe("validate-phone", () => {
 		expect(assertValidPhoneNumber("")).toBeNull();
 		expect(assertValidPhoneNumber("+14155552671")).toBe("+14155552671");
 		expect(() => assertValidPhoneNumber("555-2671")).toThrow(/E\.164/);
+		expect(() => assertValidPhoneNumber("+14155")).toThrow(/E\.164/);
 	});
 });

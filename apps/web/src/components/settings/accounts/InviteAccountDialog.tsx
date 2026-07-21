@@ -46,6 +46,7 @@ import {
 import { ROLE_META } from "@/lib/accounts/roles";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
+import { isValidPhoneNumber, normalizePhoneInput } from "@/lib/validate-phone";
 import { cn } from "@/lib/utils";
 
 type ProfileFormState = {
@@ -350,6 +351,18 @@ export function InviteAccountDialog({
 		setError(null);
 		setInviteCode(null);
 		setCodeCopied(false);
+
+		const phone = normalizePhoneInput(profile.phone);
+		if (phone && !isValidPhoneNumber(phone)) {
+			setError(
+				t("accounts.inviteDialog.invalidPhone", {
+					defaultValue:
+						"Enter a valid phone number in international format (e.g. +14155552671).",
+				}),
+			);
+			return;
+		}
+
 		inviteMutation.mutate(
 			{
 				domainId,
@@ -358,7 +371,7 @@ export function InviteAccountDialog({
 				firstName: profile.firstName,
 				lastName: profile.lastName,
 				recoveryAddress: profile.recoveryAddress || undefined,
-				phone: profile.phone || undefined,
+				phone: phone ?? undefined,
 				addressCountry: profile.addressCountry || undefined,
 				addressState: profile.addressState || undefined,
 				addressCity: profile.addressCity || undefined,

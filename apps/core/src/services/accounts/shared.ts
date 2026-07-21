@@ -112,11 +112,37 @@ export function profileInputToPatch(input: AccountProfileInput) {
 	};
 }
 
+function parseOptionalStringField(
+	value: unknown,
+): string | null | undefined {
+	if (value === null) {
+		return null;
+	}
+	if (typeof value === "string") {
+		return value;
+	}
+	return undefined;
+}
+
+/**
+ * Accepts either nested `address: { country, ... }` (profile PATCH) or flat
+ * `addressCountry` / `addressLine1` keys (invite payload).
+ */
 export function parseProfileInput(value: Record<string, unknown>) {
 	const address =
 		value.address && typeof value.address === "object"
 			? (value.address as Record<string, unknown>)
 			: null;
+
+	const fromAddressOrFlat = (
+		nestedKey: "country" | "state" | "city" | "line1" | "line2",
+		flatKey: string,
+	): string | null | undefined => {
+		if (address) {
+			return parseOptionalStringField(address[nestedKey]);
+		}
+		return parseOptionalStringField(value[flatKey]);
+	};
 
 	return {
 		firstName:
@@ -134,36 +160,11 @@ export function parseProfileInput(value: Record<string, unknown>) {
 				: typeof value.phone === "string"
 					? assertValidPhoneNumber(value.phone)
 					: undefined,
-		addressCountry:
-			address?.country === null
-				? null
-				: typeof address?.country === "string"
-					? address.country
-					: undefined,
-		addressState:
-			address?.state === null
-				? null
-				: typeof address?.state === "string"
-					? address.state
-					: undefined,
-		addressCity:
-			address?.city === null
-				? null
-				: typeof address?.city === "string"
-					? address.city
-					: undefined,
-		addressLine1:
-			address?.line1 === null
-				? null
-				: typeof address?.line1 === "string"
-					? address.line1
-					: undefined,
-		addressLine2:
-			address?.line2 === null
-				? null
-				: typeof address?.line2 === "string"
-					? address.line2
-					: undefined,
+		addressCountry: fromAddressOrFlat("country", "addressCountry"),
+		addressState: fromAddressOrFlat("state", "addressState"),
+		addressCity: fromAddressOrFlat("city", "addressCity"),
+		addressLine1: fromAddressOrFlat("line1", "addressLine1"),
+		addressLine2: fromAddressOrFlat("line2", "addressLine2"),
 	};
 }
 
