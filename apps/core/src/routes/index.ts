@@ -3,6 +3,7 @@ import { createRouter } from "../lib/http/router";
 import { problemResponse, requestInstance } from "../lib/http/problem";
 import { touchSession } from "../services/auth-session";
 import { handleHealthRequest } from "./health";
+import { healthRoutes } from "./health-routes";
 import { handleOpenApiJson } from "./openapi";
 import { bootstrapRoutes } from "./bootstrap";
 import { authRoutes } from "./auth";
@@ -16,6 +17,7 @@ export const apiRouter = createRouter(
 			action: "platform",
 			handler: handleOpenApiJson,
 		},
+		...healthRoutes,
 		...bootstrapRoutes,
 		...authRoutes,
 		...v1Routes,

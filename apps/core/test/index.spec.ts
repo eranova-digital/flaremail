@@ -6,6 +6,7 @@ import {
 } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
 import worker from "../src/index";
+import { APP_VERSION } from "../src/lib/app-version";
 
 describe("email catch-all worker", () => {
 	it("returns health check (unit style)", async () => {
@@ -13,11 +14,11 @@ describe("email catch-all worker", () => {
 		const ctx = createExecutionContext();
 		const response = await worker.fetch(request, env, ctx);
 		await waitOnExecutionContext(ctx);
-		expect(await response.json()).toEqual({ ok: true });
+		expect(await response.json()).toEqual({ ok: true, version: APP_VERSION });
 	});
 
 	it("returns health check (integration style)", async () => {
 		const response = await SELF.fetch("https://example.com/health");
-		expect(await response.json()).toEqual({ ok: true });
+		expect(await response.json()).toEqual({ ok: true, version: APP_VERSION });
 	});
 });

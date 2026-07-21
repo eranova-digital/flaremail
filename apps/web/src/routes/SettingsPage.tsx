@@ -10,6 +10,7 @@ import { SettingsShell } from "@/components/layout/SettingsShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { canEditOwnProfile } from "@/lib/accounts/permissions";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { APP_VERSION } from "@/lib/app-version";
 
 const ALL_TABS = ["profile", "identities", "preferences", "security"] as const;
 type SettingsTab = (typeof ALL_TABS)[number];
@@ -87,6 +88,9 @@ export function SettingsPage() {
 					<SecuritySection />
 				</TabsContent>
 			</Tabs>
+			<footer className="text-muted-foreground mt-12 text-center text-[11px] leading-none tracking-wide">
+				{tc("appName")} v{APP_VERSION}
+			</footer>
 		</SettingsShell>
 	);
 }
