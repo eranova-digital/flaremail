@@ -12,7 +12,7 @@ Package: `apps/gate` · CF name: `flaremail-gate`
 |---------|----------|
 | Static assets | Wrangler `assets.directory` → `../web/dist` |
 | SPA routes | `not_found_handling: single-page-application` |
-| API | `run_worker_first: ["/api/*"]` → `env.CORE.fetch(request)` |
+| API | `run_worker_first: ["/api/*", "/health"]` → `env.CORE.fetch(request)` |
 | Everything else under `/api` miss | Worker returns 404 (assets/SPA handle non-API) |
 
 Non-responsibilities: business logic, auth decisions, mail, database. Gate is intentionally thin ([ADR-0010](../../docs/adr/0010-gate-and-private-core.md)).
@@ -24,12 +24,12 @@ Non-responsibilities: business logic, auth decisions, mail, database. Gate is in
 ```
 Incoming request
   │
-  ├─ path matches /api/*  →  Worker script  →  CORE service binding  →  flaremail-core
+  ├─ path matches /api/* or /health  →  Worker script  →  CORE service binding  →  flaremail-core
   │
   └─ otherwise            →  static asset or SPA index.html fallback
 ```
 
-`src/index.ts` only handles the `/api/*` branch. Asset routing is configured in `wrangler.jsonc`, not in application code.
+`src/index.ts` only handles the `/api/*` and `/health` branches. Asset routing is configured in `wrangler.jsonc`, not in application code.
 
 ### Service binding
 

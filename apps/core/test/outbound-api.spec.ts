@@ -6,6 +6,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import worker from "../src/index";
+import { APP_VERSION } from "../src/lib/app-version";
 import { PROBLEM_CONTENT_TYPE } from "../src/lib/http/problem";
 
 describe("v1 API auth", () => {
@@ -75,9 +76,21 @@ describe("v1 API auth", () => {
 		expect(response.status).toBe(200);
 		const spec = (await response.json()) as {
 			openapi: unknown;
+			info: { version: string };
 			paths: Record<string, unknown>;
 		};
 		expect(spec.openapi).toBe("3.1.0");
+		expect(spec.info.version).toBe(APP_VERSION);
 		expect(spec.paths["/messages/send"]).toBeDefined();
+	});
+
+	it("serves health under /api/v1 without auth", async () => {
+		const request = new Request("http://example.com/api/v1/health");
+		const ctx = createExecutionContext();
+		const response = await worker.fetch(request, env, ctx);
+		await waitOnExecutionContext(ctx);
+
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ ok: true, version: APP_VERSION });
 	});
 });

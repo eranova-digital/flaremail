@@ -19,7 +19,7 @@ In production, clients use the **gate hostname** (same origin as the SPA):
 https://<gate-hostname>/api/v1
 ```
 
-Gate proxies `/api/*` to core. Paths outside `/api` on gate are SPA/static only — they do **not** reach core.
+Gate proxies `/api/*` and `/health` to core. Other paths on gate are SPA/static only.
 
 Versioned API:
 
@@ -29,8 +29,9 @@ Versioned API:
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/v1/openapi.json` | No | OpenAPI document |
-| GET | `/health` | No | Core liveness (local `core:dev` or service-binding only — not exposed via gate) |
+| GET | `/api/v1/openapi.json` | No | OpenAPI document (`info.version` = root `package.json`) |
+| GET | `/api/v1/health` | No | Liveness + version (gate-accessible) |
+| GET | `/health` | No | Same payload as `/api/v1/health` (also via gate) |
 
 ---
 

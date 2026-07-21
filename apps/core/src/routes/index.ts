@@ -14,7 +14,7 @@ export const apiRouter = createRouter(
 		{
 			method: "GET",
 			path: "/api/v1/openapi.json",
-			action: "platform",
+			auth: false,
 			handler: handleOpenApiJson,
 		},
 		...healthRoutes,
