@@ -1662,6 +1662,8 @@
 			"unavailableTitle": "Este dominio no está disponible para tu cuenta",
 			"checking": "Comprobando…",
 			"recheck": "Volver a comprobar",
+			"cancel": "Cancelar",
+			"cancelFailed": "No se pudo cancelar",
 			"overallStatus": "Estado general",
 			"noRunYet": "Aún no hay ninguna ejecución de validación. Haz clic en Volver a comprobar para iniciar una.",
 			"lastChecked": "Última comprobación {{when}}",
@@ -1753,6 +1755,7 @@
 			"history": {
 				"empty": "Aún no hay ejecuciones de validación.",
 				"inProgress": "En curso",
+				"cancelled": "Cancelada",
 				"completed": "Completada"
 			}
 		},

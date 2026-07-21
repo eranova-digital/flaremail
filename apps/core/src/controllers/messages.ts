@@ -1,7 +1,7 @@
 import { withDb, type Database } from "../db/client";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
-import { parseJsonBody } from "../lib/http/parse-body";
+import { parseJsonBody, MAX_OUTBOUND_JSON_BODY_BYTES } from "../lib/http/parse-body";
 import type { RouteContext } from "../lib/http/router";
 import {
 	parseCreateDraftBody,
@@ -29,7 +29,9 @@ export async function handleSendMessage({
 	env,
 	principal,
 }: RouteContext): Promise<Response> {
-	const body = await parseJsonBody(request);
+	const body = await parseJsonBody(request, {
+		maxBytes: MAX_OUTBOUND_JSON_BODY_BYTES,
+	});
 	if (body instanceof Response) {
 		return body;
 	}
@@ -50,7 +52,9 @@ export async function handleCreateDraft({
 	env,
 	principal,
 }: RouteContext): Promise<Response> {
-	const body = await parseJsonBody(request);
+	const body = await parseJsonBody(request, {
+		maxBytes: MAX_OUTBOUND_JSON_BODY_BYTES,
+	});
 	if (body instanceof Response) {
 		return body;
 	}
@@ -72,7 +76,9 @@ export async function handleUpdateDraft({
 	params,
 	principal,
 }: RouteContext): Promise<Response> {
-	const body = await parseJsonBody(request);
+	const body = await parseJsonBody(request, {
+		maxBytes: MAX_OUTBOUND_JSON_BODY_BYTES,
+	});
 	if (body instanceof Response) {
 		return body;
 	}
@@ -126,7 +132,9 @@ export async function handleReplyToMessage({
 	params,
 	principal,
 }: RouteContext): Promise<Response> {
-	const body = await parseJsonBody(request);
+	const body = await parseJsonBody(request, {
+		maxBytes: MAX_OUTBOUND_JSON_BODY_BYTES,
+	});
 	if (body instanceof Response) {
 		return body;
 	}
@@ -148,7 +156,9 @@ export async function handleForwardToMessage({
 	params,
 	principal,
 }: RouteContext): Promise<Response> {
-	const body = await parseJsonBody(request);
+	const body = await parseJsonBody(request, {
+		maxBytes: MAX_OUTBOUND_JSON_BODY_BYTES,
+	});
 	if (body instanceof Response) {
 		return body;
 	}

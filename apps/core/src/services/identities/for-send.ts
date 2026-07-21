@@ -120,11 +120,13 @@ export async function listAvailableIdentitiesForSend(
 		}
 	}
 
-	// System/blackhole mailboxes are not provisioned with identities, but still
-	// send (e.g. noreply transactional mail). Offer a nameless fallback.
+	// System/blackhole/shared mailboxes may have no stored identities yet.
+	// Offer a nameless fallback so grants and shared inboxes can still send.
 	if (
 		result.length === 0 &&
-		(active.type === "system" || active.type === "blackhole")
+		(active.type === "system" ||
+			active.type === "blackhole" ||
+			active.type === "shared")
 	) {
 		pushAll([toSystemMailboxFallbackIdentityDto(activeMailboxId)]);
 	}

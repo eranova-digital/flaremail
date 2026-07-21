@@ -16,6 +16,7 @@ import {
 	type ComposeAttachment,
 	createStoredAttachment,
 } from "@/lib/compose-attachments";
+import { replySubject } from "@flaremail/mail-quoting";
 import {
 	EMPTY_FIELDS,
 	type ComposeForwardContext,
@@ -112,6 +113,7 @@ export function useComposeInit(
 		replyDraftStartedRef.current = true;
 
 		void (async () => {
+			let parentSubject: string | null = null;
 			try {
 				let parentForQuote = reply.parentMessage;
 				if (!parentForQuote) {
@@ -121,6 +123,7 @@ export function useComposeInit(
 						query: { mailboxId },
 					});
 					const parentMessage = assertData(parentData, "getMessage");
+					parentSubject = parentMessage.subject ?? null;
 
 					parentForQuote = {
 						from: parentMessage.from ?? "",
@@ -170,6 +173,12 @@ export function useComposeInit(
 				setDraftId(draftRef.id);
 				setInitialized(true);
 			} catch {
+				setFields((current) => ({
+					...current,
+					subject: current.subject.trim()
+						? current.subject
+						: replySubject(parentSubject),
+				}));
 				setInitialized(true);
 			}
 		})();

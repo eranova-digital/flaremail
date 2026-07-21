@@ -1,7 +1,7 @@
 import { defineConfig } from "@hey-api/openapi-ts";
 
 export default defineConfig({
-	input: "../worker/openapi.yaml",
+	input: "../core/openapi.yaml",
 	output: {
 		path: "src/lib/api/generated",
 	},

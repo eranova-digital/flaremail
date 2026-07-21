@@ -68,9 +68,13 @@ export async function downloadAttachment(
 	const safeName = (row.filename ?? "attachment")
 		.replace(/[\r\n"]/g, "")
 		.slice(0, 200);
+	const disposition =
+		safeMime.startsWith("image/") || safeMime === "application/pdf"
+			? "inline"
+			: "attachment";
 	headers.set(
 		"Content-Disposition",
-		`attachment; filename="${safeName || "attachment"}"`,
+		`${disposition}; filename="${safeName || "attachment"}"`,
 	);
 
 	return new Response(object.body, { headers });

@@ -7,6 +7,7 @@ export {
 	listValidationRuns,
 	startDomainValidation,
 	startOrReturnValidationRun,
+	cancelDomainValidationRun,
 } from "./queries";
 export type { DomainReadinessBadge, CheckSnapshot } from "./types";
 export {

@@ -21,6 +21,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { getErrorMessage } from "@/lib/api/errors";
 import { roleLabel } from "@/lib/accounts/roles";
 import type { AccountRole } from "@/lib/accounts/api";
+import { isValidPhoneNumber, normalizePhoneInput } from "@/lib/validate-phone";
 import { useQueryClient } from "@tanstack/react-query";
 
 function LockedFieldHelp() {
@@ -89,6 +90,11 @@ export function ProfileSection() {
 		setError(null);
 		setSaved(false);
 		try {
+			const phone = normalizePhoneInput(values.phone);
+			if (phone && !isValidPhoneNumber(phone)) {
+				setError(t("profile.invalidPhone"));
+				return;
+			}
 			const response = await fetch(apiUrl("/auth/me"), {
 				method: "PATCH",
 				credentials: "include",
@@ -97,7 +103,7 @@ export function ProfileSection() {
 					profile: {
 						firstName: values.firstName,
 						lastName: values.lastName,
-						phone: values.phone || null,
+						phone,
 						address: {
 							country: values.addressCountry || null,
 							state: values.addressState || null,

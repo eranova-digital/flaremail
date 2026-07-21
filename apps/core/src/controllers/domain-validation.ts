@@ -3,11 +3,10 @@ import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import type { RouteContext } from "../lib/http/router";
 import {
-	getDomainReadinessSummary,
 	getValidationRunDetail,
 	listValidationRuns,
-	startDomainValidation,
 	startOrReturnValidationRun,
+	cancelDomainValidationRun,
 } from "../lib/domain-validation";
 import { getDomainRecord } from "../services/domains";
 import { parseLogContextFromRequest } from "../services/logs";
@@ -62,6 +61,22 @@ export async function handleCreateValidationRun({
 					context: parseLogContextFromRequest(request),
 				},
 			);
+		});
+		return jsonResponse(run, 200);
+	} catch (error) {
+		return handleRouteError(error, request);
+	}
+}
+
+export async function handleCancelValidationRun({
+	request,
+	env,
+	params,
+}: RouteContext): Promise<Response> {
+	try {
+		const run = await withDb(env, async (db) => {
+			await getDomainRecord(db, params.id);
+			return cancelDomainValidationRun(db, params.id, params.runId);
 		});
 		return jsonResponse(run, 200);
 	} catch (error) {

@@ -7,6 +7,7 @@ import {
 	domainValidationRuns,
 } from "../../db/schema";
 import { CHECK_DEFINITIONS } from "./constants";
+import { computeReadinessBadge } from "./compute-badge";
 import type { CheckSnapshot } from "./types";
 import {
 	createValidationRunExecutor,
@@ -125,6 +126,79 @@ export async function createValidationRun(
 		}
 		throw new Error("Failed to create validation run");
 	}
+}
+
+/**
+ * Cancel an in-progress validation run. Skips remaining pending checks and
+ * clears the active-run slot so a new recheck can start.
+ */
+export async function cancelValidationRun(
+	db: Database,
+	domainId: string,
+	runId: string,
+): Promise<void> {
+	const [run] = await db
+		.select()
+		.from(domainValidationRuns)
+		.where(eq(domainValidationRuns.id, runId))
+		.limit(1);
+
+	if (!run || run.domainId !== domainId) {
+		throw new Error("Validation run not found");
+	}
+
+	if (run.status !== "checking") {
+		throw new Error("Validation run is not in progress");
+	}
+
+	const now = new Date();
+
+	await db.transaction(async (tx) => {
+		await tx
+			.update(domainValidationChecks)
+			.set({
+				status: "skipped",
+				code: "cancelled",
+				message: "Skipped because the validation run was cancelled",
+				checkedAt: now,
+			})
+			.where(
+				and(
+					eq(domainValidationChecks.runId, runId),
+					eq(domainValidationChecks.status, "pending"),
+				),
+			);
+
+		const checks = await loadRunChecks(tx, runId);
+		const badge = computeReadinessBadge("cancelled", checks);
+
+		const updated = await tx
+			.update(domainValidationRuns)
+			.set({
+				status: "cancelled",
+				badge,
+				finishedAt: now,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(domainValidationRuns.id, runId),
+					eq(domainValidationRuns.status, "checking"),
+				),
+			)
+			.returning({ id: domainValidationRuns.id });
+
+		if (updated.length === 0) {
+			throw new Error("Validation run is not in progress");
+		}
+
+		await appendLog(tx, runId, {
+			level: "info",
+			stage: "summary",
+			code: "run_cancelled",
+			message: "Domain validation run cancelled",
+		});
+	});
 }
 
 export async function executeValidationRun(

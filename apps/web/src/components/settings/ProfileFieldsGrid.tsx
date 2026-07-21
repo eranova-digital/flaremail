@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import type { Value as PhoneValue } from "react-phone-number-input";
 
+import { AddressLocationFields } from "@/components/settings/AddressLocationFields";
 import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
 } from "@/components/ui/input-group";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { type ProfileFieldKey } from "@/lib/accounts/api";
 
 export type { ProfileFieldKey };
@@ -16,9 +19,6 @@ const AUTOCOMPLETE: Partial<Record<ProfileFieldKey, string>> = {
 	lastName: "family-name",
 	recoveryAddress: "email",
 	phone: "tel",
-	addressCountry: "country-name",
-	addressState: "address-level1",
-	addressCity: "address-level2",
 	addressLine1: "address-line1",
 	addressLine2: "address-line2",
 };
@@ -75,7 +75,21 @@ export function ProfileFieldsGrid({
 					</label>
 					{extra}
 				</div>
-				{trailing ? (
+				{key === "phone" ? (
+					<div className="flex items-center gap-1">
+						<PhoneInput
+							id={inputId}
+							defaultCountry="US"
+							value={(values[key] || undefined) as PhoneValue | undefined}
+							onChange={(value) => onChange(key, value ?? "")}
+							disabled={isInputDisabled}
+							required={isRequired}
+							autoComplete={AUTOCOMPLETE.phone}
+							className="min-w-0 flex-1"
+						/>
+						{trailing}
+					</div>
+				) : trailing ? (
 					<InputGroup>
 						<InputGroupInput
 							id={inputId}
@@ -90,6 +104,7 @@ export function ProfileFieldsGrid({
 				) : (
 					<Input
 						id={inputId}
+						type="text"
 						value={values[key] ?? ""}
 						autoComplete={AUTOCOMPLETE[key]}
 						onChange={(event) => onChange(key, event.target.value)}
@@ -117,11 +132,17 @@ export function ProfileFieldsGrid({
 					{field("addressLine1")}
 					{field("addressLine2")}
 				</div>
-				<div className="grid gap-3 sm:grid-cols-3">
-					{field("addressCity")}
-					{field("addressState")}
-					{field("addressCountry")}
-				</div>
+				<AddressLocationFields
+					values={values}
+					onChange={onChange}
+					idPrefix={idPrefix}
+					disabled={disabled}
+					isFieldDisabled={isFieldDisabled}
+					labelExtra={labelExtra}
+					inputExtra={inputExtra}
+					requiredFields={requiredFields}
+					hiddenFields={hiddenFields}
+				/>
 			</div>
 		</div>
 	);

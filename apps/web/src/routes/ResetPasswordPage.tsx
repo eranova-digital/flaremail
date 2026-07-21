@@ -5,6 +5,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
+import { PasswordStrengthHints } from "@/components/auth/PasswordStrengthHints";
 import { AuthCodeInput } from "@/components/auth/AuthCodeInput";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 	isNoRecoveryEmailError,
 } from "@/lib/api/errors";
 import { formatAuthCode } from "@/lib/format-auth-code";
+import { isStrongPassword } from "@/lib/password-strength";
 
 type ResetStep = "choose" | "email" | "no-recovery" | "code" | "password";
 
@@ -65,8 +67,12 @@ export function ResetPasswordPage() {
 	};
 
 	const passwordsMatch = password === confirmPassword;
+	const passwordStrong = isStrongPassword(password);
 	const canSubmitPassword =
-		Boolean(password) && Boolean(confirmPassword) && passwordsMatch;
+		Boolean(password) &&
+		Boolean(confirmPassword) &&
+		passwordsMatch &&
+		passwordStrong;
 
 	const handleContinueFromCode = async (event: React.FormEvent) => {
 		event.preventDefault();
@@ -90,6 +96,10 @@ export function ResetPasswordPage() {
 
 		if (!passwordsMatch) {
 			setError(t("passwordsDoNotMatch"));
+			return;
+		}
+		if (!passwordStrong) {
+			setError(t("passwordTooWeak"));
 			return;
 		}
 
@@ -333,10 +343,9 @@ export function ResetPasswordPage() {
 									disabled={submitting}
 									autoFocus
 									required
+									aria-invalid={Boolean(password) && !passwordStrong}
 								/>
-								<p className="text-muted-foreground text-xs">
-									{t("resetPassword.password.passwordHint")}
-								</p>
+								<PasswordStrengthHints password={password} />
 							</div>
 							<div className="space-y-2">
 								<label htmlFor="confirm-password" className="text-sm font-medium">

@@ -54,4 +54,22 @@ describe("computeReadinessBadge", () => {
 		);
 		expect(computeReadinessBadge("completed", checks)).toBe("unhealthy");
 	});
+
+	it("returns fail when a cancelled run left critical checks incomplete", () => {
+		const checks = baseChecks.map((check) =>
+			check.checkKey === "loop_receive"
+				? { ...check, status: "skipped" as const }
+				: check,
+		);
+		expect(computeReadinessBadge("cancelled", checks)).toBe("fail");
+	});
+
+	it("returns unhealthy when a cancelled run only left advisory incomplete", () => {
+		const checks = baseChecks.map((check) =>
+			check.checkKey === "dmarc_rua"
+				? { ...check, status: "skipped" as const }
+				: check,
+		);
+		expect(computeReadinessBadge("cancelled", checks)).toBe("unhealthy");
+	});
 });

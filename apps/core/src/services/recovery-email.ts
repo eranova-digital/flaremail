@@ -1,7 +1,12 @@
 import { and, eq, gt, ne, sql } from "drizzle-orm";
 
 import type { Database } from "../db/client";
-import { accountProfiles, emailVerificationCodes } from "../db/schema";
+import {
+	accountProfiles,
+	domains,
+	emailVerificationCodes,
+	mailboxes,
+} from "../db/schema";
 import { formatCode } from "../lib/auth/crypto";
 import { hashSecret } from "../lib/auth/password";
 import {
@@ -33,11 +38,47 @@ function assertValidExternalEmail(email: string): string {
 	return normalized;
 }
 
+async function assertRecoveryEmailNotHosted(
+	db: Database,
+	recoveryAddress: string,
+): Promise<void> {
+	const parsed = parseEmailAddress(recoveryAddress);
+	if (!parsed) {
+		throw new Error("Invalid recovery email address");
+	}
+
+	const [hostedDomain] = await db
+		.select({ id: domains.id })
+		.from(domains)
+		.where(sql`lower(${domains.name}) = ${parsed.domain}`)
+		.limit(1);
+
+	if (hostedDomain) {
+		throw new Error(
+			"Recovery email cannot use a mailbox domain hosted by this instance",
+		);
+	}
+
+	const [hostedMailbox] = await db
+		.select({ id: mailboxes.id })
+		.from(mailboxes)
+		.where(sql`lower(${mailboxes.address}) = ${recoveryAddress}`)
+		.limit(1);
+
+	if (hostedMailbox) {
+		throw new Error(
+			"Recovery email cannot use a mailbox hosted by this instance",
+		);
+	}
+}
+
 async function assertRecoveryEmailAvailable(
 	db: Database,
 	accountId: string,
 	recoveryAddress: string,
 ): Promise<void> {
+	await assertRecoveryEmailNotHosted(db, recoveryAddress);
+
 	const [existing] = await db
 		.select({ accountId: accountProfiles.accountId })
 		.from(accountProfiles)
