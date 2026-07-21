@@ -21,6 +21,7 @@ import {
 } from "../../lib/local-part-policy";
 import { createInviteRecord } from "../auth";
 import { normalizeEmailAddress, parseEmailAddress } from "../../lib/normalize-email-address";
+import { isUniqueViolation } from "../../lib/db/postgres-error";
 import { assertValidPhoneNumber } from "../../lib/validate-phone";
 import {
 	sendInviteTransactionalEmail,
@@ -104,6 +105,15 @@ export async function inviteAccount(
 		throw new Error("Invalid mailbox address");
 	}
 
+	const [existingMailbox] = await db
+		.select({ id: mailboxes.id })
+		.from(mailboxes)
+		.where(eq(mailboxes.address, address))
+		.limit(1);
+	if (existingMailbox) {
+		throw new Error("Mailbox already exists");
+	}
+
 	const accountId = crypto.randomUUID();
 	const mailboxId = crypto.randomUUID();
 	const now = new Date();
@@ -132,95 +142,102 @@ export async function inviteAccount(
 		}
 	}
 
-	await db.transaction(async (tx) => {
-		await tx.insert(mailboxes).values({
-			id: mailboxId,
-			domainId: domain.id,
-			localPart: parsed.localPart,
-			address,
-			type: "primary",
-			isActive: true,
-			createdAt: now,
-			updatedAt: now,
-		});
-
-		await tx.insert(accounts).values({
-			id: accountId,
-			isIntendant: false,
-			role,
-			status: "pending",
-			loginIdentifier: address,
-			primaryMailboxId: mailboxId,
-			createdAt: now,
-			updatedAt: now,
-		});
-
-		await tx.insert(accountProfiles).values({
-			accountId,
-			firstName: input.firstName ?? "",
-			lastName: input.lastName ?? "",
-			recoveryAddress: input.recoveryAddress ?? null,
-			phone: phone,
-			addressCountry: input.addressCountry ?? null,
-			addressState: input.addressState ?? null,
-			addressCity: input.addressCity ?? null,
-			addressLine1: input.addressLine1 ?? null,
-			addressLine2: input.addressLine2 ?? null,
-			updatedAt: now,
-		});
-
-		if (lockedFields.size > 0) {
-			await tx.insert(profileFieldLocks).values(
-				[...lockedFields].map((fieldName) => ({
-					accountId,
-					fieldName,
-				})),
-			);
-		}
-
-		for (const assignmentDomainId of assignmentDomainIds) {
-			await tx.insert(accountDomainAssignments).values({
-				accountId,
-				domainId: assignmentDomainId,
+	try {
+		await db.transaction(async (tx) => {
+			await tx.insert(mailboxes).values({
+				id: mailboxId,
+				domainId: domain.id,
+				localPart: parsed.localPart,
+				address,
+				type: "primary",
+				isActive: true,
+				createdAt: now,
+				updatedAt: now,
 			});
-		}
 
-		if (role === "manager") {
-			if (input.allSharedMailboxes) {
-				for (const assignmentDomainId of assignmentDomainIds) {
-					await tx.insert(managerSharedMailboxAssignments).values({
+			await tx.insert(accounts).values({
+				id: accountId,
+				isIntendant: false,
+				role,
+				status: "pending",
+				loginIdentifier: address,
+				primaryMailboxId: mailboxId,
+				createdAt: now,
+				updatedAt: now,
+			});
+
+			await tx.insert(accountProfiles).values({
+				accountId,
+				firstName: input.firstName ?? "",
+				lastName: input.lastName ?? "",
+				recoveryAddress: input.recoveryAddress ?? null,
+				phone: phone,
+				addressCountry: input.addressCountry ?? null,
+				addressState: input.addressState ?? null,
+				addressCity: input.addressCity ?? null,
+				addressLine1: input.addressLine1 ?? null,
+				addressLine2: input.addressLine2 ?? null,
+				updatedAt: now,
+			});
+
+			if (lockedFields.size > 0) {
+				await tx.insert(profileFieldLocks).values(
+					[...lockedFields].map((fieldName) => ({
 						accountId,
-						domainId: assignmentDomainId,
-						mailboxId: null,
-						allSharedMailboxes: true,
-					});
-				}
-			} else if (input.sharedMailboxIds?.length) {
-				for (const sharedMailboxId of input.sharedMailboxIds) {
-					const [sharedMailbox] = await tx
-						.select({ domainId: mailboxes.domainId, type: mailboxes.type })
-						.from(mailboxes)
-						.where(eq(mailboxes.id, sharedMailboxId))
-						.limit(1);
-					if (!sharedMailbox || sharedMailbox.type !== "shared") {
-						throw new Error("Invalid shared mailbox assignment");
+						fieldName,
+					})),
+				);
+			}
+
+			for (const assignmentDomainId of assignmentDomainIds) {
+				await tx.insert(accountDomainAssignments).values({
+					accountId,
+					domainId: assignmentDomainId,
+				});
+			}
+
+			if (role === "manager") {
+				if (input.allSharedMailboxes) {
+					for (const assignmentDomainId of assignmentDomainIds) {
+						await tx.insert(managerSharedMailboxAssignments).values({
+							accountId,
+							domainId: assignmentDomainId,
+							mailboxId: null,
+							allSharedMailboxes: true,
+						});
 					}
-					if (
-						!isPlatformPrincipal(principal) &&
-						!hasDomainAccess(principal, sharedMailbox.domainId)
-					) {
-						throw new Error("Forbidden shared mailbox assignment");
+				} else if (input.sharedMailboxIds?.length) {
+					for (const sharedMailboxId of input.sharedMailboxIds) {
+						const [sharedMailbox] = await tx
+							.select({ domainId: mailboxes.domainId, type: mailboxes.type })
+							.from(mailboxes)
+							.where(eq(mailboxes.id, sharedMailboxId))
+							.limit(1);
+						if (!sharedMailbox || sharedMailbox.type !== "shared") {
+							throw new Error("Invalid shared mailbox assignment");
+						}
+						if (
+							!isPlatformPrincipal(principal) &&
+							!hasDomainAccess(principal, sharedMailbox.domainId)
+						) {
+							throw new Error("Forbidden shared mailbox assignment");
+						}
+						await tx.insert(managerSharedMailboxAssignments).values({
+							accountId,
+							domainId: sharedMailbox.domainId,
+							mailboxId: sharedMailboxId,
+							allSharedMailboxes: false,
+						});
 					}
-					await tx.insert(managerSharedMailboxAssignments).values({
-						accountId,
-						domainId: sharedMailbox.domainId,
-						mailboxId: sharedMailboxId,
-						allSharedMailboxes: false,
-					});
 				}
 			}
+		});
+	} catch (error) {
+		if (isUniqueViolation(error)) {
+			throw new Error("Mailbox already exists");
 		}
-	});
+		throw error;
+	}
 
 	const { code: inviteCode, inviteId } = await createInviteRecord(db, {
 		accountId,

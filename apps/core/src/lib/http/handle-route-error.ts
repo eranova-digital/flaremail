@@ -69,6 +69,7 @@ const SAFE_CLIENT_MESSAGES = new Set([
 	"Forbidden shared mailbox assignment",
 	"Invalid shared mailbox assignment",
 	"Mailbox grants cannot apply to the intendant account",
+	"Mailbox already exists",
 	"Forbidden",
 	"Invalid Content-Length",
 	"Request body is too large",
@@ -136,6 +137,9 @@ export function handleRouteError(error: unknown, request?: Request): Response {
 			error.message === "Thread has no messages to reply to";
 		const mappedCode = errorCodeFromDetail(error.message);
 		const detail = clientSafeDetail(error, notFound, mappedCode);
+		if (detail === "Bad request") {
+			console.error("Unmapped client error", error.message, error.cause ?? "");
+		}
 		return problemResponse(notFound ? 404 : 400, detail, {
 			code:
 				mappedCode ??

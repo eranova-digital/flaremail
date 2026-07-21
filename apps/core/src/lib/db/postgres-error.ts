@@ -1,19 +1,13 @@
 export function isUniqueViolation(error: unknown): boolean {
-	if (!error || typeof error !== "object") {
-		return false;
-	}
-
-	const code =
-		"code" in error && typeof error.code === "string" ? error.code : null;
-	if (code === "23505") {
+	if (getPostgresErrorCode(error) === "23505") {
 		return true;
 	}
 
-	const message =
-		"message" in error && typeof error.message === "string"
-			? error.message
-			: "";
-	return message.includes("messages_message_id_unique");
+	const message = getPostgresErrorMessage(error);
+	return (
+		message.includes("messages_message_id_unique") ||
+		/duplicate key value violates unique constraint/i.test(message)
+	);
 }
 
 function getPostgresErrorCode(error: unknown): string | null {
@@ -34,7 +28,9 @@ function getPostgresErrorMessage(error: unknown): string {
 		return "";
 	}
 	if ("message" in error && typeof error.message === "string") {
-		return error.message;
+		const nested =
+			"cause" in error ? getPostgresErrorMessage(error.cause) : "";
+		return nested ? `${error.message}\n${nested}` : error.message;
 	}
 	if ("cause" in error) {
 		return getPostgresErrorMessage(error.cause);
