@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
+/** Matches the app UI (Tailwind preflight / `font-sans`) when host style is unavailable. */
+const DEFAULT_BODY_FONT_FAMILY = "ui-sans-serif, system-ui, sans-serif";
+
 type SandboxedHtmlProps = {
 	html: string;
 	title: string;
@@ -26,11 +29,14 @@ export function buildSandboxedHtmlSrcDoc(
 	options: {
 		adaptToTheme?: boolean;
 		foreground?: string;
+		fontFamily?: string;
 		isDark?: boolean;
 	} = {},
 ): string {
 	const adaptToTheme = options.adaptToTheme ?? true;
 	const foreground = options.foreground ?? (options.isDark ? "#fafafa" : "#0a0a0a");
+	// Iframe `font: inherit` does not pick up the host page — UA default is serif/Times.
+	const fontFamily = options.fontFamily?.trim() || DEFAULT_BODY_FONT_FAMILY;
 	const colorScheme = adaptToTheme
 		? options.isDark
 			? "dark"
@@ -38,8 +44,8 @@ export function buildSandboxedHtmlSrcDoc(
 		: "light";
 
 	const themeCss = adaptToTheme
-		? `html, body { margin: 0; padding: 0; background: transparent; color: ${foreground}; font: inherit; color-scheme: ${colorScheme}; }`
-		: "html, body { margin: 0; padding: 0; background: #ffffff; color: #0a0a0a; font: inherit; color-scheme: light; }";
+		? `html, body { margin: 0; padding: 0; background: transparent; color: ${foreground}; font-family: ${fontFamily}; color-scheme: ${colorScheme}; }`
+		: `html, body { margin: 0; padding: 0; background: #ffffff; color: #0a0a0a; font-family: ${fontFamily}; color-scheme: light; }`;
 
 	const resetCss = [
 		themeCss,
@@ -110,22 +116,27 @@ export function SandboxedHtml({
 		return () => observer.disconnect();
 	}, []);
 
+	// Rebuild once after mount so host computed font/color are available (refs are null on first memo).
+	useEffect(() => {
+		setThemeTick((value) => value + 1);
+	}, []);
+
 	const srcDoc = useMemo(() => {
 		if (!html.trim()) {
 			return "";
 		}
 		const isDark = document.documentElement.classList.contains("dark");
-		const foreground =
-			hostRef.current
-				? getComputedStyle(hostRef.current).color
-				: undefined;
+		const hostStyle = hostRef.current
+			? getComputedStyle(hostRef.current)
+			: undefined;
 		return buildSandboxedHtmlSrcDoc(html, bodyCss, {
 			adaptToTheme,
-			foreground,
+			foreground: hostStyle?.color,
+			fontFamily: hostStyle?.fontFamily,
 			isDark,
 		});
 		// themeTick forces rebuild when .dark toggles
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- host color read at build time
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- host color/font read at build time
 	}, [html, bodyCss, adaptToTheme, themeTick]);
 
 	useEffect(() => {

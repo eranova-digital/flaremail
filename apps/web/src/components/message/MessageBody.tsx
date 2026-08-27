@@ -83,7 +83,7 @@ export function MessageBody({
 
 	if (!text && !html && !preview) {
 		return (
-			<pre className="text-muted-foreground text-sm whitespace-pre-wrap">
+			<pre className="font-sans text-muted-foreground text-sm whitespace-pre-wrap">
 				{emptyMessage}
 			</pre>
 		);
@@ -92,11 +92,11 @@ export function MessageBody({
 	const bodyContent = hasHtml ? (
 		<EmailHtmlBody html={visibleHtml} />
 	) : hasQuotedReply && parsedReply ? (
-		<pre className="text-sm whitespace-pre-wrap">
+		<pre className="font-sans text-sm whitespace-pre-wrap">
 			{parsedReply.visibleText.trim() || emptyMessage}
 		</pre>
 	) : (
-		<pre className="text-sm whitespace-pre-wrap">
+		<pre className="font-sans text-sm whitespace-pre-wrap">
 			{text || preview || emptyMessage}
 		</pre>
 	);
@@ -126,7 +126,7 @@ export function MessageBody({
 								<EmailHtmlBody html={quotedHtml} />
 							</div>
 						) : (
-							<pre className="text-muted-foreground mt-2 border-l-2 pl-3 text-sm whitespace-pre-wrap">
+							<pre className="font-sans text-muted-foreground mt-2 border-l-2 pl-3 text-sm whitespace-pre-wrap">
 								{quotedText}
 							</pre>
 						)
