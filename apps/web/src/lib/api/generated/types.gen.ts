@@ -404,6 +404,18 @@ export type SearchPage = {
     nextCursor?: string | null;
 };
 
+export type DraftPage = {
+    items: Array<MessagePreview & {
+        /**
+         * True when the draft's thread is in the drafts folder (compose-only / no non-draft messages yet).
+         *
+         */
+        composeOnly: boolean;
+        threadFolder?: ThreadFolder;
+    }>;
+    nextCursor: string | null;
+};
+
 export type UuidId = string;
 
 export type MailboxId = string;
@@ -1136,6 +1148,35 @@ export type SendMessageResponses = {
 };
 
 export type SendMessageResponse = SendMessageResponses[keyof SendMessageResponses];
+
+export type ListDraftsData = {
+    body?: never;
+    path?: never;
+    query: {
+        mailboxId: string;
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/messages/drafts';
+};
+
+export type ListDraftsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListDraftsError = ListDraftsErrors[keyof ListDraftsErrors];
+
+export type ListDraftsResponses = {
+    /**
+     * Draft message page
+     */
+    200: DraftPage;
+};
+
+export type ListDraftsResponse = ListDraftsResponses[keyof ListDraftsResponses];
 
 export type CreateDraftData = {
     body: CreateDraftRequest;

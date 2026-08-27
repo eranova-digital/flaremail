@@ -64,6 +64,31 @@ export async function handleGetMessagePreview({
 	}
 }
 
+export async function handleListDrafts({
+	request,
+	env,
+	principal,
+}: RouteContext): Promise<Response> {
+	const mailboxId = requireQueryParam(request, "mailboxId");
+	if (mailboxId instanceof Response) {
+		return mailboxId;
+	}
+
+	const url = new URL(request.url);
+
+	try {
+		const result = await withDb(env, (db) =>
+			mailboxMail(env, db, principal, request).listDrafts(mailboxId, {
+				cursor: url.searchParams.get("cursor"),
+				limit: parseLimit(url.searchParams.get("limit")),
+			}),
+		);
+		return jsonResponse(result);
+	} catch (error) {
+		return handleRouteError(error, request);
+	}
+}
+
 export async function handleSearch({
 	request,
 	env,

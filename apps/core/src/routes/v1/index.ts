@@ -49,6 +49,7 @@ import {
 	handleDownloadRawMessage,
 	handleGetMessage,
 	handleGetMessagePreview,
+	handleListDrafts,
 	handleSearch,
 } from "../../controllers/messages-read";
 import {
@@ -333,6 +334,13 @@ export const v1Routes: RouteDefinition[] = [
 		action: "mail_write",
 		scopes: ["messages:send"],
 		handler: handleSendMessage,
+	},
+	{
+		method: "GET",
+		path: `${prefix}/messages/drafts`,
+		action: "mail_read",
+		scopes: ["drafts:list"],
+		handler: handleListDrafts,
 	},
 	{
 		method: "POST",

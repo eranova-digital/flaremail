@@ -540,6 +540,28 @@ paths:
           $ref: "#/components/responses/Problem"
 
   /messages/drafts:
+    get:
+      tags: [Drafts]
+      summary: List draft messages
+      description: >
+        Returns all outbound messages with send status `draft` visible to the
+        mailbox, including reply drafts on non-draft threads. `composeOnly` is
+        true when the parent thread is parked in the drafts folder (new compose
+        with no non-draft mail yet).
+      operationId: listDrafts
+      parameters:
+        - $ref: "#/components/parameters/MailboxIdQuery"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Draft message page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftPage"
+        default:
+          $ref: "#/components/responses/Problem"
     post:
       tags: [Drafts]
       summary: Create draft
@@ -1965,5 +1987,29 @@ components:
                   threadId:
                     type: string
                     format: uuid
+        nextCursor:
+          type: ["string", "null"]
+
+    DraftPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/MessagePreview"
+              - type: object
+                required: [composeOnly]
+                properties:
+                  composeOnly:
+                    type: boolean
+                    description: >
+                      True when the draft's thread is in the drafts folder
+                      (compose-only / no non-draft messages yet).
+                  threadFolder:
+                    allOf:
+                      - $ref: "#/components/schemas/ThreadFolder"
+                    nullable: true
         nextCursor:
           type: ["string", "null"]

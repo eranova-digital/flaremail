@@ -17,6 +17,7 @@ import { downloadRawMessage } from "../raw-message";
 import { runThreadAction } from "../thread-commands";
 import {
 	getThread,
+	listDraftMessages,
 	listThreadMessages,
 	listThreads,
 	readMessageFull,
@@ -186,6 +187,14 @@ export class MailboxMail {
 	) {
 		await this.authorizeRead(mailboxId);
 		return searchMessages(this.ctx.db, mailboxId, query, options);
+	}
+
+	async listDrafts(
+		mailboxId: string,
+		options: { cursor: string | null; limit: number },
+	) {
+		await this.authorizeRead(mailboxId);
+		return listDraftMessages(this.ctx.db, mailboxId, options);
 	}
 
 	async downloadRawMessage(messageId: string, mailboxId: string) {
