@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import { DraftListItem } from '@/components/layout/DraftListItem';
 import { useMailboxNavOptional } from '@/components/layout/MailboxNavContext';
 import { ThreadListItem } from '@/components/layout/ThreadListItem';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDrafts } from '@/hooks/use-drafts';
 import { useLabels } from '@/hooks/use-labels';
 import { useThreadsByLabel } from '@/hooks/use-threads-by-label';
 import { useThreads } from '@/hooks/use-threads';
@@ -15,7 +17,7 @@ import { FOLDER_LABELS, FOLDERS, isThreadFolder } from '@/lib/folders';
 import type { Thread, ThreadFolder } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/api/errors';
 import { DEFAULT_LABEL_COLOR } from '@/lib/label-colors';
-import { threadPath } from '@/lib/mailbox-routes';
+import { composePath, threadPath } from '@/lib/mailbox-routes';
 import { cn } from '@/lib/utils';
 
 function NavMenuButton() {
@@ -48,6 +50,97 @@ function useActiveFolder(): ThreadFolder {
 		return fromQuery;
 	}
 	return 'inbox';
+}
+
+function DraftMessageList({
+	mailboxId,
+}: {
+	mailboxId: string;
+}) {
+	const { t } = useTranslation('mail');
+	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const draftsQuery = useDrafts(mailboxId);
+	const selectedDraftId =
+		searchParams.get('draftId') ?? searchParams.get('messageId');
+
+	if (draftsQuery.isLoading) {
+		return (
+			<div className="space-y-2 p-3">
+				{Array.from({ length: 6 }).map((_, index) => (
+					<Skeleton key={index} className="h-16 w-full" />
+				))}
+			</div>
+		);
+	}
+
+	if (draftsQuery.isError) {
+		return <div className="text-destructive p-4 text-sm">{getErrorMessage(draftsQuery.error)}</div>;
+	}
+
+	const drafts = draftsQuery.data?.items ?? [];
+
+	return (
+		<>
+			<div className="flex items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+				<div className="flex min-w-0 items-center gap-1">
+					<NavMenuButton />
+					<h2 className="truncate font-medium">{FOLDER_LABELS.drafts}</h2>
+				</div>
+				<div className="flex shrink-0 items-center gap-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						className="size-8"
+						aria-label={t('threadList.refreshDrafts')}
+						disabled={draftsQuery.isFetching}
+						onClick={() => void draftsQuery.refetch()}
+					>
+						<RefreshCw className={cn('size-4', draftsQuery.isFetching && 'animate-spin')} />
+					</Button>
+					<Badge variant="secondary" className="max-w-[9rem] truncate sm:max-w-none">
+						{t('threadList.draftCount', { count: drafts.length })}
+					</Badge>
+				</div>
+			</div>
+			<div className="max-w-full flex-1 overflow-y-auto">
+				{drafts.length === 0 ? (
+					<p className="text-muted-foreground p-4 text-sm">{t('threadList.emptyDrafts')}</p>
+				) : (
+					<ul>
+						{drafts.map((draft) => (
+								<DraftListItem
+									key={draft.id!}
+									draft={draft}
+									selected={draft.id === selectedDraftId}
+									onSelect={() => {
+										if (!draft.id || !draft.threadId) {
+											return;
+										}
+										if (draft.composeOnly) {
+											navigate(
+												composePath(mailboxId, {
+													draftId: draft.id,
+													threadId: draft.threadId,
+													folder: 'drafts',
+												}),
+											);
+											return;
+										}
+										navigate(
+											threadPath(mailboxId, draft.threadId, {
+												folder: 'drafts',
+												messageId: draft.id,
+											}),
+										);
+									}}
+								/>
+							))}
+					</ul>
+				)}
+			</div>
+		</>
+	);
 }
 
 function FolderThreadList({
@@ -348,6 +441,8 @@ export function ThreadList() {
 					threadId={threadId}
 					labels={labelsQuery.data}
 				/>
+			) : activeFolder === 'drafts' ? (
+				<DraftMessageList mailboxId={mailboxId} />
 			) : (
 				<FolderThreadList
 					mailboxId={mailboxId}

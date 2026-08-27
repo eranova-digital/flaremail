@@ -3,6 +3,7 @@ import type { ThreadFolder } from "@/lib/api/client";
 type ThreadRouteOptions = {
 	folder?: ThreadFolder;
 	labelId?: string | null;
+	messageId?: string | null;
 };
 
 export function labelListPath(mailboxId: string, labelId: string): string {
@@ -14,12 +15,20 @@ export function threadPath(
 	threadId: string,
 	options?: ThreadRouteOptions,
 ): string {
+	const search = new URLSearchParams();
+	if (options?.messageId) {
+		search.set("messageId", options.messageId);
+	}
+
 	if (options?.labelId) {
-		return `/m/${mailboxId}/labels/${options.labelId}/threads/${threadId}`;
+		const query = search.toString();
+		const base = `/m/${mailboxId}/labels/${options.labelId}/threads/${threadId}`;
+		return query ? `${base}?${query}` : base;
 	}
 
 	const folder = options?.folder ?? "inbox";
-	return `/m/${mailboxId}/threads/${threadId}?folder=${folder}`;
+	search.set("folder", folder);
+	return `/m/${mailboxId}/threads/${threadId}?${search.toString()}`;
 }
 
 export function composePath(

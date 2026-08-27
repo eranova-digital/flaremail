@@ -11,6 +11,8 @@ export const queryKeys = {
 	labels: (mailboxId: string) => ["labels", mailboxId] as const,
 	threads: (mailboxId: string, folder: ThreadFolder, cursor?: string | null) =>
 		["threads", mailboxId, folder, cursor ?? null] as const,
+	drafts: (mailboxId: string, cursor?: string | null) =>
+		["drafts", mailboxId, cursor ?? null] as const,
 	threadsByLabel: (
 		mailboxId: string,
 		labelId: string,

@@ -202,6 +202,7 @@ export function ThreadView() {
 	const folderFromQuery = searchParams.get('folder');
 	const folderParam = folderFromQuery ?? 'inbox';
 	const folder = isThreadFolder(folderParam) ? folderParam : 'inbox';
+	const highlightMessageId = searchParams.get('messageId');
 	const listPath = labelId
 		? labelListPath(mailboxId ?? '', labelId)
 		: `/m/${mailboxId}/${folder}`;
@@ -232,6 +233,7 @@ export function ThreadView() {
 	const replyComposerRef = useRef<HTMLDivElement>(null);
 	const threadEndRef = useRef<HTMLDivElement>(null);
 	const scrolledToBottomThreadIdRef = useRef<string | null>(null);
+	const highlightedFromUrlRef = useRef<string | null>(null);
 	const previousMessageCountRef = useRef(0);
 	const [replyingToMessageId, setReplyingToMessageId] = useState<string | null>(null);
 	const [replyAll, setReplyAll] = useState(false);
@@ -241,6 +243,7 @@ export function ThreadView() {
 	useEffect(() => {
 		previousMessageCountRef.current = 0;
 		scrolledToBottomThreadIdRef.current = null;
+		highlightedFromUrlRef.current = null;
 	}, [threadId]);
 
 	useEffect(() => {
@@ -316,9 +319,11 @@ export function ThreadView() {
 
 		if (isInitialLoad) {
 			scrolledToBottomThreadIdRef.current = threadId;
-			requestAnimationFrame(() => {
-				threadEndRef.current?.scrollIntoView({ block: 'end' });
-			});
+			if (!highlightMessageId) {
+				requestAnimationFrame(() => {
+					threadEndRef.current?.scrollIntoView({ block: 'end' });
+				});
+			}
 		} else if (hasNewMessages) {
 			requestAnimationFrame(() => {
 				threadEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -326,7 +331,58 @@ export function ThreadView() {
 		}
 
 		previousMessageCountRef.current = messages.length;
-	}, [threadId, messagesQuery.isLoading, messagesQuery.isError, messages.length]);
+	}, [
+		threadId,
+		messagesQuery.isLoading,
+		messagesQuery.isError,
+		messages.length,
+		highlightMessageId,
+	]);
+
+	useEffect(() => {
+		if (
+			!highlightMessageId ||
+			!threadId ||
+			messagesQuery.isLoading ||
+			messagesQuery.isError
+		) {
+			return;
+		}
+
+		const highlightKey = `${threadId}:${highlightMessageId}`;
+		if (highlightedFromUrlRef.current === highlightKey) {
+			return;
+		}
+
+		if (!messages.some((message) => message.id === highlightMessageId)) {
+			return;
+		}
+
+		const frame = requestAnimationFrame(() => {
+			const attempt = () => {
+				if (!messageRefs.current.has(highlightMessageId)) {
+					return false;
+				}
+				highlightedFromUrlRef.current = highlightKey;
+				scrollToMessage(highlightMessageId);
+				return true;
+			};
+			if (attempt()) {
+				return;
+			}
+			requestAnimationFrame(() => {
+				attempt();
+			});
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [
+		highlightMessageId,
+		threadId,
+		messages,
+		messagesQuery.isLoading,
+		messagesQuery.isError,
+		scrollToMessage,
+	]);
 
 	const messagesById = useMemo(
 		() => new Map(messages.filter((message) => message.id).map((message) => [message.id!, message])),
