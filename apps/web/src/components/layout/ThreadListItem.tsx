@@ -91,7 +91,7 @@ export function ThreadListItem({
 						))}
 					</div>
 				) : null}
-				<p className="text-muted-foreground mt-1 h-0 origin-top scale-y-0 transform truncate text-xs blur-xs transition-all duration-300 ease-in-out group-hover:h-4 group-hover:scale-y-100 group-hover:blur-none">
+				<p className="text-muted-foreground mt-1 truncate text-xs max-md:block md:h-0 md:origin-top md:scale-y-0 md:transform md:blur-xs md:transition-all md:duration-300 md:ease-in-out md:group-hover:h-4 md:group-hover:scale-y-100 md:group-hover:blur-none">
 					{thread.preview || t("threadList.noPreview")}
 				</p>
 			</button>

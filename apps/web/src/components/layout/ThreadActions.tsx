@@ -19,6 +19,8 @@ import {
 import { useThread, useThreadAction } from "@/hooks/use-thread";
 import type { ThreadFolder } from "@/lib/api/client";
 
+const actionButtonClassName = "size-8 sm:size-9";
+
 type ThreadActionsProps = {
 	mailboxId: string;
 	threadId: string;
@@ -44,122 +46,129 @@ export function ThreadActions({
 	};
 
 	return (
-		<div className="flex flex-wrap gap-1">
-				{thread.isRead ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("mark-unread")}
-							>
-								<Mail className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.markUnread")}</TooltipContent>
-					</Tooltip>
-				) : (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("mark-read")}
-							>
-								<MailOpen className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.markRead")}</TooltipContent>
-					</Tooltip>
-				)}
-
+		<div className="flex max-w-full flex-wrap justify-end gap-1">
+			{thread.isRead ? (
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
 							variant="outline"
 							size="icon"
+							className={actionButtonClassName}
 							disabled={actionMutation.isPending}
-							onClick={() => run(thread.isStarred ? "unstar" : "star")}
+							onClick={() => run("mark-unread")}
 						>
-							<Star
-								className={
-									thread.isStarred ? "size-4 fill-current text-amber-500" : "size-4"
-								}
-							/>
+							<Mail className="size-4" />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>
-						{thread.isStarred ? t("threadActions.unstar") : t("threadActions.star")}
-					</TooltipContent>
+					<TooltipContent>{t("threadActions.markUnread")}</TooltipContent>
 				</Tooltip>
+			) : (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="outline"
+							size="icon"
+							className={actionButtonClassName}
+							disabled={actionMutation.isPending}
+							onClick={() => run("mark-read")}
+						>
+							<MailOpen className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{t("threadActions.markRead")}</TooltipContent>
+				</Tooltip>
+			)}
 
-				<ThreadLabelPicker mailboxId={mailboxId} threadId={threadId} />
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="outline"
+						size="icon"
+						className={actionButtonClassName}
+						disabled={actionMutation.isPending}
+						onClick={() => run(thread.isStarred ? "unstar" : "star")}
+					>
+						<Star
+							className={
+								thread.isStarred ? "size-4 fill-current text-amber-500" : "size-4"
+							}
+						/>
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>
+					{thread.isStarred ? t("threadActions.unstar") : t("threadActions.star")}
+				</TooltipContent>
+			</Tooltip>
 
-				{folder !== "archived" ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("archive")}
-							>
-								<Archive className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.archive")}</TooltipContent>
-					</Tooltip>
-				) : null}
+			<ThreadLabelPicker mailboxId={mailboxId} threadId={threadId} />
 
-				{folder !== "trash" ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("trash")}
-							>
-								<Trash2 className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.trash")}</TooltipContent>
-					</Tooltip>
-				) : null}
+			{folder !== "archived" ? (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="outline"
+							size="icon"
+							className={actionButtonClassName}
+							disabled={actionMutation.isPending}
+							onClick={() => run("archive")}
+						>
+							<Archive className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{t("threadActions.archive")}</TooltipContent>
+				</Tooltip>
+			) : null}
 
-				{folder !== "spam" ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("spam")}
-							>
-								<ShieldAlert className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.spam")}</TooltipContent>
-					</Tooltip>
-				) : null}
+			{folder !== "trash" ? (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="outline"
+							size="icon"
+							className={actionButtonClassName}
+							disabled={actionMutation.isPending}
+							onClick={() => run("trash")}
+						>
+							<Trash2 className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{t("threadActions.trash")}</TooltipContent>
+				</Tooltip>
+			) : null}
 
-				{folder === "trash" || folder === "spam" || folder === "archived" ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("restore")}
-							>
-								<ArchiveRestore className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.restore")}</TooltipContent>
-					</Tooltip>
-				) : null}
-			</div>
+			{folder !== "spam" ? (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="outline"
+							size="icon"
+							className={actionButtonClassName}
+							disabled={actionMutation.isPending}
+							onClick={() => run("spam")}
+						>
+							<ShieldAlert className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{t("threadActions.spam")}</TooltipContent>
+				</Tooltip>
+			) : null}
+
+			{folder === "trash" || folder === "spam" || folder === "archived" ? (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="outline"
+							size="icon"
+							className={actionButtonClassName}
+							disabled={actionMutation.isPending}
+							onClick={() => run("restore")}
+						>
+							<ArchiveRestore className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{t("threadActions.restore")}</TooltipContent>
+				</Tooltip>
+			) : null}
+		</div>
 	);
 }

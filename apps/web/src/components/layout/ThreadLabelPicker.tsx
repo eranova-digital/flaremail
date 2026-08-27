@@ -53,6 +53,7 @@ export function ThreadLabelPicker({ mailboxId, threadId }: ThreadLabelPickerProp
 						<Button
 							variant="outline"
 							size="icon"
+							className="size-8 sm:size-9"
 							disabled={patchMutation.isPending || labelsQuery.isLoading}
 							aria-label={labelsLabel}
 						>
