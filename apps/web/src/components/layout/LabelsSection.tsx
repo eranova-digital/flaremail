@@ -11,10 +11,11 @@ import { cn } from "@/lib/utils";
 
 type LabelsSectionProps = {
 	collapsed: boolean;
+	onNavigate?: () => void;
 	withTooltip: (label: string, trigger: ReactElement) => ReactElement;
 };
 
-export function LabelsSection({ collapsed, withTooltip }: LabelsSectionProps) {
+export function LabelsSection({ collapsed, onNavigate, withTooltip }: LabelsSectionProps) {
 	const { t } = useTranslation("mail");
 	const { t: tc } = useTranslation("common");
 	const { mailboxId, labelId: activeLabelId } = useParams();
@@ -74,6 +75,7 @@ export function LabelsSection({ collapsed, withTooltip }: LabelsSectionProps) {
 				const link = (
 					<NavLink
 						to={`/m/${mailboxId}/labels/${label.id}`}
+						onClick={() => onNavigate?.()}
 						className={({ isActive }) =>
 							cn(
 								"hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",

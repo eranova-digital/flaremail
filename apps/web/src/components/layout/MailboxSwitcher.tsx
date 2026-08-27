@@ -151,7 +151,7 @@ function MailboxOptionLabel({ mailbox }: { mailbox: Mailbox }) {
 	);
 }
 
-export function MailboxSwitcher() {
+export function MailboxSwitcher({ onNavigate }: { onNavigate?: () => void }) {
 	const { t } = useTranslation("mail");
 	const navigate = useNavigate();
 	const { mailboxId, folder: folderParam, threadId } = useParams();
@@ -208,6 +208,7 @@ export function MailboxSwitcher() {
 
 	const switchMailbox = (nextMailboxId: string) => {
 		setLastMailboxId(nextMailboxId);
+		onNavigate?.();
 		if (threadId) {
 			navigate(
 				`/m/${nextMailboxId}/threads/${threadId}?folder=${currentFolder}`,

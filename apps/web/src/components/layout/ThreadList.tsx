@@ -1,8 +1,9 @@
-import { ChevronDown, RefreshCw } from 'lucide-react';
+import { ChevronDown, Menu, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import { useMailboxNavOptional } from '@/components/layout/MailboxNavContext';
 import { ThreadListItem } from '@/components/layout/ThreadListItem';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,25 @@ import { getErrorMessage } from '@/lib/api/errors';
 import { DEFAULT_LABEL_COLOR } from '@/lib/label-colors';
 import { threadPath } from '@/lib/mailbox-routes';
 import { cn } from '@/lib/utils';
+
+function NavMenuButton() {
+	const { t } = useTranslation('mail');
+	const nav = useMailboxNavOptional();
+	if (!nav?.isMobile) {
+		return null;
+	}
+	return (
+		<Button
+			variant="ghost"
+			size="icon"
+			className="size-8 shrink-0"
+			aria-label={t('sidebar.open')}
+			onClick={nav.openNav}
+		>
+			<Menu className="size-4" />
+		</Button>
+	);
+}
 
 function useActiveFolder(): ThreadFolder {
 	const { folder } = useParams();
@@ -64,9 +84,12 @@ function FolderThreadList({
 
 	return (
 		<>
-			<div className="flex items-center justify-between border-b px-4 py-3">
-				<h2 className="font-medium">{FOLDER_LABELS[activeFolder]}</h2>
-				<div className="flex items-center gap-2">
+			<div className="flex items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+				<div className="flex min-w-0 items-center gap-1">
+					<NavMenuButton />
+					<h2 className="truncate font-medium">{FOLDER_LABELS[activeFolder]}</h2>
+				</div>
+				<div className="flex shrink-0 items-center gap-2">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -77,13 +100,13 @@ function FolderThreadList({
 					>
 						<RefreshCw className={cn('size-4', threadsQuery.isFetching && 'animate-spin')} />
 					</Button>
-					<Badge variant="secondary">
+					<Badge variant="secondary" className="max-w-[9rem] truncate sm:max-w-none">
 						{unreadCount > 0 ? t('threadList.unreadPrefix', { count: unreadCount }) : ''}
 						{t('threadList.threadCount', { count: threads.length })}
 					</Badge>
 				</div>
 			</div>
-			<div className="flex-1 max-w-full overflow-y-auto">
+			<div className="max-w-full flex-1 overflow-y-auto">
 				{threads.length === 0 ? (
 					<p className="text-muted-foreground p-4 text-sm">
 						{t('threadList.emptyFolder', { folder: FOLDER_LABELS[activeFolder] })}
@@ -237,17 +260,20 @@ function LabelThreadList({
 
 	return (
 		<>
-			<div className="flex items-center justify-between border-b px-4 py-3">
-				<div className="flex min-w-0 items-center gap-2">
-					<span
-						className="size-3 shrink-0 rounded-full"
-						style={{
-							backgroundColor: activeLabel?.color ?? DEFAULT_LABEL_COLOR,
-						}}
-					/>
-					<h2 className="truncate font-medium">{activeLabel?.name ?? t('labels.fallback')}</h2>
+			<div className="flex items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+				<div className="flex min-w-0 items-center gap-1">
+					<NavMenuButton />
+					<div className="flex min-w-0 items-center gap-2">
+						<span
+							className="size-3 shrink-0 rounded-full"
+							style={{
+								backgroundColor: activeLabel?.color ?? DEFAULT_LABEL_COLOR,
+							}}
+						/>
+						<h2 className="truncate font-medium">{activeLabel?.name ?? t('labels.fallback')}</h2>
+					</div>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex shrink-0 items-center gap-2">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -258,7 +284,7 @@ function LabelThreadList({
 					>
 						<RefreshCw className={cn('size-4', isAnyFetching && 'animate-spin')} />
 					</Button>
-					<Badge variant="secondary">
+					<Badge variant="secondary" className="max-w-[9rem] truncate sm:max-w-none">
 						{totalUnread > 0 ? t('threadList.unreadPrefix', { count: totalUnread }) : ''}
 						{t('threadList.threadCount', { count: totalThreads })}
 					</Badge>

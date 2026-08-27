@@ -71,7 +71,14 @@ function withTooltip(collapsed: boolean, label: string, trigger: ReactElement): 
 	);
 }
 
-export function FolderSidebar() {
+type FolderSidebarProps = {
+	/** `drawer` fills a sheet and stays expanded; `rail` is the desktop sidebar. */
+	variant?: 'rail' | 'drawer';
+	/** Called after a navigation action so a mobile drawer can close. */
+	onNavigate?: () => void;
+};
+
+export function FolderSidebar({ variant = 'rail', onNavigate }: FolderSidebarProps) {
 	const { t } = useTranslation('mail');
 	const { t: tc } = useTranslation('common');
 	const navigate = useNavigate();
@@ -82,7 +89,9 @@ export function FolderSidebar() {
 	const mailboxesQuery = useMailboxes();
 	const mailbox = mailboxesQuery.data?.find((item) => item.id === mailboxId);
 	const visibleFolders = getFoldersForMailbox(mailbox ?? {});
-	const [collapsed, toggleCollapsed] = useSidebarCollapsed();
+	const [railCollapsed, toggleCollapsed] = useSidebarCollapsed();
+	const isDrawer = variant === 'drawer';
+	const collapsed = isDrawer ? false : railCollapsed;
 	const activeFolder =
 		labelId
 			? null
@@ -102,12 +111,17 @@ export function FolderSidebar() {
 	const composeLabel = t('sidebar.compose');
 	const managementLabel = tc('management');
 
+	const go = (path: string) => {
+		navigate(path);
+		onNavigate?.();
+	};
+
 	return (
 		<TooltipProvider delayDuration={0}>
 			<aside
 				className={cn(
 					'bg-muted/30 flex h-full shrink-0 flex-col border-r transition-[width] duration-200 ease-in-out',
-					collapsed ? 'w-14' : 'w-56',
+					isDrawer ? 'w-full border-r-0' : collapsed ? 'w-14' : 'w-56',
 				)}
 			>
 				<div className={cn('space-y-3 p-3', collapsed && 'px-2')}>
@@ -120,28 +134,30 @@ export function FolderSidebar() {
 								<h1 className="truncate text-lg font-semibold tracking-tight">{tc('appName')}</h1>
 							</div>
 						) : null}
-						{withTooltip(
-							collapsed,
-							expandLabel,
-							<Button
-								variant="ghost"
-								size="icon"
-								className="size-8 shrink-0"
-								aria-label={collapsed ? expandLabel : collapseLabel}
-								onClick={toggleCollapsed}
-							>
-								{collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-							</Button>,
-						)}
+						{!isDrawer
+							? withTooltip(
+									collapsed,
+									expandLabel,
+									<Button
+										variant="ghost"
+										size="icon"
+										className="size-8 shrink-0"
+										aria-label={collapsed ? expandLabel : collapseLabel}
+										onClick={toggleCollapsed}
+									>
+										{collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+									</Button>,
+								)
+							: null}
 					</div>
-					{!collapsed ? <MailboxSwitcher /> : null}
+					{!collapsed ? <MailboxSwitcher onNavigate={onNavigate} /> : null}
 					{withTooltip(
 						collapsed,
 						composeLabel,
 						<Button
 							className={cn(collapsed ? 'size-10 p-0' : 'w-full')}
 							size={collapsed ? 'icon' : 'default'}
-							onClick={() => navigate(`/m/${mailboxId}/compose`)}
+							onClick={() => go(`/m/${mailboxId}/compose`)}
 							aria-label={composeLabel}
 						>
 							{collapsed ? <Pencil className="size-4" /> : composeLabel}
@@ -155,6 +171,7 @@ export function FolderSidebar() {
 						const link = (
 							<NavLink
 								to={`/m/${mailboxId}/${item}`}
+								onClick={() => onNavigate?.()}
 								className={({ isActive }) =>
 									cn(
 										'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
@@ -173,16 +190,18 @@ export function FolderSidebar() {
 					<Separator className="my-2" />
 					<LabelsSection
 						collapsed={collapsed}
+						onNavigate={onNavigate}
 						withTooltip={(label, trigger) => withTooltip(collapsed, label, trigger)}
 					/>
 				</nav>
-				<div className={cn('space-y-1 p-2', collapsed && 'px-2')}>
+				<div className={cn('space-y-1 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]', collapsed && 'px-2')}>
 					{showManagement
 						? withTooltip(
 								collapsed,
 								managementLabel,
 								<NavLink
 									to="/management"
+									onClick={() => onNavigate?.()}
 									className={({ isActive }) =>
 										cn(
 											'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
@@ -196,7 +215,7 @@ export function FolderSidebar() {
 								</NavLink>,
 							)
 						: null}
-					<UserCard collapsed={collapsed} />
+					<UserCard collapsed={collapsed} onNavigate={onNavigate} />
 				</div>
 			</aside>
 		</TooltipProvider>
