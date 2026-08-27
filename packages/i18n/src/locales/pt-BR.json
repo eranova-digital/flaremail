@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Expandir barra lateral",
 			"collapse": "Recolher barra lateral",
-			"compose": "Escrever"
+			"compose": "Escrever",
+			"open": "Abrir navegação",
+			"navigation": "Navegação da caixa"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Mostrar caixas do sistema",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "Excluir este rascunho permanentemente?",
 			"send": "Enviar",
 			"reply": "Responder",
-			"replyAll": "Responder a todos"
+			"replyAll": "Responder a todos",
+			"backToList": "Voltar à lista de conversas"
 		},
 		"recipients": {
 			"to": "Para",

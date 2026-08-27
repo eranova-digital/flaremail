@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "サイドバーを展開",
 			"collapse": "サイドバーを折りたたむ",
-			"compose": "作成"
+			"compose": "作成",
+			"open": "ナビゲーションを開く",
+			"navigation": "メールボックスナビ"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "システムメールボックスを表示",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "この下書きを完全に削除しますか？",
 			"send": "送信",
 			"reply": "返信",
-			"replyAll": "全員に返信"
+			"replyAll": "全員に返信",
+			"backToList": "スレッド一覧に戻る"
 		},
 		"recipients": {
 			"to": "宛先",

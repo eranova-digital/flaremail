@@ -503,7 +503,9 @@
 			"brand": "Flaremail",
 			"expand": "Expand sidebar",
 			"collapse": "Collapse sidebar",
-			"compose": "Compose"
+			"compose": "Compose",
+			"open": "Open navigation",
+			"navigation": "Mailbox navigation"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Show system mailboxes",
@@ -587,6 +589,7 @@
 		},
 		"threadView": {
 			"selectThread": "Select a thread to read",
+			"backToList": "Back to thread list",
 			"sendingMessage": "Sending message",
 			"loadingConversation": "Loading conversation",
 			"noPreview": "(no preview)",

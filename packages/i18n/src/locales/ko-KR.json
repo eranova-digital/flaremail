@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "사이드바 펼치기",
 			"collapse": "사이드바 접기",
-			"compose": "작성"
+			"compose": "작성",
+			"open": "탐색 열기",
+			"navigation": "사서함 탐색"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "시스템 사서함 표시",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "이 임시 저장을 영구 삭제할까요?",
 			"send": "보내기",
 			"reply": "답장",
-			"replyAll": "전체 답장"
+			"replyAll": "전체 답장",
+			"backToList": "스레드 목록으로"
 		},
 		"recipients": {
 			"to": "받는 사람",

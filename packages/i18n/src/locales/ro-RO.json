@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Extinde bara laterală",
 			"collapse": "Restrânge bara laterală",
-			"compose": "Compune"
+			"compose": "Compune",
+			"open": "Deschide navigarea",
+			"navigation": "Navigare căsuță"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Afișează cutiile de sistem",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "Ștergi definitiv această ciornă?",
 			"send": "Trimite",
 			"reply": "Răspunde",
-			"replyAll": "Răspunde tuturor"
+			"replyAll": "Răspunde tuturor",
+			"backToList": "Înapoi la lista de fire"
 		},
 		"recipients": {
 			"to": "Către",

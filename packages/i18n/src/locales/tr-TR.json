@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Kenar çubuğunu genişlet",
 			"collapse": "Kenar çubuğunu daralt",
-			"compose": "Yeni ileti"
+			"compose": "Yeni ileti",
+			"open": "Gezinmeyi aç",
+			"navigation": "Posta kutusu gezintisi"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Sistem posta kutularını göster",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "Bu taslak kalıcı olarak silinsin mi?",
 			"send": "Gönder",
 			"reply": "Yanıtla",
-			"replyAll": "Tümünü yanıtla"
+			"replyAll": "Tümünü yanıtla",
+			"backToList": "Konu listesine dön"
 		},
 		"recipients": {
 			"to": "Kime",

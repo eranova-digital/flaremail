@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Seitenleiste erweitern",
 			"collapse": "Seitenleiste einklappen",
-			"compose": "Verfassen"
+			"compose": "Verfassen",
+			"open": "Navigation öffnen",
+			"navigation": "Postfach-Navigation"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Systempostfächer anzeigen",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "Diesen Entwurf endgültig löschen?",
 			"send": "Senden",
 			"reply": "Antworten",
-			"replyAll": "Allen antworten"
+			"replyAll": "Allen antworten",
+			"backToList": "Zurück zur Thread-Liste"
 		},
 		"recipients": {
 			"to": "An",

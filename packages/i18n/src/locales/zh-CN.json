@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "展开侧边栏",
 			"collapse": "收起侧边栏",
-			"compose": "写邮件"
+			"compose": "写邮件",
+			"open": "打开导航",
+			"navigation": "邮箱导航"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "显示系统邮箱",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "永久删除此草稿？",
 			"send": "发送",
 			"reply": "回复",
-			"replyAll": "全部回复"
+			"replyAll": "全部回复",
+			"backToList": "返回会话列表"
 		},
 		"recipients": {
 			"to": "收件人",

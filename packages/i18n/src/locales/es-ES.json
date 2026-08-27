@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Expandir barra lateral",
 			"collapse": "Contraer barra lateral",
-			"compose": "Redactar"
+			"compose": "Redactar",
+			"open": "Abrir navegación",
+			"navigation": "Navegación del buzón"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Mostrar buzones del sistema",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "¿Eliminar este borrador permanentemente?",
 			"send": "Enviar",
 			"reply": "Responder",
-			"replyAll": "Responder a todos"
+			"replyAll": "Responder a todos",
+			"backToList": "Volver a la lista de hilos"
 		},
 		"recipients": {
 			"to": "Para",

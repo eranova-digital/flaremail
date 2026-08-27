@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Rozwiń panel boczny",
 			"collapse": "Zwiń panel boczny",
-			"compose": "Utwórz"
+			"compose": "Utwórz",
+			"open": "Otwórz nawigację",
+			"navigation": "Nawigacja skrzynki"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Pokaż skrzynki systemowe",
@@ -602,7 +604,8 @@
 			"deleteDraftConfirm": "Trwale usunąć ten szkic?",
 			"send": "Wyślij",
 			"reply": "Odpowiedz",
-			"replyAll": "Odpowiedz wszystkim"
+			"replyAll": "Odpowiedz wszystkim",
+			"backToList": "Wróć do listy wątków"
 		},
 		"recipients": {
 			"to": "Do",
