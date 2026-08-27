@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "サイドバーを展開",
 			"collapse": "サイドバーを折りたたむ",
-			"compose": "作成"
+			"compose": "作成",
+			"open": "ナビゲーションを開く",
+			"navigation": "メールボックスナビ"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "システムメールボックスを表示",
@@ -572,7 +574,8 @@
 			"trash": "ゴミ箱",
 			"spam": "迷惑メール",
 			"restore": "復元",
-			"labels": "ラベル"
+			"labels": "ラベル",
+			"menu": "スレッドの操作"
 		},
 		"threadView": {
 			"selectThread": "読むスレッドを選択",
@@ -602,7 +605,8 @@
 			"deleteDraftConfirm": "この下書きを完全に削除しますか？",
 			"send": "送信",
 			"reply": "返信",
-			"replyAll": "全員に返信"
+			"replyAll": "全員に返信",
+			"backToList": "スレッド一覧に戻る"
 		},
 		"recipients": {
 			"to": "宛先",
@@ -670,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "キャンセル",
-			"delete": "削除",
-			"deleting": "削除中",
+			"delete": "下書きを削除",
+			"deleting": "削除中…",
 			"save": "保存",
-			"saving": "保存中",
+			"saving": "保存中…",
 			"send": "送信",
-			"sending": "送信中"
+			"sending": "送信中…",
+			"close": "作成画面を閉じる",
+			"discard": "破棄",
+			"saveDraft": "下書きを保存"
 		},
 		"confirm": {
 			"deleteDraft": "この下書きを完全に削除しますか？"

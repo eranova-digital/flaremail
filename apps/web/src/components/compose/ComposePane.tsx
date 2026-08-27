@@ -1,5 +1,5 @@
-import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Loader2, Send, Trash2, X } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { RecipientCombobox } from "@/components/compose/RecipientCombobox";
@@ -41,6 +41,31 @@ type ComposePaneProps = {
 	onDeleted?: () => void;
 	onDraftIdChange?: (draftId: string | null) => void;
 };
+
+function ComposeFieldRow({
+	label,
+	htmlFor,
+	actions,
+	children,
+}: {
+	label: string;
+	htmlFor?: string;
+	actions?: ReactNode;
+	children: ReactNode;
+}) {
+	return (
+		<div className="flex min-w-0 items-start gap-3 px-3 py-2 sm:px-4">
+			<label
+				htmlFor={htmlFor}
+				className="text-muted-foreground w-12 shrink-0 pt-2 text-sm sm:w-14"
+			>
+				{label}
+			</label>
+			<div className="min-w-0 flex-1">{children}</div>
+			{actions ? <div className="flex shrink-0 items-center gap-0.5 pt-0.5">{actions}</div> : null}
+		</div>
+	);
+}
 
 export function ComposePane({
 	mailboxId,
@@ -152,11 +177,11 @@ export function ComposePane({
 	const showToField = !isReply;
 	const showCcField = showCc || hasCc;
 	const showBccField = showBcc || hasBcc;
-	const showCcBccRow = showCcField || showBccField;
 	const showCcBccButtons = !showCcField || !showBccField;
 	const canSend =
 		Boolean(compose.fields.subject.trim()) &&
 		(isReply || Boolean(compose.fields.to.trim()));
+	const busy = compose.isDeleting || compose.isSending || compose.isSaving;
 
 	const handleSend = async () => {
 		try {
@@ -211,6 +236,18 @@ export function ComposePane({
 		}
 	};
 
+	const handleClose = () => {
+		if (showDraftActions && !isResumedDraft) {
+			void handleCancel();
+			return;
+		}
+		if (showDraftActions && isResumedDraft) {
+			onClose();
+			return;
+		}
+		onClose();
+	};
+
 	if (!compose.initialized) {
 		return (
 			<div
@@ -241,95 +278,37 @@ export function ComposePane({
 				? t("title.forward")
 				: t("title.newMessage");
 
-	const header = (
-		<div
-			className={cn(
-				"flex items-center justify-between gap-3",
-				isInline ? "mb-3" : "border-b px-4 py-3",
-			)}
-		>
-			<h2 className={cn("font-medium", isInline && "text-sm")}>{headerTitle}</h2>
-			<div className="flex items-center gap-2">
-				{showDraftActions ? (
-					isResumedDraft ? (
-						<Button
-							variant="outline"
-							size={isInline ? "sm" : "default"}
-							className="text-destructive hover:text-destructive"
-							onClick={() => void handleDelete()}
-							disabled={compose.isDeleting || compose.isSending || compose.isSaving}
-						>
-							{compose.isDeleting ? (
-								<>
-									<Loader2 className="size-4 animate-spin" />
-									{t("actions.deleting")}
-								</>
-							) : (
-								t("actions.delete")
-							)}
-						</Button>
-					) : (
-						<Button
-							variant="outline"
-							size={isInline ? "sm" : "default"}
-							onClick={() => void handleCancel()}
-							disabled={compose.isDeleting || compose.isSending || compose.isSaving}
-						>
-							{t("actions.cancel")}
-						</Button>
-					)
-				) : (
-					<Button
-						variant="outline"
-						size={isInline ? "sm" : "default"}
-						onClick={onClose}
-						disabled={compose.isSending}
-					>
-						{t("actions.cancel")}
-					</Button>
-				)}
-				{showDraftActions ? (
-					<Button
-						variant="outline"
-						size={isInline ? "sm" : "default"}
-						onClick={() => void handleSave()}
-						disabled={!compose.canSave || compose.isSaving || compose.isSending}
-					>
-						{compose.isSaving ? (
-							<>
-								<Loader2 className="size-4 animate-spin" />
-								{t("actions.saving")}
-							</>
-						) : (
-							t("actions.save")
-						)}
-					</Button>
-				) : null}
+	const ccBccActions = showCcBccButtons ? (
+		<>
+			{!showCcField ? (
 				<Button
-					size={isInline ? "sm" : "default"}
-					onClick={() => void handleSend()}
-					disabled={!canSend || compose.isSending || compose.isSaving}
+					type="button"
+					variant="ghost"
+					size="sm"
+					className="text-muted-foreground h-8 px-2"
+					onClick={() => setShowCc(true)}
 				>
-					{compose.isSending ? (
-						<>
-							<Loader2 className="size-4 animate-spin" />
-							{t("actions.sending")}
-						</>
-					) : (
-						t("actions.send")
-					)}
+					{t("fields.cc")}
 				</Button>
-			</div>
-		</div>
-	);
+			) : null}
+			{!showBccField ? (
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					className="text-muted-foreground h-8 px-2"
+					onClick={() => setShowBcc(true)}
+				>
+					{t("fields.bcc")}
+				</Button>
+			) : null}
+		</>
+	) : null;
 
-	const fields = (
-		<div className="space-y-3">
+	const metaFields = (
+		<div className="divide-border min-w-0 divide-y">
 			{identitiesQuery.data && identitiesQuery.data.length > 0 ? (
-				<div className="space-y-2">
-					<label className="text-sm font-medium" htmlFor="compose-identity">
-						{t("fields.from")}
-					</label>
+				<ComposeFieldRow label={t("fields.from")} htmlFor="compose-identity">
 					<Select
 						value={compose.fields.identityId ?? undefined}
 						onValueChange={handleIdentityChange}
@@ -337,6 +316,7 @@ export function ComposePane({
 						<SelectTrigger
 							id="compose-identity"
 							aria-label={t("fields.fromIdentityAria")}
+							className="h-9 min-w-0 border-0 bg-transparent px-0 shadow-none focus:ring-0"
 						>
 							<SelectValue placeholder={t("fields.selectIdentity")} />
 						</SelectTrigger>
@@ -355,162 +335,246 @@ export function ComposePane({
 							})}
 						</SelectContent>
 					</Select>
-				</div>
+				</ComposeFieldRow>
 			) : null}
+
 			{showToField ? (
-				<div className="space-y-2">
-					<div className="flex items-center justify-between gap-2">
-						<label className="text-sm font-medium" htmlFor="compose-to">
-							{t("fields.to")}
-						</label>
-						{showCcBccButtons ? (
-							<div className="flex items-center gap-1">
-								{!showCcField ? (
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="text-muted-foreground h-7 px-2"
-										onClick={() => setShowCc(true)}
-									>
-										{t("fields.cc")}
-									</Button>
-								) : null}
-								{!showBccField ? (
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="text-muted-foreground h-7 px-2"
-										onClick={() => setShowBcc(true)}
-									>
-										{t("fields.bcc")}
-									</Button>
-								) : null}
-							</div>
-						) : null}
-					</div>
+				<ComposeFieldRow
+					label={t("fields.to")}
+					htmlFor="compose-to"
+					actions={ccBccActions}
+				>
 					<RecipientCombobox
 						id="compose-to"
+						plain
 						value={compose.fields.to}
 						onValueChange={(to) => compose.updateFields({ to })}
 						placeholder={t("placeholders.to")}
 					/>
-				</div>
+				</ComposeFieldRow>
 			) : null}
+
 			{!showToField && showCcBccButtons ? (
-				<div className="flex items-center gap-1">
-					{!showCcField ? (
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							className="text-muted-foreground h-7 px-2"
-							onClick={() => setShowCc(true)}
-						>
-							{t("fields.cc")}
-						</Button>
-					) : null}
-					{!showBccField ? (
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							className="text-muted-foreground h-7 px-2"
-							onClick={() => setShowBcc(true)}
-						>
-							{t("fields.bcc")}
-						</Button>
-					) : null}
-				</div>
+				<div className="flex justify-end gap-0.5 px-3 py-1.5 sm:px-4">{ccBccActions}</div>
 			) : null}
-			{showCcBccRow ? (
-				<div className="flex gap-3">
-					{showCcField ? (
-						<div className="min-w-0 flex-1 space-y-2">
-							<label className="text-sm font-medium" htmlFor="compose-cc">
-								{t("fields.cc")}
-							</label>
-							<RecipientCombobox
-								id="compose-cc"
-								value={compose.fields.cc}
-								onValueChange={(cc) => compose.updateFields({ cc })}
-								placeholder={
-									isReply ? t("placeholders.optional") : t("placeholders.cc")
-								}
-								onEmptyBlur={() => setShowCc(false)}
-							/>
-						</div>
-					) : null}
-					{showBccField ? (
-						<div className="min-w-0 flex-1 space-y-2">
-							<label className="text-sm font-medium" htmlFor="compose-bcc">
-								{t("fields.bcc")}
-							</label>
-							<RecipientCombobox
-								id="compose-bcc"
-								value={compose.fields.bcc}
-								onValueChange={(bcc) => compose.updateFields({ bcc })}
-								placeholder={
-									isReply ? t("placeholders.optional") : t("placeholders.bcc")
-								}
-								onEmptyBlur={() => setShowBcc(false)}
-							/>
-						</div>
-					) : null}
-				</div>
+
+			{showCcField ? (
+				<ComposeFieldRow label={t("fields.cc")} htmlFor="compose-cc">
+					<RecipientCombobox
+						id="compose-cc"
+						plain
+						value={compose.fields.cc}
+						onValueChange={(cc) => compose.updateFields({ cc })}
+						placeholder={
+							isReply ? t("placeholders.optional") : t("placeholders.cc")
+						}
+						onEmptyBlur={() => setShowCc(false)}
+					/>
+				</ComposeFieldRow>
 			) : null}
+
+			{showBccField ? (
+				<ComposeFieldRow label={t("fields.bcc")} htmlFor="compose-bcc">
+					<RecipientCombobox
+						id="compose-bcc"
+						plain
+						value={compose.fields.bcc}
+						onValueChange={(bcc) => compose.updateFields({ bcc })}
+						placeholder={
+							isReply ? t("placeholders.optional") : t("placeholders.bcc")
+						}
+						onEmptyBlur={() => setShowBcc(false)}
+					/>
+				</ComposeFieldRow>
+			) : null}
+
 			{isReply ? (
 				showSubjectEditor ? (
-					<div className="space-y-2">
-						<label className="text-sm font-medium" htmlFor="compose-subject">
-							{t("fields.subject")}
-						</label>
+					<ComposeFieldRow label={t("fields.subject")} htmlFor="compose-subject">
 						<Input
 							id="compose-subject"
 							value={compose.fields.subject}
 							onChange={(event) =>
 								compose.updateFields({ subject: event.target.value })
 							}
+							className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
 						/>
-					</div>
+					</ComposeFieldRow>
 				) : (
-					<Button
-						type="button"
-						variant="link"
-						size="sm"
-						className="text-muted-foreground h-auto p-0"
-						onClick={() => setShowSubjectEditor(true)}
-					>
-						{t("fields.changeSubject")}
-					</Button>
+					<div className="px-3 py-2 sm:px-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="text-muted-foreground h-8 px-2"
+							onClick={() => setShowSubjectEditor(true)}
+						>
+							{t("fields.changeSubject")}
+						</Button>
+					</div>
 				)
 			) : (
-				<div className="space-y-2">
-					<label className="text-sm font-medium" htmlFor="compose-subject">
-						{t("fields.subject")}
-					</label>
+				<ComposeFieldRow label={t("fields.subject")} htmlFor="compose-subject">
 					<Input
 						id="compose-subject"
 						value={compose.fields.subject}
 						onChange={(event) =>
 							compose.updateFields({ subject: event.target.value })
 						}
+						className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
 					/>
-				</div>
+				</ComposeFieldRow>
 			)}
-			{compose.forwardSource ? (
-				<ComposeForwardSource source={compose.forwardSource} />
+		</div>
+	);
+
+	const errors = (
+		<>
+			{compose.saveError ? (
+				<p className="text-destructive px-3 text-sm sm:px-4">{compose.saveError}</p>
 			) : null}
-			<div className="space-y-2">
-				<label className="text-sm font-medium" htmlFor="compose-body">
-					{compose.forwardSource ? t("fields.message") : t("fields.body")}
-				</label>
+			{compose.sendError ? (
+				<p className="text-destructive px-3 text-sm sm:px-4">
+					{getErrorMessage(compose.sendError)}
+				</p>
+			) : null}
+			{compose.deleteError ? (
+				<p className="text-destructive px-3 text-sm sm:px-4">
+					{getErrorMessage(compose.deleteError)}
+				</p>
+			) : null}
+		</>
+	);
+
+	const titleBar = (
+		<div
+			className={cn(
+				"flex items-center gap-2",
+				isInline ? "px-3 pt-3 sm:px-4" : "border-b px-3 py-3 sm:px-4",
+			)}
+		>
+			<h2 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight">
+				{headerTitle}
+			</h2>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				className="size-8 shrink-0"
+				aria-label={t("actions.close")}
+				onClick={handleClose}
+				disabled={compose.isSending || compose.isDeleting}
+			>
+				<X className="size-4" />
+			</Button>
+		</div>
+	);
+
+	const footer = (
+		<div
+			className={cn(
+				"bg-background/95 supports-backdrop-filter:bg-background/80 flex flex-wrap items-center gap-2 border-t px-3 py-3 backdrop-blur sm:px-4",
+				isInline && "rounded-b-lg",
+			)}
+		>
+			{showDraftActions ? (
+				isResumedDraft ? (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="text-destructive hover:text-destructive"
+						onClick={() => void handleDelete()}
+						disabled={busy}
+					>
+						{compose.isDeleting ? (
+							<Loader2 className="size-4 animate-spin" />
+						) : (
+							<Trash2 className="size-4" />
+						)}
+						{compose.isDeleting ? t("actions.deleting") : t("actions.delete")}
+					</Button>
+				) : (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						onClick={() => void handleCancel()}
+						disabled={busy}
+					>
+						{t("actions.discard")}
+					</Button>
+				)
+			) : (
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					onClick={onClose}
+					disabled={compose.isSending}
+				>
+					{t("actions.discard")}
+				</Button>
+			)}
+
+			{showDraftActions ? (
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					onClick={() => void handleSave()}
+					disabled={!compose.canSave || compose.isSaving || compose.isSending}
+				>
+					{compose.isSaving ? (
+						<>
+							<Loader2 className="size-4 animate-spin" />
+							{t("actions.saving")}
+						</>
+					) : (
+						t("actions.saveDraft")
+					)}
+				</Button>
+			) : null}
+
+			<Button
+				type="button"
+				className="ml-auto"
+				onClick={() => void handleSend()}
+				disabled={!canSend || compose.isSending || compose.isSaving}
+			>
+				{compose.isSending ? (
+					<>
+						<Loader2 className="size-4 animate-spin" />
+						{t("actions.sending")}
+					</>
+				) : (
+					<>
+						<Send className="size-4" />
+						{t("actions.send")}
+					</>
+				)}
+			</Button>
+		</div>
+	);
+
+	const body = (
+		<>
+			{metaFields}
+			{compose.forwardSource ? (
+				<div className="border-border border-t px-3 py-3 sm:px-4">
+					<ComposeForwardSource source={compose.forwardSource} />
+				</div>
+			) : null}
+			<div className="border-border min-w-0 border-t">
 				<ComposeEditor
 					key={`${compose.draftId ?? "new"}-${compose.initialized}`}
 					id="compose-body"
 					mailboxId={mailboxId}
-					className={cn(isInline ? "min-h-[160px]" : "min-h-[280px]")}
+					flush
+					className={cn(
+						"min-w-0 rounded-none border-0 shadow-none",
+						isInline ? "min-h-[12rem]" : "min-h-[min(24rem,50dvh)]",
+					)}
 					initialHtml={compose.fields.bodyHtml}
 					signatureHtml={signatureHtml}
 					placeholder={t("placeholders.body")}
@@ -520,42 +584,33 @@ export function ComposePane({
 					}
 				/>
 			</div>
-			<ComposeAttachments
-				attachments={compose.attachments}
-				onChange={compose.updateAttachments}
-				disabled={compose.isSending}
-			/>
-			{compose.saveError ? (
-				<p className="text-destructive text-sm">{compose.saveError}</p>
-			) : null}
-			{compose.sendError ? (
-				<p className="text-destructive text-sm">
-					{getErrorMessage(compose.sendError)}
-				</p>
-			) : null}
-			{compose.deleteError ? (
-				<p className="text-destructive text-sm">
-					{getErrorMessage(compose.deleteError)}
-				</p>
-			) : null}
-		</div>
+			<div className="border-border border-t px-3 py-3 sm:px-4">
+				<ComposeAttachments
+					compact
+					attachments={compose.attachments}
+					onChange={compose.updateAttachments}
+					disabled={compose.isSending}
+				/>
+			</div>
+			{errors}
+		</>
 	);
 
 	if (isInline) {
 		return (
-			<Card className="gap-0 rounded-lg p-4 py-4">
-				{header}
-				{fields}
+			<Card className="w-full min-w-0 max-w-full gap-0 overflow-x-clip rounded-lg py-0 shadow-sm">
+				{titleBar}
+				<div className="min-w-0">{body}</div>
+				{footer}
 			</Card>
 		);
 	}
 
 	return (
-		<div className="flex h-full flex-col">
-			{header}
-			<div className="min-h-0 flex-1 overflow-auto">
-				<div className="p-4">{fields}</div>
-			</div>
+		<div className="flex h-full min-w-0 flex-col">
+			{titleBar}
+			<div className="min-h-0 min-w-0 flex-1 overflow-auto">{body}</div>
+			{footer}
 		</div>
 	);
 }

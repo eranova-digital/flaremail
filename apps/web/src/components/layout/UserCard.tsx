@@ -21,9 +21,10 @@ import { cn } from '@/lib/utils';
 
 type UserCardProps = {
 	collapsed: boolean;
+	onNavigate?: () => void;
 };
 
-export function UserCard({ collapsed }: UserCardProps) {
+export function UserCard({ collapsed, onNavigate }: UserCardProps) {
 	const { t } = useTranslation('mail');
 	const { t: tc } = useTranslation('common');
 	const { account, signOut } = useAuth();
@@ -96,7 +97,12 @@ export function UserCard({ collapsed }: UserCardProps) {
 					</span>
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem onSelect={() => navigate('/settings')}>
+				<DropdownMenuItem
+					onSelect={() => {
+						onNavigate?.();
+						navigate('/settings');
+					}}
+				>
 					<Settings className="size-4" />
 					{tc('settings')}
 				</DropdownMenuItem>

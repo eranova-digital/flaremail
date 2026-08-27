@@ -111,7 +111,7 @@ export function ToolbarButton({
 			type="button"
 			variant="ghost"
 			size="icon-xs"
-			className={cn("size-8", isActive && "bg-accent text-accent-foreground")}
+			className={cn("size-8 shrink-0", isActive && "bg-accent text-accent-foreground")}
 			onClick={onClick}
 			disabled={disabled}
 			aria-label={label}
@@ -124,7 +124,7 @@ export function ToolbarButton({
 }
 
 function ToolbarDivider() {
-	return <div className="bg-border mx-0.5 h-6 w-px" />;
+	return <div className="bg-border mx-0.5 h-6 w-px shrink-0" />;
 }
 
 function setLink(editor: Editor) {
@@ -471,7 +471,7 @@ export function StyleControls({ editor, disabled = false }: ControlProps) {
 				}}
 				disabled={disabled}
 			>
-				<SelectTrigger className="h-8 w-[5.5rem] px-2 text-xs" tabIndex={-1}>
+				<SelectTrigger className="h-8 w-[5.5rem] shrink-0 px-2 text-xs" tabIndex={-1}>
 					<SelectValue placeholder={t("toolbar.fontSize")} />
 				</SelectTrigger>
 				<SelectContent>
@@ -717,6 +717,8 @@ function useStuckToTop() {
 type ToolbarProps = ControlProps & {
 	onHeightChange?: (height: number) => void;
 	mailboxId?: string;
+	/** Square top edge when the editor sits flush under compose fields. */
+	flush?: boolean;
 };
 
 export function ComposeEditorToolbar({
@@ -724,6 +726,7 @@ export function ComposeEditorToolbar({
 	disabled = false,
 	onHeightChange,
 	mailboxId,
+	flush = false,
 }: ToolbarProps) {
 	const { sentinelRef, stuck } = useStuckToTop();
 	const toolbarRef = useRef<HTMLDivElement>(null);
@@ -750,8 +753,10 @@ export function ComposeEditorToolbar({
 			<div
 				ref={toolbarRef}
 				className={cn(
-					"border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 sticky top-0 z-20 flex flex-wrap items-center gap-0.5 border-b px-1 py-1 backdrop-blur",
-					!stuck && "rounded-t-md",
+					"border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 sticky top-0 z-20 flex w-full min-w-0 max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto overscroll-x-contain border-b px-1 py-1 backdrop-blur",
+					"[scrollbar-width:thin] [scrollbar-color:var(--border)_transparent]",
+					"[&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent",
+					!flush && !stuck && "rounded-t-md",
 				)}
 			>
 				<MarkControls editor={editor} disabled={disabled} />

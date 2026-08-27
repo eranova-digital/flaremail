@@ -51,12 +51,12 @@ export function SettingsShell({
 	const trail = crumbs.slice(0, -1);
 
 	return (
-		<div className="bg-background min-h-svh">
-			<header className="bg-background/95 supports-backdrop-filter:bg-background/80 sticky top-0 z-10 border-b backdrop-blur">
+		<div className="bg-background min-h-svh pb-[env(safe-area-inset-bottom)]">
+			<header className="bg-background/95 supports-backdrop-filter:bg-background/80 sticky top-0 z-10 border-b backdrop-blur pt-[env(safe-area-inset-top)]">
 				<div
-					className={`mx-auto flex items-center gap-3 px-4 py-3 sm:px-6 ${widthClassName}`}
+					className={`mx-auto flex items-center gap-2 px-3 py-3 sm:gap-3 sm:px-6 ${widthClassName}`}
 				>
-					<Button variant="ghost" size="icon" asChild>
+					<Button variant="ghost" size="icon" className="shrink-0" asChild>
 						<Link to={backTo} aria-label={resolvedBackLabel}>
 							<ArrowLeft className="size-4" />
 						</Link>
@@ -73,14 +73,14 @@ export function SettingsShell({
 							<>
 								<Link
 									to={rootTo}
-									className="text-muted-foreground hover:text-foreground shrink-0 text-sm font-medium transition-colors"
+									className="text-muted-foreground hover:text-foreground hidden shrink-0 text-sm font-medium transition-colors sm:inline"
 								>
 									{resolvedRootLabel}
 								</Link>
 								{trail.map((crumb) => (
 									<span
 										key={crumb.label}
-										className="flex min-w-0 items-center gap-1.5"
+										className="hidden min-w-0 items-center gap-1.5 sm:flex"
 									>
 										<ChevronRight
 											className="text-muted-foreground/60 size-3.5 shrink-0"
@@ -101,7 +101,7 @@ export function SettingsShell({
 									</span>
 								))}
 								<ChevronRight
-									className="text-muted-foreground/60 size-3.5 shrink-0"
+									className="text-muted-foreground/60 hidden size-3.5 shrink-0 sm:block"
 									aria-hidden
 								/>
 								<h1 className="truncate text-base font-semibold tracking-tight">
@@ -116,7 +116,7 @@ export function SettingsShell({
 				</div>
 			</header>
 
-			<main className={`mx-auto px-4 py-8 sm:px-6 ${widthClassName}`}>
+			<main className={`mx-auto px-3 py-6 sm:px-6 sm:py-8 ${widthClassName}`}>
 				{description ? (
 					<p className="text-muted-foreground -mt-2 mb-6 text-sm">{description}</p>
 				) : null}

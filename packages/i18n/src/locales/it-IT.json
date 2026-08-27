@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Espandi barra laterale",
 			"collapse": "Comprimi barra laterale",
-			"compose": "Scrivi"
+			"compose": "Scrivi",
+			"open": "Apri navigazione",
+			"navigation": "Navigazione casella"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Mostra caselle di sistema",
@@ -572,7 +574,8 @@
 			"trash": "Cestino",
 			"spam": "Spam",
 			"restore": "Ripristina",
-			"labels": "Etichette"
+			"labels": "Etichette",
+			"menu": "Azioni conversazione"
 		},
 		"threadView": {
 			"selectThread": "Seleziona una conversazione da leggere",
@@ -602,7 +605,8 @@
 			"deleteDraftConfirm": "Eliminare definitivamente questa bozza?",
 			"send": "Invia",
 			"reply": "Rispondi",
-			"replyAll": "Rispondi a tutti"
+			"replyAll": "Rispondi a tutti",
+			"backToList": "Torna all’elenco conversazioni"
 		},
 		"recipients": {
 			"to": "A",
@@ -670,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Annulla",
-			"delete": "Elimina",
-			"deleting": "Eliminazione",
+			"delete": "Elimina bozza",
+			"deleting": "Eliminazione…",
 			"save": "Salva",
-			"saving": "Salvataggio",
+			"saving": "Salvataggio…",
 			"send": "Invia",
-			"sending": "Invio"
+			"sending": "Invio…",
+			"close": "Chiudi compositore",
+			"discard": "Annulla",
+			"saveDraft": "Salva bozza"
 		},
 		"confirm": {
 			"deleteDraft": "Eliminare definitivamente questa bozza?"

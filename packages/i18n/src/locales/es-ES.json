@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Expandir barra lateral",
 			"collapse": "Contraer barra lateral",
-			"compose": "Redactar"
+			"compose": "Redactar",
+			"open": "Abrir navegación",
+			"navigation": "Navegación del buzón"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Mostrar buzones del sistema",
@@ -572,7 +574,8 @@
 			"trash": "Papelera",
 			"spam": "Spam",
 			"restore": "Restaurar",
-			"labels": "Etiquetas"
+			"labels": "Etiquetas",
+			"menu": "Acciones del hilo"
 		},
 		"threadView": {
 			"selectThread": "Selecciona un hilo para leer",
@@ -602,7 +605,8 @@
 			"deleteDraftConfirm": "¿Eliminar este borrador permanentemente?",
 			"send": "Enviar",
 			"reply": "Responder",
-			"replyAll": "Responder a todos"
+			"replyAll": "Responder a todos",
+			"backToList": "Volver a la lista de hilos"
 		},
 		"recipients": {
 			"to": "Para",
@@ -670,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Cancelar",
-			"delete": "Eliminar",
-			"deleting": "Eliminando",
+			"delete": "Eliminar borrador",
+			"deleting": "Eliminando…",
 			"save": "Guardar",
-			"saving": "Guardando",
+			"saving": "Guardando…",
 			"send": "Enviar",
-			"sending": "Enviando"
+			"sending": "Enviando…",
+			"close": "Cerrar redactor",
+			"discard": "Descartar",
+			"saveDraft": "Guardar borrador"
 		},
 		"confirm": {
 			"deleteDraft": "¿Eliminar este borrador permanentemente?"

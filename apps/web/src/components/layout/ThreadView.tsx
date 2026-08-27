@@ -1,4 +1,4 @@
-import { Paperclip, Reply, ReplyAll } from 'lucide-react';
+import { ArrowLeft, Paperclip, Reply, ReplyAll } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMailboxNavOptional } from '@/components/layout/MailboxNavContext';
 import { ThreadActions } from '@/components/layout/ThreadActions';
 import { SeenByAvatarGroup } from '@/components/SeenByAvatarGroup';
 import { useAutoThreadReadStatus } from '@/hooks/use-auto-thread-read-status';
@@ -194,12 +195,16 @@ export function ThreadView() {
 	const { t, i18n } = useTranslation('mail');
 	const { t: tc } = useTranslation('common');
 	const navigate = useNavigate();
+	const mailboxNav = useMailboxNavOptional();
 	const { mailboxId, threadId, labelId: labelIdParam } = useParams();
 	const [searchParams] = useSearchParams();
 	const labelId = labelIdParam ?? searchParams.get('label');
 	const folderFromQuery = searchParams.get('folder');
 	const folderParam = folderFromQuery ?? 'inbox';
 	const folder = isThreadFolder(folderParam) ? folderParam : 'inbox';
+	const listPath = labelId
+		? labelListPath(mailboxId ?? '', labelId)
+		: `/m/${mailboxId}/${folder}`;
 	const mailboxesQuery = useMailboxes();
 	const isSharedMailbox = useMemo(
 		() =>
@@ -429,19 +434,34 @@ export function ThreadView() {
 
 	return (
 		<div className="flex h-full min-w-0 flex-col">
-				<div className="space-y-3 border-b p-4">
-					<div className="flex items-start justify-between gap-4">
-						<div className="min-w-0">
-							<h2 className="truncate text-lg font-semibold">{thread?.subject || t('threadView.noSubject')}</h2>
-							<p className="text-muted-foreground text-sm">
-								{t('threadView.messageCount', { count: messages.length })}
-							</p>
+				<div className="space-y-3 border-b p-3 sm:p-4">
+					<div className="flex items-start justify-between gap-2 sm:gap-4">
+						<div className="flex min-w-0 flex-1 items-start gap-1">
+							{mailboxNav?.isMobile ? (
+								<Button
+									variant="ghost"
+									size="icon"
+									className="mt-0.5 size-8 shrink-0"
+									aria-label={t('threadView.backToList')}
+									onClick={() => navigate(listPath)}
+								>
+									<ArrowLeft className="size-4" />
+								</Button>
+							) : null}
+							<div className="min-w-0">
+								<h2 className="truncate text-base font-semibold sm:text-lg">
+									{thread?.subject || t('threadView.noSubject')}
+								</h2>
+								<p className="text-muted-foreground text-sm">
+									{t('threadView.messageCount', { count: messages.length })}
+								</p>
+							</div>
 						</div>
 						<ThreadActions mailboxId={mailboxId} threadId={threadId} folder={actionFolder} />
 					</div>
 				</div>
-				<ScrollArea className="flex-1">
-					<div className="space-y-4 p-4">
+				<ScrollArea className="min-h-0 min-w-0 flex-1">
+					<div className="min-w-0 max-w-full space-y-4 p-3 sm:p-4">
 						{messages.map((message, index) => {
 							const isDraft = isDraftMessage(message.sendStatus);
 							const isPendingSend = isPendingSendMessage(message);
@@ -601,7 +621,7 @@ export function ThreadView() {
 											}}
 											className={cn(
 												'min-w-0 gap-0 rounded-2xl p-4 py-4 transition-all duration-500',
-												isStructural ? 'w-full' : 'max-w-[85%]',
+												isStructural ? 'w-full' : 'max-w-[min(100%,42rem)] sm:max-w-[85%]',
 												isPendingSend
 													? 'border-r-primary rounded-tr-sm border-r-4 opacity-80'
 													: isDraft
@@ -749,7 +769,7 @@ export function ThreadView() {
 							);
 						})}
 						{replyContext ? (
-							<div ref={replyComposerRef}>
+							<div ref={replyComposerRef} className="w-full min-w-0">
 								<ComposePane
 									key={`${replyingToMessageId}-${replyAll ? 'all' : 'one'}`}
 									variant="inline"
@@ -763,17 +783,21 @@ export function ThreadView() {
 								/>
 							</div>
 						) : lastReplyableMessageId ? (
-							<div className="flex gap-2">
+							<div className="flex flex-col gap-2 sm:flex-row">
 								<Button
 									variant="outline"
-									className={showReplyAll ? 'flex-1' : 'w-full'}
+									className={showReplyAll ? 'w-full flex-1' : 'w-full'}
 									onClick={() => openReply(lastReplyableMessageId, false)}
 								>
 									<Reply className="size-4" />
 									{t('threadView.reply')}
 								</Button>
 								{showReplyAll ? (
-									<Button variant="outline" className="flex-1" onClick={() => openReply(lastReplyableMessageId, true)}>
+									<Button
+										variant="outline"
+										className="w-full flex-1"
+										onClick={() => openReply(lastReplyableMessageId, true)}
+									>
 										<ReplyAll className="size-4" />
 										{t('threadView.replyAll')}
 									</Button>

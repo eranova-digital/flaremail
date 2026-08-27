@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "展开侧边栏",
 			"collapse": "收起侧边栏",
-			"compose": "写邮件"
+			"compose": "写邮件",
+			"open": "打开导航",
+			"navigation": "邮箱导航"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "显示系统邮箱",
@@ -572,7 +574,8 @@
 			"trash": "删除",
 			"spam": "垃圾邮件",
 			"restore": "还原",
-			"labels": "标签"
+			"labels": "标签",
+			"menu": "会话操作"
 		},
 		"threadView": {
 			"selectThread": "选择一个会话进行阅读",
@@ -602,7 +605,8 @@
 			"deleteDraftConfirm": "永久删除此草稿？",
 			"send": "发送",
 			"reply": "回复",
-			"replyAll": "全部回复"
+			"replyAll": "全部回复",
+			"backToList": "返回会话列表"
 		},
 		"recipients": {
 			"to": "收件人",
@@ -670,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "取消",
-			"delete": "删除",
-			"deleting": "正在删除",
+			"delete": "删除草稿",
+			"deleting": "正在删除…",
 			"save": "保存",
-			"saving": "正在保存",
+			"saving": "正在保存…",
 			"send": "发送",
-			"sending": "正在发送"
+			"sending": "正在发送…",
+			"close": "关闭撰写",
+			"discard": "丢弃",
+			"saveDraft": "保存草稿"
 		},
 		"confirm": {
 			"deleteDraft": "永久删除此草稿？"

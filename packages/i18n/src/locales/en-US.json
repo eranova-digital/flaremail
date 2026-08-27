@@ -503,7 +503,9 @@
 			"brand": "Flaremail",
 			"expand": "Expand sidebar",
 			"collapse": "Collapse sidebar",
-			"compose": "Compose"
+			"compose": "Compose",
+			"open": "Open navigation",
+			"navigation": "Mailbox navigation"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Show system mailboxes",
@@ -575,6 +577,7 @@
 			"seenByOverflow": "+{{count}}"
 		},
 		"threadActions": {
+			"menu": "Thread actions",
 			"markUnread": "Mark unread",
 			"markRead": "Mark read",
 			"star": "Star",
@@ -587,6 +590,7 @@
 		},
 		"threadView": {
 			"selectThread": "Select a thread to read",
+			"backToList": "Back to thread list",
 			"sendingMessage": "Sending message",
 			"loadingConversation": "Loading conversation",
 			"noPreview": "(no preview)",
@@ -681,12 +685,15 @@
 		},
 		"actions": {
 			"cancel": "Cancel",
-			"delete": "Delete",
-			"deleting": "Deleting",
+			"close": "Close composer",
+			"discard": "Discard",
+			"delete": "Delete draft",
+			"deleting": "Deleting…",
 			"save": "Save",
-			"saving": "Saving",
+			"saveDraft": "Save draft",
+			"saving": "Saving…",
 			"send": "Send",
-			"sending": "Sending"
+			"sending": "Sending…"
 		},
 		"confirm": {
 			"deleteDraft": "Delete this draft permanently?"

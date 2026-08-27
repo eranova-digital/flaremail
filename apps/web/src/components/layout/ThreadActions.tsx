@@ -3,19 +3,22 @@ import {
 	ArchiveRestore,
 	Mail,
 	MailOpen,
+	MoreVertical,
 	ShieldAlert,
 	Star,
 	Trash2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { ThreadLabelPicker } from "@/components/layout/ThreadLabelPicker";
+import { ThreadLabelMenuItems } from "@/components/layout/ThreadLabelPicker";
 import { Button } from "@/components/ui/button";
 import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useThread, useThreadAction } from "@/hooks/use-thread";
 import type { ThreadFolder } from "@/lib/api/client";
 
@@ -43,123 +46,77 @@ export function ThreadActions({
 		actionMutation.mutate(action);
 	};
 
+	const busy = actionMutation.isPending;
+
 	return (
-		<div className="flex flex-wrap gap-1">
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="outline"
+					size="icon"
+					className="size-8 shrink-0"
+					aria-label={t("threadActions.menu")}
+					disabled={busy}
+				>
+					<MoreVertical className="size-4" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-52">
 				{thread.isRead ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("mark-unread")}
-							>
-								<Mail className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.markUnread")}</TooltipContent>
-					</Tooltip>
+					<DropdownMenuItem disabled={busy} onSelect={() => run("mark-unread")}>
+						<Mail className="size-4" />
+						{t("threadActions.markUnread")}
+					</DropdownMenuItem>
 				) : (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("mark-read")}
-							>
-								<MailOpen className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.markRead")}</TooltipContent>
-					</Tooltip>
+					<DropdownMenuItem disabled={busy} onSelect={() => run("mark-read")}>
+						<MailOpen className="size-4" />
+						{t("threadActions.markRead")}
+					</DropdownMenuItem>
 				)}
 
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="outline"
-							size="icon"
-							disabled={actionMutation.isPending}
-							onClick={() => run(thread.isStarred ? "unstar" : "star")}
-						>
-							<Star
-								className={
-									thread.isStarred ? "size-4 fill-current text-amber-500" : "size-4"
-								}
-							/>
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>
-						{thread.isStarred ? t("threadActions.unstar") : t("threadActions.star")}
-					</TooltipContent>
-				</Tooltip>
-
-				<ThreadLabelPicker mailboxId={mailboxId} threadId={threadId} />
+				<DropdownMenuItem
+					disabled={busy}
+					onSelect={() => run(thread.isStarred ? "unstar" : "star")}
+				>
+					<Star
+						className={
+							thread.isStarred ? "size-4 fill-current text-amber-500" : "size-4"
+						}
+					/>
+					{thread.isStarred ? t("threadActions.unstar") : t("threadActions.star")}
+				</DropdownMenuItem>
 
 				{folder !== "archived" ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("archive")}
-							>
-								<Archive className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.archive")}</TooltipContent>
-					</Tooltip>
+					<DropdownMenuItem disabled={busy} onSelect={() => run("archive")}>
+						<Archive className="size-4" />
+						{t("threadActions.archive")}
+					</DropdownMenuItem>
 				) : null}
 
 				{folder !== "trash" ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("trash")}
-							>
-								<Trash2 className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.trash")}</TooltipContent>
-					</Tooltip>
+					<DropdownMenuItem disabled={busy} onSelect={() => run("trash")}>
+						<Trash2 className="size-4" />
+						{t("threadActions.trash")}
+					</DropdownMenuItem>
 				) : null}
 
 				{folder !== "spam" ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("spam")}
-							>
-								<ShieldAlert className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.spam")}</TooltipContent>
-					</Tooltip>
+					<DropdownMenuItem disabled={busy} onSelect={() => run("spam")}>
+						<ShieldAlert className="size-4" />
+						{t("threadActions.spam")}
+					</DropdownMenuItem>
 				) : null}
 
 				{folder === "trash" || folder === "spam" || folder === "archived" ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={actionMutation.isPending}
-								onClick={() => run("restore")}
-							>
-								<ArchiveRestore className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{t("threadActions.restore")}</TooltipContent>
-					</Tooltip>
+					<DropdownMenuItem disabled={busy} onSelect={() => run("restore")}>
+						<ArchiveRestore className="size-4" />
+						{t("threadActions.restore")}
+					</DropdownMenuItem>
 				) : null}
-			</div>
+
+				<DropdownMenuSeparator />
+				<ThreadLabelMenuItems mailboxId={mailboxId} threadId={threadId} />
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

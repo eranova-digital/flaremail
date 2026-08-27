@@ -103,7 +103,7 @@ export function TableEditBar({
 
 	return (
 		<div
-			className="border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 sticky z-10 flex flex-wrap items-center gap-1 border-b px-2 py-1 backdrop-blur"
+			className="border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 sticky z-10 flex w-full min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto border-b px-2 py-1 backdrop-blur [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border"
 			style={{ top: stickyTop }}
 		>
 			<span className="text-muted-foreground mr-1 text-xs font-medium">

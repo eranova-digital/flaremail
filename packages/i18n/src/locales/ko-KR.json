@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "사이드바 펼치기",
 			"collapse": "사이드바 접기",
-			"compose": "작성"
+			"compose": "작성",
+			"open": "탐색 열기",
+			"navigation": "사서함 탐색"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "시스템 사서함 표시",
@@ -572,7 +574,8 @@
 			"trash": "휴지통",
 			"spam": "스팸",
 			"restore": "복원",
-			"labels": "라벨"
+			"labels": "라벨",
+			"menu": "스레드 작업"
 		},
 		"threadView": {
 			"selectThread": "읽을 스레드를 선택하세요",
@@ -602,7 +605,8 @@
 			"deleteDraftConfirm": "이 임시 저장을 영구 삭제할까요?",
 			"send": "보내기",
 			"reply": "답장",
-			"replyAll": "전체 답장"
+			"replyAll": "전체 답장",
+			"backToList": "스레드 목록으로"
 		},
 		"recipients": {
 			"to": "받는 사람",
@@ -670,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "취소",
-			"delete": "삭제",
-			"deleting": "삭제 중",
+			"delete": "임시보관함 삭제",
+			"deleting": "삭제 중…",
 			"save": "저장",
-			"saving": "저장 중",
+			"saving": "저장 중…",
 			"send": "보내기",
-			"sending": "보내는 중"
+			"sending": "보내는 중…",
+			"close": "작성기 닫기",
+			"discard": "버리기",
+			"saveDraft": "임시보관함에 저장"
 		},
 		"confirm": {
 			"deleteDraft": "이 임시 저장을 영구 삭제할까요?"

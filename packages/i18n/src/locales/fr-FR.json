@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Développer la barre latérale",
 			"collapse": "Réduire la barre latérale",
-			"compose": "Nouveau message"
+			"compose": "Nouveau message",
+			"open": "Ouvrir la navigation",
+			"navigation": "Navigation de la boîte"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Afficher les boîtes système",
@@ -572,7 +574,8 @@
 			"trash": "Corbeille",
 			"spam": "Indésirable",
 			"restore": "Restaurer",
-			"labels": "Libellés"
+			"labels": "Libellés",
+			"menu": "Actions du fil"
 		},
 		"threadView": {
 			"selectThread": "Sélectionnez une conversation à lire",
@@ -602,7 +605,8 @@
 			"deleteDraftConfirm": "Supprimer définitivement ce brouillon ?",
 			"send": "Envoyer",
 			"reply": "Répondre",
-			"replyAll": "Répondre à tous"
+			"replyAll": "Répondre à tous",
+			"backToList": "Retour à la liste des fils"
 		},
 		"recipients": {
 			"to": "À",
@@ -670,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Annuler",
-			"delete": "Supprimer",
-			"deleting": "Suppression",
+			"delete": "Supprimer le brouillon",
+			"deleting": "Suppression…",
 			"save": "Enregistrer",
-			"saving": "Enregistrement",
+			"saving": "Enregistrement…",
 			"send": "Envoyer",
-			"sending": "Envoi"
+			"sending": "Envoi…",
+			"close": "Fermer le compositeur",
+			"discard": "Jeter",
+			"saveDraft": "Enregistrer le brouillon"
 		},
 		"confirm": {
 			"deleteDraft": "Supprimer définitivement ce brouillon ?"

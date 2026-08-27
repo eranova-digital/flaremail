@@ -492,7 +492,9 @@
 			"brand": "Flaremail",
 			"expand": "Expandir barra lateral",
 			"collapse": "Recolher barra lateral",
-			"compose": "Escrever"
+			"compose": "Escrever",
+			"open": "Abrir navegação",
+			"navigation": "Navegação da caixa"
 		},
 		"mailboxSwitcher": {
 			"showSystem": "Mostrar caixas do sistema",
@@ -572,7 +574,8 @@
 			"trash": "Lixeira",
 			"spam": "Spam",
 			"restore": "Restaurar",
-			"labels": "Marcadores"
+			"labels": "Marcadores",
+			"menu": "Ações da conversa"
 		},
 		"threadView": {
 			"selectThread": "Selecione uma conversa para ler",
@@ -602,7 +605,8 @@
 			"deleteDraftConfirm": "Excluir este rascunho permanentemente?",
 			"send": "Enviar",
 			"reply": "Responder",
-			"replyAll": "Responder a todos"
+			"replyAll": "Responder a todos",
+			"backToList": "Voltar à lista de conversas"
 		},
 		"recipients": {
 			"to": "Para",
@@ -670,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Cancelar",
-			"delete": "Excluir",
-			"deleting": "Excluindo",
+			"delete": "Excluir rascunho",
+			"deleting": "Excluindo…",
 			"save": "Salvar",
-			"saving": "Salvando",
+			"saving": "Salvando…",
 			"send": "Enviar",
-			"sending": "Enviando"
+			"sending": "Enviando…",
+			"close": "Fechar editor",
+			"discard": "Descartar",
+			"saveDraft": "Salvar rascunho"
 		},
 		"confirm": {
 			"deleteDraft": "Excluir este rascunho permanentemente?"
