@@ -411,10 +411,13 @@ POST /messages/:id/forward
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/messages/drafts?mailboxId=&cursor=&limit=` | List draft messages |
 | POST | `/messages/drafts` | Create draft |
 | PATCH | `/messages/drafts/:id` | Update draft |
 | DELETE | `/messages/drafts/:id` | Delete draft |
 | POST | `/messages/drafts/:id/send` | Send draft |
+
+List returns message previews plus `composeOnly` (true when the parent thread is parked in the drafts folder) and `threadFolder`. Includes reply drafts on non-draft threads.
 
 Create/update body matches send, plus optional:
 
@@ -439,7 +442,7 @@ All thread reads and mutations require **`?mailboxId=`** (404 if the thread is n
 | GET | `/threads/:id/messages?mailboxId=` | Messages in thread (preview DTOs, chronological) |
 | PATCH | `/threads/:id?mailboxId=` | Replace labels: `{ "labelIds": ["uuid", ...] }` |
 
-**`folder`** (optional): `inbox`, `sent`, `drafts`, `archived`, `trash`, `spam` — omit for all folders.
+**`folder`** (optional): `inbox`, `sent`, `drafts`, `archived`, `trash`, `spam` — omit for all folders. `drafts` lists draft-only threads (implementation parking); the web UI Drafts folder uses `GET /messages/drafts` instead.
 
 **`labelId`** (optional): filter to threads with that label.
 

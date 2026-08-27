@@ -198,11 +198,11 @@ A single email stored in the system, whether inbound, outbound, draft, or failed
 _Avoid_: email (as a stored entity id), delivery
 
 **Draft**:
-An outbound message with send status `draft` that has not been sent yet.
+An outbound message with send status `draft` that has not been sent yet. The sidebar **Drafts** entry is a view of these messages, not a list of threads.
 _Avoid_: compose session, unsent email
 
 **Folder**:
-A thread's placement in the mailbox UI (`inbox`, `sent`, `drafts`, `archived`, `trash`, `spam`).
+A thread's placement in the mailbox UI (`inbox`, `sent`, `archived`, `trash`, `spam`). The value `drafts` is reserved for parking draft-only threads so they do not appear in inbox or sent; the UI Drafts entry lists draft **messages**, not threads in that folder.
 _Avoid_: label, category
 
 **Hard delete**:
@@ -313,7 +313,7 @@ _Avoid_: log TTL, audit retention
 
 **Dev:** Is a **draft** a different table?
 
-**Expert:** No. A **draft** is a **message** with outbound direction and `draft` send status. **GET /messages/:id** reads it like any other **message**; only mutations use the draft command paths.
+**Expert:** No. A **draft** is a **message** with outbound direction and `draft` send status. **GET /messages/:id** reads it like any other **message**; only mutations use the draft command paths. The Drafts sidebar lists those messages via **GET /messages/drafts**, not threads.
 
 **Dev:** Is `patrick@acme.com` an **account** or a **mailbox**?
 
