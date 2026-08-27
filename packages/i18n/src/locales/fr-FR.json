@@ -602,7 +602,10 @@
 			"notSent": "Non envoyé",
 			"editDraft": "Modifier",
 			"deleteDraft": "Supprimer",
-			"deleteDraftConfirm": "Supprimer définitivement ce brouillon ?",
+			"deleteDraftConfirm": {
+				"title": "Supprimer le brouillon ?",
+				"description": "Supprimer définitivement ce brouillon ."
+			},
 			"send": "Envoyer",
 			"reply": "Répondre",
 			"replyAll": "Répondre à tous",
@@ -685,7 +688,10 @@
 			"saveDraft": "Enregistrer le brouillon"
 		},
 		"confirm": {
-			"deleteDraft": "Supprimer définitivement ce brouillon ?"
+			"deleteDraft": {
+				"title": "Supprimer le brouillon ?",
+				"description": "Supprimer définitivement ce brouillon ."
+			}
 		},
 		"fields": {
 			"from": "De",

@@ -602,7 +602,10 @@
 			"notSent": "未发送",
 			"editDraft": "编辑",
 			"deleteDraft": "删除",
-			"deleteDraftConfirm": "永久删除此草稿？",
+			"deleteDraftConfirm": {
+				"title": "删除草稿？",
+				"description": "永久删除此草稿。"
+			},
 			"send": "发送",
 			"reply": "回复",
 			"replyAll": "全部回复",
@@ -685,7 +688,10 @@
 			"saveDraft": "保存草稿"
 		},
 		"confirm": {
-			"deleteDraft": "永久删除此草稿？"
+			"deleteDraft": {
+				"title": "删除草稿？",
+				"description": "永久删除此草稿。"
+			}
 		},
 		"fields": {
 			"from": "发件人",

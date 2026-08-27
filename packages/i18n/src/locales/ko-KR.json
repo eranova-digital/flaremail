@@ -602,7 +602,10 @@
 			"notSent": "보내지 않음",
 			"editDraft": "편집",
 			"deleteDraft": "삭제",
-			"deleteDraftConfirm": "이 임시 저장을 영구 삭제할까요?",
+			"deleteDraftConfirm": {
+				"title": "임시 저장을 삭제할까요?",
+				"description": "이 임시 저장을 영구 삭제할까요."
+			},
 			"send": "보내기",
 			"reply": "답장",
 			"replyAll": "전체 답장",
@@ -685,7 +688,10 @@
 			"saveDraft": "임시보관함에 저장"
 		},
 		"confirm": {
-			"deleteDraft": "이 임시 저장을 영구 삭제할까요?"
+			"deleteDraft": {
+				"title": "임시 저장을 삭제할까요?",
+				"description": "이 임시 저장을 영구 삭제할까요."
+			}
 		},
 		"fields": {
 			"from": "보낸 사람",

@@ -602,7 +602,10 @@
 			"notSent": "未送信",
 			"editDraft": "編集",
 			"deleteDraft": "削除",
-			"deleteDraftConfirm": "この下書きを完全に削除しますか？",
+			"deleteDraftConfirm": {
+				"title": "下書きを削除しますか？",
+				"description": "この下書きを完全に削除しますか。"
+			},
 			"send": "送信",
 			"reply": "返信",
 			"replyAll": "全員に返信",
@@ -685,7 +688,10 @@
 			"saveDraft": "下書きを保存"
 		},
 		"confirm": {
-			"deleteDraft": "この下書きを完全に削除しますか？"
+			"deleteDraft": {
+				"title": "下書きを削除しますか？",
+				"description": "この下書きを完全に削除しますか。"
+			}
 		},
 		"fields": {
 			"from": "差出人",

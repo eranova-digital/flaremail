@@ -602,7 +602,10 @@
 			"notSent": "Niewysłane",
 			"editDraft": "Edytuj",
 			"deleteDraft": "Usuń",
-			"deleteDraftConfirm": "Trwale usunąć ten szkic?",
+			"deleteDraftConfirm": {
+				"title": "Usunąć szkic?",
+				"description": "Trwale usunąć ten szkic."
+			},
 			"send": "Wyślij",
 			"reply": "Odpowiedz",
 			"replyAll": "Odpowiedz wszystkim",
@@ -685,7 +688,10 @@
 			"saveDraft": "Zapisz wersję roboczą"
 		},
 		"confirm": {
-			"deleteDraft": "Trwale usunąć ten szkic?"
+			"deleteDraft": {
+				"title": "Usunąć szkic?",
+				"description": "Trwale usunąć ten szkic."
+			}
 		},
 		"fields": {
 			"from": "Od",

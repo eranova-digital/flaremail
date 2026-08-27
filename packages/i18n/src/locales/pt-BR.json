@@ -602,7 +602,10 @@
 			"notSent": "Não enviado",
 			"editDraft": "Editar",
 			"deleteDraft": "Excluir",
-			"deleteDraftConfirm": "Excluir este rascunho permanentemente?",
+			"deleteDraftConfirm": {
+				"title": "Excluir rascunho?",
+				"description": "Excluir este rascunho permanentemente."
+			},
 			"send": "Enviar",
 			"reply": "Responder",
 			"replyAll": "Responder a todos",
@@ -685,7 +688,10 @@
 			"saveDraft": "Salvar rascunho"
 		},
 		"confirm": {
-			"deleteDraft": "Excluir este rascunho permanentemente?"
+			"deleteDraft": {
+				"title": "Excluir rascunho?",
+				"description": "Excluir este rascunho permanentemente."
+			}
 		},
 		"fields": {
 			"from": "De",

@@ -602,7 +602,10 @@
 			"notSent": "Nicht gesendet",
 			"editDraft": "Bearbeiten",
 			"deleteDraft": "Löschen",
-			"deleteDraftConfirm": "Diesen Entwurf endgültig löschen?",
+			"deleteDraftConfirm": {
+				"title": "Entwurf löschen?",
+				"description": "Diesen Entwurf endgültig löschen."
+			},
 			"send": "Senden",
 			"reply": "Antworten",
 			"replyAll": "Allen antworten",
@@ -685,7 +688,10 @@
 			"saveDraft": "Entwurf speichern"
 		},
 		"confirm": {
-			"deleteDraft": "Diesen Entwurf endgültig löschen?"
+			"deleteDraft": {
+				"title": "Entwurf löschen?",
+				"description": "Diesen Entwurf endgültig löschen."
+			}
 		},
 		"fields": {
 			"from": "Von",

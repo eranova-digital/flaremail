@@ -602,7 +602,10 @@
 			"notSent": "Non inviato",
 			"editDraft": "Modifica",
 			"deleteDraft": "Elimina",
-			"deleteDraftConfirm": "Eliminare definitivamente questa bozza?",
+			"deleteDraftConfirm": {
+				"title": "Eliminare la bozza?",
+				"description": "Eliminare definitivamente questa bozza."
+			},
 			"send": "Invia",
 			"reply": "Rispondi",
 			"replyAll": "Rispondi a tutti",
@@ -685,7 +688,10 @@
 			"saveDraft": "Salva bozza"
 		},
 		"confirm": {
-			"deleteDraft": "Eliminare definitivamente questa bozza?"
+			"deleteDraft": {
+				"title": "Eliminare la bozza?",
+				"description": "Eliminare definitivamente questa bozza."
+			}
 		},
 		"fields": {
 			"from": "Da",

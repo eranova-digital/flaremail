@@ -602,7 +602,10 @@
 			"notSent": "Gönderilmedi",
 			"editDraft": "Düzenle",
 			"deleteDraft": "Sil",
-			"deleteDraftConfirm": "Bu taslak kalıcı olarak silinsin mi?",
+			"deleteDraftConfirm": {
+				"title": "Taslak silinsin mi?",
+				"description": "Bu taslak kalıcı olarak silinsin mi."
+			},
 			"send": "Gönder",
 			"reply": "Yanıtla",
 			"replyAll": "Tümünü yanıtla",
@@ -685,7 +688,10 @@
 			"saveDraft": "Taslağı kaydet"
 		},
 		"confirm": {
-			"deleteDraft": "Bu taslak kalıcı olarak silinsin mi?"
+			"deleteDraft": {
+				"title": "Taslak silinsin mi?",
+				"description": "Bu taslak kalıcı olarak silinsin mi."
+			}
 		},
 		"fields": {
 			"from": "Kimden",

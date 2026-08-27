@@ -6,6 +6,7 @@ import { RecipientCombobox } from "@/components/compose/RecipientCombobox";
 import { ComposeEditor } from "@/components/compose/ComposeEditor";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -93,6 +94,7 @@ export function ComposePane({
 	const isResumedDraft = Boolean(existingDraftId);
 	const isForward = compose.isForwardMode;
 	const showDraftActions = !isForward;
+	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
 	const mailboxAddress =
 		mailboxesQuery.data?.find((mailbox) => mailbox.id === mailboxId)?.address ??
@@ -220,12 +222,9 @@ export function ComposePane({
 			return;
 		}
 
-		if (!window.confirm(t("confirm.deleteDraft"))) {
-			return;
-		}
-
 		try {
 			await compose.removeDraft();
+			setDeleteConfirmOpen(false);
 			if (onDeleted) {
 				onDeleted();
 			} else {
@@ -484,7 +483,7 @@ export function ComposePane({
 						variant="ghost"
 						size="sm"
 						className="text-destructive hover:text-destructive"
-						onClick={() => void handleDelete()}
+						onClick={() => setDeleteConfirmOpen(true)}
 						disabled={busy}
 					>
 						{compose.isDeleting ? (
@@ -596,21 +595,41 @@ export function ComposePane({
 		</>
 	);
 
+	const confirmDeleteDialog = (
+		<ConfirmDialog
+			open={deleteConfirmOpen}
+			onOpenChange={setDeleteConfirmOpen}
+			title={t("confirm.deleteDraft.title")}
+			description={t("confirm.deleteDraft.description")}
+			confirmLabel={t("actions.delete")}
+			pending={compose.isDeleting}
+			onConfirm={() => {
+				void handleDelete();
+			}}
+		/>
+	);
+
 	if (isInline) {
 		return (
-			<Card className="w-full min-w-0 max-w-full gap-0 overflow-x-clip rounded-lg py-0 shadow-sm">
-				{titleBar}
-				<div className="min-w-0">{body}</div>
-				{footer}
-			</Card>
+			<>
+				<Card className="w-full min-w-0 max-w-full gap-0 overflow-x-clip rounded-lg py-0 shadow-sm">
+					{titleBar}
+					<div className="min-w-0">{body}</div>
+					{footer}
+				</Card>
+				{confirmDeleteDialog}
+			</>
 		);
 	}
 
 	return (
-		<div className="flex h-full min-w-0 flex-col">
-			{titleBar}
-			<div className="min-h-0 min-w-0 flex-1 overflow-auto">{body}</div>
-			{footer}
-		</div>
+		<>
+			<div className="flex h-full min-w-0 flex-col">
+				{titleBar}
+				<div className="min-h-0 min-w-0 flex-1 overflow-auto">{body}</div>
+				{footer}
+			</div>
+			{confirmDeleteDialog}
+		</>
 	);
 }

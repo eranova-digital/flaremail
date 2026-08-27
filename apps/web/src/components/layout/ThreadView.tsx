@@ -7,6 +7,7 @@ import { ComposePane } from '@/components/compose/ComposePane';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { MessageActionsMenu } from '@/components/message/MessageActionsMenu';
 import { MessageAddress } from '@/components/message/MessageAddress';
 import { MessageBody } from '@/components/message/MessageBody';
@@ -239,11 +240,13 @@ export function ThreadView() {
 	const [replyAll, setReplyAll] = useState(false);
 	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 	const [composerDraftId, setComposerDraftId] = useState<string | null>(null);
+	const [draftPendingDeleteId, setDraftPendingDeleteId] = useState<string | null>(null);
 
 	useEffect(() => {
 		previousMessageCountRef.current = 0;
 		scrolledToBottomThreadIdRef.current = null;
 		highlightedFromUrlRef.current = null;
+		setDraftPendingDeleteId(null);
 	}, [threadId]);
 
 	useEffect(() => {
@@ -489,6 +492,7 @@ export function ThreadView() {
 	}
 
 	return (
+		<>
 		<div className="flex h-full min-w-0 flex-col">
 				<div className="space-y-3 border-b p-3 sm:p-4">
 					<div className="flex items-start justify-between gap-2 sm:gap-4">
@@ -734,12 +738,7 @@ export function ThreadView() {
 																	if (!message.id) {
 																		return;
 																	}
-
-																	if (!window.confirm(t('threadView.deleteDraftConfirm'))) {
-																		return;
-																	}
-
-																	deleteDraftMutation.mutate(message.id);
+																	setDraftPendingDeleteId(message.id);
 																}}
 															>
 																{tc('delete')}
@@ -864,5 +863,26 @@ export function ThreadView() {
 					</div>
 				</ScrollArea>
 			</div>
+			<ConfirmDialog
+				open={draftPendingDeleteId !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setDraftPendingDeleteId(null);
+					}
+				}}
+				title={t('threadView.deleteDraftConfirm.title')}
+				description={t('threadView.deleteDraftConfirm.description')}
+				confirmLabel={tc('delete')}
+				pending={deleteDraftMutation.isPending}
+				onConfirm={() => {
+					if (!draftPendingDeleteId) {
+						return;
+					}
+					deleteDraftMutation.mutate(draftPendingDeleteId, {
+						onSuccess: () => setDraftPendingDeleteId(null),
+					});
+				}}
+			/>
+		</>
 	);
 }

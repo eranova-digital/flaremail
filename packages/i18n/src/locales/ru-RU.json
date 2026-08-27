@@ -602,7 +602,10 @@
 			"notSent": "Не отправлено",
 			"editDraft": "Изменить",
 			"deleteDraft": "Удалить",
-			"deleteDraftConfirm": "Удалить этот черновик навсегда?",
+			"deleteDraftConfirm": {
+				"title": "Удалить черновик?",
+				"description": "Удалить этот черновик навсегда."
+			},
 			"send": "Отправить",
 			"reply": "Ответить",
 			"replyAll": "Ответить всем",
@@ -685,7 +688,10 @@
 			"saveDraft": "Сохранить черновик"
 		},
 		"confirm": {
-			"deleteDraft": "Удалить этот черновик навсегда?"
+			"deleteDraft": {
+				"title": "Удалить черновик?",
+				"description": "Удалить этот черновик навсегда."
+			}
 		},
 		"fields": {
 			"from": "От",

@@ -619,7 +619,10 @@
 			"notSent": "Not sent",
 			"editDraft": "Edit",
 			"deleteDraft": "Delete",
-			"deleteDraftConfirm": "Delete this draft permanently?",
+			"deleteDraftConfirm": {
+				"title": "Delete draft?",
+				"description": "This permanently removes the draft."
+			},
 			"send": "Send",
 			"reply": "Reply",
 			"replyAll": "Reply all"
@@ -701,7 +704,10 @@
 			"sending": "Sending…"
 		},
 		"confirm": {
-			"deleteDraft": "Delete this draft permanently?"
+			"deleteDraft": {
+				"title": "Delete draft?",
+				"description": "This permanently removes the draft."
+			}
 		},
 		"fields": {
 			"from": "From",

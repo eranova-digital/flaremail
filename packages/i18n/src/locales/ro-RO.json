@@ -602,7 +602,10 @@
 			"notSent": "Netrimis",
 			"editDraft": "Editează",
 			"deleteDraft": "Șterge",
-			"deleteDraftConfirm": "Ștergi definitiv această ciornă?",
+			"deleteDraftConfirm": {
+				"title": "Ștergi ciorna?",
+				"description": "Ștergi definitiv această ciornă."
+			},
 			"send": "Trimite",
 			"reply": "Răspunde",
 			"replyAll": "Răspunde tuturor",
@@ -685,7 +688,10 @@
 			"saveDraft": "Salvează ciorna"
 		},
 		"confirm": {
-			"deleteDraft": "Ștergi definitiv această ciornă?"
+			"deleteDraft": {
+				"title": "Ștergi ciorna?",
+				"description": "Ștergi definitiv această ciornă."
+			}
 		},
 		"fields": {
 			"from": "De la",

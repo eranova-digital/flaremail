@@ -602,7 +602,10 @@
 			"notSent": "No enviado",
 			"editDraft": "Editar",
 			"deleteDraft": "Eliminar",
-			"deleteDraftConfirm": "¿Eliminar este borrador permanentemente?",
+			"deleteDraftConfirm": {
+				"title": "¿Eliminar borrador?",
+				"description": "¿Eliminar este borrador permanentemente."
+			},
 			"send": "Enviar",
 			"reply": "Responder",
 			"replyAll": "Responder a todos",
@@ -685,7 +688,10 @@
 			"saveDraft": "Guardar borrador"
 		},
 		"confirm": {
-			"deleteDraft": "¿Eliminar este borrador permanentemente?"
+			"deleteDraft": {
+				"title": "¿Eliminar borrador?",
+				"description": "¿Eliminar este borrador permanentemente."
+			}
 		},
 		"fields": {
 			"from": "De",
