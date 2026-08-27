@@ -29,12 +29,6 @@ import {
 import { fetchAttachmentBlob, saveAttachmentFile, saveLocalFile } from '@/lib/attachments';
 import { getErrorMessage } from '@/lib/api/errors';
 
-type ComposeAttachmentsProps = {
-	attachments: ComposeAttachment[];
-	onChange: (attachments: ComposeAttachment[]) => void;
-	disabled?: boolean;
-};
-
 function LocalImagePreview({ file, alt }: { file: File; alt: string }) {
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -218,10 +212,19 @@ function ComposeAttachmentCard({
 	);
 }
 
+type ComposeAttachmentsProps = {
+	attachments: ComposeAttachment[];
+	onChange: (attachments: ComposeAttachment[]) => void;
+	disabled?: boolean;
+	/** Quieter chrome for the compose footer area — no empty-state copy. */
+	compact?: boolean;
+};
+
 export function ComposeAttachments({
 	attachments,
 	onChange,
 	disabled = false,
+	compact = false,
 }: ComposeAttachmentsProps) {
 	const { t } = useTranslation('compose');
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -248,9 +251,21 @@ export function ComposeAttachments({
 
 	return (
 		<div className="space-y-2">
-			<div className="flex items-center justify-between gap-3">
-				<label className="text-sm font-medium">{t('attachments.title')}</label>
-				<div>
+			<div
+				className={
+					!compact || attachments.length > 0
+						? 'flex flex-wrap items-center justify-between gap-2'
+						: 'flex flex-wrap items-center gap-2'
+				}
+			>
+				{!compact || attachments.length > 0 ? (
+					<label className="text-muted-foreground text-sm font-medium">
+						{t('attachments.title')}
+					</label>
+				) : (
+					<span className="sr-only">{t('attachments.title')}</span>
+				)}
+				<div className="shrink-0">
 					<input
 						ref={inputRef}
 						type="file"
@@ -261,8 +276,9 @@ export function ComposeAttachments({
 					/>
 					<Button
 						type="button"
-						variant="outline"
+						variant={compact ? 'ghost' : 'outline'}
 						size="sm"
+						className={compact ? '-ml-2' : undefined}
 						disabled={disabled}
 						onClick={() => inputRef.current?.click()}
 					>
@@ -283,7 +299,7 @@ export function ComposeAttachments({
 						/>
 					))}
 				</AttachmentGroup>
-			) : (
+			) : compact ? null : (
 				<p className="text-muted-foreground text-sm">{t('attachments.empty')}</p>
 			)}
 		</div>

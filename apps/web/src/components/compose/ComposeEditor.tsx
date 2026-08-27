@@ -18,6 +18,8 @@ type ComposeEditorProps = {
 	placeholder?: string;
 	disabled?: boolean;
 	className?: string;
+	/** Square the toolbar top when flush under compose fields. */
+	flush?: boolean;
 	onChange: (value: { html: string; text: string }) => void;
 };
 
@@ -29,6 +31,7 @@ export function ComposeEditor({
 	placeholder,
 	disabled = false,
 	className,
+	flush = false,
 	onChange,
 }: ComposeEditorProps) {
 	const { t } = useTranslation("compose");
@@ -46,7 +49,7 @@ export function ComposeEditor({
 			attributes: {
 				...(id ? { id } : {}),
 				class:
-					"compose-editor-content min-h-[inherit] px-3 py-2 text-sm outline-none",
+					"tiptap compose-editor-content min-h-[inherit] max-w-full min-w-0 px-3 py-2 text-sm outline-none",
 			},
 		},
 		onUpdate: ({ editor: currentEditor }) => {
@@ -99,7 +102,7 @@ export function ComposeEditor({
 	return (
 		<div
 			className={cn(
-				"compose-editor border-input bg-background focus-within:ring-ring rounded-md border shadow-sm focus-within:ring-1",
+				"compose-editor border-input bg-background focus-within:ring-ring min-w-0 max-w-full overflow-hidden rounded-md border shadow-sm focus-within:ring-1",
 				className,
 			)}
 		>
@@ -107,6 +110,7 @@ export function ComposeEditor({
 				editor={editor}
 				disabled={disabled}
 				mailboxId={mailboxId}
+				flush={flush}
 				onHeightChange={setToolbarHeight}
 			/>
 			{isTableActive ? (
@@ -125,7 +129,7 @@ export function ComposeEditor({
 			>
 				<ImageBubbleMenu editor={editor} disabled={disabled} />
 			</BubbleMenu>
-			<EditorContent editor={editor} />
+			<EditorContent editor={editor} className="min-w-0 overflow-x-auto" />
 		</div>
 	);
 }

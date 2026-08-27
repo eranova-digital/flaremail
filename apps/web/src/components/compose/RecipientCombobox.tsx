@@ -13,6 +13,7 @@ import {
 	ComboboxValue,
 	useComboboxAnchor,
 } from "@/components/ui/combobox";
+import { cn } from "@/lib/utils";
 import { formatRecipients, parseRecipients } from "@/hooks/compose/types";
 
 type RecipientComboboxProps = {
@@ -23,6 +24,8 @@ type RecipientComboboxProps = {
 	disabled?: boolean;
 	suggestions?: string[];
 	onEmptyBlur?: () => void;
+	/** Borderless chips for compose field rows. */
+	plain?: boolean;
 };
 
 export function RecipientCombobox({
@@ -33,6 +36,7 @@ export function RecipientCombobox({
 	disabled = false,
 	suggestions = [],
 	onEmptyBlur,
+	plain = false,
 }: RecipientComboboxProps) {
 	const { t } = useTranslation("compose");
 	const resolvedPlaceholder = placeholder ?? t("placeholders.to");
@@ -155,12 +159,22 @@ export function RecipientCombobox({
 				}
 			}}
 		>
-			<ComboboxChips ref={anchor} id={id} className="w-full">
+			<ComboboxChips
+				ref={anchor}
+				id={id}
+				className={cn(
+					"w-full min-w-0",
+					plain &&
+						"rounded-none border-0 bg-transparent px-0 py-1 shadow-none focus-within:border-transparent focus-within:ring-0 dark:bg-transparent",
+				)}
+			>
 				<ComboboxValue>
 					{(values: string[]) => (
 						<>
 							{values.map((email: string) => (
-								<ComboboxChip key={email}>{email}</ComboboxChip>
+								<ComboboxChip key={email} className="max-w-[calc(100%-0.25rem)]">
+									<span className="min-w-0 truncate">{email}</span>
+								</ComboboxChip>
 							))}
 							<ComboboxChipsInput
 								placeholder={values.length === 0 ? resolvedPlaceholder : undefined}
