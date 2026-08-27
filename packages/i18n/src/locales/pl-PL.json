@@ -574,7 +574,8 @@
 			"trash": "Kosz",
 			"spam": "Spam",
 			"restore": "Przywróć",
-			"labels": "Etykiety"
+			"labels": "Etykiety",
+			"menu": "Akcje wątku"
 		},
 		"threadView": {
 			"selectThread": "Wybierz wątek do przeczytania",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Anuluj",
-			"delete": "Usuń",
-			"deleting": "Usuwanie",
+			"delete": "Usuń wersję roboczą",
+			"deleting": "Usuwanie…",
 			"save": "Zapisz",
-			"saving": "Zapisywanie",
+			"saving": "Zapisywanie…",
 			"send": "Wyślij",
-			"sending": "Wysyłanie"
+			"sending": "Wysyłanie…",
+			"close": "Zamknij edytor",
+			"discard": "Odrzuć",
+			"saveDraft": "Zapisz wersję roboczą"
 		},
 		"confirm": {
 			"deleteDraft": "Trwale usunąć ten szkic?"

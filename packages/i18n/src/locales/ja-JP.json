@@ -574,7 +574,8 @@
 			"trash": "ゴミ箱",
 			"spam": "迷惑メール",
 			"restore": "復元",
-			"labels": "ラベル"
+			"labels": "ラベル",
+			"menu": "スレッドの操作"
 		},
 		"threadView": {
 			"selectThread": "読むスレッドを選択",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "キャンセル",
-			"delete": "削除",
-			"deleting": "削除中",
+			"delete": "下書きを削除",
+			"deleting": "削除中…",
 			"save": "保存",
-			"saving": "保存中",
+			"saving": "保存中…",
 			"send": "送信",
-			"sending": "送信中"
+			"sending": "送信中…",
+			"close": "作成画面を閉じる",
+			"discard": "破棄",
+			"saveDraft": "下書きを保存"
 		},
 		"confirm": {
 			"deleteDraft": "この下書きを完全に削除しますか？"

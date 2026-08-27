@@ -574,7 +574,8 @@
 			"trash": "Papelera",
 			"spam": "Spam",
 			"restore": "Restaurar",
-			"labels": "Etiquetas"
+			"labels": "Etiquetas",
+			"menu": "Acciones del hilo"
 		},
 		"threadView": {
 			"selectThread": "Selecciona un hilo para leer",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Cancelar",
-			"delete": "Eliminar",
-			"deleting": "Eliminando",
+			"delete": "Eliminar borrador",
+			"deleting": "Eliminando…",
 			"save": "Guardar",
-			"saving": "Guardando",
+			"saving": "Guardando…",
 			"send": "Enviar",
-			"sending": "Enviando"
+			"sending": "Enviando…",
+			"close": "Cerrar redactor",
+			"discard": "Descartar",
+			"saveDraft": "Guardar borrador"
 		},
 		"confirm": {
 			"deleteDraft": "¿Eliminar este borrador permanentemente?"

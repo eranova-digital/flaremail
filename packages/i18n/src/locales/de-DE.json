@@ -574,7 +574,8 @@
 			"trash": "Papierkorb",
 			"spam": "Spam",
 			"restore": "Wiederherstellen",
-			"labels": "Labels"
+			"labels": "Labels",
+			"menu": "Thread-Aktionen"
 		},
 		"threadView": {
 			"selectThread": "Wählen Sie einen Thread zum Lesen",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Abbrechen",
-			"delete": "Löschen",
-			"deleting": "Wird gelöscht",
+			"delete": "Entwurf löschen",
+			"deleting": "Wird gelöscht…",
 			"save": "Speichern",
-			"saving": "Wird gespeichert",
+			"saving": "Wird gespeichert…",
 			"send": "Senden",
-			"sending": "Wird gesendet"
+			"sending": "Wird gesendet…",
+			"close": "Composer schließen",
+			"discard": "Verwerfen",
+			"saveDraft": "Entwurf speichern"
 		},
 		"confirm": {
 			"deleteDraft": "Diesen Entwurf endgültig löschen?"

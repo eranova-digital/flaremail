@@ -460,8 +460,8 @@ export function ThreadView() {
 						<ThreadActions mailboxId={mailboxId} threadId={threadId} folder={actionFolder} />
 					</div>
 				</div>
-				<ScrollArea className="flex-1">
-					<div className="space-y-4 p-3 sm:p-4">
+				<ScrollArea className="min-h-0 min-w-0 flex-1">
+					<div className="min-w-0 max-w-full space-y-4 p-3 sm:p-4">
 						{messages.map((message, index) => {
 							const isDraft = isDraftMessage(message.sendStatus);
 							const isPendingSend = isPendingSendMessage(message);
@@ -769,7 +769,7 @@ export function ThreadView() {
 							);
 						})}
 						{replyContext ? (
-							<div ref={replyComposerRef}>
+							<div ref={replyComposerRef} className="w-full min-w-0">
 								<ComposePane
 									key={`${replyingToMessageId}-${replyAll ? 'all' : 'one'}`}
 									variant="inline"
@@ -783,17 +783,21 @@ export function ThreadView() {
 								/>
 							</div>
 						) : lastReplyableMessageId ? (
-							<div className="flex gap-2">
+							<div className="flex flex-col gap-2 sm:flex-row">
 								<Button
 									variant="outline"
-									className={showReplyAll ? 'flex-1' : 'w-full'}
+									className={showReplyAll ? 'w-full flex-1' : 'w-full'}
 									onClick={() => openReply(lastReplyableMessageId, false)}
 								>
 									<Reply className="size-4" />
 									{t('threadView.reply')}
 								</Button>
 								{showReplyAll ? (
-									<Button variant="outline" className="flex-1" onClick={() => openReply(lastReplyableMessageId, true)}>
+									<Button
+										variant="outline"
+										className="w-full flex-1"
+										onClick={() => openReply(lastReplyableMessageId, true)}
+									>
 										<ReplyAll className="size-4" />
 										{t('threadView.replyAll')}
 									</Button>

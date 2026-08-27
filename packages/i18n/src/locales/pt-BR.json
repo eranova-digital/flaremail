@@ -574,7 +574,8 @@
 			"trash": "Lixeira",
 			"spam": "Spam",
 			"restore": "Restaurar",
-			"labels": "Marcadores"
+			"labels": "Marcadores",
+			"menu": "Ações da conversa"
 		},
 		"threadView": {
 			"selectThread": "Selecione uma conversa para ler",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Cancelar",
-			"delete": "Excluir",
-			"deleting": "Excluindo",
+			"delete": "Excluir rascunho",
+			"deleting": "Excluindo…",
 			"save": "Salvar",
-			"saving": "Salvando",
+			"saving": "Salvando…",
 			"send": "Enviar",
-			"sending": "Enviando"
+			"sending": "Enviando…",
+			"close": "Fechar editor",
+			"discard": "Descartar",
+			"saveDraft": "Salvar rascunho"
 		},
 		"confirm": {
 			"deleteDraft": "Excluir este rascunho permanentemente?"

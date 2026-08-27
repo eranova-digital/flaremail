@@ -119,10 +119,17 @@
 .compose-editor {
 	display: flex;
 	flex-direction: column;
+	min-width: 0;
+	max-width: 100%;
 }
 
-.compose-editor .tiptap {
+.compose-editor .tiptap,
+.compose-editor .compose-editor-content {
 	min-height: 8rem;
+	max-width: 100%;
+	min-width: 0;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 	outline: none;
 }
 
@@ -217,6 +224,8 @@
 .compose-editor .reply-quote-block {
 	position: relative;
 	margin-top: 0.75rem;
+	max-width: 100%;
+	min-width: 0;
 }
 
 .compose-editor .reply-quote-block-inner {
@@ -226,10 +235,20 @@
 	color: var(--muted-foreground);
 	font-size: 0.875rem;
 	line-height: 1.5;
+	max-width: 100%;
+	min-width: 0;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 .compose-editor .reply-quote-attribution {
 	margin: 0 0 0.5rem;
+}
+
+.compose-editor .reply-quote-body {
+	max-width: 100%;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 .compose-editor .reply-quote-remove {
@@ -269,6 +288,8 @@
 	border-radius: var(--radius-sm);
 	background: var(--muted);
 	overflow: hidden;
+	max-width: 100%;
+	min-width: 0;
 }
 
 .compose-editor .compose-html-toolbar {
@@ -331,6 +352,9 @@
 	padding: 0.75rem;
 	background: var(--background);
 	min-height: 4rem;
+	max-width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .compose-editor .compose-html-preview-content > *:first-child {
@@ -367,8 +391,8 @@
 
 .compose-editor .compose-html-var-field {
 	display: flex;
-	min-width: 8rem;
-	flex: 1 1 8rem;
+	min-width: 0;
+	flex: 1 1 100%;
 	flex-direction: column;
 	gap: 0.2rem;
 }
@@ -403,10 +427,17 @@
 	border-radius: 0.25rem;
 }
 
+.compose-editor .tableWrapper {
+	max-width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
 .compose-editor .tiptap table {
 	border-collapse: collapse;
 	margin: 0.75rem 0;
 	width: 100%;
+	max-width: 100%;
 	table-layout: fixed;
 }
 
@@ -450,7 +481,7 @@
 	margin: unset;
 	padding: unset;
 	width: unset;
-	max-width: unset;
+	max-width: 100%;
 	table-layout: unset;
 	vertical-align: unset;
 	font-weight: unset;

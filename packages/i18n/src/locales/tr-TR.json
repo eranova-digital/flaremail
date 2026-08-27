@@ -574,7 +574,8 @@
 			"trash": "Çöp",
 			"spam": "Spam",
 			"restore": "Geri yükle",
-			"labels": "Etiketler"
+			"labels": "Etiketler",
+			"menu": "Konu işlemleri"
 		},
 		"threadView": {
 			"selectThread": "Okumak için bir konuşma seçin",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "İptal",
-			"delete": "Sil",
-			"deleting": "Siliniyor",
+			"delete": "Taslağı sil",
+			"deleting": "Siliniyor…",
 			"save": "Kaydet",
-			"saving": "Kaydediliyor",
+			"saving": "Kaydediliyor…",
 			"send": "Gönder",
-			"sending": "Gönderiliyor"
+			"sending": "Gönderiliyor…",
+			"close": "Düzenleyiciyi kapat",
+			"discard": "Vazgeç",
+			"saveDraft": "Taslağı kaydet"
 		},
 		"confirm": {
 			"deleteDraft": "Bu taslak kalıcı olarak silinsin mi?"

@@ -574,7 +574,8 @@
 			"trash": "Corbeille",
 			"spam": "Indésirable",
 			"restore": "Restaurer",
-			"labels": "Libellés"
+			"labels": "Libellés",
+			"menu": "Actions du fil"
 		},
 		"threadView": {
 			"selectThread": "Sélectionnez une conversation à lire",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Annuler",
-			"delete": "Supprimer",
-			"deleting": "Suppression",
+			"delete": "Supprimer le brouillon",
+			"deleting": "Suppression…",
 			"save": "Enregistrer",
-			"saving": "Enregistrement",
+			"saving": "Enregistrement…",
 			"send": "Envoyer",
-			"sending": "Envoi"
+			"sending": "Envoi…",
+			"close": "Fermer le compositeur",
+			"discard": "Jeter",
+			"saveDraft": "Enregistrer le brouillon"
 		},
 		"confirm": {
 			"deleteDraft": "Supprimer définitivement ce brouillon ?"

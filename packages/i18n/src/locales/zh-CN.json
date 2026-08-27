@@ -574,7 +574,8 @@
 			"trash": "删除",
 			"spam": "垃圾邮件",
 			"restore": "还原",
-			"labels": "标签"
+			"labels": "标签",
+			"menu": "会话操作"
 		},
 		"threadView": {
 			"selectThread": "选择一个会话进行阅读",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "取消",
-			"delete": "删除",
-			"deleting": "正在删除",
+			"delete": "删除草稿",
+			"deleting": "正在删除…",
 			"save": "保存",
-			"saving": "正在保存",
+			"saving": "正在保存…",
 			"send": "发送",
-			"sending": "正在发送"
+			"sending": "正在发送…",
+			"close": "关闭撰写",
+			"discard": "丢弃",
+			"saveDraft": "保存草稿"
 		},
 		"confirm": {
 			"deleteDraft": "永久删除此草稿？"

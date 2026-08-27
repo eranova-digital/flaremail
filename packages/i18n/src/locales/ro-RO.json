@@ -574,7 +574,8 @@
 			"trash": "Mută în coș",
 			"spam": "Spam",
 			"restore": "Restaurează",
-			"labels": "Etichete"
+			"labels": "Etichete",
+			"menu": "Acțiuni fir"
 		},
 		"threadView": {
 			"selectThread": "Selectează o conversație de citit",
@@ -673,12 +674,15 @@
 		},
 		"actions": {
 			"cancel": "Anulează",
-			"delete": "Șterge",
-			"deleting": "Se șterge",
+			"delete": "Șterge ciorna",
+			"deleting": "Se șterge…",
 			"save": "Salvează",
-			"saving": "Se salvează",
+			"saving": "Se salvează…",
 			"send": "Trimite",
-			"sending": "Se trimite"
+			"sending": "Se trimite…",
+			"close": "Închide redactorul",
+			"discard": "Renunță",
+			"saveDraft": "Salvează ciorna"
 		},
 		"confirm": {
 			"deleteDraft": "Ștergi definitiv această ciornă?"
