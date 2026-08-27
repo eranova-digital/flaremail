@@ -244,12 +244,16 @@ export function ComposePane({
 	const header = (
 		<div
 			className={cn(
-				"flex items-center justify-between gap-3",
-				isInline ? "mb-3" : "border-b px-4 py-3",
+				"flex gap-3",
+				isInline
+					? "mb-3 items-center justify-between"
+					: "flex-col border-b px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4",
 			)}
 		>
-			<h2 className={cn("font-medium", isInline && "text-sm")}>{headerTitle}</h2>
-			<div className="flex items-center gap-2">
+			<h2 className={cn("min-w-0 truncate font-medium", isInline && "text-sm")}>
+				{headerTitle}
+			</h2>
+			<div className="flex flex-wrap items-center gap-2">
 				{showDraftActions ? (
 					isResumedDraft ? (
 						<Button
@@ -425,7 +429,7 @@ export function ComposePane({
 				</div>
 			) : null}
 			{showCcBccRow ? (
-				<div className="flex gap-3">
+				<div className="flex flex-col gap-3 sm:flex-row">
 					{showCcField ? (
 						<div className="min-w-0 flex-1 space-y-2">
 							<label className="text-sm font-medium" htmlFor="compose-cc">
@@ -554,7 +558,7 @@ export function ComposePane({
 		<div className="flex h-full flex-col">
 			{header}
 			<div className="min-h-0 flex-1 overflow-auto">
-				<div className="p-4">{fields}</div>
+				<div className="p-3 sm:p-4">{fields}</div>
 			</div>
 		</div>
 	);

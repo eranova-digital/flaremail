@@ -750,7 +750,7 @@ export function ComposeEditorToolbar({
 			<div
 				ref={toolbarRef}
 				className={cn(
-					"border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 sticky top-0 z-20 flex flex-wrap items-center gap-0.5 border-b px-1 py-1 backdrop-blur",
+					"border-border bg-muted/80 supports-backdrop-filter:bg-muted/60 sticky top-0 z-20 flex flex-nowrap items-center gap-0.5 overflow-x-auto overscroll-x-contain border-b px-1 py-1 backdrop-blur [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 					!stuck && "rounded-t-md",
 				)}
 			>
