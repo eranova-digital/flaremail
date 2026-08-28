@@ -1,6 +1,6 @@
 {
 	"name": "@flaremail/core",
-	"version": "0.9.0",
+	"version": "0.9.5",
 	"private": true,
 	"scripts": {
 		"deploy": "npm run db:migrate && node scripts/deploy-with-secrets.mjs",

@@ -8,9 +8,9 @@
 
 Receive catch-all mail · shared mailboxes · web UI · versioned HTTP API
 
-**v0.9.0** — production-ready feature set; further testing and bug hunting still expected.
+**v0.9.5** — responsive mobile UI, inbound BIMI brand marks, and a refactored drafts system.
 
-[![Version](https://img.shields.io/badge/version-0.9.0-00aeef?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.9.5-00aeef?style=flat-square)](./package.json)
 [![Runtime](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/workers/)
 [![Database](https://img.shields.io/badge/Postgres-Neon-00E699?style=flat-square&logo=postgresql&logoColor=white)](https://neon.tech/)
 [![UI](https://img.shields.io/badge/UI-React%20%2B%20Vite-149ECA?style=flat-square&logo=react&logoColor=white)](./apps/web)
