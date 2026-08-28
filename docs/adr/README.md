@@ -14,5 +14,6 @@ Short records of hard-to-reverse choices. Format: title, context/decision/why (s
 | [0008](./0008-pkce-required-all-clients.md) | PKCE required for all authorization code clients |
 | [0009](./0009-logs-in-postgres.md) | Logs stored in Postgres |
 | [0010](./0010-gate-and-private-core.md) | Gate and private core |
+| [0011](./0011-bimi-inbound-brand-marks.md) | BIMI inbound brand marks |
 
 New ADRs: next number, kebab-case slug, link from this table.

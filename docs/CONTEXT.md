@@ -197,6 +197,14 @@ Which mailboxes can see a message, tracked in `message_mailboxes`. Populated fro
 A single email stored in the system, whether inbound, outbound, draft, or failed send.
 _Avoid_: email (as a stored entity id), delivery
 
+**BIMI logo**:
+The brand mark for an external sending domain asserted via BIMI. Shown as a sender avatar only when the inbound **message** passes DMARC alignment for that domain and the **organizational domain** publishes an enforcing DMARC policy (`quarantine` or `reject`). Distinct from an **account** profile picture and from a **client profile picture**. Cached per publishing domain and shared across messages that resolve to it.
+_Avoid_: favicon, profile picture, avatar (as the stored entity), sender icon
+
+**BIMI domain**:
+The external domain that published the BIMI assertion used for a **message**'s **BIMI logo** (aligned From domain or its **organizational domain**, whichever record was used). Stored on the **message** when eligible; absent when auth/policy fails or no assertion exists.
+_Avoid_: Domain, sending domain (ambiguous), From domain (not always the same after walk-up)
+
 **Draft**:
 An outbound message with send status `draft` that has not been sent yet. The sidebar **Drafts** entry is a view of these messages, not a list of threads.
 _Avoid_: compose session, unsent email
