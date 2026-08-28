@@ -265,6 +265,11 @@ export type ThreadMessagePreview = {
      */
     inReplyTo?: string | null;
     /**
+     * Publishing BIMI domain when this message resolved a found logo; null otherwise.
+     *
+     */
+    bimiDomain?: string | null;
+    /**
      * Present when includeBody=true on list thread messages.
      */
     text?: string | null;
@@ -327,6 +332,11 @@ export type MessagePreview = {
     hasAttachments?: boolean;
     sentAt?: string | null;
     receivedAt?: string;
+    /**
+     * Publishing BIMI domain when this message resolved a found logo; null otherwise.
+     *
+     */
+    bimiDomain?: string | null;
 };
 
 export type MessageFull = MessagePreview & {
@@ -371,6 +381,11 @@ export type Thread = {
      *
      */
     seenBy?: Array<SeenByViewer>;
+    /**
+     * Unique publishing BIMI domains from messages in this thread that have a found logo cache entry.
+     *
+     */
+    bimiDomains?: Array<string>;
 };
 
 export type ProfilePicture = {
@@ -1633,6 +1648,42 @@ export type DownloadAttachmentResponses = {
 };
 
 export type DownloadAttachmentResponse = DownloadAttachmentResponses[keyof DownloadAttachmentResponses];
+
+export type GetBimiLogoData = {
+    body?: never;
+    path: {
+        /**
+         * Publishing BIMI domain (lowercase).
+         */
+        domain: string;
+    };
+    query?: {
+        size?: 'small' | 'large';
+        /**
+         * Cache-busting token (typically logoUpdatedAt ISO string).
+         */
+        v?: string;
+    };
+    url: '/bimi/{domain}/logo';
+};
+
+export type GetBimiLogoErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetBimiLogoError = GetBimiLogoErrors[keyof GetBimiLogoErrors];
+
+export type GetBimiLogoResponses = {
+    /**
+     * BIMI logo WebP
+     */
+    200: Blob | File;
+};
+
+export type GetBimiLogoResponse = GetBimiLogoResponses[keyof GetBimiLogoResponses];
 
 export type ListOidcClientsData = {
     body?: never;

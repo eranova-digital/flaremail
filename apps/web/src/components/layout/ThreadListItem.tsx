@@ -2,6 +2,7 @@ import { Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { Label, Thread } from "@/lib/api/client";
+import { BimiAvatarGroup } from "@/components/BimiAvatarGroup";
 import { SeenByAvatarGroup } from "@/components/SeenByAvatarGroup";
 import { DEFAULT_LABEL_COLOR } from "@/lib/label-colors";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ export function ThreadListItem({
 	const threadLabels = (thread.labelIds ?? [])
 		.map((id) => labels.find((label) => label.id === id))
 		.filter((label): label is Label => Boolean(label));
+	const bimiDomains = thread.bimiDomains ?? [];
 
 	return (
 		<li>
@@ -53,7 +55,10 @@ export function ThreadListItem({
 				)}
 			>
 				<div className="flex items-start justify-between gap-2">
-					<p className="text-muted-foreground truncate text-xs">{displayName}</p>
+					<div className="flex min-w-0 items-center gap-2">
+						<BimiAvatarGroup domains={bimiDomains} size="sm" />
+						<p className="text-muted-foreground truncate text-xs">{displayName}</p>
+					</div>
 					<div className="flex shrink-0 items-center gap-1">
 						{thread.isStarred ? (
 							<Star className="size-3.5 fill-current text-amber-500" />

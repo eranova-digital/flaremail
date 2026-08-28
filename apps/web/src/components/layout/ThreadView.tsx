@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { MessageActionsMenu } from '@/components/message/MessageActionsMenu';
+import { BimiAvatar } from '@/components/BimiAvatar';
 import { MessageAddress } from '@/components/message/MessageAddress';
 import { MessageBody } from '@/components/message/MessageBody';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
@@ -698,6 +699,12 @@ export function ThreadView() {
 												<>
 											<div className="mb-2 flex items-center justify-between gap-3">
 												<div className="flex min-w-0 items-center gap-2 text-sm">
+													{(message as ThreadMessagePreview).bimiDomain ? (
+														<BimiAvatar
+															domain={(message as ThreadMessagePreview).bimiDomain!}
+															className="size-5"
+														/>
+													) : null}
 													<MessageAddress address={message.from} className="font-medium" />
 													{isDraft ? <Badge variant="secondary">{t('threadView.draft')}</Badge> : null}
 													{message.hasAttachments ? (
