@@ -28,6 +28,7 @@
 		"yaml": "^2.9.0"
 	},
 	"dependencies": {
+		"@cf-wasm/resvg": "^0.4.0",
 		"@jsquash/jpeg": "^1.6.0",
 		"@jsquash/png": "^3.1.1",
 		"@jsquash/resize": "^2.1.1",
@@ -40,9 +41,11 @@
 		"@flaremail/mail-quoting": "*",
 		"drizzle-orm": "^0.45.2",
 		"jose": "^6.2.3",
+		"mailauth": "^5.0.2",
 		"mimetext": "^3.0.28",
 		"pg": "^8.22.0",
 		"postal-mime": "^2.7.5",
+		"tldts": "^7.4.11",
 		"wasm-feature-detect": "^1.8.0"
 	}
 }

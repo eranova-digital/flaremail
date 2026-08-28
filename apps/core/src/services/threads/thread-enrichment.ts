@@ -1,7 +1,8 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import {
+	bimiLogos,
 	labels,
 	messageMailboxes,
 	messages,
@@ -89,6 +90,58 @@ export async function getThreadPartiesForMailbox(
 			threadId,
 			collectThreadParties(byThread.get(threadId) ?? [], mailboxAddress),
 		);
+	}
+
+	return result;
+}
+
+/**
+ * Unique BIMI publishing domains for messages in these threads that have a
+ * found logo cache row.
+ */
+export async function getBimiDomainsForThreads(
+	db: Database,
+	mailboxId: string,
+	threadIds: string[],
+): Promise<Map<string, string[]>> {
+	const result = new Map<string, string[]>();
+	if (!threadIds.length) {
+		return result;
+	}
+
+	const rows = await db
+		.select({
+			threadId: messages.threadId,
+			bimiDomain: messages.bimiDomain,
+		})
+		.from(messages)
+		.innerJoin(
+			messageMailboxes,
+			and(
+				eq(messageMailboxes.messageId, messages.id),
+				eq(messageMailboxes.mailboxId, mailboxId),
+			),
+		)
+		.innerJoin(
+			bimiLogos,
+			and(
+				eq(bimiLogos.domain, messages.bimiDomain),
+				eq(bimiLogos.status, "found"),
+			),
+		)
+		.where(
+			and(inArray(messages.threadId, threadIds), isNotNull(messages.bimiDomain)),
+		);
+
+	for (const row of rows) {
+		if (!row.bimiDomain) {
+			continue;
+		}
+		const existing = result.get(row.threadId) ?? [];
+		if (!existing.includes(row.bimiDomain)) {
+			existing.push(row.bimiDomain);
+		}
+		result.set(row.threadId, existing);
 	}
 
 	return result;

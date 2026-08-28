@@ -1,6 +1,8 @@
 import PostalMime from 'postal-mime';
+import { eq } from 'drizzle-orm';
 
 import { withDb } from './db/client';
+import { messages } from './db/schema';
 import { DomainValidationRun } from './lib/domain-validation';
 import { resolveMailboxForEnvelope } from './lib/resolve-mailbox';
 import { isSelfSentLoopback } from './lib/messages/self-loopback';
@@ -78,6 +80,45 @@ export default {
 				console.log(
 					`Stored message ${id}: ${message.from} -> ${resolution.envelopeTo} (${parsed.subject ?? 'no subject'}, ${parsed.attachments.length} attachment(s))`,
 				);
+
+				const { verifyInboundAuth } = await import('./lib/mail-auth/verify-inbound');
+				const auth = await verifyInboundAuth(raw, {
+					sender: message.from,
+					authenticationResults: message.headers.get('Authentication-Results'),
+					arcAuthenticationResults: message.headers.get(
+						'ARC-Authentication-Results',
+					),
+					receivedSpf: message.headers.get('Received-SPF'),
+				});
+
+				await db
+					.update(messages)
+					.set({
+						dmarcResult: auth.dmarcResult,
+						bimiDomain: null,
+					})
+					.where(eq(messages.id, id));
+
+				if (auth.eligibleForBimi && auth.alignedDomain) {
+					const alignedDomain = auth.alignedDomain;
+					ctx.waitUntil(
+						(async () => {
+							const { resolveBimiForMessage } = await import(
+								'./lib/bimi/resolve-for-message'
+							);
+							await withDb(env, (waitDb) =>
+								resolveBimiForMessage(
+									waitDb,
+									env.BUCKET,
+									id,
+									alignedDomain,
+								),
+							);
+						})().catch((error) => {
+							console.error(`BIMI resolve failed for message ${id}:`, error);
+						}),
+					);
+				}
 			});
 		} catch (error) {
 			console.error('Inbound email handler error:', error);

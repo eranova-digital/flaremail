@@ -260,6 +260,13 @@
       "when": 1782796000000,
       "tag": "0036_domain_validation_cancelled",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1782797000000,
+      "tag": "0037_bimi",
+      "breakpoints": true
     }
   ]
 }

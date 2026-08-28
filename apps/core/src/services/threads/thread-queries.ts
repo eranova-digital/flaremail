@@ -21,6 +21,7 @@ import { assertThreadInMailbox } from "../../lib/thread-mailbox";
 import { listLatestMessageSeenByForThreads } from "../../lib/message-seen-by";
 import { toThreadDto } from "./dto";
 import {
+	getBimiDomainsForThreads,
 	getLabelIdsForThreads,
 	getThreadPartiesForMailbox,
 } from "./thread-enrichment";
@@ -137,6 +138,12 @@ export async function listThreads(
 		rows.map((row) => row.thread.id),
 	);
 
+	const bimiDomainsMap = await getBimiDomainsForThreads(
+		db,
+		mailboxId,
+		rows.map((row) => row.thread.id),
+	);
+
 	const items = rows.map((row) =>
 		toThreadDto(
 			row.thread,
@@ -144,6 +151,7 @@ export async function listThreads(
 			labelMap.get(row.thread.id) ?? [],
 			partiesMap.get(row.thread.id),
 			seenByMap.get(row.thread.id) ?? [],
+			bimiDomainsMap.get(row.thread.id) ?? [],
 		),
 	);
 
@@ -211,11 +219,14 @@ export async function getThread(
 
 	const seenByMap = await listLatestMessageSeenByForThreads(db, mailboxId, [threadId]);
 
+	const bimiDomainsMap = await getBimiDomainsForThreads(db, mailboxId, [threadId]);
+
 	return toThreadDto(
 		row.thread,
 		row.mailboxView,
 		labelRows.map((labelRow) => labelRow.labelId),
 		parties,
 		seenByMap.get(threadId) ?? [],
+		bimiDomainsMap.get(threadId) ?? [],
 	);
 }

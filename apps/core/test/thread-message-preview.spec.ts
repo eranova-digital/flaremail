@@ -32,6 +32,9 @@ function message(overrides: Partial<Message> & Pick<Message, "id" | "messageId">
 		rawEmlKey: "raw/1",
 		sendErrorCode: null,
 		sendErrorMessage: null,
+		sentByAccountId: null,
+		dmarcResult: null,
+		bimiDomain: null,
 		...overrides,
 	};
 }

@@ -909,6 +909,46 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /bimi/{domain}/logo:
+    parameters:
+      - name: domain
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Publishing BIMI domain (lowercase).
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [small, large]
+          default: small
+      - name: v
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Cache-busting token (typically logoUpdatedAt ISO string).
+    get:
+      tags: [Messages]
+      summary: Download BIMI logo
+      description: >
+        Auth-gated WebP logo for a publishing BIMI domain. Requires a signed-in
+        session or an API key with `bimi:read`. Returns 404 when the domain has
+        no found logo cache entry.
+      operationId: getBimiLogo
+      responses:
+        "200":
+          description: BIMI logo WebP
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: "#/components/responses/Problem"
+
   /oidc-clients:
     get:
       tags: [OIDC]
@@ -1730,6 +1770,10 @@ components:
           type: ["string", "null"]
           format: uuid
           description: Parent message id within the thread, when this message is a reply.
+        bimiDomain:
+          type: ["string", "null"]
+          description: >
+            Publishing BIMI domain when this message resolved a found logo; null otherwise.
         text:
           type: ["string", "null"]
           description: Present when includeBody=true on list thread messages.
@@ -1839,6 +1883,10 @@ components:
         receivedAt:
           type: string
           format: date-time
+        bimiDomain:
+          type: ["string", "null"]
+          description: >
+            Publishing BIMI domain when this message resolved a found logo; null otherwise.
 
     MessageFull:
       allOf:
@@ -1923,6 +1971,13 @@ components:
             message in the thread.
           items:
             $ref: "#/components/schemas/SeenByViewer"
+        bimiDomains:
+          type: array
+          description: >
+            Unique publishing BIMI domains from messages in this thread that have a
+            found logo cache entry.
+          items:
+            type: string
 
     ProfilePicture:
       type: ["object", "null"]

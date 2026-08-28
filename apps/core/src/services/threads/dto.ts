@@ -56,6 +56,7 @@ export function toMessagePreview(message: Message) {
 		hasAttachments: message.hasAttachments,
 		sentAt: message.sentAt?.toISOString() ?? null,
 		receivedAt: message.receivedAt.toISOString(),
+		bimiDomain: message.bimiDomain ?? null,
 	};
 }
 
@@ -123,6 +124,7 @@ export function toThreadDto(
 	labelIds: string[],
 	parties?: ThreadParties,
 	seenBy: SeenByViewer[] = [],
+	bimiDomains: string[] = [],
 ) {
 	return {
 		id: thread.id,
@@ -137,6 +139,7 @@ export function toThreadDto(
 		sender: parties?.sender ?? null,
 		participants: parties?.participants ?? [],
 		seenBy,
+		bimiDomains,
 	};
 }
 

@@ -42,6 +42,8 @@ const SAFE_CLIENT_MESSAGES = new Set([
 	"Attachment not found",
 	"Attachment content not found",
 	"Image not found",
+	"BIMI logo not found",
+	"size must be small or large",
 	"Message not found",
 	"Invalid email address",
 	"Invalid recovery email address",

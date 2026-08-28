@@ -88,6 +88,7 @@ export const API_KEY_SCOPES = [
 	"instance_settings:read",
 	"instance_settings:update",
 	"logs:list",
+	"bimi:read",
 ] as const;
 
 export type ApiKeyScope = (typeof API_KEY_SCOPES)[number];
@@ -180,6 +181,7 @@ export const SCOPE_ACTION_REQUIREMENTS: Record<ApiKeyScope, AuthAction> = {
 	"instance_settings:read": "platform",
 	"instance_settings:update": "platform",
 	"logs:list": "platform",
+	"bimi:read": "authenticated",
 };
 
 export function isApiKeyScope(value: string): value is ApiKeyScope {

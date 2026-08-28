@@ -2,6 +2,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "../../db/client";
 import { accountProfiles, accounts, messageMailboxes, messages } from "../../db/schema";
+import { backfillBimiForMessages } from "../../lib/bimi/backfill-message";
 import { isSharedMailbox, listMessageSeenByForMessages } from "../../lib/message-seen-by";
 import { loadMessageBody } from "../../lib/messages/message-body";
 import { toProfilePicturePayload } from "../../lib/profile-picture/payload";
@@ -35,6 +36,28 @@ export async function listThreadMessages(
 		.orderBy(asc(messages.receivedAt));
 
 	const messageRows = rows.map((row) => row.message);
+
+	if (options?.bucket) {
+		const needsBimi = messageRows.filter(
+			(message) =>
+				message.direction === "inbound" && message.bimiDomain === null,
+		);
+		if (needsBimi.length > 0) {
+			await backfillBimiForMessages(db, options.bucket, needsBimi);
+			const refreshed = await db
+				.select({ message: messages })
+				.from(messages)
+				.where(inArray(messages.id, needsBimi.map((m) => m.id)));
+			const byId = new Map(refreshed.map((row) => [row.message.id, row.message]));
+			for (let i = 0; i < messageRows.length; i += 1) {
+				const updated = byId.get(messageRows[i].id);
+				if (updated) {
+					messageRows[i] = updated;
+				}
+			}
+		}
+	}
+
 	const rfcMessageIdToUuid = buildRfcMessageIdToUuidMap(messageRows);
 
 	const sharedViewer = await isSharedMailbox(db, mailboxId);

@@ -19,6 +19,31 @@ import type { StoredAttachmentInput } from "./stored-attachment-input";
 import { processInboundHtmlImages } from "../email-images/process-inbound-html";
 import { emitLog } from "../logs/emit";
 
+const PRESERVED_AUTH_HEADERS = [
+	"Authentication-Results",
+	"ARC-Authentication-Results",
+	"Received-SPF",
+] as const;
+
+function preserveInboundAuthHeaders(
+	mimeContent: ReturnType<typeof postalEmailToMimeContent>,
+	message: ForwardableEmailMessage,
+): void {
+	const headers = mimeContent.headers ?? [];
+	const existing = new Set(headers.map((header) => header.key.toLowerCase()));
+
+	for (const name of PRESERVED_AUTH_HEADERS) {
+		const value = message.headers.get(name);
+		if (!value || existing.has(name.toLowerCase())) {
+			continue;
+		}
+		headers.push({ key: name, value });
+		existing.add(name.toLowerCase());
+	}
+
+	mimeContent.headers = headers;
+}
+
 export async function storeInboundEmail(
 	db: Database,
 	bucket: R2Bucket,
@@ -64,6 +89,7 @@ export async function storeInboundEmail(
 		.filter((part): part is StoredAttachmentInput => part !== null);
 
 	const mimeContent = postalEmailToMimeContent(parsed);
+	preserveInboundAuthHeaders(mimeContent, message);
 	let externalImageInputs: Awaited<
 		ReturnType<typeof processInboundHtmlImages>
 	>["externalImages"] = [];

@@ -73,6 +73,7 @@ import {
 	handleListSystemEmailTemplates,
 	handleUploadSystemEmailTemplate,
 } from "../../controllers/system-email-templates";
+import { handleGetBimiLogo } from "../../controllers/bimi";
 
 const prefix = "/api/v1";
 
@@ -463,5 +464,13 @@ export const v1Routes: RouteDefinition[] = [
 		action: "mail_read",
 		scopes: ["attachments:read"],
 		handler: handleDownloadAttachment,
+	},
+
+	{
+		method: "GET",
+		path: `${prefix}/bimi/:domain/logo`,
+		action: "authenticated",
+		scopes: ["bimi:read"],
+		handler: handleGetBimiLogo,
 	},
 ];

@@ -37,6 +37,17 @@ export const sendStatusEnum = pgEnum("send_status", [
 	"sent",
 	"failed",
 ]);
+export const dmarcResultEnum = pgEnum("dmarc_result", [
+	"pass",
+	"fail",
+	"none",
+	"temperror",
+	"permerror",
+]);
+export const bimiLogoStatusEnum = pgEnum("bimi_logo_status", [
+	"found",
+	"missing",
+]);
 export const threadFolderEnum = pgEnum("thread_folder", [
 	"inbox",
 	"spam",
@@ -257,6 +268,8 @@ export const messages = pgTable(
 		sentByAccountId: uuid("sent_by_account_id").references(() => accounts.id, {
 			onDelete: "set null",
 		}),
+		dmarcResult: dmarcResultEnum("dmarc_result"),
+		bimiDomain: text("bimi_domain"),
 	},
 	(table) => [
 		index("messages_thread_id_received_at_idx").on(
@@ -271,6 +284,16 @@ export const messages = pgTable(
 		index("messages_sent_by_account_id_idx").on(table.sentByAccountId),
 	],
 );
+
+export const bimiLogos = pgTable("bimi_logos", {
+	domain: text("domain").primaryKey(),
+	status: bimiLogoStatusEnum("status").notNull(),
+	sourceUrl: text("source_url"),
+	storageKey: text("storage_key"),
+	checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
+	expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+	logoUpdatedAt: timestamp("logo_updated_at", { withTimezone: true }),
+});
 
 export const messageSeenBy = pgTable(
 	"message_seen_by",
@@ -439,6 +462,10 @@ export type Label = typeof labels.$inferSelect;
 export type NewLabel = typeof labels.$inferInsert;
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+export type BimiLogo = typeof bimiLogos.$inferSelect;
+export type NewBimiLogo = typeof bimiLogos.$inferInsert;
+export type DmarcResult = (typeof dmarcResultEnum.enumValues)[number];
+export type BimiLogoStatus = (typeof bimiLogoStatusEnum.enumValues)[number];
 export type MessageSeenBy = typeof messageSeenBy.$inferSelect;
 export type NewMessageSeenBy = typeof messageSeenBy.$inferInsert;
 export type Attachment = typeof attachments.$inferSelect;

@@ -94,7 +94,7 @@ export class MailboxMail {
 			mailboxId,
 		});
 		return listThreadMessages(this.ctx.db, threadId, mailboxId, {
-			bucket: options.includeBody ? this.ctx.bucket : undefined,
+			bucket: this.ctx.bucket,
 			includeBody: options.includeBody,
 		});
 	}
