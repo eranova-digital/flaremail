@@ -64,20 +64,6 @@ function DraftMessageList({
 	const selectedDraftId =
 		searchParams.get('draftId') ?? searchParams.get('messageId');
 
-	if (draftsQuery.isLoading) {
-		return (
-			<div className="space-y-2 p-3">
-				{Array.from({ length: 6 }).map((_, index) => (
-					<Skeleton key={index} className="h-16 w-full" />
-				))}
-			</div>
-		);
-	}
-
-	if (draftsQuery.isError) {
-		return <div className="text-destructive p-4 text-sm">{getErrorMessage(draftsQuery.error)}</div>;
-	}
-
 	const drafts = draftsQuery.data?.items ?? [];
 
 	return (
@@ -98,44 +84,54 @@ function DraftMessageList({
 					>
 						<RefreshCw className={cn('size-4', draftsQuery.isFetching && 'animate-spin')} />
 					</Button>
-					<Badge variant="secondary" className="max-w-[9rem] truncate sm:max-w-none">
-						{t('threadList.draftCount', { count: drafts.length })}
-					</Badge>
+					{!draftsQuery.isLoading && !draftsQuery.isError ? (
+						<Badge variant="secondary" className="max-w-[9rem] truncate sm:max-w-none">
+							{t('threadList.draftCount', { count: drafts.length })}
+						</Badge>
+					) : null}
 				</div>
 			</div>
 			<div className="max-w-full flex-1 overflow-y-auto">
-				{drafts.length === 0 ? (
+				{draftsQuery.isLoading ? (
+					<div className="space-y-2 p-3">
+						{Array.from({ length: 6 }).map((_, index) => (
+							<Skeleton key={index} className="h-16 w-full" />
+						))}
+					</div>
+				) : draftsQuery.isError ? (
+					<div className="text-destructive p-4 text-sm">{getErrorMessage(draftsQuery.error)}</div>
+				) : drafts.length === 0 ? (
 					<p className="text-muted-foreground p-4 text-sm">{t('threadList.emptyDrafts')}</p>
 				) : (
 					<ul>
 						{drafts.map((draft) => (
-								<DraftListItem
-									key={draft.id!}
-									draft={draft}
-									selected={draft.id === selectedDraftId}
-									onSelect={() => {
-										if (!draft.id || !draft.threadId) {
-											return;
-										}
-										if (draft.composeOnly) {
-											navigate(
-												composePath(mailboxId, {
-													draftId: draft.id,
-													threadId: draft.threadId,
-													folder: 'drafts',
-												}),
-											);
-											return;
-										}
+							<DraftListItem
+								key={draft.id!}
+								draft={draft}
+								selected={draft.id === selectedDraftId}
+								onSelect={() => {
+									if (!draft.id || !draft.threadId) {
+										return;
+									}
+									if (draft.composeOnly) {
 										navigate(
-											threadPath(mailboxId, draft.threadId, {
+											composePath(mailboxId, {
+												draftId: draft.id,
+												threadId: draft.threadId,
 												folder: 'drafts',
-												messageId: draft.id,
 											}),
 										);
-									}}
-								/>
-							))}
+										return;
+									}
+									navigate(
+										threadPath(mailboxId, draft.threadId, {
+											folder: 'drafts',
+											messageId: draft.id,
+										}),
+									);
+								}}
+							/>
+						))}
 					</ul>
 				)}
 			</div>
@@ -157,21 +153,6 @@ function FolderThreadList({
 	const { t } = useTranslation('mail');
 	const navigate = useNavigate();
 	const threadsQuery = useThreads(mailboxId, activeFolder);
-
-	if (threadsQuery.isLoading) {
-		return (
-			<div className="space-y-2 p-3">
-				{Array.from({ length: 6 }).map((_, index) => (
-					<Skeleton key={index} className="h-16 w-full" />
-				))}
-			</div>
-		);
-	}
-
-	if (threadsQuery.isError) {
-		return <div className="text-destructive p-4 text-sm">{getErrorMessage(threadsQuery.error)}</div>;
-	}
-
 	const threads = threadsQuery.data?.items ?? [];
 	const unreadCount = threads.filter((thread) => !thread.isRead).length;
 
@@ -193,14 +174,24 @@ function FolderThreadList({
 					>
 						<RefreshCw className={cn('size-4', threadsQuery.isFetching && 'animate-spin')} />
 					</Button>
-					<Badge variant="secondary" className="max-w-[9rem] truncate sm:max-w-none">
-						{unreadCount > 0 ? t('threadList.unreadPrefix', { count: unreadCount }) : ''}
-						{t('threadList.threadCount', { count: threads.length })}
-					</Badge>
+					{!threadsQuery.isLoading && !threadsQuery.isError ? (
+						<Badge variant="secondary" className="max-w-[9rem] truncate sm:max-w-none">
+							{unreadCount > 0 ? t('threadList.unreadPrefix', { count: unreadCount }) : ''}
+							{t('threadList.threadCount', { count: threads.length })}
+						</Badge>
+					) : null}
 				</div>
 			</div>
 			<div className="max-w-full flex-1 overflow-y-auto">
-				{threads.length === 0 ? (
+				{threadsQuery.isLoading ? (
+					<div className="space-y-2 p-3">
+						{Array.from({ length: 6 }).map((_, index) => (
+							<Skeleton key={index} className="h-16 w-full" />
+						))}
+					</div>
+				) : threadsQuery.isError ? (
+					<div className="text-destructive p-4 text-sm">{getErrorMessage(threadsQuery.error)}</div>
+				) : threads.length === 0 ? (
 					<p className="text-muted-foreground p-4 text-sm">
 						{t('threadList.emptyFolder', { folder: FOLDER_LABELS[activeFolder] })}
 					</p>

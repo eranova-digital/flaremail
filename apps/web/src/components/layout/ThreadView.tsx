@@ -153,30 +153,15 @@ function MessageCardSkeleton({
 	);
 }
 
-function ThreadViewSkeleton({ label }: { label: string }) {
+function ThreadViewBodySkeleton({ label }: { label: string }) {
 	return (
-		<div className="flex h-full min-w-0 flex-col" aria-busy="true" aria-label={label}>
-			<div className="space-y-3 border-b p-4">
-				<div className="flex items-start justify-between gap-4">
-					<div className="min-w-0 space-y-2">
-						<Skeleton className="h-6 w-64" />
-						<Skeleton className="h-4 w-24" />
-					</div>
-					<div className="flex shrink-0 items-center gap-2">
-						<Skeleton className="size-8 rounded-md" />
-						<Skeleton className="size-8 rounded-md" />
-						<Skeleton className="size-8 rounded-md" />
-					</div>
-				</div>
-			</div>
-			<div className="flex-1 overflow-hidden">
-				<div className="space-y-4 p-4">
-					<MessageCardSkeleton className="w-[72%]" lines={3} />
-					<MessageCardSkeleton className="w-[58%]" outbound lines={2} />
-					<MessageCardSkeleton className="w-[78%]" lines={4} />
-					<div className="flex gap-2 pt-2">
-						<Skeleton className="h-9 flex-1" />
-					</div>
+		<div className="min-h-0 flex-1 overflow-hidden" aria-busy="true" aria-label={label}>
+			<div className="space-y-4 p-3 sm:p-4">
+				<MessageCardSkeleton className="w-[72%]" lines={3} />
+				<MessageCardSkeleton className="w-[58%]" outbound lines={2} />
+				<MessageCardSkeleton className="w-[78%]" lines={4} />
+				<div className="flex gap-2 pt-2">
+					<Skeleton className="h-9 flex-1" />
 				</div>
 			</div>
 		</div>
@@ -475,22 +460,16 @@ export function ThreadView() {
 		return <div className="text-muted-foreground flex h-full items-center justify-center p-8 text-sm">{t('threadView.selectThread')}</div>;
 	}
 
-	if (messagesQuery.isLoading) {
-		return <ThreadViewSkeleton label={t('threadView.loadingConversation')} />;
+	if (messagesQuery.isError && isNotFoundError(messagesQuery.error)) {
+		return (
+			<Navigate
+				to={labelId ? labelListPath(mailboxId, labelId) : `/m/${mailboxId}/${folder}`}
+				replace
+			/>
+		);
 	}
 
-	if (messagesQuery.isError) {
-		if (isNotFoundError(messagesQuery.error)) {
-			return (
-				<Navigate
-					to={labelId ? labelListPath(mailboxId, labelId) : `/m/${mailboxId}/${folder}`}
-					replace
-				/>
-			);
-		}
-
-		return <div className="text-destructive p-6 text-sm">{getErrorMessage(messagesQuery.error)}</div>;
-	}
+	const threadReady = !messagesQuery.isLoading && !messagesQuery.isError;
 
 	return (
 		<>
@@ -510,17 +489,35 @@ export function ThreadView() {
 								</Button>
 							) : null}
 							<div className="min-w-0">
-								<h2 className="truncate text-base font-semibold sm:text-lg">
-									{thread?.subject || t('threadView.noSubject')}
-								</h2>
-								<p className="text-muted-foreground text-sm">
-									{t('threadView.messageCount', { count: messages.length })}
-								</p>
+								{threadReady ? (
+									<>
+										<h2 className="truncate text-base font-semibold sm:text-lg">
+											{thread?.subject || t('threadView.noSubject')}
+										</h2>
+										<p className="text-muted-foreground text-sm">
+											{t('threadView.messageCount', { count: messages.length })}
+										</p>
+									</>
+								) : (
+									<div className="space-y-2">
+										<Skeleton className="h-6 w-48 sm:w-64" />
+										<Skeleton className="h-4 w-24" />
+									</div>
+								)}
 							</div>
 						</div>
-						<ThreadActions mailboxId={mailboxId} threadId={threadId} folder={actionFolder} />
+						{threadReady ? (
+							<ThreadActions mailboxId={mailboxId} threadId={threadId} folder={actionFolder} />
+						) : (
+							<Skeleton className="size-8 shrink-0 rounded-md" />
+						)}
 					</div>
 				</div>
+				{messagesQuery.isLoading ? (
+					<ThreadViewBodySkeleton label={t('threadView.loadingConversation')} />
+				) : messagesQuery.isError ? (
+					<div className="text-destructive p-6 text-sm">{getErrorMessage(messagesQuery.error)}</div>
+				) : (
 				<ScrollArea className="min-h-0 min-w-0 flex-1">
 					<div className="min-w-0 max-w-full space-y-4 p-3 sm:p-4">
 						{messages.map((message, index) => {
@@ -869,6 +866,7 @@ export function ThreadView() {
 						<div ref={threadEndRef} aria-hidden className="h-px shrink-0" />
 					</div>
 				</ScrollArea>
+				)}
 			</div>
 			<ConfirmDialog
 				open={draftPendingDeleteId !== null}
