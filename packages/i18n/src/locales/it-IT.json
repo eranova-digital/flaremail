@@ -272,7 +272,10 @@
 		"invite-role-required": "Il ruolo di invito è obbligatorio per questa operazione",
 		"remove-target-required": "La destinazione di rimozione è obbligatoria per questa operazione",
 		"invalid-alias-target-address": "Indirizzo di destinazione alias non valido",
-		"something-went-wrong": "Qualcosa è andato storto"
+		"something-went-wrong": "Qualcosa è andato storto",
+		"invalid-phone-number": "Il numero di telefono deve essere un numero internazionale valido in formato E.164 (ad es. +14155552671)",
+		"recovery-email-hosted-domain": "L’e-mail di recupero non può usare un dominio ospitato da questo server di posta",
+		"recovery-email-hosted-mailbox": "L’e-mail di recupero non può usare una casella su questo server di posta"
 	},
 	"auth": {
 		"session": {
@@ -485,6 +488,14 @@
 			"title": "Configurazione richiesta",
 			"hint": "Copia <example>{{example}}</example> in <env>{{env}}</env> e imposta <apiUrl>{{apiUrl}}</apiUrl>.",
 			"invalid": "Configurazione non valida"
+		},
+		"passwordTooWeak": "La password deve contenere almeno 8 caratteri, una lettera e un numero.",
+		"password-too-weak": "La password deve contenere almeno 8 caratteri, una lettera e un numero.",
+		"passwordStrength": {
+			"hint": "Almeno 8 caratteri, inclusa una lettera e un numero. Preferisci una password unica che non usi altrove.",
+			"minLength": "Almeno 8 caratteri",
+			"hasLetter": "Contiene una lettera",
+			"hasNumber": "Contiene un numero"
 		}
 	},
 	"mail": {
@@ -563,7 +574,12 @@
 			"noPreview": "Nessuna anteprima",
 			"unknown": "(sconosciuto)",
 			"seenBy": "Visto da",
-			"seenByOverflow": "+{{count}}"
+			"seenByOverflow": "+{{count}}",
+			"refreshDrafts": "Aggiorna bozze",
+			"draftCount_one": "{{count}} bozza",
+			"draftCount_few": "{{count}} bozze",
+			"draftCount_other": "{{count}} bozze",
+			"emptyDrafts": "Nessuna bozza."
 		},
 		"threadActions": {
 			"markUnread": "Segna come non letto",
@@ -870,7 +886,13 @@
 				"addressCity": "Città",
 				"addressLine1": "Indirizzo riga 1",
 				"addressLine2": "Indirizzo riga 2",
-				"addressHeading": "Indirizzo"
+				"addressHeading": "Indirizzo",
+				"phonePlaceholder": "+14155552671",
+				"selectCountry": "Seleziona paese…",
+				"selectState": "Seleziona stato/provincia…",
+				"selectCity": "Seleziona città…",
+				"locationSearchPlaceholder": "Cerca…",
+				"locationEmpty": "Nessun risultato."
 			},
 			"picture": {
 				"change": "Cambia foto",
@@ -878,7 +900,8 @@
 				"remove": "Rimuovi foto",
 				"uploadFailed": "Caricamento non riuscito",
 				"removeFailed": "Rimozione non riuscita"
-			}
+			},
+			"invalidPhone": "Inserisci un numero di telefono valido in formato internazionale (ad es. +14155552671)."
 		},
 		"identities": {
 			"noPrimaryMailbox": "Le identità sono disponibili per gli account con una casella principale.",
