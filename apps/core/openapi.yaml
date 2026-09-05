@@ -2150,6 +2150,230 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /templates:
+    get:
+      tags: [Templates]
+      summary: List email templates
+      description: |
+        Pass `manage=1` for templates the principal can manage (includes
+        `capabilities.canCreateGlobal`). Otherwise pass `mailboxId` for
+        templates available when composing from that mailbox (global + mailbox).
+      operationId: listEmailTemplates
+      parameters:
+        - name: manage
+          in: query
+          schema:
+            type: string
+            enum: ["1"]
+        - name: mailboxId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Template list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplateList"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [Templates]
+      summary: Create email template
+      description: Multipart HTML upload, max 1 MiB.
+      operationId: createEmailTemplate
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, file]
+              properties:
+                name:
+                  type: string
+                mailboxId:
+                  type: string
+                  format: uuid
+                  description: Omit for a global template
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /templates/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Templates]
+      summary: Get email template
+      operationId: getEmailTemplate
+      parameters:
+        - name: mailboxId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Template metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [Templates]
+      summary: Rename email template
+      operationId: updateEmailTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Templates]
+      summary: Delete email template
+      operationId: deleteEmailTemplate
+      responses:
+        "204":
+          description: Deleted
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /templates/{id}/content:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Templates]
+      summary: Download template HTML
+      operationId: getEmailTemplateContent
+      parameters:
+        - name: mailboxId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Raw HTML
+          content:
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /system-templates:
+    get:
+      tags: [System Templates]
+      summary: List system email templates
+      description: Catalog of transactional types plus configured status and tags.
+      operationId: listSystemEmailTemplates
+      responses:
+        "200":
+          description: System template catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SystemEmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /system-templates/{key}:
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/SystemEmailTemplateKey"
+    put:
+      tags: [System Templates]
+      summary: Upload system email template HTML
+      description: Multipart upload, max 1 MiB.
+      operationId: uploadSystemEmailTemplate
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Updated catalog entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemEmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [System Templates]
+      summary: Revert system template to built-in plain text
+      operationId: deleteSystemEmailTemplate
+      responses:
+        "204":
+          description: Reverted
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /system-templates/{key}/content:
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/SystemEmailTemplateKey"
+    get:
+      tags: [System Templates]
+      summary: Download system template HTML
+      operationId: getSystemEmailTemplateContent
+      responses:
+        "200":
+          description: Raw HTML
+          content:
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/Problem"
+
   /messages/send:
     post:
       tags: [Messages]
@@ -3718,6 +3942,77 @@ components:
           type: string
         color:
           type: ["string", "null"]
+
+    EmailTemplate:
+      type: object
+      required: [id, name, scope, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        mailboxId:
+          type: ["string", "null"]
+          format: uuid
+        scope:
+          type: string
+          enum: [global, mailbox]
+        mailboxAddress:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EmailTemplateList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailTemplate"
+        capabilities:
+          type: object
+          properties:
+            canCreateGlobal:
+              type: boolean
+          description: Present when listing with manage=1
+
+    SystemEmailTemplateKey:
+      type: string
+      enum: [invite, password_reset, recovery_verify, mfa_disable]
+
+    SystemEmailTemplate:
+      type: object
+      required: [key, label, description, subject, tags, configured]
+      properties:
+        key:
+          $ref: "#/components/schemas/SystemEmailTemplateKey"
+        label:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        tags:
+          type: array
+          items:
+            type: object
+            required: [name, description]
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+        configured:
+          type: boolean
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
 
     IdentityNamePattern:
       type: string
