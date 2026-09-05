@@ -562,6 +562,343 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /auth/mfa:
+    get:
+      tags: [Auth]
+      summary: MFA status
+      description: Session-only.
+      operationId: getMfaStatus
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: MFA status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaStatus"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Auth]
+      summary: Disable MFA
+      description: |
+        Session-only. `code` is the recovery-email code when a recovery
+        address is set, otherwise a TOTP code.
+      operationId: disableMfa
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, code]
+              properties:
+                password:
+                  type: string
+                  format: password
+                code:
+                  type: string
+      responses:
+        "200":
+          description: MFA disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaStatus"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa/setup:
+    post:
+      tags: [Auth]
+      summary: Start MFA setup
+      description: Session-only. Returns a TOTP secret and otpauth URL.
+      operationId: setupMfa
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: TOTP secret
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [secret, otpauthUrl]
+                properties:
+                  secret:
+                    type: string
+                  otpauthUrl:
+                    type: string
+                    format: uri
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm MFA setup
+      description: Session-only.
+      operationId: confirmMfa
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  description: TOTP code
+      responses:
+        "200":
+          description: MFA enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaStatus"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa/disable/send-recovery-code:
+    post:
+      tags: [Auth]
+      summary: Send MFA-disable recovery code
+      description: Session-only. Requires a verified recovery email.
+      operationId: sendMfaDisableRecoveryCode
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa/verify:
+    post:
+      tags: [Auth]
+      summary: Complete MFA sign-in
+      description: Unauthenticated. Exchanges an MFA token and TOTP code for a session cookie.
+      operationId: verifyMfaSignIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mfaToken, code]
+              properties:
+                mfaToken:
+                  type: string
+                code:
+                  type: string
+      responses:
+        "200":
+          description: Signed in
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: flaremail_session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys:
+    get:
+      tags: [Auth]
+      summary: List passkeys
+      description: Session-only.
+      operationId: listPasskeys
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Passkey list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PasskeySummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    delete:
+      tags: [Auth]
+      summary: Remove a passkey
+      description: Session-only. Requires the account password.
+      operationId: removePasskey
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Remaining passkeys
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PasskeySummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/register/options:
+    post:
+      tags: [Auth]
+      summary: Begin passkey registration
+      description: Session-only. Returns WebAuthn creation options and a challenge token.
+      operationId: beginPasskeyRegistration
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Registration options
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnChallenge"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/register/verify:
+    post:
+      tags: [Auth]
+      summary: Complete passkey registration
+      description: Session-only.
+      operationId: completePasskeyRegistration
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeToken, response]
+              properties:
+                challengeToken:
+                  type: string
+                response:
+                  type: object
+                  additionalProperties: true
+                  description: WebAuthn registration credential
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Updated passkey list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PasskeySummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/sign-in/options:
+    post:
+      tags: [Auth]
+      summary: Begin passkey sign-in
+      description: |
+        Unauthenticated. Omit `email` for discoverable credentials.
+        Rate-limited.
+      operationId: beginPasskeySignIn
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        "200":
+          description: Authentication options
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnChallenge"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/sign-in/verify:
+    post:
+      tags: [Auth]
+      summary: Complete passkey sign-in
+      description: Unauthenticated. Rate-limited.
+      operationId: completePasskeySignIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeToken, response]
+              properties:
+                challengeToken:
+                  type: string
+                response:
+                  type: object
+                  additionalProperties: true
+                  description: WebAuthn assertion
+      responses:
+        "200":
+          description: Signed in
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: flaremail_session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /domains:
     get:
       tags: [Domains]
@@ -2157,6 +2494,45 @@ components:
           type: boolean
           const: true
         mfaToken:
+          type: string
+
+    MfaStatus:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+        enabledAt:
+          type: ["string", "null"]
+          format: date-time
+
+    PasskeySummary:
+      type: object
+      required: [id, createdAt, backedUp]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: ["string", "null"]
+          format: date-time
+        backedUp:
+          type: boolean
+
+    WebAuthnChallenge:
+      type: object
+      required: [options, challengeToken]
+      properties:
+        options:
+          type: object
+          additionalProperties: true
+          description: SimpleWebAuthn options JSON
+        challengeToken:
           type: string
 
     SessionInfo:
