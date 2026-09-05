@@ -32,12 +32,14 @@ Versioned API:
 | GET | `/api/v1/openapi.json` | No | OpenAPI document (`info.version` = root `package.json`) |
 | GET | `/api/v1/health` | No | Liveness + version (gate-accessible) |
 | GET | `/health` | No | Same payload as `/api/v1/health` (also via gate) |
+| POST | `/api/v1/bootstrap` | No | First-run intendant create (`{ created: false }` thereafter) |
 
 ---
 
 ## Authentication
 
-Protected endpoints require either a signed-in web session or an API key in the
+Protected endpoints require either a signed-in web session cookie
+(`flaremail_session`, HttpOnly, Secure, SameSite=Lax) or an API key in the
 `Authorization` header:
 
 ```
@@ -79,6 +81,28 @@ API key endpoints require a signed-in session:
 | GET | `/api-keys` | List your API keys and grantable scopes |
 | POST | `/api-keys` | Create an API key |
 | DELETE | `/api-keys/:id` | Revoke one of your API keys |
+
+### Session auth
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/auth/sign-in` | No | Session cookie, or MFA challenge |
+| POST | `/auth/sign-out` | No | Clear session |
+| GET / PATCH | `/auth/me` | Session or `profile:*` key | Current account / profile |
+| PUT / DELETE | `/auth/me/profile-picture` | Session or `profile_picture:*` | Own picture |
+| GET | `/auth/invite-preview` | No | Invite preview |
+| POST | `/auth/activate` | No | Activate invite and sign in |
+| POST | `/auth/forgot-password` | No | Always `{ ok: true }` |
+| GET | `/auth/reset-preview` | No | Preview reset code |
+| POST | `/auth/reset-password` | No | Set new password |
+| GET / DELETE | `/auth/mfa` | Session | Status / disable |
+| POST | `/auth/mfa/setup` | Session | TOTP secret |
+| POST | `/auth/mfa/confirm` | Session | Enable MFA |
+| POST | `/auth/mfa/verify` | No | Complete MFA sign-in |
+| GET / POST / DELETE | `/auth/passkeys*` | Mixed | WebAuthn register and sign-in |
+| GET / DELETE | `/auth/sessions` | Session | List / revoke sessions |
+| POST | `/auth/recovery-email/*` | Session | Verify recovery address |
+| POST | `/auth/intendant/regenerate-password` | Intendant session | New random password |
 
 ---
 
@@ -266,6 +290,34 @@ Mail endpoints require `mailboxId` (query param or body). Requests for a mailbox
 
 ---
 
+## Accounts
+
+Management APIs for invites, roles, grants, and assignments. Scoped by `domain_manage_users` (managers/admins on their domains; platform principals instance-wide).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/accounts` | List accounts (excludes intendant) |
+| GET / PATCH / DELETE | `/accounts/:id` | Detail, profile, removal |
+| PATCH | `/accounts/:id/assignments` | Domains, shared mailboxes, grants |
+| GET | `/accounts/:id/identities` | Identity overview for that account |
+| POST | `/accounts/invite` | Create pending account + primary mailbox |
+| POST | `/accounts/invite/suggest-local-part` | Suggest a local-part |
+| POST | `/accounts/assign-role` | Change role |
+| POST | `/accounts/:id/suspend` | Suspend |
+| POST | `/accounts/:id/unsuspend` | Unsuspend |
+| POST | `/accounts/:id/password-reset-code` | Admin-issued reset code |
+| POST | `/accounts/:id/regenerate-invite` | New invite for pending accounts |
+| GET / DELETE | `/accounts/:id/sessions` | Admin session list / revoke-all |
+| GET / DELETE | `/accounts/:id/mfa` | Admin MFA status / disable (session-only) |
+| POST / DELETE | `/accounts/:id/mailbox-grants` | Shared-mailbox grants |
+| POST / DELETE | `/accounts/:id/manager-assignments` | Manager mailbox assignments |
+| GET | `/mailboxes/:mailboxId/grants` | Grant holders |
+| GET | `/mailboxes/:mailboxId/manager-assignments` | Managers of a shared mailbox |
+| GET / PATCH | `/domains/:domainId/local-part-policy` | Invite local-part rules |
+| GET | `/accounts/:id/profile-picture?size=` | Public WebP (`small` or `large`) |
+
+---
+
 ## Labels (per mailbox)
 
 | Method | Path |
@@ -318,6 +370,7 @@ Custom HTML for instance transactional emails. Available to the intendant (and s
 | GET | `/messages/:id?mailboxId=` | Full message — parses raw EML from R2 (`text`, `html`, `headers`, attachment metadata) |
 | GET | `/messages/:id/preview?mailboxId=` | DB metadata only (fast; no R2) |
 | GET | `/messages/:id/raw?mailboxId=` | Download raw `.eml` bytes (`message/rfc822`) |
+| GET | `/messages/:id/images/:imageId` | Cached remote HTML image bytes |
 
 All read endpoints require `mailboxId` for visibility scoping. Works for inbound, sent, and draft messages.
 
@@ -509,6 +562,34 @@ Hard deletes preserve database integrity first. R2 object deletion runs after th
 | Alias mailbox | Alias and its visibility rows | Target-owned messages remain; `matchedMailboxId` cleared, `matchedVia`/`envelopeTo` kept as history | Alias is an enabled catch-all target |
 | Draft | Draft message, attachments, R2 objects | Thread state refreshed; empty draft-only threads removed | — |
 | System mailbox | — | — | Always blocked (`isSystemManaged`) |
+
+---
+
+## Instance settings
+
+Intendant (and superadmins when organization tab access allows):
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET / PATCH | `/instance/settings` | Organization policies, identity defaults, log retention |
+
+## Logs
+
+Intendant and superadmins. Cursor is `before` (ISO `createdAt` of the last item).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/logs` | Filter by `q`, `type`, importance, time, `accountId` |
+
+## OIDC
+
+Flaremail is an OpenID Provider. Discovery is **not** under `/api/v1`:
+
+```
+GET /.well-known/openid-configuration
+```
+
+Admin CRUD is `/oidc-clients`. Authorization, token, JWKS, userinfo, pending consent, and connected-app revoke live under `/oauth/*` and `/me/oidc-grants`. See the OpenAPI document for request/response schemas.
 
 ---
 
