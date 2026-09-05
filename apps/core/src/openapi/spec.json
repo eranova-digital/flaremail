@@ -3,7 +3,7 @@
   "info": {
     "title": "Flaremail API",
     "version": "1.0.0",
-    "description": "Flaremail - Enterprise / self-managed email infrastructure hosted on Cloudflare. Visit https://github.com/pxtrickb/flaremail for documentation.\n",
+    "description": "HTTP API for Flaremail, self-hosted email on Cloudflare. Production clients\ncall the **gate** hostname; gate proxies `/api/*` and `/health` to **core**.\n\nVersioned prefix: `/api/v1`. Live spec: `GET /api/v1/openapi.json`\n(`info.version` is the product version from root `package.json`).\n\nErrors use RFC 9457 Problem Details (`application/problem+json`). List\nendpoints use cursor pagination (`limit` default 50, max 100;\n`nextCursor` is null on the last page) unless noted.\n\nAuth is a signed-in session cookie **or** an API key Bearer token. Some\nsecurity operations are session-only and reject API keys.\n",
     "license": {
       "name": "Proprietary"
     }
@@ -11,10 +11,26 @@
   "servers": [
     {
       "url": "/api/v1",
-      "description": "API v1 base path"
+      "description": "API v1 base path (relative to the gate origin)"
     }
   ],
   "tags": [
+    {
+      "name": "Meta",
+      "description": "Spec, liveness, and first-run bootstrap"
+    },
+    {
+      "name": "Auth",
+      "description": "Sign-in, profile, MFA, passkeys, sessions, and recovery"
+    },
+    {
+      "name": "Accounts",
+      "description": "Account management, invites, grants, and assignments"
+    },
+    {
+      "name": "API Keys",
+      "description": "Session-only API key create, list, and revoke"
+    },
     {
       "name": "Domains"
     },
@@ -26,6 +42,14 @@
     },
     {
       "name": "Labels"
+    },
+    {
+      "name": "Templates",
+      "description": "Reusable HTML compose templates"
+    },
+    {
+      "name": "System Templates",
+      "description": "Instance transactional email HTML"
     },
     {
       "name": "Messages"
@@ -43,10 +67,23 @@
       "name": "Attachments"
     },
     {
+      "name": "BIMI"
+    },
+    {
+      "name": "Instance",
+      "description": "Organization settings"
+    },
+    {
+      "name": "Logs"
+    },
+    {
       "name": "OIDC"
     }
   ],
   "security": [
+    {
+      "sessionCookie": []
+    },
     {
       "bearerAuth": []
     }
@@ -456,13 +493,16 @@
                 "type": "object",
                 "properties": {
                   "isActive": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Managers cannot change mailbox active state."
                   },
                   "personalIdentityAllowance": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Shared mailboxes only. When true, senders may select identities owned by their primary mailbox while composing from this mailbox.\n"
                   },
                   "identityExport": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Shared mailboxes only. When true, this mailbox's identities may be selected when sending from other mailboxes the account can access.\n"
                   }
                 }
               }
@@ -1564,7 +1604,7 @@
       ],
       "get": {
         "tags": [
-          "Messages"
+          "BIMI"
         ],
         "summary": "Download BIMI logo",
         "description": "Auth-gated WebP logo for a publishing BIMI domain. Requires a signed-in session or an API key with `bimi:read`. Returns 404 when the domain has no found logo cache entry.\n",
@@ -1776,7 +1816,13 @@
           "OIDC"
         ],
         "summary": "List my OIDC consent grants",
+        "description": "Session-only. API keys cannot list connected apps.",
         "operationId": "listMyOidcGrants",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Connected apps"
@@ -1803,7 +1849,13 @@
           "OIDC"
         ],
         "summary": "Revoke my consent grant",
+        "description": "Session-only. API keys cannot revoke connected apps.",
         "operationId": "revokeMyOidcGrant",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
         "responses": {
           "204": {
             "description": "Revoked"
@@ -1930,10 +1982,16 @@
   },
   "components": {
     "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "flaremail_session",
+        "description": "Signed-in web session. HttpOnly, Secure, SameSite=Lax cookie set by\nsign-in, invite activation, MFA verify, and passkey sign-in. Idle\nlifetime is 7 days. Required for session-only operations (API keys,\nMFA, passkeys, sessions, recovery email, and other security surfaces).\n"
+      },
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Use an API key in the `Authorization` header:\n\n`Authorization: Bearer <api-key>`\n\nUser API keys start with `fmu_`. Effective access is the holder's\nnormal account permissions intersected with the key's scopes.\n"
+        "description": "API key or OAuth access token in the `Authorization` header:\n\n`Authorization: Bearer <token>`\n\nUser API keys start with `fmu_`. Effective access is the holder's\naccount permissions intersected with the key's scopes. OAuth access\ntokens are issued by `POST /oauth/token`. API keys cannot call\nsession-only endpoints.\n"
       }
     },
     "parameters": {
