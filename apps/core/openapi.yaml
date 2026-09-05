@@ -1475,6 +1475,88 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /api-keys:
+    get:
+      tags: [API Keys]
+      summary: List API keys
+      description: Session-only. Returns the caller's keys and scopes they may grant.
+      operationId: listApiKeys
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: API keys and grantable scopes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, availableScopes]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ApiKey"
+                  availableScopes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ApiKeyScope"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [API Keys]
+      summary: Create an API key
+      description: |
+        Session-only. The plaintext secret is returned once. At least one
+        grantable scope is required.
+      operationId: createApiKey
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scopes]
+              properties:
+                name:
+                  type: string
+                  default: API key
+                scopes:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ApiKeyScope"
+                  minItems: 1
+      responses:
+        "200":
+          description: Created key (secret shown once)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedApiKey"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /api-keys/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    delete:
+      tags: [API Keys]
+      summary: Revoke an API key
+      description: Session-only. Revokes one of the caller's keys.
+      operationId: revokeApiKey
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /domains:
     get:
       tags: [Domains]
@@ -3236,6 +3318,134 @@ components:
           type: boolean
         pattern:
           type: ["string", "null"]
+
+    ApiKeyScope:
+      type: string
+      enum:
+        - domains:list
+        - domains:create
+        - domains:read
+        - domains:update
+        - domains:delete
+        - domain_validation_runs:list
+        - domain_validation_runs:create
+        - domain_validation_runs:read
+        - domain_validation_runs:cancel
+        - domain_local_part_policies:read
+        - domain_local_part_policies:update
+        - mailboxes:list
+        - mailboxes:create
+        - mailboxes:read
+        - mailboxes:update
+        - mailboxes:delete
+        - identities:list
+        - identities:create
+        - identities:update
+        - identities:delete
+        - mailbox_grants:list
+        - mailbox_manager_assignments:list
+        - labels:list
+        - labels:create
+        - labels:read
+        - labels:update
+        - labels:delete
+        - templates:list
+        - templates:create
+        - templates:read
+        - templates:update
+        - templates:delete
+        - system_templates:list
+        - system_templates:read
+        - system_templates:update
+        - system_templates:delete
+        - messages:send
+        - drafts:list
+        - drafts:create
+        - drafts:update
+        - drafts:delete
+        - drafts:send
+        - messages:reply
+        - messages:forward
+        - messages:read_preview
+        - messages:read_raw
+        - messages:read
+        - messages:read_images
+        - threads:list
+        - threads:read
+        - threads:update
+        - search:read
+        - attachments:read
+        - accounts:list
+        - accounts:read
+        - accounts:update
+        - account_assignments:update
+        - accounts:invite
+        - accounts:suggest_local_part
+        - accounts:assign_role
+        - accounts:suspend
+        - accounts:unsuspend
+        - accounts:delete
+        - account_password_reset_codes:create
+        - account_invites:regenerate
+        - account_mailbox_grants:create
+        - account_mailbox_grants:delete
+        - account_manager_assignments:create
+        - account_manager_assignments:delete
+        - account_profile_pictures:read
+        - account_profile_pictures:update
+        - account_profile_pictures:delete
+        - profile:read
+        - profile:update
+        - profile_picture:read
+        - profile_picture:update
+        - profile_picture:delete
+        - oidc_clients:create
+        - oidc_clients:read
+        - oidc_clients:update
+        - oidc_clients:delete
+        - instance_settings:read
+        - instance_settings:update
+        - logs:list
+        - bimi:read
+
+    ApiKey:
+      type: object
+      required: [id, name, prefix, scopes, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prefix:
+          type: string
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    CreatedApiKey:
+      type: object
+      required: [id, secret, prefix, scopes]
+      properties:
+        id:
+          type: string
+          format: uuid
+        secret:
+          type: string
+          description: "Plaintext key (`fmu_…`). Shown only at creation."
+        prefix:
+          type: string
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
 
     MfaChallenge:
       type: object
