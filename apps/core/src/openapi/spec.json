@@ -4643,6 +4643,163 @@
         }
       }
     },
+    "/instance/settings": {
+      "get": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Get instance settings",
+        "operationId": "getInstanceSettings",
+        "responses": {
+          "200": {
+            "description": "Organization settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Update instance settings",
+        "description": "At least one field required. Changing `organizationTabAccess` is\nintendant-only.\n",
+        "operationId": "updateInstanceSettings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstanceSettingsPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/logs": {
+      "get": {
+        "tags": [
+          "Logs"
+        ],
+        "summary": "List audit logs",
+        "description": "Intendant and superadmins only.",
+        "operationId": "listLogs",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/LogType"
+              }
+            },
+            "description": "Repeatable. Values may also be comma-separated."
+          },
+          {
+            "name": "maxImportance",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            }
+          },
+          {
+            "name": "minImportance",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Cursor (createdAt ISO of the last item from the previous page)"
+          },
+          {
+            "name": "accountId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Log page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/oidc-clients": {
       "get": {
         "tags": [
@@ -6616,6 +6773,317 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "OrganizationTabAccess": {
+        "type": "string",
+        "enum": [
+          "intendant_only",
+          "intendant_and_superadmins"
+        ]
+      },
+      "RequireMfaScope": {
+        "type": "string",
+        "enum": [
+          "none",
+          "all",
+          "manager_and_above",
+          "admin_and_above",
+          "superadmin_and_above"
+        ]
+      },
+      "LogRetentionDays": {
+        "type": "integer",
+        "enum": [
+          3,
+          7,
+          14,
+          30,
+          60,
+          90
+        ]
+      },
+      "InstanceSettings": {
+        "type": "object",
+        "properties": {
+          "organizationTabAccess": {
+            "$ref": "#/components/schemas/OrganizationTabAccess"
+          },
+          "requireMfaScope": {
+            "$ref": "#/components/schemas/RequireMfaScope"
+          },
+          "requireRecoveryEmail": {
+            "type": "boolean"
+          },
+          "persistNoreplyOutboundEmails": {
+            "type": "boolean"
+          },
+          "identitySelfServe": {
+            "type": "boolean"
+          },
+          "customNameAllowance": {
+            "type": "boolean"
+          },
+          "defaultIdentityNamePattern": {
+            "$ref": "#/components/schemas/IdentityNamePattern"
+          },
+          "defaultIdentityCustomName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultIdentitySignatureHtml": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "logsEnabled": {
+            "type": "boolean"
+          },
+          "maxImportanceStored": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "logRetentionDays": {
+            "$ref": "#/components/schemas/LogRetentionDays"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedByAccountId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "InstanceSettingsPatch": {
+        "type": "object",
+        "properties": {
+          "organizationTabAccess": {
+            "$ref": "#/components/schemas/OrganizationTabAccess"
+          },
+          "requireMfaScope": {
+            "$ref": "#/components/schemas/RequireMfaScope"
+          },
+          "requireRecoveryEmail": {
+            "type": "boolean"
+          },
+          "persistNoreplyOutboundEmails": {
+            "type": "boolean"
+          },
+          "identitySelfServe": {
+            "type": "boolean"
+          },
+          "customNameAllowance": {
+            "type": "boolean"
+          },
+          "defaultIdentityNamePattern": {
+            "$ref": "#/components/schemas/IdentityNamePattern"
+          },
+          "defaultIdentityCustomName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultIdentitySignatureHtml": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "logsEnabled": {
+            "type": "boolean"
+          },
+          "maxImportanceStored": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "logRetentionDays": {
+            "$ref": "#/components/schemas/LogRetentionDays"
+          }
+        }
+      },
+      "LogType": {
+        "type": "string",
+        "enum": [
+          "auth",
+          "accounts",
+          "invites",
+          "mailboxes",
+          "mailing",
+          "threads",
+          "messages",
+          "identities",
+          "domains",
+          "settings",
+          "oidc",
+          "api-keys"
+        ]
+      },
+      "LogRefKind": {
+        "type": "string",
+        "enum": [
+          "account",
+          "mailbox",
+          "thread",
+          "message",
+          "domain",
+          "identity",
+          "invite",
+          "oidc-client",
+          "api-key",
+          "external-address"
+        ]
+      },
+      "LogResolvedAccountRef": {
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "displayName",
+          "loginIdentifier",
+          "deleted"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "account"
+          },
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "loginIdentifier": {
+            "type": "string"
+          },
+          "profilePicture": {
+            "$ref": "#/components/schemas/ProfilePicture"
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LogResolvedGenericRef": {
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "label",
+          "deleted"
+        ],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/LogRefKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LogListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "importance": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "type": {
+            "$ref": "#/components/schemas/LogType"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "refs": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/LogResolvedAccountRef"
+                },
+                {
+                  "$ref": "#/components/schemas/LogResolvedGenericRef"
+                }
+              ]
+            }
+          },
+          "actor": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LogResolvedAccountRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "context": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "ip": {
+                "type": "string"
+              },
+              "userAgent": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LogPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "nextBefore"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogListItem"
+            }
+          },
+          "nextBefore": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
