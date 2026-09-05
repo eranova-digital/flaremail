@@ -25,22 +25,12 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLogs } from "@/hooks/use-logs";
+import { formatLogTimestamp } from "@/lib/i18n/date-locale";
 import { getErrorMessage } from "@/lib/api/errors";
 import { LOG_TYPES, type LogListItem, type LogType } from "@/lib/logs/api";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZES = [25, 50, 100] as const;
-
-function formatWhen(iso: string): string {
-	try {
-		return new Intl.DateTimeFormat(undefined, {
-			dateStyle: "medium",
-			timeStyle: "medium",
-		}).format(new Date(iso));
-	} catch {
-		return iso;
-	}
-}
 
 function importanceVariant(
 	importance: number,
@@ -51,7 +41,7 @@ function importanceVariant(
 }
 
 function LogRow({ item }: { item: LogListItem }) {
-	const { t } = useTranslation("management");
+	const { t, i18n } = useTranslation("management");
 
 	return (
 		<li className="hover:bg-muted/40 px-4 py-3.5 transition-colors sm:px-5">
@@ -80,7 +70,9 @@ function LogRow({ item }: { item: LogListItem }) {
 					<LogSummary summary={item.summary} refs={item.refs} />
 				</div>
 				<div className="text-muted-foreground flex shrink-0 flex-col gap-0.5 text-xs sm:items-end sm:text-right">
-					<time dateTime={item.createdAt}>{formatWhen(item.createdAt)}</time>
+					<time dateTime={item.createdAt}>
+						{formatLogTimestamp(item.createdAt, i18n.language)}
+					</time>
 					{item.context?.ip ? (
 						<span className="font-mono tabular-nums">{item.context.ip}</span>
 					) : null}
