@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -44,8 +44,8 @@ export function buildSandboxedHtmlSrcDoc(
 		: "light";
 
 	const themeCss = adaptToTheme
-		? `html, body { margin: 0; padding: 0; background: transparent; color: ${foreground}; font-family: ${fontFamily}; color-scheme: ${colorScheme}; }`
-		: `html, body { margin: 0; padding: 0; background: #ffffff; color: #0a0a0a; font-family: ${fontFamily}; color-scheme: light; }`;
+		? `html, body { margin: 0; padding: 0; height: auto !important; min-height: 0 !important; background: transparent; color: ${foreground}; font-family: ${fontFamily}; color-scheme: ${colorScheme}; }`
+		: `html, body { margin: 0; padding: 0; height: auto !important; min-height: 0 !important; background: #ffffff; color: #0a0a0a; font-family: ${fontFamily}; color-scheme: light; }`;
 
 	const resetCss = [
 		themeCss,
@@ -64,7 +64,7 @@ export function buildSandboxedHtmlSrcDoc(
 		'<meta name="viewport" content="width=device-width, initial-scale=1" />',
 		`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' https: http: data: blob:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'" />`,
 		`<style>${resetCss}</style>`,
-		"</head><body>",
+		"</head><body data-flaremail-html>",
 		html,
 		"</body></html>",
 	].join("");
@@ -73,21 +73,30 @@ export function buildSandboxedHtmlSrcDoc(
 function measureIframeHeight(iframe: HTMLIFrameElement): number {
 	try {
 		const doc = iframe.contentDocument;
-		if (!doc?.documentElement) {
+		if (!doc?.documentElement || !doc.body) {
 			return 0;
 		}
 		const body = doc.body;
 		const root = doc.documentElement;
 		return Math.ceil(
 			Math.max(
-				body?.scrollHeight ?? 0,
-				body?.offsetHeight ?? 0,
+				body.scrollHeight,
+				body.offsetHeight,
 				root.scrollHeight,
 				root.offsetHeight,
 			),
 		);
 	} catch {
 		return 0;
+	}
+}
+
+function isSandboxedDocumentReady(iframe: HTMLIFrameElement): boolean {
+	try {
+		const doc = iframe.contentDocument;
+		return Boolean(doc?.body?.hasAttribute("data-flaremail-html") && doc.readyState !== "loading");
+	} catch {
+		return false;
 	}
 }
 
@@ -104,7 +113,7 @@ export function SandboxedHtml({
 }: SandboxedHtmlProps) {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const hostRef = useRef<HTMLDivElement>(null);
-	const [height, setHeight] = useState(128);
+	const [height, setHeight] = useState(0);
 	const [themeTick, setThemeTick] = useState(0);
 
 	useEffect(() => {
@@ -114,11 +123,6 @@ export function SandboxedHtml({
 		});
 		observer.observe(root, { attributes: true, attributeFilter: ["class"] });
 		return () => observer.disconnect();
-	}, []);
-
-	// Rebuild once after mount so host computed font/color are available (refs are null on first memo).
-	useEffect(() => {
-		setThemeTick((value) => value + 1);
 	}, []);
 
 	const srcDoc = useMemo(() => {
@@ -139,41 +143,68 @@ export function SandboxedHtml({
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- host color/font read at build time
 	}, [html, bodyCss, adaptToTheme, themeTick]);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const iframe = iframeRef.current;
 		if (!iframe || !srcDoc) {
 			return;
 		}
 
+		let cancelled = false;
+		let raf = 0;
+		let measuring = false;
+		const typed = iframe as IframeWithObserver;
+
 		const syncHeight = () => {
-			const next = measureIframeHeight(iframe);
-			if (next > 0) {
-				setHeight(next);
+			if (cancelled || measuring || !isSandboxedDocumentReady(iframe)) {
+				return;
+			}
+			measuring = true;
+			try {
+				const next = measureIframeHeight(iframe);
+				if (next > 0) {
+					iframe.style.height = `${next}px`;
+					setHeight((prev) => (prev === next ? prev : next));
+				}
+			} finally {
+				measuring = false;
 			}
 		};
 
-		const onLoad = () => {
-			syncHeight();
+		const attach = () => {
+			if (cancelled || !isSandboxedDocumentReady(iframe)) {
+				return false;
+			}
 			const doc = iframe.contentDocument;
 			if (!doc?.body) {
-				return;
+				return false;
 			}
-			const typed = iframe as IframeWithObserver;
 			typed._sandboxedResizeObserver?.disconnect();
 			const observer = new ResizeObserver(() => syncHeight());
 			observer.observe(doc.body);
 			observer.observe(doc.documentElement);
 			typed._sandboxedResizeObserver = observer;
+			syncHeight();
+			return true;
 		};
 
-		iframe.addEventListener("load", onLoad);
-		if (iframe.contentDocument?.readyState === "complete") {
-			onLoad();
-		}
+		const poll = () => {
+			if (cancelled) {
+				return;
+			}
+			if (attach()) {
+				return;
+			}
+			raf = requestAnimationFrame(poll);
+		};
+
+		iframe.addEventListener("load", attach);
+		raf = requestAnimationFrame(poll);
+		attach();
 
 		return () => {
-			iframe.removeEventListener("load", onLoad);
-			const typed = iframe as IframeWithObserver;
+			cancelled = true;
+			cancelAnimationFrame(raf);
+			iframe.removeEventListener("load", attach);
 			typed._sandboxedResizeObserver?.disconnect();
 			delete typed._sandboxedResizeObserver;
 		};
@@ -191,7 +222,7 @@ export function SandboxedHtml({
 				sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
 				referrerPolicy="no-referrer"
 				srcDoc={srcDoc}
-				style={{ height }}
+				style={{ height, overflow: "hidden", visibility: height > 0 ? "visible" : "hidden" }}
 				className={cn("bg-transparent w-full border-0", className)}
 			/>
 		</div>
