@@ -111,6 +111,457 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /auth/sign-in:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      description: |
+        Unauthenticated. Returns a session cookie, or `{ requiresMfa: true,
+        mfaToken }` when MFA is enabled. Rate-limited by IP and email.
+      operationId: signIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  description: Login identifier (mailbox address, or `intendant`)
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Session established, or MFA challenge
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: "`flaremail_session` when MFA is not required"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/OkResponse"
+                  - $ref: "#/components/schemas/MfaChallenge"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/sign-out:
+    post:
+      tags: [Auth]
+      summary: Sign out
+      description: Clears the current session cookie when present.
+      operationId: signOut
+      security: []
+      responses:
+        "200":
+          description: Signed out
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Cleared `flaremail_session` when a token was present
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current account
+      operationId: getMe
+      responses:
+        "200":
+          description: Signed-in account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [Auth]
+      summary: Update own profile
+      description: |
+        Recovery email cannot be changed here — use the recovery-email
+        endpoints. Locked profile fields are ignored.
+      operationId: updateMe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelfProfileUpdate"
+      responses:
+        "200":
+          description: Updated account detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/me/profile-picture:
+    put:
+      tags: [Auth]
+      summary: Upload own profile picture
+      operationId: uploadMyProfilePicture
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Updated picture metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profilePicture]
+                properties:
+                  profilePicture:
+                    $ref: "#/components/schemas/ProfilePicture"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Auth]
+      summary: Delete own profile picture
+      operationId: deleteMyProfilePicture
+      responses:
+        "200":
+          description: Picture removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profilePicture]
+                properties:
+                  profilePicture:
+                    type: "null"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/invite-preview:
+    get:
+      tags: [Auth]
+      summary: Preview an invite
+      description: Unauthenticated. Rate-limited by invite code.
+      operationId: previewInvite
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invite preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitePreview"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/activate:
+    post:
+      tags: [Auth]
+      summary: Activate an invite
+      description: Sets the password, optional profile fields, and signs in. Rate-limited.
+      operationId: activateInvite
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivateInviteRequest"
+      responses:
+        "200":
+          description: Activated and signed in
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: "`flaremail_session`"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/reset-preview:
+    get:
+      tags: [Auth]
+      summary: Preview a password-reset code
+      description: Unauthenticated. Rate-limited by code.
+      operationId: previewPasswordReset
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Address the code belongs to
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [address]
+                properties:
+                  address:
+                    type: string
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset email
+      description: |
+        Always returns `{ ok: true }` to avoid account enumeration. Rate-limited.
+      operationId: forgotPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address:
+                  type: string
+                  description: Mailbox address or login identifier
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with a code
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, password]
+              properties:
+                code:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/recovery-email/send:
+    post:
+      tags: [Auth]
+      summary: Send recovery-email verification code
+      description: Session-only.
+      operationId: sendRecoveryEmailCode
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/recovery-email/verify:
+    post:
+      tags: [Auth]
+      summary: Verify recovery email
+      description: Session-only.
+      operationId: verifyRecoveryEmail
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+      responses:
+        "200":
+          description: Recovery email verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/sessions:
+    get:
+      tags: [Auth]
+      summary: List own sessions
+      description: Session-only.
+      operationId: listMySessions
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SessionInfo"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Auth]
+      summary: Revoke own sessions
+      description: |
+        Session-only. By default keeps the current session. Pass
+        `includeCurrent=true` to sign out everywhere.
+      operationId: revokeMySessions
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: includeCurrent
+          in: query
+          schema:
+            type: string
+            enum: ["true"]
+      responses:
+        "200":
+          description: Sessions revoked
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Cleared cookie when the current session was revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRevokeResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/sessions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    delete:
+      tags: [Auth]
+      summary: Revoke one of own sessions
+      description: Session-only. Clears the cookie when revoking the current session.
+      operationId: revokeMySession
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Session revoked
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Cleared cookie when this was the current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRevokeResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/intendant/regenerate-password:
+    post:
+      tags: [Auth]
+      summary: Regenerate the intendant password
+      description: |
+        Intendant only. Returns a new random password and revokes all
+        intendant sessions. TOTP `code` is required when MFA is enabled.
+        Session-only.
+      operationId: regenerateIntendantPassword
+      security:
+        - sessionCookie: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: TOTP code when MFA is enabled
+      responses:
+        "200":
+          description: New password (shown once)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [password]
+                properties:
+                  password:
+                    type: string
+        default:
+          $ref: "#/components/responses/Problem"
+
   /domains:
     get:
       tags: [Domains]
@@ -1383,6 +1834,373 @@ components:
         password:
           type: string
           description: Generated intendant password. Present only when created is true.
+
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          const: true
+
+    AccountRole:
+      type: string
+      enum: [user, manager, admin, superadmin]
+
+    AccountStatus:
+      type: string
+      enum: [pending, active, suspended]
+
+    ProfileLockableField:
+      type: string
+      enum:
+        - firstName
+        - lastName
+        - recoveryAddress
+        - phone
+        - addressCountry
+        - addressState
+        - addressCity
+        - addressLine1
+        - addressLine2
+
+    ProfileAddress:
+      type: object
+      properties:
+        country:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        line1:
+          type: ["string", "null"]
+        line2:
+          type: ["string", "null"]
+
+    ProfilePayload:
+      type: ["object", "null"]
+      properties:
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        recoveryAddress:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          $ref: "#/components/schemas/ProfileAddress"
+
+    AccountCapabilities:
+      type: object
+      properties:
+        accessManagementPage:
+          type: boolean
+        accessAccountsTab:
+          type: boolean
+        accessOrganizationTab:
+          type: boolean
+        accessDomainsTab:
+          type: boolean
+        accessMailboxesTab:
+          type: boolean
+        manageMailboxes:
+          type: boolean
+        registerDomains:
+          type: boolean
+        assignRoles:
+          type: boolean
+        editOwnProfile:
+          type: boolean
+        editLocalPartPolicy:
+          type: boolean
+        manageSharedMailboxUsers:
+          type: boolean
+        manageUserMailboxGrants:
+          type: boolean
+        lockProfileFields:
+          type: boolean
+        manageAssignments:
+          type: boolean
+        manageManagerMailboxAssignments:
+          type: boolean
+        showsManagerMailboxGrantsTab:
+          type: boolean
+        accessTemplatesTab:
+          type: boolean
+        canCreateGlobalTemplates:
+          type: boolean
+        accessOidcClientsTab:
+          type: boolean
+        accessLogsTab:
+          type: boolean
+        manageableTargetRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+        suspendableTargetRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+        removableTargetRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+        inviteableRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+
+    Me:
+      type: object
+      required:
+        - id
+        - isIntendant
+        - status
+        - loginIdentifier
+        - capabilities
+        - displayName
+      properties:
+        id:
+          type: string
+          format: uuid
+        isIntendant:
+          type: boolean
+        role:
+          oneOf:
+            - $ref: "#/components/schemas/AccountRole"
+            - type: "null"
+        status:
+          $ref: "#/components/schemas/AccountStatus"
+        loginIdentifier:
+          type: string
+        primaryMailboxId:
+          type: ["string", "null"]
+          format: uuid
+        domainIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        lockedFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileLockableField"
+        mfaEnabled:
+          type: boolean
+        mfaEnabledAt:
+          type: ["string", "null"]
+          format: date-time
+        securityRequirements:
+          type: object
+          properties:
+            recoveryEmail:
+              type: boolean
+            mfa:
+              type: boolean
+        organizationPolicies:
+          type: object
+          properties:
+            mfaRequired:
+              type: boolean
+            recoveryEmailRequired:
+              type: boolean
+        capabilities:
+          $ref: "#/components/schemas/AccountCapabilities"
+        profile:
+          $ref: "#/components/schemas/ProfilePayload"
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+        displayName:
+          type: string
+
+    InvitedBy:
+      type: ["object", "null"]
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        loginIdentifier:
+          type: string
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+        deleted:
+          type: boolean
+
+    AccountListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          oneOf:
+            - $ref: "#/components/schemas/AccountRole"
+            - type: "null"
+        status:
+          $ref: "#/components/schemas/AccountStatus"
+        loginIdentifier:
+          type: string
+        primaryMailboxId:
+          type: ["string", "null"]
+          format: uuid
+        isIntendant:
+          type: boolean
+        domainId:
+          type: ["string", "null"]
+          format: uuid
+        displayName:
+          type: string
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+
+    AccountDetail:
+      allOf:
+        - $ref: "#/components/schemas/AccountListItem"
+        - type: object
+          properties:
+            profile:
+              $ref: "#/components/schemas/ProfilePayload"
+            lockedFields:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProfileLockableField"
+            domainIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            allSharedMailboxes:
+              type: boolean
+            sharedMailboxIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            grantedMailboxIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            invitedBy:
+              $ref: "#/components/schemas/InvitedBy"
+
+    ProfileFieldPatch:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        recoveryAddress:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          $ref: "#/components/schemas/ProfileAddress"
+        addressCountry:
+          type: ["string", "null"]
+        addressState:
+          type: ["string", "null"]
+        addressCity:
+          type: ["string", "null"]
+        addressLine1:
+          type: ["string", "null"]
+        addressLine2:
+          type: ["string", "null"]
+
+    SelfProfileUpdate:
+      allOf:
+        - $ref: "#/components/schemas/ProfileFieldPatch"
+        - type: object
+          properties:
+            profile:
+              $ref: "#/components/schemas/ProfileFieldPatch"
+
+    InvitePreview:
+      type: object
+      required: [address, lockedFields, requireRecoveryEmail]
+      properties:
+        address:
+          type: string
+        lockedFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileLockableField"
+        requireRecoveryEmail:
+          type: boolean
+        profile:
+          $ref: "#/components/schemas/ProfilePayload"
+
+    ActivateInviteRequest:
+      allOf:
+        - $ref: "#/components/schemas/ProfileFieldPatch"
+        - type: object
+          required: [code, password]
+          properties:
+            code:
+              type: string
+            password:
+              type: string
+              format: password
+            profile:
+              $ref: "#/components/schemas/ProfileFieldPatch"
+
+    MfaChallenge:
+      type: object
+      required: [requiresMfa, mfaToken]
+      properties:
+        requiresMfa:
+          type: boolean
+          const: true
+        mfaToken:
+          type: string
+
+    SessionInfo:
+      type: object
+      required: [id, current, createdAt, lastSeenAt, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        current:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        ipAddress:
+          type: ["string", "null"]
+        countryCode:
+          type: ["string", "null"]
+        browser:
+          oneOf:
+            - type: string
+              enum: [Edge, Chrome, Firefox, Safari]
+            - type: "null"
+        os:
+          oneOf:
+            - type: string
+              enum: [Windows, macOS, Android, iOS, Linux]
+            - type: "null"
+
+    SessionRevokeResponse:
+      type: object
+      required: [ok, signedOutCurrent]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        signedOutCurrent:
+          type: boolean
 
     Domain:
       type: object
