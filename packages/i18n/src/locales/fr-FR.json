@@ -892,7 +892,9 @@
 				"selectState": "Sélectionner un État/une province…",
 				"selectCity": "Sélectionner une ville…",
 				"locationSearchPlaceholder": "Rechercher…",
-				"locationEmpty": "Aucun résultat."
+				"locationEmpty": "Aucun résultat.",
+				"searchCountry": "Rechercher un pays...",
+				"noCountryFound": "Aucun pays trouvé."
 			},
 			"picture": {
 				"change": "Changer la photo",

@@ -892,7 +892,9 @@
 				"selectState": "Eyalet/il seç…",
 				"selectCity": "Şehir seç…",
 				"locationSearchPlaceholder": "Ara…",
-				"locationEmpty": "Sonuç bulunamadı."
+				"locationEmpty": "Sonuç bulunamadı.",
+				"searchCountry": "Ülke ara...",
+				"noCountryFound": "Ülke bulunamadı."
 			},
 			"picture": {
 				"change": "Fotoğrafı değiştir",

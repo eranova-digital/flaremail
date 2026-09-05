@@ -892,7 +892,9 @@
 				"selectState": "Выберите регион…",
 				"selectCity": "Выберите город…",
 				"locationSearchPlaceholder": "Поиск…",
-				"locationEmpty": "Ничего не найдено."
+				"locationEmpty": "Ничего не найдено.",
+				"searchCountry": "Поиск страны...",
+				"noCountryFound": "Страна не найдена."
 			},
 			"picture": {
 				"change": "Сменить фото",

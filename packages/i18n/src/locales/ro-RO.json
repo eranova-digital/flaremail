@@ -892,7 +892,9 @@
 				"selectState": "Selectează județul/statul…",
 				"selectCity": "Selectează orașul…",
 				"locationSearchPlaceholder": "Caută…",
-				"locationEmpty": "Niciun rezultat."
+				"locationEmpty": "Niciun rezultat.",
+				"searchCountry": "Caută țara...",
+				"noCountryFound": "Nicio țară găsită."
 			},
 			"picture": {
 				"change": "Schimbă fotografia",

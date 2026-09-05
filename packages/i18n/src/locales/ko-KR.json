@@ -892,7 +892,9 @@
 				"selectState": "주/도 선택…",
 				"selectCity": "도시 선택…",
 				"locationSearchPlaceholder": "검색…",
-				"locationEmpty": "결과가 없습니다."
+				"locationEmpty": "결과가 없습니다.",
+				"searchCountry": "국가 검색...",
+				"noCountryFound": "국가를 찾을 수 없습니다."
 			},
 			"picture": {
 				"change": "사진 변경",

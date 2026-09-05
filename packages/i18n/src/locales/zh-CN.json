@@ -892,7 +892,9 @@
 				"selectState": "选择省/州…",
 				"selectCity": "选择城市…",
 				"locationSearchPlaceholder": "搜索…",
-				"locationEmpty": "未找到结果。"
+				"locationEmpty": "未找到结果。",
+				"searchCountry": "搜索国家/地区...",
+				"noCountryFound": "未找到国家/地区。"
 			},
 			"picture": {
 				"change": "更换照片",

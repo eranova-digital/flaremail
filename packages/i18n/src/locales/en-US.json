@@ -893,7 +893,9 @@
 				"selectState": "Select state/province…",
 				"selectCity": "Select city…",
 				"locationSearchPlaceholder": "Search…",
-				"locationEmpty": "No results found."
+				"locationEmpty": "No results found.",
+				"searchCountry": "Search country...",
+				"noCountryFound": "No country found."
 			},
 			"picture": {
 				"change": "Change photo",

@@ -892,7 +892,9 @@
 				"selectState": "都道府県/州を選択…",
 				"selectCity": "市区町村を選択…",
 				"locationSearchPlaceholder": "検索…",
-				"locationEmpty": "結果が見つかりません。"
+				"locationEmpty": "結果が見つかりません。",
+				"searchCountry": "国を検索...",
+				"noCountryFound": "国が見つかりません。"
 			},
 			"picture": {
 				"change": "写真を変更",

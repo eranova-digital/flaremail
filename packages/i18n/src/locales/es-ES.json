@@ -892,7 +892,9 @@
 				"selectState": "Seleccionar estado/provincia…",
 				"selectCity": "Seleccionar ciudad…",
 				"locationSearchPlaceholder": "Buscar…",
-				"locationEmpty": "No se encontraron resultados."
+				"locationEmpty": "No se encontraron resultados.",
+				"searchCountry": "Buscar país...",
+				"noCountryFound": "No se encontró ningún país."
 			},
 			"picture": {
 				"change": "Cambiar foto",
