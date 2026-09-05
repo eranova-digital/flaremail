@@ -1326,7 +1326,8 @@
 					"profile": "プロフィール",
 					"access": "アクセス",
 					"identities": "アイデンティティ",
-					"security": "セキュリティ"
+					"security": "セキュリティ",
+					"logs": "ログ"
 				},
 				"locked": "ロック済み",
 				"role": "ロール",
@@ -1362,6 +1363,13 @@
 					"description": "アカウントとそのメールボックスアクセスが完全に削除されます。",
 					"cannotUndo": "この操作は元に戻せません。",
 					"confirm": "アカウントを削除"
+				},
+				"logs": {
+					"invitedBy": "招待者",
+					"invitedByHint": "このアカウントの招待を作成した人です。",
+					"noInvite": "招待の記録はありません。",
+					"relatedTitle": "関連ログ",
+					"relatedHint": "このアカウントが実行者である、または参照されているログです。"
 				}
 			},
 			"identities": {

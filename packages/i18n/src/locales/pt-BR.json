@@ -1326,7 +1326,8 @@
 					"profile": "Perfil",
 					"access": "Acesso",
 					"identities": "Identidades",
-					"security": "Segurança"
+					"security": "Segurança",
+					"logs": "Logs"
 				},
 				"locked": "Bloqueado",
 				"role": "Função",
@@ -1362,6 +1363,13 @@
 					"description": "Isso remove permanentemente a conta e o acesso às caixas.",
 					"cannotUndo": "Isso não pode ser desfeito.",
 					"confirm": "Remover conta"
+				},
+				"logs": {
+					"invitedBy": "Convidado por",
+					"invitedByHint": "Quem criou o convite desta conta.",
+					"noInvite": "Nenhum convite registrado.",
+					"relatedTitle": "Logs relacionados",
+					"relatedHint": "Logs em que esta conta é o ator ou é referenciada."
 				}
 			},
 			"identities": {

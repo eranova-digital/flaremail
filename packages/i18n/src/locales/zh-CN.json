@@ -1326,7 +1326,8 @@
 					"profile": "个人资料",
 					"access": "访问",
 					"identities": "身份",
-					"security": "安全"
+					"security": "安全",
+					"logs": "日志"
 				},
 				"locked": "已锁定",
 				"role": "角色",
@@ -1362,6 +1363,13 @@
 					"description": "这将永久移除该账户及其邮箱访问权限。",
 					"cannotUndo": "此操作无法撤销。",
 					"confirm": "移除账户"
+				},
+				"logs": {
+					"invitedBy": "邀请人",
+					"invitedByHint": "为此账户创建邀请的人。",
+					"noInvite": "没有邀请记录。",
+					"relatedTitle": "相关日志",
+					"relatedHint": "此账户作为操作者或被引用的日志。"
 				}
 			},
 			"identities": {

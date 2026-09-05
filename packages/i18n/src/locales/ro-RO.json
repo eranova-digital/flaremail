@@ -1326,7 +1326,8 @@
 					"profile": "Profil",
 					"access": "Acces",
 					"identities": "Identități",
-					"security": "Securitate"
+					"security": "Securitate",
+					"logs": "Jurnale"
 				},
 				"locked": "Blocat",
 				"role": "Rol",
@@ -1362,6 +1363,13 @@
 					"description": "Aceasta elimină definitiv contul și accesul la cutiile poștale.",
 					"cannotUndo": "Această acțiune nu poate fi anulată.",
 					"confirm": "Elimină contul"
+				},
+				"logs": {
+					"invitedBy": "Invitat de",
+					"invitedByHint": "Cine a creat invitația pentru acest cont.",
+					"noInvite": "Nicio invitație înregistrată.",
+					"relatedTitle": "Jurnale asociate",
+					"relatedHint": "Jurnale în care acest cont este actorul sau este menționat."
 				}
 			},
 			"identities": {

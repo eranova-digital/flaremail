@@ -1326,7 +1326,8 @@
 					"profile": "Profil",
 					"access": "Zugriff",
 					"identities": "Identitäten",
-					"security": "Sicherheit"
+					"security": "Sicherheit",
+					"logs": "Protokolle"
 				},
 				"locked": "Gesperrt",
 				"role": "Rolle",
@@ -1362,6 +1363,13 @@
 					"description": "Dadurch wird das Konto und der Postfachzugriff dauerhaft entfernt.",
 					"cannotUndo": "Dies kann nicht rückgängig gemacht werden.",
 					"confirm": "Konto entfernen"
+				},
+				"logs": {
+					"invitedBy": "Eingeladen von",
+					"invitedByHint": "Wer die Einladung für dieses Konto erstellt hat.",
+					"noInvite": "Keine Einladung hinterlegt.",
+					"relatedTitle": "Zugehörige Protokolle",
+					"relatedHint": "Protokolle, in denen dieses Konto Akteur ist oder referenziert wird."
 				}
 			},
 			"identities": {

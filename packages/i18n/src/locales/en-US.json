@@ -1326,7 +1326,8 @@
 					"profile": "Profile",
 					"access": "Access",
 					"identities": "Identities",
-					"security": "Security"
+					"security": "Security",
+					"logs": "Logs"
 				},
 				"locked": "Locked",
 				"role": "Role",
@@ -1362,6 +1363,13 @@
 					"description": "This permanently removes the account and its mailbox access.",
 					"cannotUndo": "This cannot be undone.",
 					"confirm": "Remove account"
+				},
+				"logs": {
+					"invitedBy": "Invited by",
+					"invitedByHint": "Who created the invite for this account.",
+					"noInvite": "No invite on record.",
+					"relatedTitle": "Related logs",
+					"relatedHint": "Logs where this account is the actor or is referenced."
 				}
 			},
 			"identities": {

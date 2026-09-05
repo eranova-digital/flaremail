@@ -1326,7 +1326,8 @@
 					"profile": "Profil",
 					"access": "Erişim",
 					"identities": "Kimlikler",
-					"security": "Güvenlik"
+					"security": "Güvenlik",
+					"logs": "Günlükler"
 				},
 				"locked": "Kilitli",
 				"role": "Rol",
@@ -1362,6 +1363,13 @@
 					"description": "Bu, hesabı ve posta kutusu erişimini kalıcı olarak kaldırır.",
 					"cannotUndo": "Bu işlem geri alınamaz.",
 					"confirm": "Hesabı kaldır"
+				},
+				"logs": {
+					"invitedBy": "Davet eden",
+					"invitedByHint": "Bu hesap için daveti oluşturan kişi.",
+					"noInvite": "Kayıtlı davet yok.",
+					"relatedTitle": "İlgili günlükler",
+					"relatedHint": "Bu hesabın aktör olduğu veya atıfta bulunulduğu günlükler."
 				}
 			},
 			"identities": {

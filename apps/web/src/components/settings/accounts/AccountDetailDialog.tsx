@@ -539,7 +539,7 @@ export function AccountDetailDialog({
 										) : null}
 										{showLogsTab ? (
 											<TabsTrigger className="h-7 px-4" value="logs">
-												Logs
+												{t("accounts.detail.tab.logs")}
 											</TabsTrigger>
 										) : null}
 									</TabsList>

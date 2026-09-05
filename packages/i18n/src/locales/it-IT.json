@@ -1326,7 +1326,8 @@
 					"profile": "Profilo",
 					"access": "Accesso",
 					"identities": "Identità",
-					"security": "Sicurezza"
+					"security": "Sicurezza",
+					"logs": "Log"
 				},
 				"locked": "Bloccato",
 				"role": "Ruolo",
@@ -1362,6 +1363,13 @@
 					"description": "Questo rimuove definitivamente l’account e l’accesso alle caselle.",
 					"cannotUndo": "Questa azione non può essere annullata.",
 					"confirm": "Rimuovi account"
+				},
+				"logs": {
+					"invitedBy": "Invitato da",
+					"invitedByHint": "Chi ha creato l’invito per questo account.",
+					"noInvite": "Nessun invito registrato.",
+					"relatedTitle": "Log correlati",
+					"relatedHint": "Log in cui questo account è l’attore o viene referenziato."
 				}
 			},
 			"identities": {

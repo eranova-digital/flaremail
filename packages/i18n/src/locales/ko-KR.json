@@ -1326,7 +1326,8 @@
 					"profile": "프로필",
 					"access": "액세스",
 					"identities": "정체성",
-					"security": "보안"
+					"security": "보안",
+					"logs": "로그"
 				},
 				"locked": "잠김",
 				"role": "역할",
@@ -1362,6 +1363,13 @@
 					"description": "계정과 사서함 액세스가 영구적으로 제거됩니다.",
 					"cannotUndo": "이 작업은 되돌릴 수 없습니다.",
 					"confirm": "계정 제거"
+				},
+				"logs": {
+					"invitedBy": "초대한 사람",
+					"invitedByHint": "이 계정의 초대를 만든 사람입니다.",
+					"noInvite": "초대 기록이 없습니다.",
+					"relatedTitle": "관련 로그",
+					"relatedHint": "이 계정이 행위자이거나 참조된 로그입니다."
 				}
 			},
 			"identities": {

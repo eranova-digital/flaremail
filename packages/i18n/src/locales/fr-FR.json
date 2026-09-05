@@ -1326,7 +1326,8 @@
 					"profile": "Profil",
 					"access": "Accès",
 					"identities": "Identités",
-					"security": "Sécurité"
+					"security": "Sécurité",
+					"logs": "Journaux"
 				},
 				"locked": "Verrouillé",
 				"role": "Rôle",
@@ -1362,6 +1363,13 @@
 					"description": "Cela supprime définitivement le compte et son accès aux boîtes.",
 					"cannotUndo": "Cette action est irréversible.",
 					"confirm": "Supprimer le compte"
+				},
+				"logs": {
+					"invitedBy": "Invité par",
+					"invitedByHint": "Qui a créé l’invitation de ce compte.",
+					"noInvite": "Aucune invitation enregistrée.",
+					"relatedTitle": "Journaux associés",
+					"relatedHint": "Journaux où ce compte est l’acteur ou est référencé."
 				}
 			},
 			"identities": {

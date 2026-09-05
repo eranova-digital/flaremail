@@ -6,6 +6,7 @@ import {
 	RefreshCw,
 	ScrollText,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { LogSummary } from "@/components/settings/logs/LogSummary";
@@ -51,6 +52,8 @@ function importanceVariant(
 }
 
 function LogRow({ item }: { item: LogListItem }) {
+	const { t } = useTranslation("management");
+
 	return (
 		<li className="hover:bg-muted/40 px-4 py-3 transition-colors">
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -59,7 +62,7 @@ function LogRow({ item }: { item: LogListItem }) {
 						<Badge
 							variant={importanceVariant(item.importance)}
 							className="font-mono tabular-nums"
-							title={`Importance ${item.importance} (0 = most important)`}
+							title={t("logs.importanceTitle", { n: item.importance })}
 						>
 							{item.importance}
 						</Badge>
@@ -94,6 +97,8 @@ type AccountLogsTabProps = {
 };
 
 export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
+	const { t } = useTranslation("management");
+	const { t: tc } = useTranslation("common");
 	const [searchDraft, setSearchDraft] = useState("");
 	const [q, setQ] = useState("");
 	const [maxImportance, setMaxImportance] = useState(5);
@@ -169,9 +174,9 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 		<div className="space-y-4">
 			<div className="bg-muted/30 space-y-3 rounded-lg border p-4">
 				<div>
-					<p className="text-sm font-medium">Invited by</p>
+					<p className="text-sm font-medium">{t("accounts.detail.logs.invitedBy")}</p>
 					<p className="text-muted-foreground text-xs">
-						Who created the invite for this account.
+						{t("accounts.detail.logs.invitedByHint")}
 					</p>
 				</div>
 				{invitedBy ? (
@@ -198,36 +203,41 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 						</div>
 					</div>
 				) : (
-					<p className="text-muted-foreground text-sm">No invite on record.</p>
+					<p className="text-muted-foreground text-sm">
+						{t("accounts.detail.logs.noInvite")}
+					</p>
 				)}
 			</div>
 
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 space-y-0.5">
-					<p className="text-sm font-medium">Related logs</p>
+					<p className="text-sm font-medium">
+						{t("accounts.detail.logs.relatedTitle")}
+					</p>
 					<p className="text-muted-foreground text-xs">
-						Logs where this account is the actor or is referenced.
+						{t("accounts.detail.logs.relatedHint")}
 					</p>
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
 					{query.data ? (
 						<Badge variant="secondary">
-							{items.length}
-							{hasNext ? "+" : ""} on this page
+							{hasNext
+								? t("logs.pageCountMore", { count: items.length })
+								: t("logs.pageCount", { count: items.length })}
 						</Badge>
 					) : null}
 					<Button
 						variant="outline"
 						size="sm"
 						className="gap-2"
-						aria-label="Refresh logs"
+						aria-label={t("logs.refreshAria")}
 						disabled={query.isFetching}
 						onClick={() => void query.refetch()}
 					>
 						<RefreshCw
 							className={cn("size-3.5", query.isFetching && "animate-spin")}
 						/>
-						Refresh
+						{t("logs.refresh")}
 					</Button>
 				</div>
 			</div>
@@ -238,12 +248,12 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 						className="text-muted-foreground text-xs"
 						htmlFor="account-logs-q"
 					>
-						Search
+						{tc("search")}
 					</label>
 					<Input
 						id="account-logs-q"
 						value={searchDraft}
-						placeholder="Search summary, refs, context…"
+						placeholder={t("logs.searchPlaceholder")}
 						onChange={(event) => setSearchDraft(event.target.value)}
 					/>
 				</div>
@@ -253,7 +263,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 							className="text-muted-foreground text-xs"
 							htmlFor="account-logs-importance"
 						>
-							Max importance
+							{t("logs.maxImportance")}
 						</label>
 						<Select
 							value={String(maxImportance)}
@@ -265,7 +275,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 							<SelectContent>
 								{Array.from({ length: 11 }, (_, i) => (
 									<SelectItem key={i} value={String(i)}>
-										≤ {i}
+										{t("logs.maxImportanceOption", { n: i })}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -276,7 +286,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 							className="text-muted-foreground text-xs"
 							htmlFor="account-logs-type"
 						>
-							Type
+							{t("logs.type")}
 						</label>
 						<LogTypeMultiSelect
 							id="account-logs-type"
@@ -289,7 +299,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 							className="text-muted-foreground text-xs"
 							htmlFor="account-logs-range"
 						>
-							Date & time range
+							{t("logs.dateRangeLabel")}
 						</label>
 						<DateTimeRangePicker
 							id="account-logs-range"
@@ -302,7 +312,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 
 			{query.isError ? (
 				<Alert tone="destructive">
-					{getErrorMessage(query.error) ?? "Could not load logs."}
+					{getErrorMessage(query.error) ?? t("logs.loadError")}
 				</Alert>
 			) : null}
 
@@ -324,11 +334,10 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 			{!query.isLoading && !query.isError && items.length === 0 ? (
 				<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-12 text-center">
 					<ScrollText className="size-7 opacity-40" aria-hidden />
-					<p className="text-foreground text-sm font-medium">No logs found</p>
-					<p className="max-w-sm text-xs">
-						Try widening max importance, clearing the date range, or choosing
-						another type.
+					<p className="text-foreground text-sm font-medium">
+						{t("logs.emptyTitle")}
 					</p>
+					<p className="max-w-sm text-xs">{t("logs.emptyHint")}</p>
 				</div>
 			) : null}
 
@@ -348,15 +357,15 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 					<div className="bg-muted/30 flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex flex-wrap items-center gap-3">
 							<p className="text-muted-foreground text-xs">
-								Page {pageNumber}
-								{hasNext ? " · more available" : " · end of results"}
+								{t("logs.page", { n: pageNumber })}
+								{hasNext ? t("logs.moreAvailable") : t("logs.endOfResults")}
 							</p>
 							<div className="flex items-center gap-2">
 								<label
 									className="text-muted-foreground text-xs"
 									htmlFor="account-logs-limit"
 								>
-									Page size
+									{t("logs.pageSize")}
 								</label>
 								<Select
 									value={String(limit)}
@@ -373,7 +382,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 									<SelectContent>
 										{PAGE_SIZES.map((size) => (
 											<SelectItem key={size} value={String(size)}>
-												{size} / page
+												{t("logs.perPage", { n: size })}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -389,7 +398,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 								className="gap-1"
 							>
 								<ChevronLeft className="size-4" />
-								Previous
+								{t("logs.previous")}
 							</Button>
 							<Button
 								variant="outline"
@@ -402,7 +411,7 @@ export function AccountLogsTab({ accountId, invitedBy }: AccountLogsTabProps) {
 									<Loader2 className="size-4 animate-spin" />
 								) : (
 									<>
-										Next
+										{tc("next")}
 										<ChevronRight className="size-4" />
 									</>
 								)}

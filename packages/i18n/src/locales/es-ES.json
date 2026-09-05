@@ -1326,7 +1326,8 @@
 					"profile": "Perfil",
 					"access": "Acceso",
 					"identities": "Identidades",
-					"security": "Seguridad"
+					"security": "Seguridad",
+					"logs": "Registros"
 				},
 				"locked": "Bloqueado",
 				"role": "Rol",
@@ -1362,6 +1363,13 @@
 					"description": "Esto elimina permanentemente la cuenta y su acceso a buzones.",
 					"cannotUndo": "Esta acción no se puede deshacer.",
 					"confirm": "Eliminar cuenta"
+				},
+				"logs": {
+					"invitedBy": "Invitado por",
+					"invitedByHint": "Quién creó la invitación de esta cuenta.",
+					"noInvite": "No hay invitación registrada.",
+					"relatedTitle": "Registros relacionados",
+					"relatedHint": "Registros en los que esta cuenta es el actor o está referenciada."
 				}
 			},
 			"identities": {

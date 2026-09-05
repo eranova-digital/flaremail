@@ -1326,7 +1326,8 @@
 					"profile": "Profil",
 					"access": "Dostęp",
 					"identities": "Tożsamości",
-					"security": "Bezpieczeństwo"
+					"security": "Bezpieczeństwo",
+					"logs": "Logi"
 				},
 				"locked": "Zablokowane",
 				"role": "Rola",
@@ -1362,6 +1363,13 @@
 					"description": "To trwale usuwa konto i dostęp do jego skrzynki.",
 					"cannotUndo": "Tej operacji nie można cofnąć.",
 					"confirm": "Usuń konto"
+				},
+				"logs": {
+					"invitedBy": "Zaproszony przez",
+					"invitedByHint": "Kto utworzył zaproszenie do tego konta.",
+					"noInvite": "Brak zaproszenia w historii.",
+					"relatedTitle": "Powiązane logi",
+					"relatedHint": "Logi, w których to konto jest aktorem lub jest w nich wymienione."
 				}
 			},
 			"identities": {
