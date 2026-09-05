@@ -4300,6 +4300,46 @@
         }
       }
     },
+    "/messages/{id}/images/{imageId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        },
+        {
+          "name": "imageId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Messages"
+        ],
+        "summary": "Download a cached external image",
+        "description": "Inline bytes for an HTML remote image cached on this message.\nSVG is rejected.\n",
+        "operationId": "downloadMessageExternalImage",
+        "responses": {
+          "200": {
+            "description": "Image bytes",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/threads": {
       "get": {
         "tags": [
@@ -4809,7 +4849,25 @@
         "operationId": "listOidcClients",
         "responses": {
           "200": {
-            "description": "OIDC client list"
+            "description": "OIDC client list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "clients"
+                  ],
+                  "properties": {
+                    "clients": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OidcClient"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -4822,9 +4880,26 @@
         ],
         "summary": "Create OIDC client",
         "operationId": "createOidcClient",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOidcClientRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
-            "description": "Created client (clientSecret returned once when confidential)"
+            "description": "Created client (clientSecret returned once when confidential)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcClientCreated"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -4852,7 +4927,14 @@
         "operationId": "getOidcClient",
         "responses": {
           "200": {
-            "description": "OIDC client"
+            "description": "OIDC client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcClient"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -4865,9 +4947,25 @@
         ],
         "summary": "Update OIDC client",
         "operationId": "updateOidcClient",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOidcClientRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Updated client"
+            "description": "Updated client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcClient"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -4883,6 +4981,137 @@
         "responses": {
           "204": {
             "description": "Deleted"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/oidc-clients/{id}/logo": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Download OIDC client logo",
+        "description": "Unauthenticated. Returns WebP bytes.",
+        "operationId": "getOidcClientLogo",
+        "security": [],
+        "parameters": [
+          {
+            "name": "size",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "small",
+                "large"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Client logo WebP",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Upload OIDC client logo",
+        "operationId": "uploadOidcClientLogo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logo metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "logo"
+                  ],
+                  "properties": {
+                    "logo": {
+                      "$ref": "#/components/schemas/ProfilePicture"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "Delete OIDC client logo",
+        "operationId": "deleteOidcClientLogo",
+        "responses": {
+          "200": {
+            "description": "Logo removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "logo"
+                  ],
+                  "properties": {
+                    "logo": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -4910,7 +5139,26 @@
         "operationId": "regenerateOidcClientSecret",
         "responses": {
           "200": {
-            "description": "New secret (once)"
+            "description": "New secret (once)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "clientId",
+                    "clientSecret"
+                  ],
+                  "properties": {
+                    "clientId": {
+                      "type": "string"
+                    },
+                    "clientSecret": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -4938,7 +5186,25 @@
         "operationId": "listOidcClientGrants",
         "responses": {
           "200": {
-            "description": "Consent grants"
+            "description": "Consent grants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "grants"
+                  ],
+                  "properties": {
+                    "grants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OidcClientGrant"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -4998,7 +5264,25 @@
         ],
         "responses": {
           "200": {
-            "description": "Connected apps"
+            "description": "Connected apps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "grants"
+                  ],
+                  "properties": {
+                    "grants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OidcMyGrant"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -5045,8 +5329,85 @@
           "OIDC"
         ],
         "summary": "OAuth authorization endpoint",
+        "description": "Unauthenticated. Redirects to login, consent, or the client with a\ncode. PKCE S256 is required. `response_type` must be `code`.\n",
         "operationId": "oauthAuthorize",
         "security": [],
+        "parameters": [
+          {
+            "name": "pending",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Resume after login"
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nonce",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "S256"
+              ]
+            }
+          },
+          {
+            "name": "response_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "code"
+              ],
+              "default": "code"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Space-separated scopes. Default `openid profile email`."
+          }
+        ],
         "responses": {
           "302": {
             "description": "Redirect to login, consent, or client"
@@ -5063,11 +5424,34 @@
           "OIDC"
         ],
         "summary": "OAuth token endpoint",
+        "description": "Unauthenticated. Accepts `application/x-www-form-urlencoded` or JSON.\nConfidential clients may use HTTP Basic for `client_id`/`client_secret`.\n",
         "operationId": "oauthToken",
         "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcTokenRequest"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcTokenRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Token response"
+            "description": "Token response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcTokenResponse"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -5085,7 +5469,26 @@
         "security": [],
         "responses": {
           "200": {
-            "description": "Public ES256 JWKS"
+            "description": "Public ES256 JWKS",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "keys"
+                  ],
+                  "properties": {
+                    "keys": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -5099,7 +5502,32 @@
         "operationId": "oauthUserinfo",
         "responses": {
           "200": {
-            "description": "User claims"
+            "description": "User claims",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "sub"
+                  ],
+                  "properties": {
+                    "sub": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "picture": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -5124,10 +5552,23 @@
           "OIDC"
         ],
         "summary": "Pending authorization for consent UI",
+        "description": "Session-only.",
         "operationId": "getOidcPending",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Pending details"
+            "description": "Pending details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcPendingAuthorization"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -5141,13 +5582,91 @@
           "OIDC"
         ],
         "summary": "Approve or deny pending authorization",
+        "description": "Session-only.",
         "operationId": "oauthConsent",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pendingId",
+                  "decision"
+                ],
+                "properties": {
+                  "pendingId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "deny"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Relaying-party redirect URL"
+            "description": "Relaying-party redirect URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "redirectTo"
+                  ],
+                  "properties": {
+                    "redirectTo": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/.well-known/openid-configuration": {
+      "servers": [
+        {
+          "url": "/",
+          "description": "Origin (not under /api/v1)"
+        }
+      ],
+      "get": {
+        "tags": [
+          "OIDC"
+        ],
+        "summary": "OpenID Provider configuration",
+        "description": "Unauthenticated discovery document.",
+        "operationId": "openIdDiscovery",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Discovery document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenIdConfiguration"
+                }
+              }
+            }
           }
         }
       }
@@ -8159,6 +8678,428 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "OidcScope": {
+        "type": "string",
+        "enum": [
+          "openid",
+          "profile",
+          "email",
+          "mail:read",
+          "mail:send"
+        ]
+      },
+      "OidcClient": {
+        "type": "object",
+        "required": [
+          "id",
+          "clientId",
+          "name",
+          "redirectUris",
+          "allowedScopes",
+          "m2mPermissions",
+          "isConfidential",
+          "requireConsent",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowedScopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OidcScope"
+            }
+          },
+          "m2mPermissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isConfidential": {
+            "type": "boolean"
+          },
+          "requireConsent": {
+            "type": "boolean"
+          },
+          "homescreenUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "logo": {
+            "$ref": "#/components/schemas/ProfilePicture"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OidcClientCreated": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OidcClient"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "clientSecret": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Present once for confidential clients"
+              }
+            }
+          }
+        ]
+      },
+      "CreateOidcClientRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "redirectUris"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "allowedScopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OidcScope"
+            },
+            "default": [
+              "openid",
+              "profile",
+              "email"
+            ]
+          },
+          "m2mPermissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isConfidential": {
+            "type": "boolean",
+            "default": true
+          },
+          "requireConsent": {
+            "type": "boolean",
+            "default": true
+          },
+          "homescreenUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          }
+        }
+      },
+      "UpdateOidcClientRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "redirectUris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "allowedScopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OidcScope"
+            }
+          },
+          "m2mPermissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isConfidential": {
+            "type": "boolean"
+          },
+          "requireConsent": {
+            "type": "boolean"
+          },
+          "homescreenUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          }
+        }
+      },
+      "OidcClientGrant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loginIdentifier": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grantedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OidcMyGrant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grantedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OidcPendingAuthorization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientRecordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "redirectUri": {
+            "type": "string"
+          },
+          "requireConsent": {
+            "type": "boolean"
+          },
+          "homescreenUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "logo": {
+            "$ref": "#/components/schemas/ProfilePicture"
+          }
+        }
+      },
+      "OidcTokenRequest": {
+        "type": "object",
+        "required": [
+          "grant_type",
+          "client_id"
+        ],
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "enum": [
+              "authorization_code",
+              "refresh_token",
+              "client_credentials"
+            ]
+          },
+          "client_id": {
+            "type": "string"
+          },
+          "client_secret": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "redirect_uri": {
+            "type": "string"
+          },
+          "code_verifier": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      },
+      "OidcTokenResponse": {
+        "type": "object",
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in",
+          "scope"
+        ],
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "const": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "example": 3600
+          },
+          "refresh_token": {
+            "type": "string"
+          },
+          "id_token": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      },
+      "OpenIdConfiguration": {
+        "type": "object",
+        "required": [
+          "issuer",
+          "authorization_endpoint",
+          "token_endpoint",
+          "userinfo_endpoint",
+          "jwks_uri"
+        ],
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorization_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "token_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userinfo_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "jwks_uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "response_types_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grant_types_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "code_challenge_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes_supported": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OidcScope"
+            }
+          },
+          "token_endpoint_auth_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subject_types_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id_token_signing_alg_values_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
