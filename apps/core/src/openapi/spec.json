@@ -1460,6 +1460,987 @@
         }
       }
     },
+    "/accounts": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "List accounts",
+        "description": "Excludes the intendant. Non-platform principals see accounts on their domains only.",
+        "operationId": "listAccounts",
+        "responses": {
+          "200": {
+            "description": "Account list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AccountListItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/invite": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Invite an account",
+        "operationId": "inviteAccount",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invite created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "accountId",
+                    "mailboxId",
+                    "address",
+                    "inviteCode",
+                    "inviteId"
+                  ],
+                  "properties": {
+                    "accountId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "mailboxId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "inviteCode": {
+                      "type": "string"
+                    },
+                    "inviteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/invite/suggest-local-part": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Suggest an invite local-part",
+        "operationId": "suggestInviteLocalPart",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "domainId"
+                ],
+                "properties": {
+                  "domainId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Suggested local-part",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "localPart"
+                  ],
+                  "properties": {
+                    "localPart": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/assign-role": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Assign an account role",
+        "operationId": "assignAccountRole",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "accountId",
+                  "role"
+                ],
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "role": {
+                    "$ref": "#/components/schemas/AccountRole"
+                  },
+                  "domainIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Get account",
+        "operationId": "getAccount",
+        "responses": {
+          "200": {
+            "description": "Account detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Update account profile",
+        "operationId": "updateAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "profile": {
+                    "$ref": "#/components/schemas/ProfileFieldPatch"
+                  },
+                  "lockedFields": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ProfileLockableField"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Remove account",
+        "operationId": "removeAccount",
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/assignments": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "patch": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Update account assignments",
+        "description": "Domain assignments, shared-mailbox assignments, and mailbox grants.\nWhen `grantedMailboxIds` is set, only grants are updated.\n",
+        "operationId": "updateAccountAssignments",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domainIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "allSharedMailboxes": {
+                    "type": "boolean"
+                  },
+                  "sharedMailboxIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "grantedMailboxIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/identities": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "List identities for an account",
+        "operationId": "listAccountIdentitiesForAccount",
+        "responses": {
+          "200": {
+            "description": "Identity overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountIdentitiesOverview"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/profile-picture": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Download account profile picture",
+        "description": "Unauthenticated. Returns WebP bytes.",
+        "operationId": "getAccountProfilePicture",
+        "security": [],
+        "parameters": [
+          {
+            "name": "size",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "small",
+                "large"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile picture WebP",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Upload account profile picture",
+        "operationId": "uploadAccountProfilePicture",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated picture metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "profilePicture"
+                  ],
+                  "properties": {
+                    "profilePicture": {
+                      "$ref": "#/components/schemas/ProfilePicture"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Delete account profile picture",
+        "operationId": "deleteAccountProfilePicture",
+        "responses": {
+          "200": {
+            "description": "Picture removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "profilePicture"
+                  ],
+                  "properties": {
+                    "profilePicture": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/suspend": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Suspend account",
+        "operationId": "suspendAccount",
+        "responses": {
+          "200": {
+            "description": "Suspended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/unsuspend": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Unsuspend account",
+        "operationId": "unsuspendAccount",
+        "responses": {
+          "200": {
+            "description": "Unsuspended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/password-reset-code": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Create a password-reset code",
+        "operationId": "createAccountPasswordResetCode",
+        "responses": {
+          "200": {
+            "description": "Reset code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/regenerate-invite": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Regenerate invite code",
+        "description": "Pending accounts only.",
+        "operationId": "regenerateAccountInvite",
+        "responses": {
+          "200": {
+            "description": "New invite",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "inviteCode",
+                    "inviteId"
+                  ],
+                  "properties": {
+                    "inviteCode": {
+                      "type": "string"
+                    },
+                    "inviteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/sessions": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "List account sessions",
+        "description": "Session-only. Requires security-management permission on the target.",
+        "operationId": "listAccountSessions",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SessionInfo"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Revoke all account sessions",
+        "description": "Session-only.",
+        "operationId": "revokeAllAccountSessions",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sessions revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/sessions/{sessionId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        },
+        {
+          "name": "sessionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Revoke one account session",
+        "description": "Session-only.",
+        "operationId": "revokeAccountSession",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/mfa": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Get account MFA status",
+        "description": "Session-only.",
+        "operationId": "getAccountMfaStatus",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MFA status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Disable account MFA",
+        "description": "Session-only.",
+        "operationId": "disableAccountMfa",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MFA disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/mailbox-grants": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Grant shared-mailbox access",
+        "operationId": "grantSharedMailboxAccess",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mailboxId"
+                ],
+                "properties": {
+                  "mailboxId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Grant created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/mailbox-grants/{mailboxId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        },
+        {
+          "$ref": "#/components/parameters/MailboxId"
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Revoke shared-mailbox access",
+        "operationId": "revokeSharedMailboxAccess",
+        "responses": {
+          "204": {
+            "description": "Revoked"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/manager-assignments": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Grant a manager mailbox assignment",
+        "operationId": "grantManagerMailboxAssignment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mailboxId"
+                ],
+                "properties": {
+                  "mailboxId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assignment created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/accounts/{id}/manager-assignments/{mailboxId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UuidId"
+        },
+        {
+          "$ref": "#/components/parameters/MailboxId"
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Revoke a manager mailbox assignment",
+        "operationId": "revokeManagerMailboxAssignment",
+        "responses": {
+          "204": {
+            "description": "Revoked"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/domains": {
       "get": {
         "tags": [
@@ -1749,6 +2730,83 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DomainValidationRunDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/domains/{domainId}/local-part-policy": {
+      "parameters": [
+        {
+          "name": "domainId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Domains"
+        ],
+        "summary": "Get local-part policy",
+        "operationId": "getDomainLocalPartPolicy",
+        "responses": {
+          "200": {
+            "description": "Local-part policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalPartPolicy"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Domains"
+        ],
+        "summary": "Update local-part policy",
+        "operationId": "updateDomainLocalPartPolicy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enforced": {
+                    "type": "boolean"
+                  },
+                  "pattern": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalPartPolicy"
                 }
               }
             }
@@ -2107,6 +3165,88 @@
         "responses": {
           "204": {
             "description": "Deleted"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/mailboxes/{mailboxId}/grants": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/MailboxId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "List mailbox grant holders",
+        "description": "Shared mailboxes only.",
+        "operationId": "listMailboxGrantHolders",
+        "responses": {
+          "200": {
+            "description": "Grant holders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MailboxGrantHolder"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/mailboxes/{mailboxId}/manager-assignments": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/MailboxId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "List manager assignments for a mailbox",
+        "description": "Shared mailboxes only.",
+        "operationId": "listMailboxManagerAssignments",
+        "responses": {
+          "200": {
+            "description": "Manager assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MailboxManagerAssignment"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -4039,6 +5179,138 @@
             }
           }
         ]
+      },
+      "InviteAccountRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProfileFieldPatch"
+          },
+          {
+            "type": "object",
+            "required": [
+              "domainId",
+              "localPart"
+            ],
+            "properties": {
+              "domainId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "localPart": {
+                "type": "string"
+              },
+              "role": {
+                "$ref": "#/components/schemas/AccountRole"
+              },
+              "lockedFields": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ProfileLockableField"
+                }
+              },
+              "sendInviteEmail": {
+                "type": "boolean"
+              },
+              "assignedDomainIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "sharedMailboxIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "allSharedMailboxes": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "MailboxGrantHolder": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loginIdentifier": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePicture": {
+            "$ref": "#/components/schemas/ProfilePicture"
+          },
+          "role": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AccountRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/AccountStatus"
+          }
+        }
+      },
+      "MailboxManagerAssignment": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loginIdentifier": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "profilePicture": {
+            "$ref": "#/components/schemas/ProfilePicture"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AccountStatus"
+          },
+          "viaAllShared": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LocalPartPolicy": {
+        "type": "object",
+        "required": [
+          "domainId",
+          "enforced"
+        ],
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enforced": {
+            "type": "boolean"
+          },
+          "pattern": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       },
       "MfaChallenge": {
         "type": "object",
