@@ -55,6 +55,62 @@ security:
   - bearerAuth: []
 
 paths:
+  /openapi.json:
+    get:
+      tags: [Meta]
+      summary: OpenAPI document
+      description: |
+        Unauthenticated. `info.version` is replaced at serve time with the
+        product version from root `package.json`.
+      operationId: getOpenApiDocument
+      security: []
+      responses:
+        "200":
+          description: OpenAPI 3.1 document
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /health:
+    get:
+      tags: [Meta]
+      summary: Liveness
+      description: |
+        Unauthenticated liveness and version. The same payload is also served
+        at origin `/health` (not under `/api/v1`) for gate health checks.
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Liveness payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /bootstrap:
+    post:
+      tags: [Meta]
+      summary: Bootstrap the intendant
+      description: |
+        Unauthenticated first-run. Creates the intendant account when none
+        exists and returns the generated password once. Subsequent calls
+        return `{ created: false }` without revealing credentials.
+        Rate-limited.
+      operationId: bootstrapIntendant
+      security: []
+      responses:
+        "200":
+          description: Bootstrap result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BootstrapResult"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /domains:
     get:
       tags: [Domains]
@@ -1305,6 +1361,28 @@ components:
           type: string
           description: Application-specific error code
           example: validation-error
+
+    HealthStatus:
+      type: object
+      required: [ok, version]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        version:
+          type: string
+          description: Product version from root package.json
+          example: 0.9.5
+
+    BootstrapResult:
+      type: object
+      required: [created]
+      properties:
+        created:
+          type: boolean
+        password:
+          type: string
+          description: Generated intendant password. Present only when created is true.
 
     Domain:
       type: object
