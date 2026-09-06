@@ -84,7 +84,14 @@ export function ConsentPage() {
 	if (account?.isIntendant) {
 		return (
 			<AuthPageShell title={t("consent.cannotAuthorizeTitle")}>
-				<Alert tone="destructive">{t("consent.cannotAuthorizeBody")}</Alert>
+				<Card className="rounded-xl py-6 shadow-sm">
+					<CardContent className="space-y-4">
+						<Alert tone="destructive">{t("consent.cannotAuthorizeBody")}</Alert>
+						<Button asChild className="w-full">
+							<Link to="/management">{tCommon("management")}</Link>
+						</Button>
+					</CardContent>
+				</Card>
 			</AuthPageShell>
 		);
 	}

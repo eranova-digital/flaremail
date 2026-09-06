@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { KeyRound, Loader2, Mail, AtSign } from "lucide-react";
+import { AtSign, ChevronRight, KeyRound, Loader2, Mail } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 
-import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import {
+	AuthPageShell,
+	authStickyActionClassName,
+} from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { PasswordStrengthHints } from "@/components/auth/PasswordStrengthHints";
-import { AuthCodeInput } from "@/components/auth/AuthCodeInput";
+import { AuthCodeInput, isAuthCodeComplete } from "@/components/auth/AuthCodeInput";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -141,7 +144,7 @@ export function ResetPasswordPage() {
 						: t("resetPassword.password.description");
 
 	return (
-		<AuthPageShell title={title} description={description}>
+		<AuthPageShell title={title} description={description} align="start">
 			<Card className="rounded-xl py-6 shadow-sm">
 				<CardContent>
 					{step === "choose" ? (
@@ -149,14 +152,14 @@ export function ResetPasswordPage() {
 							<Button
 								type="button"
 								variant="outline"
-								className="h-auto w-full justify-start gap-3 px-4 py-4"
+								className="hover:bg-accent h-auto w-full cursor-pointer justify-start gap-3 px-4 py-4"
 								onClick={() => {
 									resetMessages();
 									setStep("email");
 								}}
 							>
 								<Mail className="text-muted-foreground size-5 shrink-0" />
-								<span className="text-left">
+								<span className="min-w-0 flex-1 text-left">
 									<span className="block text-sm font-medium">
 										{t("resetPassword.choose.emailTitle")}
 									</span>
@@ -164,18 +167,19 @@ export function ResetPasswordPage() {
 										{t("resetPassword.choose.emailDescription")}
 									</span>
 								</span>
+								<ChevronRight className="text-muted-foreground size-4 shrink-0" />
 							</Button>
 							<Button
 								type="button"
 								variant="outline"
-								className="h-auto w-full justify-start gap-3 px-4 py-4"
+								className="hover:bg-accent h-auto w-full cursor-pointer justify-start gap-3 px-4 py-4"
 								onClick={() => {
 									resetMessages();
 									setStep("code");
 								}}
 							>
 								<KeyRound className="text-muted-foreground size-5 shrink-0" />
-								<span className="text-left">
+								<span className="min-w-0 flex-1 text-left">
 									<span className="block text-sm font-medium">
 										{t("resetPassword.choose.codeTitle")}
 									</span>
@@ -183,6 +187,7 @@ export function ResetPasswordPage() {
 										{t("resetPassword.choose.codeDescription")}
 									</span>
 								</span>
+								<ChevronRight className="text-muted-foreground size-4 shrink-0" />
 							</Button>
 						</div>
 					) : null}
@@ -205,7 +210,7 @@ export function ResetPasswordPage() {
 									required
 								/>
 								<p className="text-muted-foreground text-xs">
-									{t("resetPassword.email.hint")}
+									{t("resetPassword.choose.emailDescription")}
 								</p>
 							</div>
 							{error ? <Alert tone="destructive">{error}</Alert> : null}
@@ -291,18 +296,20 @@ export function ResetPasswordPage() {
 								</p>
 							</div>
 							{error ? <Alert tone="destructive">{error}</Alert> : null}
-							<Button
-								type="submit"
-								className="w-full"
-								disabled={submitting || !code.trim()}
-							>
-								{submitting ? (
-									<Loader2 className="size-4 animate-spin" aria-hidden />
-								) : null}
-								{submitting
-									? t("resetPassword.code.checking")
-									: t("resetPassword.code.continue")}
-							</Button>
+							<div className={authStickyActionClassName}>
+								<Button
+									type="submit"
+									className="w-full"
+									disabled={submitting || !isAuthCodeComplete(code)}
+								>
+									{submitting ? (
+										<Loader2 className="size-4 animate-spin" aria-hidden />
+									) : null}
+									{submitting
+										? t("resetPassword.code.checking")
+										: t("resetPassword.code.continue")}
+								</Button>
+							</div>
 							<Button
 								type="button"
 								variant="ghost"

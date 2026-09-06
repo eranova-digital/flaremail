@@ -190,8 +190,8 @@ export function LoginPage() {
 			}
 		>
 			{success ? <Alert tone="success">{success}</Alert> : null}
-			<Card className="rounded-xl py-6 shadow-sm">
-				<CardContent>
+			<Card className="rounded-xl py-0 shadow-sm">
+				<CardContent className="p-6">
 					{mfaToken ? (
 						<form onSubmit={handleMfaSubmit} className="space-y-4">
 							<div className="space-y-2">
@@ -252,18 +252,9 @@ export function LoginPage() {
 								/>
 							</div>
 							<div className="space-y-2">
-								<div className="flex items-center justify-between">
-									<label htmlFor="password" className="text-sm font-medium">
-										{t("login.password")}
-									</label>
-									<Link
-										to="/reset-password"
-										className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
-										tabIndex={-1}
-									>
-										{t("login.forgotPassword")}
-									</Link>
-								</div>
+								<label htmlFor="password" className="text-sm font-medium">
+									{t("login.password")}
+								</label>
 								<PasswordInput
 									id="password"
 									autoComplete="current-password"
@@ -272,6 +263,12 @@ export function LoginPage() {
 									disabled={submitting}
 									required
 								/>
+								<Link
+									to="/reset-password"
+									className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center text-sm font-medium transition-colors"
+								>
+									{t("login.forgotPassword")}
+								</Link>
 							</div>
 							{error ? <Alert tone="destructive">{error}</Alert> : null}
 							<Button
@@ -286,7 +283,7 @@ export function LoginPage() {
 							</Button>
 							{passkeySupported ? (
 								<>
-									<div className="relative py-1">
+									<div className="relative">
 										<div className="bg-border absolute inset-x-0 top-1/2 h-px" />
 										<p className="text-muted-foreground relative mx-auto w-fit bg-card px-2 text-xs">
 											{t("login.or")}

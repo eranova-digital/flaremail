@@ -33,7 +33,7 @@ export function PageLoader({ label, className }: PageLoaderProps) {
 				<span className="text-lg font-semibold tracking-tight">{t('appName')}</span>
 			</div>
 			<div className="text-muted-foreground relative z-10 flex items-center gap-2.5 text-sm" role="status">
-				<Loader2 className="text-primary size-5 animate-spin" aria-hidden />
+				<Loader2 className="text-primary size-6 animate-spin" aria-hidden />
 				{resolvedLabel}
 			</div>
 		</div>
