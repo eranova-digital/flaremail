@@ -16,5 +16,7 @@ Short records of hard-to-reverse choices. Format: title, context/decision/why (s
 | [0010](./0010-gate-and-private-core.md) | Gate and private core |
 | [0011](./0011-bimi-inbound-brand-marks.md) | BIMI inbound brand marks |
 | [0012](./0012-cli-instance-config.md) | CLI owns instance config; Wrangler files are generated |
+| [0013](./0013-search-returns-grouped-threads.md) | Search returns grouped threads |
+| [0014](./0014-mail-search-query-language.md) | Mail search query language |
 
 New ADRs: next number, kebab-case slug, link from this table.

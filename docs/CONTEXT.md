@@ -205,6 +205,26 @@ Which mailboxes can see a message, tracked in `message_mailboxes`. Populated fro
 A single email stored in the system, whether inbound, outbound, draft, or failed send.
 _Avoid_: email (as a stored entity id), delivery
 
+**Attachment**:
+A file part of a **message** with disposition `attachment`. Distinct from an inline part (CID image, signature logo).
+_Avoid_: inline image, file, part
+
+**Search**:
+Finding **messages** in the selected **mailbox** that match a **search query**. Never other **mailboxes**. Default scope is every **folder** except trash and spam. Distinct from browsing by **folder** or **label**.
+_Avoid_: mail search, filter, thread search
+
+**Search query**:
+The string that drives **search**. Plain text and operators; juxtaposition and `&&` are AND, `||` is OR, `-` is NOT; parentheses group; quotes mark a phrase or a spaced operator value.
+_Avoid_: filter string, q
+
+**Search hit**:
+A **message** that matches the message-level part of a **search query** (thread operators stripped). AND of message operators must hold on that same **message**. Operators that describe the **thread** (`in:`, `label:`, `is:read` / `is:unread` / `is:starred`) constrain the **search result**; they do not create hits.
+_Avoid_: match, result (for the message)
+
+**Search result**:
+A **thread** that satisfies the query's thread-level operators and, when the query has a message-level part, contains one or more **search hits**. Shown once in the threadlist, with those hits grouped under it (no nested hits when the query is thread-only).
+_Avoid_: hit, message result, conversation result
+
 **BIMI logo**:
 The brand mark for an external sending domain asserted via BIMI. Shown as a sender avatar only when the inbound **message** passes DMARC alignment for that domain and the **organizational domain** publishes an enforcing DMARC policy (`quarantine` or `reject`). Distinct from an **account** profile picture and from a **client profile picture**. Cached per publishing domain and shared across messages that resolve to it.
 _Avoid_: favicon, profile picture, avatar (as the stored entity), sender icon
