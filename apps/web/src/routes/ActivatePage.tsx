@@ -301,11 +301,7 @@ export function ActivatePage() {
 				: t("activate.descriptionRecovery");
 
 	return (
-		<AuthPageShell
-			title={t("activate.title")}
-			description={description}
-			align="start"
-		>
+		<AuthPageShell title={t("activate.title")} description={description}>
 			<Card className="rounded-xl py-6 shadow-sm">
 				<CardContent>
 					{step === "code" ? (

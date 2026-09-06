@@ -1,4 +1,4 @@
-import { ArrowLeft, Forward, Paperclip, Reply, ReplyAll } from 'lucide-react';
+import { ArrowLeft, Paperclip, Reply, ReplyAll } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -513,16 +513,6 @@ export function ThreadView() {
 
 	const threadReady = !messagesQuery.isLoading && !messagesQuery.isError;
 	const isMobile = Boolean(mailboxNav?.isMobile);
-	const openForward = (messageId: string) => {
-		navigate(
-			composePath(mailboxId, {
-				forward: messageId,
-				threadId,
-				folder: labelId ? undefined : actionFolder,
-				label: labelId ?? undefined,
-			}),
-		);
-	};
 
 	return (
 		<>
@@ -565,36 +555,6 @@ export function ThreadView() {
 							<Skeleton className="size-8 shrink-0 rounded-md" />
 						)}
 					</div>
-					{threadReady && lastReplyableMessageId && !isMobile ? (
-						<div className="flex flex-wrap items-center gap-1">
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => openReply(lastReplyableMessageId, false)}
-							>
-								<Reply className="size-4" />
-								{t('threadView.reply')}
-							</Button>
-							{showReplyAll ? (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => openReply(lastReplyableMessageId, true)}
-								>
-									<ReplyAll className="size-4" />
-									{t('threadView.replyAll')}
-								</Button>
-							) : null}
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => openForward(lastReplyableMessageId)}
-							>
-								<Forward className="size-4" />
-								{t('message.forward')}
-							</Button>
-						</div>
-					) : null}
 				</div>
 				{messagesQuery.isLoading ? (
 					<ThreadViewBodySkeleton label={t('threadView.loadingConversation')} />
@@ -771,73 +731,29 @@ export function ThreadView() {
 												<PendingMessageSkeleton label={t('threadView.sendingMessage')} />
 											) : (
 												<>
-											<div className="mb-2 flex items-center justify-between gap-3">
-												<div className="flex min-w-0 items-center gap-2 text-sm">
-													{(message as ThreadMessagePreview).bimiDomain ? (
-														<BimiAvatar
-															domain={(message as ThreadMessagePreview).bimiDomain!}
-															className="size-5"
-														/>
-													) : null}
-													<MessageAddress address={message.from} className="font-medium" />
-													{isDraft ? <Badge variant="secondary">{t('threadView.draft')}</Badge> : null}
-													{message.hasAttachments ? (
-														<Paperclip
-															className="text-muted-foreground size-3.5"
-															aria-label={t('threadView.hasAttachments')}
-														/>
-													) : null}
-												</div>
-												<div className="flex shrink-0 items-center gap-1">
-													<span className="text-muted-foreground text-xs">
-														{isDraft ? t('threadView.notSent') : formatMessageTime(message.sentAt ?? message.receivedAt ?? '', i18n.language)}
-													</span>
-													{isDraft ? (
-														<>
-															<Button
-																variant="ghost"
-																size="sm"
-																onClick={() =>
-																	navigate(
-																		composePath(mailboxId, {
-																			draftId: message.id,
-																			threadId,
-																			folder: labelId ? undefined : actionFolder,
-																			label: labelId ?? undefined,
-																		}),
-																	)
-																}
-															>
-																{tc('edit')}
-															</Button>
-															<Button
-																variant="ghost"
-																size="sm"
-																className="text-destructive hover:text-destructive"
-																disabled={deleteDraftMutation.isPending}
-																onClick={() => {
-																	if (!message.id) {
-																		return;
-																	}
-																	setDraftPendingDeleteId(message.id);
-																}}
-															>
-																{tc('delete')}
-															</Button>
-															<Button
-																size="sm"
-																disabled={sendDraftMutation.isPending}
-																onClick={() => {
-																	if (message.id) {
-																		sendDraftMutation.mutate(message.id);
-																	}
-																}}
-															>
-																{t('threadView.send')}
-															</Button>
-														</>
-													) : (
-														<>
+											<div className="mb-2 space-y-2">
+												<div className="flex items-center justify-between gap-3">
+													<div className="flex min-w-0 items-center gap-2 text-sm">
+														{(message as ThreadMessagePreview).bimiDomain ? (
+															<BimiAvatar
+																domain={(message as ThreadMessagePreview).bimiDomain!}
+																className="size-5"
+															/>
+														) : null}
+														<MessageAddress address={message.from} className="font-medium" />
+														{isDraft ? <Badge variant="secondary">{t('threadView.draft')}</Badge> : null}
+														{message.hasAttachments ? (
+															<Paperclip
+																className="text-muted-foreground size-3.5"
+																aria-label={t('threadView.hasAttachments')}
+															/>
+														) : null}
+													</div>
+													{isDraft ? null : (
+														<div className="flex shrink-0 items-center gap-1">
+															<span className="text-muted-foreground text-xs">
+																{formatMessageTime(message.sentAt ?? message.receivedAt ?? '', i18n.language)}
+															</span>
 															{message.id !== lastReplyableMessageId ? (
 																<>
 																	<Button
@@ -873,9 +789,54 @@ export function ThreadView() {
 															{message.id ? (
 																<MessageActionsMenu messageId={message.id} mailboxId={mailboxId} threadId={threadId!} folder={actionFolder} />
 															) : null}
-														</>
+														</div>
 													)}
 												</div>
+												{isDraft ? (
+													<div className="flex flex-wrap items-center justify-end gap-1">
+														<Button
+															variant="ghost"
+															size="sm"
+															onClick={() =>
+																navigate(
+																	composePath(mailboxId, {
+																		draftId: message.id,
+																		threadId,
+																		folder: labelId ? undefined : actionFolder,
+																		label: labelId ?? undefined,
+																	}),
+																)
+															}
+														>
+															{tc('edit')}
+														</Button>
+														<Button
+															variant="ghost"
+															size="sm"
+															className="text-destructive hover:text-destructive"
+															disabled={deleteDraftMutation.isPending}
+															onClick={() => {
+																if (!message.id) {
+																	return;
+																}
+																setDraftPendingDeleteId(message.id);
+															}}
+														>
+															{tc('delete')}
+														</Button>
+														<Button
+															size="sm"
+															disabled={sendDraftMutation.isPending}
+															onClick={() => {
+																if (message.id) {
+																	sendDraftMutation.mutate(message.id);
+																}
+															}}
+														>
+															{t('threadView.send')}
+														</Button>
+													</div>
+												) : null}
 											</div>
 											<MessageRecipientLine
 												to={message.to}

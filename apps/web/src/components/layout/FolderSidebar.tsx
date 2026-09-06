@@ -174,10 +174,10 @@ export function FolderSidebar({ variant = 'rail', onNavigate }: FolderSidebarPro
 								onClick={() => onNavigate?.()}
 								className={({ isActive }) =>
 									cn(
-										'hover:bg-accent relative flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+										'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
 										collapsed && 'justify-center px-0',
 										(isActive || (!labelId && activeFolder === item)) &&
-											'bg-primary/10 text-foreground font-medium before:bg-primary before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full',
+											'bg-primary/10 text-foreground font-medium',
 									)
 								}
 							>
