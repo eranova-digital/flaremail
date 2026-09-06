@@ -158,6 +158,8 @@ npx flaremail deploy --yes
 
 Drift: `npx flaremail doctor` then `npx flaremail apply --yes`.
 
+Push to `master` deploys production via GitHub Actions (`npx flaremail deploy --yes`). Details: [`apps/cli`](./apps/cli/README.md#ci).
+
 ---
 
 ## Develop

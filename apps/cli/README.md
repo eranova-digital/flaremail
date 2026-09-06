@@ -132,9 +132,9 @@ npx flaremail deploy --yes
 
 ## CI
 
-[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs `npx flaremail sync --from-example` then tests (no Cloudflare token).
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs on pull requests and pushes to `development`: `npx flaremail sync --from-example` then tests (no Cloudflare token).
 
-[`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) writes conf from secret `FLAREMAIL_CONF` and runs `npx flaremail deploy --yes`. GitHub Environment: `production` (`main`), `staging` (`development`). Set these environment secrets — not Wrangler login in CI:
+[`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) runs on push to `master` (and `workflow_dispatch`): tests, then writes conf from the `production` environment secret `FLAREMAIL_CONF` and runs `npx flaremail deploy --yes`. Set these **environment** secrets on `production` — not Wrangler login in CI:
 
 | Secret | Value |
 |--------|--------|

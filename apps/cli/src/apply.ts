@@ -1,12 +1,12 @@
 import { mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 
 import type { CloudflareAdapter } from "./cloudflare.js";
 import { type Conf, gateHostname, writeHyperdriveId } from "./config.js";
 import { evaluateHealth, type HealthCheck, type HealthReport, collectSnapshot } from "./health.js";
 import { materialize } from "./materialize.js";
-import type { RepoPaths } from "./paths.js";
+import { repoPaths, type RepoPaths } from "./paths.js";
 import { REQUIRED_SECRETS } from "./templates.js";
 import { runOrThrow } from "./spawn.js";
 
@@ -163,7 +163,10 @@ export async function putCoreSecrets(
 
 export function wranglerEnv(conf: Conf): NodeJS.ProcessEnv {
 	const token = process.env.CLOUDFLARE_API_TOKEN?.trim() || conf.cloudflare.apiToken.trim();
-	const env: NodeJS.ProcessEnv = {};
+	const bin = join(repoPaths().root, "node_modules", ".bin");
+	const env: NodeJS.ProcessEnv = {
+		PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+	};
 	if (token) env.CLOUDFLARE_API_TOKEN = token;
 	if (conf.cloudflare.accountId) {
 		env.CLOUDFLARE_ACCOUNT_ID = conf.cloudflare.accountId;
