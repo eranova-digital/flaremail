@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { Loader2, Mail, Shield, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -92,7 +92,14 @@ export function ConsentPage() {
 	if (!pendingId) {
 		return (
 			<AuthPageShell title={t("consent.invalidRequestTitle")}>
-				<Alert tone="destructive">{t("consent.missingPending")}</Alert>
+				<Card className="rounded-xl py-6 shadow-sm">
+					<CardContent className="space-y-4">
+						<Alert tone="destructive">{t("consent.missingPending")}</Alert>
+						<Button asChild className="w-full">
+							<Link to="/login">{t("login.signIn")}</Link>
+						</Button>
+					</CardContent>
+				</Card>
 			</AuthPageShell>
 		);
 	}

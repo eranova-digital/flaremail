@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { Check, Copy, Loader2, ShieldCheck } from "lucide-react";
+import { Check, Copy, Loader2 } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
@@ -74,9 +74,8 @@ export function BootstrapPage() {
 				<CardContent className="space-y-4">
 					{state.kind === "idle" || state.kind === "loading" ? (
 						<>
-							<div className="flex items-start gap-3">
-								<ShieldCheck className="text-muted-foreground mt-0.5 size-4 shrink-0" />
-								<p className="text-muted-foreground text-sm">
+							<Alert tone="warning">
+								<p>
 									<Trans
 										i18nKey="bootstrap.intro"
 										ns="auth"
@@ -86,7 +85,7 @@ export function BootstrapPage() {
 										}}
 									/>
 								</p>
-							</div>
+							</Alert>
 							<Button
 								className="w-full"
 								onClick={handleBootstrap}
