@@ -29,17 +29,29 @@ describe("recovery email uniqueness", () => {
 		vi.mocked(sendRecoveryVerifyTransactionalEmail).mockResolvedValue();
 	});
 
-	it("rejects setup when the recovery email belongs to another account", async () => {
-		const db = {
+	function dbWithRecoveryTaken() {
+		let selectCalls = 0;
+		return {
 			select: () => ({
 				from: () => ({
 					where: () => ({
-						limit: async () => [{ accountId: "other-account" }],
+						limit: async () => {
+							selectCalls += 1;
+							if (selectCalls === 3) {
+								return [{ accountId: "other-account" }];
+							}
+							return [];
+						},
 					}),
 				}),
 			}),
 			insert: vi.fn(),
+			update: vi.fn(),
 		};
+	}
+
+	it("rejects setup when the recovery email belongs to another account", async () => {
+		const db = dbWithRecoveryTaken();
 
 		await expect(
 			sendRecoveryEmailSetupCode(db as never, deps, {
@@ -76,16 +88,7 @@ describe("recovery email uniqueness", () => {
 	});
 
 	it("rejects verify when the recovery email belongs to another account", async () => {
-		const db = {
-			select: () => ({
-				from: () => ({
-					where: () => ({
-						limit: async () => [{ accountId: "other-account" }],
-					}),
-				}),
-			}),
-			update: vi.fn(),
-		};
+		const db = dbWithRecoveryTaken();
 
 		await expect(
 			verifyAndSetRecoveryEmail(db as never, {

@@ -28,10 +28,10 @@ describe("v1 API auth", () => {
 		expect(response.headers.get("Content-Type")).toContain(PROBLEM_CONTENT_TYPE);
 		const body = (await response.json()) as Record<string, unknown>;
 		expect(body).toMatchObject({
-			type: "/api/v1/problems/unauthorized",
+			type: "/api/v1/problems/authentication-required",
 			title: "Unauthorized",
 			status: 401,
-			code: "unauthorized",
+			code: "authentication-required",
 		});
 		expect(body.detail).toBeTruthy();
 	});
