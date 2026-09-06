@@ -177,7 +177,7 @@ export function FolderSidebar({ variant = 'rail', onNavigate }: FolderSidebarPro
 										'hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
 										collapsed && 'justify-center px-0',
 										(isActive || (!labelId && activeFolder === item)) &&
-											'bg-accent text-accent-foreground font-medium',
+											'bg-primary/10 text-foreground font-medium',
 									)
 								}
 							>

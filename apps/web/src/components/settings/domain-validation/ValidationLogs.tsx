@@ -43,7 +43,9 @@ export function ValidationLogs({ logs }: { logs: DomainValidationLogEvent[] }) {
 					</div>
 					<p>{log.message}</p>
 					{log.code ? (
-						<p className="text-muted-foreground font-mono text-xs">{log.code}</p>
+						<p className="text-muted-foreground/70 font-mono text-[10px] tracking-wide">
+							{log.code}
+						</p>
 					) : null}
 				</li>
 			))}

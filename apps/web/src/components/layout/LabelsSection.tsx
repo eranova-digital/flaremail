@@ -105,7 +105,7 @@ export function LabelsSection({ collapsed, onNavigate, withTooltip }: LabelsSect
 			{!collapsed && labels.length === 0 && !labelsQuery.isLoading ? (
 				<button
 					type="button"
-					className="text-muted-foreground hover:text-foreground px-3 py-1 text-left text-xs"
+					className="text-primary hover:text-primary/80 px-3 py-1 text-left text-xs font-medium underline-offset-4 hover:underline"
 					onClick={() => setManageOpen(true)}
 				>
 					{t("labels.addFirst")}

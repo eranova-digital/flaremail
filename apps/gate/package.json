@@ -1,6 +1,6 @@
 {
 	"name": "@flaremail/gate",
-	"version": "0.9.5",
+	"version": "0.9.6",
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",

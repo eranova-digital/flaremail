@@ -1,6 +1,7 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Select,
@@ -40,25 +41,27 @@ function ThemeOption({
 	return (
 		<label
 			className={cn(
-				"flex cursor-pointer gap-3 rounded-lg border px-4 py-3 transition-colors",
+				"flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition-colors",
 				selected && "border-primary bg-primary/5",
 			)}
 		>
-			<input
-				type="radio"
-				name="theme-preference"
-				value={value}
-				checked={selected}
-				onChange={() => onChange(value)}
-				className="mt-1"
-			/>
-			<span className="flex min-w-0 flex-1 items-start gap-3">
-				<Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-hidden />
-				<span className="space-y-1">
-					<span className="block text-sm font-medium">{label}</span>
-					<span className="text-muted-foreground block text-xs">
-						{description}
-					</span>
+			<span className="flex h-5 shrink-0 items-center">
+				<input
+					type="radio"
+					name="theme-preference"
+					value={value}
+					checked={selected}
+					onChange={() => onChange(value)}
+					className="size-4"
+				/>
+			</span>
+			<span className="min-w-0 flex-1">
+				<span className="flex h-5 items-center gap-2">
+					<Icon className="text-muted-foreground size-4 shrink-0" aria-hidden />
+					<span className="text-sm font-medium">{label}</span>
+				</span>
+				<span className="text-muted-foreground mt-0.5 block text-xs">
+					{description}
 				</span>
 			</span>
 		</label>
@@ -98,11 +101,11 @@ export function PreferencesSection() {
 
 	return (
 		<div className="space-y-6">
-			<div className="space-y-2">
+			<div className="space-y-3">
 				<h2 className="text-lg font-semibold">{t("preferences.title")}</h2>
-				<p className="text-muted-foreground max-w-prose text-sm">
-					{t("preferences.description")}
-				</p>
+				<Alert tone="info">
+					<p>{t("preferences.description")}</p>
+				</Alert>
 			</div>
 
 			<Card className="rounded-xl shadow-sm">
@@ -124,7 +127,7 @@ export function PreferencesSection() {
 						}}
 					>
 						<SelectTrigger
-							className="max-w-sm"
+							className="max-w-sm rounded-lg"
 							aria-label={t("preferences.language.title")}
 						>
 							<SelectValue />

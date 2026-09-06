@@ -164,7 +164,7 @@ export function DomainValidationPage() {
 								{selectedRun?.finishedAt ? (
 									<p className="text-muted-foreground text-sm">
 										{t("domainValidation.lastChecked", {
-											time: formatValidationTimestamp(selectedRun.finishedAt),
+											when: formatValidationTimestamp(selectedRun.finishedAt),
 										})}
 									</p>
 								) : null}

@@ -1,7 +1,21 @@
 import * as React from "react";
 import { CheckIcon, ChevronsUpDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import * as RPNInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
+import de from "react-phone-number-input/locale/de.json";
+import en from "react-phone-number-input/locale/en.json";
+import es from "react-phone-number-input/locale/es.json";
+import fr from "react-phone-number-input/locale/fr.json";
+import it from "react-phone-number-input/locale/it.json";
+import ja from "react-phone-number-input/locale/ja.json";
+import ko from "react-phone-number-input/locale/ko.json";
+import pl from "react-phone-number-input/locale/pl.json";
+import ptBR from "react-phone-number-input/locale/pt-BR.json";
+import ru from "react-phone-number-input/locale/ru.json";
+import tr from "react-phone-number-input/locale/tr.json";
+import zh from "react-phone-number-input/locale/zh.json";
+import { isAppLocale, type AppLocale } from "@flaremail/i18n";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +37,26 @@ import { cn } from "@/lib/utils";
 
 import "react-phone-number-input/style.css";
 
+const PHONE_COUNTRY_LABELS: Record<AppLocale, typeof en> = {
+	"en-US": en,
+	"ro-RO": en,
+	"es-ES": es,
+	"de-DE": de,
+	"fr-FR": fr,
+	"pt-BR": ptBR,
+	"it-IT": it,
+	"pl-PL": pl,
+	"tr-TR": tr,
+	"ja-JP": ja,
+	"ko-KR": ko,
+	"zh-CN": zh,
+	"ru-RU": ru,
+};
+
+function phoneCountryLabels(language: string): typeof en {
+	return isAppLocale(language) ? PHONE_COUNTRY_LABELS[language] : en;
+}
+
 type PhoneInputProps = Omit<
 	React.ComponentProps<"input">,
 	"onChange" | "value" | "ref"
@@ -35,6 +69,8 @@ const PhoneInput = React.forwardRef<
 	React.ElementRef<typeof RPNInput.default>,
 	PhoneInputProps
 >(({ className, onChange, value, ...props }, ref) => {
+	const { i18n } = useTranslation("settings");
+
 	return (
 		<RPNInput.default
 			ref={ref}
@@ -42,6 +78,7 @@ const PhoneInput = React.forwardRef<
 			flagComponent={FlagComponent}
 			countrySelectComponent={CountrySelect}
 			inputComponent={InputComponent}
+			labels={phoneCountryLabels(i18n.language)}
 			smartCaret={false}
 			value={value || undefined}
 			/**
@@ -85,6 +122,7 @@ const CountrySelect = ({
 	const scrollAreaRef = React.useRef<HTMLDivElement>(null);
 	const [searchValue, setSearchValue] = React.useState("");
 	const [isOpen, setIsOpen] = React.useState(false);
+	const { t } = useTranslation("settings");
 
 	return (
 		<Popover
@@ -131,11 +169,11 @@ const CountrySelect = ({
 								}
 							}, 0);
 						}}
-						placeholder="Search country..."
+						placeholder={t("profile.fields.searchCountry")}
 					/>
 					<CommandList>
 						<ScrollArea ref={scrollAreaRef} className="h-72">
-							<CommandEmpty>No country found.</CommandEmpty>
+							<CommandEmpty>{t("profile.fields.noCountryFound")}</CommandEmpty>
 							<CommandGroup>
 								{countryList.map(({ value, label }) =>
 									value ? (

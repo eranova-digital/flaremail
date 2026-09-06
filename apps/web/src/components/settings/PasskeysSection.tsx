@@ -13,6 +13,23 @@ import { isPasskeySupported } from "@/lib/auth/passkey-support";
 import type { PasskeySummary } from "@/lib/auth/types";
 import { getErrorMessage } from "@/lib/api/errors";
 
+function passkeyNamePlaceholder(macFallback: string): string {
+	if (typeof navigator === "undefined") {
+		return macFallback;
+	}
+	const ua = navigator.userAgent;
+	const uaData =
+		"userAgentData" in navigator
+			? (navigator as Navigator & { userAgentData?: { platform?: string } })
+					.userAgentData
+			: undefined;
+	const platform = uaData?.platform || navigator.platform;
+	if (/Win/i.test(platform) || /Windows/i.test(ua)) {
+		return "Windows Hello";
+	}
+	return macFallback;
+}
+
 function formatPasskeyDate(value: string | null): string | null {
 	if (!value) {
 		return null;
@@ -234,7 +251,9 @@ export function PasskeysSection() {
 								</label>
 								<Input
 									id="passkey-name"
-									placeholder={t("passkeys.namePlaceholder")}
+									placeholder={passkeyNamePlaceholder(
+										t("passkeys.namePlaceholder"),
+									)}
 									value={newPasskeyName}
 									onChange={(event) => setNewPasskeyName(event.target.value)}
 									disabled={submitting}

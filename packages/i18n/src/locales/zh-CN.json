@@ -272,7 +272,10 @@
 		"invite-role-required": "此操作需要邀请角色",
 		"remove-target-required": "此操作需要移除目标",
 		"invalid-alias-target-address": "别名目标地址无效",
-		"something-went-wrong": "出了点问题"
+		"something-went-wrong": "出了点问题",
+		"invalid-phone-number": "电话号码必须是有效的 E.164 国际号码（例如 +14155552671）",
+		"recovery-email-hosted-domain": "恢复邮箱不能使用此邮件服务器托管的域名",
+		"recovery-email-hosted-mailbox": "恢复邮箱不能使用此邮件服务器上的邮箱"
 	},
 	"auth": {
 		"session": {
@@ -485,6 +488,14 @@
 			"title": "需要配置",
 			"hint": "将 <example>{{example}}</example> 复制为 <env>{{env}}</env>，并设置 <apiUrl>{{apiUrl}}</apiUrl>。",
 			"invalid": "配置无效"
+		},
+		"passwordTooWeak": "密码至少 8 个字符，且须包含字母和数字。",
+		"password-too-weak": "密码至少 8 个字符，且须包含字母和数字。",
+		"passwordStrength": {
+			"hint": "至少 8 个字符，包含字母和数字。请使用未在其他地方使用过的唯一密码。",
+			"minLength": "至少 8 个字符",
+			"hasLetter": "包含字母",
+			"hasNumber": "包含数字"
 		}
 	},
 	"mail": {
@@ -563,7 +574,12 @@
 			"noPreview": "无预览",
 			"unknown": "（未知）",
 			"seenBy": "已读人员",
-			"seenByOverflow": "+{{count}}"
+			"seenByOverflow": "+{{count}}",
+			"refreshDrafts": "刷新草稿",
+			"draftCount_one": "{{count}} 封草稿",
+			"draftCount_few": "{{count}} 封草稿",
+			"draftCount_other": "{{count}} 封草稿",
+			"emptyDrafts": "没有草稿。"
 		},
 		"threadActions": {
 			"markUnread": "标为未读",
@@ -870,7 +886,15 @@
 				"addressCity": "城市",
 				"addressLine1": "地址行 1",
 				"addressLine2": "地址行 2",
-				"addressHeading": "地址"
+				"addressHeading": "地址",
+				"phonePlaceholder": "+14155552671",
+				"selectCountry": "选择国家/地区…",
+				"selectState": "选择省/州…",
+				"selectCity": "选择城市…",
+				"locationSearchPlaceholder": "搜索…",
+				"locationEmpty": "未找到结果。",
+				"searchCountry": "搜索国家/地区...",
+				"noCountryFound": "未找到国家/地区。"
 			},
 			"picture": {
 				"change": "更换照片",
@@ -878,7 +902,8 @@
 				"remove": "移除照片",
 				"uploadFailed": "上传失败",
 				"removeFailed": "移除失败"
-			}
+			},
+			"invalidPhone": "请输入国际格式的有效电话号码（例如 +14155552671）。"
 		},
 		"identities": {
 			"noPrimaryMailbox": "身份适用于拥有主邮箱的账户。",
@@ -1303,7 +1328,8 @@
 					"profile": "个人资料",
 					"access": "访问",
 					"identities": "身份",
-					"security": "安全"
+					"security": "安全",
+					"logs": "日志"
 				},
 				"locked": "已锁定",
 				"role": "角色",
@@ -1339,6 +1365,13 @@
 					"description": "这将永久移除该账户及其邮箱访问权限。",
 					"cannotUndo": "此操作无法撤销。",
 					"confirm": "移除账户"
+				},
+				"logs": {
+					"invitedBy": "邀请人",
+					"invitedByHint": "为此账户创建邀请的人。",
+					"noInvite": "没有邀请记录。",
+					"relatedTitle": "相关日志",
+					"relatedHint": "此账户作为操作者或被引用的日志。"
 				}
 			},
 			"identities": {

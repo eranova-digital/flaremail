@@ -55,15 +55,15 @@ function ComposeFieldRow({
 	children: ReactNode;
 }) {
 	return (
-		<div className="flex min-w-0 items-start gap-3 px-3 py-2 sm:px-4">
+		<div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 sm:px-4">
 			<label
 				htmlFor={htmlFor}
-				className="text-muted-foreground w-12 shrink-0 pt-2 text-sm sm:w-14"
+				className="text-muted-foreground w-14 shrink-0 text-sm"
 			>
 				{label}
 			</label>
 			<div className="min-w-0 flex-1">{children}</div>
-			{actions ? <div className="flex shrink-0 items-center gap-0.5 pt-0.5">{actions}</div> : null}
+			{actions ? <div className="flex shrink-0 items-center gap-0.5">{actions}</div> : null}
 		</div>
 	);
 }
@@ -304,10 +304,37 @@ export function ComposePane({
 		</>
 	) : null;
 
+	const changeSubjectButton =
+		isReply && !showSubjectEditor ? (
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				className="text-muted-foreground h-8 px-2"
+				onClick={() => setShowSubjectEditor(true)}
+			>
+				{t("fields.changeSubject")}
+			</Button>
+		) : null;
+
+	const replyMetaActions =
+		!showToField && (showCcBccButtons || changeSubjectButton) ? (
+			<>
+				{ccBccActions}
+				{changeSubjectButton}
+			</>
+		) : null;
+
+	const hasFromField = Boolean(identitiesQuery.data && identitiesQuery.data.length > 0);
+
 	const metaFields = (
 		<div className="divide-border min-w-0 divide-y">
-			{identitiesQuery.data && identitiesQuery.data.length > 0 ? (
-				<ComposeFieldRow label={t("fields.from")} htmlFor="compose-identity">
+			{hasFromField ? (
+				<ComposeFieldRow
+					label={t("fields.from")}
+					htmlFor="compose-identity"
+					actions={replyMetaActions}
+				>
 					<Select
 						value={compose.fields.identityId ?? undefined}
 						onValueChange={handleIdentityChange}
@@ -320,7 +347,7 @@ export function ComposePane({
 							<SelectValue placeholder={t("fields.selectIdentity")} />
 						</SelectTrigger>
 						<SelectContent>
-							{identitiesQuery.data.map((identity) => {
+							{identitiesQuery.data?.map((identity) => {
 								const label = identity.fromNamePreview
 									? `${identity.fromNamePreview} <${mailboxAddress}>`
 									: mailboxAddress;
@@ -351,10 +378,6 @@ export function ComposePane({
 						placeholder={t("placeholders.to")}
 					/>
 				</ComposeFieldRow>
-			) : null}
-
-			{!showToField && showCcBccButtons ? (
-				<div className="flex justify-end gap-0.5 px-3 py-1.5 sm:px-4">{ccBccActions}</div>
 			) : null}
 
 			{showCcField ? (
@@ -399,19 +422,7 @@ export function ComposePane({
 							className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
 						/>
 					</ComposeFieldRow>
-				) : (
-					<div className="px-3 py-2 sm:px-4">
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							className="text-muted-foreground h-8 px-2"
-							onClick={() => setShowSubjectEditor(true)}
-						>
-							{t("fields.changeSubject")}
-						</Button>
-					</div>
-				)
+				) : null
 			) : (
 				<ComposeFieldRow label={t("fields.subject")} htmlFor="compose-subject">
 					<Input
@@ -455,6 +466,9 @@ export function ComposePane({
 			<h2 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight">
 				{headerTitle}
 			</h2>
+			{!hasFromField ? (
+				<div className="flex shrink-0 items-center gap-0.5">{replyMetaActions}</div>
+			) : null}
 			<Button
 				type="button"
 				variant="ghost"
@@ -497,7 +511,6 @@ export function ComposePane({
 					<Button
 						type="button"
 						variant="ghost"
-						size="sm"
 						onClick={() => void handleCancel()}
 						disabled={busy}
 					>
@@ -508,7 +521,6 @@ export function ComposePane({
 				<Button
 					type="button"
 					variant="ghost"
-					size="sm"
 					onClick={onClose}
 					disabled={compose.isSending}
 				>
@@ -519,8 +531,7 @@ export function ComposePane({
 			{showDraftActions ? (
 				<Button
 					type="button"
-					variant="ghost"
-					size="sm"
+					variant="outline"
 					onClick={() => void handleSave()}
 					disabled={!compose.canSave || compose.isSaving || compose.isSending}
 				>

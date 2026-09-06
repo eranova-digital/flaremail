@@ -24,6 +24,29 @@ function formatDateTime(value: string): string {
 	});
 }
 
+function formatRelativeTime(value: string, language?: string): string {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) {
+		return formatDateTime(value);
+	}
+	const diffSec = Math.round((date.getTime() - Date.now()) / 1000);
+	const abs = Math.abs(diffSec);
+	const rtf = new Intl.RelativeTimeFormat(language, { numeric: "auto" });
+	if (abs < 60) {
+		return rtf.format(diffSec, "second");
+	}
+	if (abs < 3600) {
+		return rtf.format(Math.round(diffSec / 60), "minute");
+	}
+	if (abs < 86_400) {
+		return rtf.format(Math.round(diffSec / 3600), "hour");
+	}
+	if (abs < 86_400 * 7) {
+		return rtf.format(Math.round(diffSec / 86_400), "day");
+	}
+	return formatDateTime(value);
+}
+
 function formatLocation(session: AuthSession): string | null {
 	if (session.countryCode && session.countryCode !== "XX" && session.countryCode !== "T1") {
 		try {
@@ -140,7 +163,7 @@ export function SessionsSection() {
 					{loading ? (
 						<div className="space-y-2">
 							{Array.from({ length: 2 }).map((_, index) => (
-								<Skeleton key={index} className="h-16 w-full rounded-lg" />
+								<Skeleton key={index} className="h-12 w-full rounded-lg" />
 							))}
 						</div>
 					) : sessions.length === 0 ? (
@@ -223,7 +246,7 @@ function SessionRow({
 	revoking: boolean;
 	onRevoke: () => void;
 }) {
-	const { t } = useTranslation("settings");
+	const { t, i18n } = useTranslation("settings");
 	const location = formatLocation(session);
 
 	const formatDevice = (s: AuthSession): string => {
@@ -238,26 +261,23 @@ function SessionRow({
 	};
 
 	return (
-		<li className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-4 py-3 text-sm">
-			<div className="min-w-0 space-y-1">
-				<div className="flex flex-wrap items-center gap-2">
-					<p className="font-medium">{formatDevice(session)}</p>
+		<li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-sm">
+			<div className="min-w-0 space-y-0.5">
+				<div className="flex flex-wrap items-center gap-1.5">
+					<p className="font-medium leading-tight">{formatDevice(session)}</p>
 					{session.current ? (
 						<Badge variant="success">{t("sessions.currentBadge")}</Badge>
 					) : null}
 				</div>
-				<p className="text-muted-foreground text-xs">
+				<p className="text-muted-foreground text-[11px] leading-snug">
 					{t("sessions.seenMeta", {
-						createdAt: formatDateTime(session.createdAt),
-						lastSeenAt: formatDateTime(session.lastSeenAt),
+						createdAt: formatRelativeTime(session.createdAt, i18n.language),
+						lastSeenAt: formatRelativeTime(session.lastSeenAt, i18n.language),
 					})}
+					{location || session.ipAddress
+						? ` · ${location ?? t("sessions.unknownLocation")}${session.ipAddress ? ` · ${session.ipAddress}` : ""}`
+						: ""}
 				</p>
-				{location || session.ipAddress ? (
-					<p className="text-muted-foreground text-xs">
-						{location ?? t("sessions.unknownLocation")}
-						{session.ipAddress ? ` · ${session.ipAddress}` : ""}
-					</p>
-				) : null}
 			</div>
 			<Button
 				variant="outline"

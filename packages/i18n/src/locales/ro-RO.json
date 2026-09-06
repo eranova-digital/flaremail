@@ -272,7 +272,10 @@
 		"invite-role-required": "Rolul de invitație este obligatoriu pentru această operațiune",
 		"remove-target-required": "Ținta de eliminare este obligatorie pentru această operațiune",
 		"invalid-alias-target-address": "Adresă țintă alias invalidă",
-		"something-went-wrong": "Ceva nu a mers bine"
+		"something-went-wrong": "Ceva nu a mers bine",
+		"invalid-phone-number": "Numărul de telefon trebuie să fie un număr internațional valid în format E.164 (ex. +14155552671)",
+		"recovery-email-hosted-domain": "E-mailul de recuperare nu poate folosi un domeniu găzduit de acest server de e-mail",
+		"recovery-email-hosted-mailbox": "E-mailul de recuperare nu poate folosi o cutie poștală de pe acest server de e-mail"
 	},
 	"auth": {
 		"session": {
@@ -485,6 +488,14 @@
 			"title": "Configurare necesară",
 			"hint": "Copiază <example>{{example}}</example> în <env>{{env}}</env> și setează <apiUrl>{{apiUrl}}</apiUrl>.",
 			"invalid": "Configurație invalidă"
+		},
+		"passwordTooWeak": "Parola trebuie să aibă cel puțin 8 caractere și să includă o literă și o cifră.",
+		"password-too-weak": "Parola trebuie să aibă cel puțin 8 caractere și să includă o literă și o cifră.",
+		"passwordStrength": {
+			"hint": "Cel puțin 8 caractere, inclusiv o literă și o cifră. Preferă o parolă unică, pe care nu o folosești în altă parte.",
+			"minLength": "Cel puțin 8 caractere",
+			"hasLetter": "Conține o literă",
+			"hasNumber": "Conține o cifră"
 		}
 	},
 	"mail": {
@@ -563,7 +574,12 @@
 			"noPreview": "Fără previzualizare",
 			"unknown": "(necunoscut)",
 			"seenBy": "Văzut de",
-			"seenByOverflow": "+{{count}}"
+			"seenByOverflow": "+{{count}}",
+			"refreshDrafts": "Reîmprospătează ciornele",
+			"draftCount_one": "{{count}} ciornă",
+			"draftCount_few": "{{count}} ciorne",
+			"draftCount_other": "{{count}} de ciorne",
+			"emptyDrafts": "Nicio ciornă."
 		},
 		"threadActions": {
 			"markUnread": "Marchează ca necitit",
@@ -870,7 +886,15 @@
 				"addressCity": "Oraș",
 				"addressLine1": "Adresă linia 1",
 				"addressLine2": "Adresă linia 2",
-				"addressHeading": "Adresă"
+				"addressHeading": "Adresă",
+				"phonePlaceholder": "+14155552671",
+				"selectCountry": "Selectează țara…",
+				"selectState": "Selectează județul/statul…",
+				"selectCity": "Selectează orașul…",
+				"locationSearchPlaceholder": "Caută…",
+				"locationEmpty": "Niciun rezultat.",
+				"searchCountry": "Caută țara...",
+				"noCountryFound": "Nicio țară găsită."
 			},
 			"picture": {
 				"change": "Schimbă fotografia",
@@ -878,7 +902,8 @@
 				"remove": "Elimină fotografia",
 				"uploadFailed": "Încărcarea a eșuat",
 				"removeFailed": "Eliminarea a eșuat"
-			}
+			},
+			"invalidPhone": "Introdu un număr de telefon valid în format internațional (ex. +14155552671)."
 		},
 		"identities": {
 			"noPrimaryMailbox": "Identitățile sunt disponibile pentru conturile cu o cutie poștală principală.",
@@ -1303,7 +1328,8 @@
 					"profile": "Profil",
 					"access": "Acces",
 					"identities": "Identități",
-					"security": "Securitate"
+					"security": "Securitate",
+					"logs": "Jurnale"
 				},
 				"locked": "Blocat",
 				"role": "Rol",
@@ -1339,6 +1365,13 @@
 					"description": "Aceasta elimină definitiv contul și accesul la cutiile poștale.",
 					"cannotUndo": "Această acțiune nu poate fi anulată.",
 					"confirm": "Elimină contul"
+				},
+				"logs": {
+					"invitedBy": "Invitat de",
+					"invitedByHint": "Cine a creat invitația pentru acest cont.",
+					"noInvite": "Nicio invitație înregistrată.",
+					"relatedTitle": "Jurnale asociate",
+					"relatedHint": "Jurnale în care acest cont este actorul sau este menționat."
 				}
 			},
 			"identities": {

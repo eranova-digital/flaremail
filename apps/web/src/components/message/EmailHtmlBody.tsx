@@ -15,7 +15,7 @@ const MESSAGE_BODY_CSS = [
 	"a { color: #2563eb; text-decoration: underline; }",
 	"table { border-collapse: collapse; max-width: 100%; }",
 	"td, th { word-break: break-word; }",
-	"img { max-width: 100%; height: auto; }",
+	"img { max-width: 100% !important; max-height: 20rem !important; height: auto !important; object-fit: contain; }",
 	"img[data-align='center'] { display: block; margin-left: auto; margin-right: auto; }",
 	"img[data-align='right'] { display: block; margin-left: auto; }",
 ].join("\n");

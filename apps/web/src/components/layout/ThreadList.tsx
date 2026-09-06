@@ -1,5 +1,17 @@
-import { ChevronDown, Menu, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import {
+	Archive,
+	ChevronDown,
+	FileText,
+	Inbox,
+	Menu,
+	Pencil,
+	RefreshCw,
+	Send,
+	ShieldAlert,
+	Tag,
+	Trash2,
+} from 'lucide-react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -19,6 +31,44 @@ import { getErrorMessage } from '@/lib/api/errors';
 import { DEFAULT_LABEL_COLOR } from '@/lib/label-colors';
 import { composePath, threadPath } from '@/lib/mailbox-routes';
 import { cn } from '@/lib/utils';
+
+const FOLDER_ICONS: Record<ThreadFolder, typeof Inbox> = {
+	inbox: Inbox,
+	sent: Send,
+	drafts: FileText,
+	archived: Archive,
+	trash: Trash2,
+	spam: ShieldAlert,
+};
+
+function EmptyListState({
+	icon: Icon,
+	message,
+	action,
+}: {
+	icon: ComponentType<{ className?: string }>;
+	message: string;
+	action?: ReactNode;
+}) {
+	return (
+		<div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+			<Icon className="text-muted-foreground size-8 opacity-40" aria-hidden />
+			<p className="text-muted-foreground text-sm">{message}</p>
+			{action}
+		</div>
+	);
+}
+
+function EmptyFolderHint({ folder }: { folder: ThreadFolder }) {
+	const { t } = useTranslation('mail');
+	const Icon = FOLDER_ICONS[folder];
+	return (
+		<div className="text-muted-foreground flex flex-col items-center justify-center gap-1.5 px-4 py-6 text-center">
+			<Icon className="size-5 opacity-40" aria-hidden />
+			<p className="text-sm">{t('threadList.emptyFolder', { folder: FOLDER_LABELS[folder] })}</p>
+		</div>
+	);
+}
 
 function NavMenuButton() {
 	const { t } = useTranslation('mail');
@@ -91,7 +141,7 @@ function DraftMessageList({
 					) : null}
 				</div>
 			</div>
-			<div className="max-w-full flex-1 overflow-y-auto">
+			<div className="flex min-h-0 max-w-full flex-1 flex-col overflow-y-auto">
 				{draftsQuery.isLoading ? (
 					<div className="space-y-2 p-3">
 						{Array.from({ length: 6 }).map((_, index) => (
@@ -101,7 +151,16 @@ function DraftMessageList({
 				) : draftsQuery.isError ? (
 					<div className="text-destructive p-4 text-sm">{getErrorMessage(draftsQuery.error)}</div>
 				) : drafts.length === 0 ? (
-					<p className="text-muted-foreground p-4 text-sm">{t('threadList.emptyDrafts')}</p>
+					<EmptyListState
+						icon={FileText}
+						message={t('threadList.emptyDrafts')}
+						action={
+							<Button onClick={() => navigate(composePath(mailboxId, { folder: 'drafts' }))}>
+								<Pencil />
+								{t('sidebar.compose')}
+							</Button>
+						}
+					/>
 				) : (
 					<ul>
 						{drafts.map((draft) => (
@@ -182,7 +241,7 @@ function FolderThreadList({
 					) : null}
 				</div>
 			</div>
-			<div className="max-w-full flex-1 overflow-y-auto">
+			<div className="flex min-h-0 max-w-full flex-1 flex-col overflow-y-auto">
 				{threadsQuery.isLoading ? (
 					<div className="space-y-2 p-3">
 						{Array.from({ length: 6 }).map((_, index) => (
@@ -192,9 +251,10 @@ function FolderThreadList({
 				) : threadsQuery.isError ? (
 					<div className="text-destructive p-4 text-sm">{getErrorMessage(threadsQuery.error)}</div>
 				) : threads.length === 0 ? (
-					<p className="text-muted-foreground p-4 text-sm">
-						{t('threadList.emptyFolder', { folder: FOLDER_LABELS[activeFolder] })}
-					</p>
+					<EmptyListState
+						icon={FOLDER_ICONS[activeFolder]}
+						message={t('threadList.emptyFolder', { folder: FOLDER_LABELS[activeFolder] })}
+					/>
 				) : (
 					<ul>
 						{threads.map((thread) => (
@@ -277,9 +337,7 @@ function LabelFolderSection({
 					) : isError ? (
 						<p className="text-destructive p-4 text-sm">{getErrorMessage(error)}</p>
 					) : threads.length === 0 ? (
-						<p className="text-muted-foreground px-4 py-3 text-xs">
-							{t('threadList.emptyFolder', { folder: FOLDER_LABELS[folder] })}
-						</p>
+						<EmptyFolderHint folder={folder} />
 					) : (
 						<ul>
 							{threads.map((thread) => (
@@ -374,7 +432,7 @@ function LabelThreadList({
 					</Badge>
 				</div>
 			</div>
-			<div className="flex-1 max-w-full overflow-y-auto">
+			<div className="flex min-h-0 max-w-full flex-1 flex-col overflow-y-auto">
 				{isAnyLoading ? (
 					<div className="space-y-2 p-3">
 						{Array.from({ length: 4 }).map((_, index) => (
@@ -382,7 +440,7 @@ function LabelThreadList({
 						))}
 					</div>
 				) : totalThreads === 0 ? (
-					<p className="text-muted-foreground p-4 text-sm">{t('threadList.emptyLabel')}</p>
+					<EmptyListState icon={Tag} message={t('threadList.emptyLabel')} />
 				) : (
 					FOLDERS.map((folder, index) => {
 						const query = folderQueries[index];

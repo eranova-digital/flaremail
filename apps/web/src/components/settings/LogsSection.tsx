@@ -25,22 +25,12 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLogs } from "@/hooks/use-logs";
+import { formatLogTimestamp } from "@/lib/i18n/date-locale";
 import { getErrorMessage } from "@/lib/api/errors";
 import { LOG_TYPES, type LogListItem, type LogType } from "@/lib/logs/api";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZES = [25, 50, 100] as const;
-
-function formatWhen(iso: string): string {
-	try {
-		return new Intl.DateTimeFormat(undefined, {
-			dateStyle: "medium",
-			timeStyle: "medium",
-		}).format(new Date(iso));
-	} catch {
-		return iso;
-	}
-}
 
 function importanceVariant(
 	importance: number,
@@ -51,12 +41,12 @@ function importanceVariant(
 }
 
 function LogRow({ item }: { item: LogListItem }) {
-	const { t } = useTranslation("management");
+	const { t, i18n } = useTranslation("management");
 
 	return (
-		<li className="hover:bg-muted/40 px-4 py-3.5 transition-colors sm:px-5">
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-				<div className="min-w-0 flex-1 space-y-2">
+		<li className="hover:bg-muted/40 px-4 py-2.5 transition-colors sm:px-5">
+			<div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+				<div className="min-w-0 flex-1 space-y-1.5">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge
 							variant={importanceVariant(item.importance)}
@@ -79,8 +69,10 @@ function LogRow({ item }: { item: LogListItem }) {
 					</div>
 					<LogSummary summary={item.summary} refs={item.refs} />
 				</div>
-				<div className="text-muted-foreground flex shrink-0 flex-col gap-0.5 text-xs sm:items-end sm:text-right">
-					<time dateTime={item.createdAt}>{formatWhen(item.createdAt)}</time>
+				<div className="text-foreground/70 flex shrink-0 flex-col gap-0.5 text-xs sm:items-end sm:text-right">
+					<time dateTime={item.createdAt}>
+						{formatLogTimestamp(item.createdAt, i18n.language)}
+					</time>
 					{item.context?.ip ? (
 						<span className="font-mono tabular-nums">{item.context.ip}</span>
 					) : null}
@@ -366,8 +358,8 @@ export function LogsSection() {
 			) : null}
 
 			{!query.isLoading && !query.isError && items.length === 0 ? (
-				<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-16 text-center">
-					<ScrollText className="size-8 opacity-40" aria-hidden />
+				<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-12 text-center">
+					<ScrollText className="text-muted-foreground/60 size-6" aria-hidden />
 					<p className="text-sm font-medium text-foreground">
 						{t("logs.emptyTitle")}
 					</p>

@@ -272,7 +272,10 @@
 		"invite-role-required": "Rola zaproszenia jest wymagana dla tej operacji",
 		"remove-target-required": "Cel usunięcia jest wymagany dla tej operacji",
 		"invalid-alias-target-address": "Nieprawidłowy adres docelowy aliasu",
-		"something-went-wrong": "Coś poszło nie tak"
+		"something-went-wrong": "Coś poszło nie tak",
+		"invalid-phone-number": "Numer telefonu musi być prawidłowym numerem międzynarodowym w formacie E.164 (np. +14155552671)",
+		"recovery-email-hosted-domain": "E-mail odzyskiwania nie może używać domeny hostowanej na tym serwerze poczty",
+		"recovery-email-hosted-mailbox": "E-mail odzyskiwania nie może używać skrzynki na tym serwerze poczty"
 	},
 	"auth": {
 		"session": {
@@ -485,6 +488,14 @@
 			"title": "Wymagana konfiguracja",
 			"hint": "Skopiuj <example>{{example}}</example> do <env>{{env}}</env> i ustaw <apiUrl>{{apiUrl}}</apiUrl>.",
 			"invalid": "Nieprawidłowa konfiguracja"
+		},
+		"passwordTooWeak": "Hasło musi mieć co najmniej 8 znaków oraz zawierać literę i cyfrę.",
+		"password-too-weak": "Hasło musi mieć co najmniej 8 znaków oraz zawierać literę i cyfrę.",
+		"passwordStrength": {
+			"hint": "Co najmniej 8 znaków, w tym litera i cyfra. Preferuj unikalne hasło, którego nie używasz gdzie indziej.",
+			"minLength": "Co najmniej 8 znaków",
+			"hasLetter": "Zawiera literę",
+			"hasNumber": "Zawiera cyfrę"
 		}
 	},
 	"mail": {
@@ -563,7 +574,12 @@
 			"noPreview": "Brak podglądu",
 			"unknown": "(nieznany)",
 			"seenBy": "Widziane przez",
-			"seenByOverflow": "+{{count}}"
+			"seenByOverflow": "+{{count}}",
+			"refreshDrafts": "Odśwież szkice",
+			"draftCount_one": "{{count}} szkic",
+			"draftCount_few": "{{count}} szkice",
+			"draftCount_other": "{{count}} szkiców",
+			"emptyDrafts": "Brak szkiców."
 		},
 		"threadActions": {
 			"markUnread": "Oznacz jako nieprzeczytane",
@@ -870,7 +886,15 @@
 				"addressCity": "Miasto",
 				"addressLine1": "Adres wiersz 1",
 				"addressLine2": "Adres wiersz 2",
-				"addressHeading": "Adres"
+				"addressHeading": "Adres",
+				"phonePlaceholder": "+14155552671",
+				"selectCountry": "Wybierz kraj…",
+				"selectState": "Wybierz stan/prowincję…",
+				"selectCity": "Wybierz miasto…",
+				"locationSearchPlaceholder": "Szukaj…",
+				"locationEmpty": "Nie znaleziono wyników.",
+				"searchCountry": "Szukaj kraju...",
+				"noCountryFound": "Nie znaleziono kraju."
 			},
 			"picture": {
 				"change": "Zmień zdjęcie",
@@ -878,7 +902,8 @@
 				"remove": "Usuń zdjęcie",
 				"uploadFailed": "Przesyłanie nie powiodło się",
 				"removeFailed": "Usuwanie nie powiodło się"
-			}
+			},
+			"invalidPhone": "Podaj prawidłowy numer telefonu w formacie międzynarodowym (np. +14155552671)."
 		},
 		"identities": {
 			"noPrimaryMailbox": "Tożsamości są dostępne dla kont z główną skrzynką pocztową.",
@@ -1303,7 +1328,8 @@
 					"profile": "Profil",
 					"access": "Dostęp",
 					"identities": "Tożsamości",
-					"security": "Bezpieczeństwo"
+					"security": "Bezpieczeństwo",
+					"logs": "Logi"
 				},
 				"locked": "Zablokowane",
 				"role": "Rola",
@@ -1339,6 +1365,13 @@
 					"description": "To trwale usuwa konto i dostęp do jego skrzynki.",
 					"cannotUndo": "Tej operacji nie można cofnąć.",
 					"confirm": "Usuń konto"
+				},
+				"logs": {
+					"invitedBy": "Zaproszony przez",
+					"invitedByHint": "Kto utworzył zaproszenie do tego konta.",
+					"noInvite": "Brak zaproszenia w historii.",
+					"relatedTitle": "Powiązane logi",
+					"relatedHint": "Logi, w których to konto jest aktorem lub jest w nich wymienione."
 				}
 			},
 			"identities": {

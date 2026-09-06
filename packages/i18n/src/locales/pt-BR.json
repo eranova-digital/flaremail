@@ -272,7 +272,10 @@
 		"invite-role-required": "A função do convite é obrigatória para esta operação",
 		"remove-target-required": "O alvo de remoção é obrigatório para esta operação",
 		"invalid-alias-target-address": "Endereço de destino do alias inválido",
-		"something-went-wrong": "Algo deu errado"
+		"something-went-wrong": "Algo deu errado",
+		"invalid-phone-number": "O número de telefone deve ser um número internacional válido no formato E.164 (ex.: +14155552671)",
+		"recovery-email-hosted-domain": "O e-mail de recuperação não pode usar um domínio hospedado neste servidor de e-mail",
+		"recovery-email-hosted-mailbox": "O e-mail de recuperação não pode usar uma caixa neste servidor de e-mail"
 	},
 	"auth": {
 		"session": {
@@ -485,6 +488,14 @@
 			"title": "Configuração necessária",
 			"hint": "Copie <example>{{example}}</example> para <env>{{env}}</env> e defina <apiUrl>{{apiUrl}}</apiUrl>.",
 			"invalid": "Configuração inválida"
+		},
+		"passwordTooWeak": "A senha deve ter pelo menos 8 caracteres e incluir uma letra e um número.",
+		"password-too-weak": "A senha deve ter pelo menos 8 caracteres e incluir uma letra e um número.",
+		"passwordStrength": {
+			"hint": "Pelo menos 8 caracteres, incluindo uma letra e um número. Prefira uma senha exclusiva que você não use em outros lugares.",
+			"minLength": "Pelo menos 8 caracteres",
+			"hasLetter": "Contém uma letra",
+			"hasNumber": "Contém um número"
 		}
 	},
 	"mail": {
@@ -563,7 +574,12 @@
 			"noPreview": "Sem prévia",
 			"unknown": "(desconhecido)",
 			"seenBy": "Visto por",
-			"seenByOverflow": "+{{count}}"
+			"seenByOverflow": "+{{count}}",
+			"refreshDrafts": "Atualizar rascunhos",
+			"draftCount_one": "{{count}} rascunho",
+			"draftCount_few": "{{count}} rascunhos",
+			"draftCount_other": "{{count}} rascunhos",
+			"emptyDrafts": "Nenhum rascunho."
 		},
 		"threadActions": {
 			"markUnread": "Marcar como não lida",
@@ -870,7 +886,15 @@
 				"addressCity": "Cidade",
 				"addressLine1": "Endereço linha 1",
 				"addressLine2": "Endereço linha 2",
-				"addressHeading": "Endereço"
+				"addressHeading": "Endereço",
+				"phonePlaceholder": "+14155552671",
+				"selectCountry": "Selecionar país…",
+				"selectState": "Selecionar estado/província…",
+				"selectCity": "Selecionar cidade…",
+				"locationSearchPlaceholder": "Buscar…",
+				"locationEmpty": "Nenhum resultado encontrado.",
+				"searchCountry": "Buscar país...",
+				"noCountryFound": "Nenhum país encontrado."
 			},
 			"picture": {
 				"change": "Alterar foto",
@@ -878,7 +902,8 @@
 				"remove": "Remover foto",
 				"uploadFailed": "Falha no envio",
 				"removeFailed": "Falha ao remover"
-			}
+			},
+			"invalidPhone": "Informe um número de telefone válido no formato internacional (ex.: +14155552671)."
 		},
 		"identities": {
 			"noPrimaryMailbox": "Identidades estão disponíveis para contas com uma caixa de entrada principal.",
@@ -1303,7 +1328,8 @@
 					"profile": "Perfil",
 					"access": "Acesso",
 					"identities": "Identidades",
-					"security": "Segurança"
+					"security": "Segurança",
+					"logs": "Logs"
 				},
 				"locked": "Bloqueado",
 				"role": "Função",
@@ -1339,6 +1365,13 @@
 					"description": "Isso remove permanentemente a conta e o acesso às caixas.",
 					"cannotUndo": "Isso não pode ser desfeito.",
 					"confirm": "Remover conta"
+				},
+				"logs": {
+					"invitedBy": "Convidado por",
+					"invitedByHint": "Quem criou o convite desta conta.",
+					"noInvite": "Nenhum convite registrado.",
+					"relatedTitle": "Logs relacionados",
+					"relatedHint": "Logs em que esta conta é o ator ou é referenciada."
 				}
 			},
 			"identities": {

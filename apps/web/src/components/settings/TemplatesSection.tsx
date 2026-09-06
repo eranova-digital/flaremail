@@ -141,7 +141,13 @@ export function TemplatesSection() {
 					<p>{getErrorMessage(templatesQuery.error)}</p>
 				</Alert>
 			) : items.length === 0 ? (
-				<p className="text-muted-foreground text-sm">{t("templates.empty")}</p>
+				<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+					<FileCode2
+						className="text-muted-foreground/60 size-8"
+						aria-hidden
+					/>
+					<p className="text-muted-foreground text-sm">{t("templates.empty")}</p>
+				</div>
 			) : (
 				<div className="space-y-6">
 					{sorted.global.length > 0 ? (

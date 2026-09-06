@@ -175,7 +175,12 @@ export function ProfileSection() {
 					{saved ? (
 						<Alert tone="success">{t("profile.saved")}</Alert>
 					) : null}
-					<Button onClick={handleSave} disabled={saving}>
+					<Button
+						variant="default"
+						className="w-full sm:w-auto"
+						onClick={handleSave}
+						disabled={saving}
+					>
 						{saving ? (
 							<Loader2 className="size-4 animate-spin" aria-hidden />
 						) : null}

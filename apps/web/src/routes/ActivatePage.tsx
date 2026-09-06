@@ -3,7 +3,10 @@ import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { AtSign, Loader2, Lock } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 
-import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import {
+	AuthPageShell,
+	authStickyActionClassName,
+} from "@/components/auth/AuthPageShell";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { PasswordStrengthHints } from "@/components/auth/PasswordStrengthHints";
 import { RecoveryEmailSetup } from "@/components/auth/RecoveryEmailSetup";
@@ -345,13 +348,15 @@ export function ActivatePage() {
 								<Alert tone="destructive">{previewError}</Alert>
 							) : null}
 
-							<Button
-								type="submit"
-								className="w-full"
-								disabled={!canContinueToProfile || submitting}
-							>
-								{t("activate.continue")}
-							</Button>
+							<div className={authStickyActionClassName}>
+								<Button
+									type="submit"
+									className="w-full"
+									disabled={!canContinueToProfile || submitting}
+								>
+									{t("activate.continue")}
+								</Button>
+							</div>
 						</form>
 					) : step === "profile" ? (
 						<form onSubmit={handleSubmit} className="space-y-4">

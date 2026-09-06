@@ -45,7 +45,11 @@ export function SharedMailboxUsersPage() {
 			]}
 			backTo="/management?tab=mailboxes"
 			backLabel={t("shell.backToMailboxes")}
-			description={t("sharedMailboxUsers.description")}
+			description={
+				tab === "identities"
+					? t("sharedMailboxUsers.identityPolicy.description")
+					: t("sharedMailboxUsers.description")
+			}
 		>
 			{mailboxesQuery.isLoading ? (
 				<div className="space-y-3">

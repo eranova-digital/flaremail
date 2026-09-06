@@ -272,7 +272,10 @@
 		"invite-role-required": "Bu işlem için davet rolü gerekli",
 		"remove-target-required": "Bu işlem için kaldırma hedefi gerekli",
 		"invalid-alias-target-address": "Geçersiz takma ad hedef adresi",
-		"something-went-wrong": "Bir şeyler ters gitti"
+		"something-went-wrong": "Bir şeyler ters gitti",
+		"invalid-phone-number": "Telefon numarası E.164 biçiminde geçerli bir uluslararası numara olmalıdır (örn. +14155552671)",
+		"recovery-email-hosted-domain": "Kurtarma e-postası bu posta sunucusunun barındırdığı bir etki alanını kullanamaz",
+		"recovery-email-hosted-mailbox": "Kurtarma e-postası bu posta sunucusundaki bir kutuyu kullanamaz"
 	},
 	"auth": {
 		"session": {
@@ -485,6 +488,14 @@
 			"title": "Yapılandırma gerekli",
 			"hint": "<example>{{example}}</example> dosyasını <env>{{env}}</env> olarak kopyalayın ve <apiUrl>{{apiUrl}}</apiUrl> değerini ayarlayın.",
 			"invalid": "Geçersiz yapılandırma"
+		},
+		"passwordTooWeak": "Parola en az 8 karakter olmalı ve bir harf ile bir rakam içermelidir.",
+		"password-too-weak": "Parola en az 8 karakter olmalı ve bir harf ile bir rakam içermelidir.",
+		"passwordStrength": {
+			"hint": "En az 8 karakter, bir harf ve bir rakam. Başka yerde kullanmadığınız benzersiz bir parola tercih edin.",
+			"minLength": "En az 8 karakter",
+			"hasLetter": "Harf içerir",
+			"hasNumber": "Rakam içerir"
 		}
 	},
 	"mail": {
@@ -563,7 +574,12 @@
 			"noPreview": "Önizleme yok",
 			"unknown": "(bilinmiyor)",
 			"seenBy": "Görenler",
-			"seenByOverflow": "+{{count}}"
+			"seenByOverflow": "+{{count}}",
+			"refreshDrafts": "Taslakları yenile",
+			"draftCount_one": "{{count}} taslak",
+			"draftCount_few": "{{count}} taslak",
+			"draftCount_other": "{{count}} taslak",
+			"emptyDrafts": "Taslak yok."
 		},
 		"threadActions": {
 			"markUnread": "Okunmadı olarak işaretle",
@@ -870,7 +886,15 @@
 				"addressCity": "Şehir",
 				"addressLine1": "Adres satırı 1",
 				"addressLine2": "Adres satırı 2",
-				"addressHeading": "Adres"
+				"addressHeading": "Adres",
+				"phonePlaceholder": "+14155552671",
+				"selectCountry": "Ülke seç…",
+				"selectState": "Eyalet/il seç…",
+				"selectCity": "Şehir seç…",
+				"locationSearchPlaceholder": "Ara…",
+				"locationEmpty": "Sonuç bulunamadı.",
+				"searchCountry": "Ülke ara...",
+				"noCountryFound": "Ülke bulunamadı."
 			},
 			"picture": {
 				"change": "Fotoğrafı değiştir",
@@ -878,7 +902,8 @@
 				"remove": "Fotoğrafı kaldır",
 				"uploadFailed": "Yükleme başarısız",
 				"removeFailed": "Kaldırma başarısız"
-			}
+			},
+			"invalidPhone": "Uluslararası biçimde geçerli bir telefon numarası girin (örn. +14155552671)."
 		},
 		"identities": {
 			"noPrimaryMailbox": "Kimlikler, birincil posta kutusu olan hesaplar için kullanılabilir.",
@@ -1303,7 +1328,8 @@
 					"profile": "Profil",
 					"access": "Erişim",
 					"identities": "Kimlikler",
-					"security": "Güvenlik"
+					"security": "Güvenlik",
+					"logs": "Günlükler"
 				},
 				"locked": "Kilitli",
 				"role": "Rol",
@@ -1339,6 +1365,13 @@
 					"description": "Bu, hesabı ve posta kutusu erişimini kalıcı olarak kaldırır.",
 					"cannotUndo": "Bu işlem geri alınamaz.",
 					"confirm": "Hesabı kaldır"
+				},
+				"logs": {
+					"invitedBy": "Davet eden",
+					"invitedByHint": "Bu hesap için daveti oluşturan kişi.",
+					"noInvite": "Kayıtlı davet yok.",
+					"relatedTitle": "İlgili günlükler",
+					"relatedHint": "Bu hesabın aktör olduğu veya atıfta bulunulduğu günlükler."
 				}
 			},
 			"identities": {

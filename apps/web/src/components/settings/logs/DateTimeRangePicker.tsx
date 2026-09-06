@@ -12,6 +12,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatDateTime } from "@/lib/i18n/date-locale";
 import { cn } from "@/lib/utils";
 
 export type DateTimeRangeValue = {
@@ -41,16 +42,22 @@ function withTime(date: Date, time: string): Date {
 
 function formatRangeLabel(
 	value: DateTimeRangeValue | undefined,
+	language: string,
 	incompleteSuffix: string,
 ): string | null {
 	if (!value?.from) return null;
+	const fromLabel = formatDateTime(value.from, language, {
+		dateStyle: "medium",
+		timeStyle: "short",
+	});
 	if (value.to) {
-		return `${format(value.from, "MMM d, yyyy HH:mm")} – ${format(value.to, "MMM d, yyyy HH:mm")}`;
+		const toLabel = formatDateTime(value.to, language, {
+			dateStyle: "medium",
+			timeStyle: "short",
+		});
+		return `${fromLabel} – ${toLabel}`;
 	}
-	return incompleteSuffix.replace(
-		"{{from}}",
-		format(value.from, "MMM d, yyyy HH:mm"),
-	);
+	return incompleteSuffix.replace("{{from}}", fromLabel);
 }
 
 export function DateTimeRangePicker({
@@ -60,7 +67,7 @@ export function DateTimeRangePicker({
 	className,
 	placeholder,
 }: DateTimeRangePickerProps) {
-	const { t } = useTranslation("management");
+	const { t, i18n } = useTranslation("management");
 	const [open, setOpen] = useState(false);
 	const resolvedPlaceholder = placeholder ?? t("logs.dateRange.placeholder");
 
@@ -71,7 +78,11 @@ export function DateTimeRangePicker({
 
 	const fromTime = timeInputValue(value?.from, "00:00:00");
 	const toTime = timeInputValue(value?.to, "23:59:59");
-	const label = formatRangeLabel(value, t("logs.dateRange.placeholder"));
+	const label = formatRangeLabel(
+		value,
+		i18n.language,
+		t("logs.dateRange.openEnded"),
+	);
 
 	const handleSelect = (range: DateRange | undefined) => {
 		if (!range?.from) {

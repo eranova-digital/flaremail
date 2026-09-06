@@ -272,7 +272,10 @@
 		"invite-role-required": "Le rôle d'invitation est requis pour cette opération",
 		"remove-target-required": "La cible de suppression est requise pour cette opération",
 		"invalid-alias-target-address": "Adresse cible d'alias invalide",
-		"something-went-wrong": "Une erreur s'est produite"
+		"something-went-wrong": "Une erreur s'est produite",
+		"invalid-phone-number": "Le numéro de téléphone doit être un numéro international valide au format E.164 (p. ex. +14155552671)",
+		"recovery-email-hosted-domain": "L’e-mail de récupération ne peut pas utiliser un domaine hébergé par ce serveur de messagerie",
+		"recovery-email-hosted-mailbox": "L’e-mail de récupération ne peut pas utiliser une boîte aux lettres de ce serveur de messagerie"
 	},
 	"auth": {
 		"session": {
@@ -485,6 +488,14 @@
 			"title": "Configuration requise",
 			"hint": "Copiez <example>{{example}}</example> vers <env>{{env}}</env> et définissez <apiUrl>{{apiUrl}}</apiUrl>.",
 			"invalid": "Configuration invalide"
+		},
+		"passwordTooWeak": "Le mot de passe doit contenir au moins 8 caractères, dont une lettre et un chiffre.",
+		"password-too-weak": "Le mot de passe doit contenir au moins 8 caractères, dont une lettre et un chiffre.",
+		"passwordStrength": {
+			"hint": "Au moins 8 caractères, dont une lettre et un chiffre. Préférez un mot de passe unique que vous n’utilisez nulle part ailleurs.",
+			"minLength": "Au moins 8 caractères",
+			"hasLetter": "Contient une lettre",
+			"hasNumber": "Contient un chiffre"
 		}
 	},
 	"mail": {
@@ -563,7 +574,12 @@
 			"noPreview": "Aucun aperçu",
 			"unknown": "(inconnu)",
 			"seenBy": "Vu par",
-			"seenByOverflow": "+{{count}}"
+			"seenByOverflow": "+{{count}}",
+			"refreshDrafts": "Actualiser les brouillons",
+			"draftCount_one": "{{count}} brouillon",
+			"draftCount_few": "{{count}} brouillons",
+			"draftCount_other": "{{count}} brouillons",
+			"emptyDrafts": "Aucun brouillon."
 		},
 		"threadActions": {
 			"markUnread": "Marquer comme non lu",
@@ -870,7 +886,15 @@
 				"addressCity": "Ville",
 				"addressLine1": "Adresse ligne 1",
 				"addressLine2": "Adresse ligne 2",
-				"addressHeading": "Adresse"
+				"addressHeading": "Adresse",
+				"phonePlaceholder": "+14155552671",
+				"selectCountry": "Sélectionner un pays…",
+				"selectState": "Sélectionner un État/une province…",
+				"selectCity": "Sélectionner une ville…",
+				"locationSearchPlaceholder": "Rechercher…",
+				"locationEmpty": "Aucun résultat.",
+				"searchCountry": "Rechercher un pays...",
+				"noCountryFound": "Aucun pays trouvé."
 			},
 			"picture": {
 				"change": "Changer la photo",
@@ -878,7 +902,8 @@
 				"remove": "Supprimer la photo",
 				"uploadFailed": "Échec du téléversement",
 				"removeFailed": "Échec de la suppression"
-			}
+			},
+			"invalidPhone": "Saisissez un numéro de téléphone valide au format international (p. ex. +14155552671)."
 		},
 		"identities": {
 			"noPrimaryMailbox": "Les identités sont disponibles pour les comptes disposant d’une boîte aux lettres principale.",
@@ -1303,7 +1328,8 @@
 					"profile": "Profil",
 					"access": "Accès",
 					"identities": "Identités",
-					"security": "Sécurité"
+					"security": "Sécurité",
+					"logs": "Journaux"
 				},
 				"locked": "Verrouillé",
 				"role": "Rôle",
@@ -1339,6 +1365,13 @@
 					"description": "Cela supprime définitivement le compte et son accès aux boîtes.",
 					"cannotUndo": "Cette action est irréversible.",
 					"confirm": "Supprimer le compte"
+				},
+				"logs": {
+					"invitedBy": "Invité par",
+					"invitedByHint": "Qui a créé l’invitation de ce compte.",
+					"noInvite": "Aucune invitation enregistrée.",
+					"relatedTitle": "Journaux associés",
+					"relatedHint": "Journaux où ce compte est l’acteur ou est référencé."
 				}
 			},
 			"identities": {

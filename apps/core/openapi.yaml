@@ -3,30 +3,1560 @@ info:
   title: Flaremail API
   version: 1.0.0
   description: |
-    Flaremail - Enterprise / self-managed email infrastructure hosted on Cloudflare. Visit https://github.com/pxtrickb/flaremail for documentation.
+    HTTP API for Flaremail, self-hosted email on Cloudflare. Production clients
+    call the **gate** hostname; gate proxies `/api/*` and `/health` to **core**.
+
+    Versioned prefix: `/api/v1`. Live spec: `GET /api/v1/openapi.json`
+    (`info.version` is the product version from root `package.json`).
+
+    Errors use RFC 9457 Problem Details (`application/problem+json`). List
+    endpoints use cursor pagination (`limit` default 50, max 100;
+    `nextCursor` is null on the last page) unless noted.
+
+    Auth is a signed-in session cookie **or** an API key Bearer token. Some
+    security operations are session-only and reject API keys.
   license:
     name: Proprietary
 
 servers:
   - url: /api/v1
-    description: API v1 base path
+    description: API v1 base path (relative to the gate origin)
 
 tags:
+  - name: Meta
+    description: Spec, liveness, and first-run bootstrap
+  - name: Auth
+    description: Sign-in, profile, MFA, passkeys, sessions, and recovery
+  - name: Accounts
+    description: Account management, invites, grants, and assignments
+  - name: API Keys
+    description: Session-only API key create, list, and revoke
   - name: Domains
   - name: Mailboxes
   - name: Identities
   - name: Labels
+  - name: Templates
+    description: Reusable HTML compose templates
+  - name: System Templates
+    description: Instance transactional email HTML
   - name: Messages
   - name: Drafts
   - name: Threads
   - name: Search
   - name: Attachments
+  - name: BIMI
+  - name: Instance
+    description: Organization settings
+  - name: Logs
   - name: OIDC
 
 security:
+  - sessionCookie: []
   - bearerAuth: []
 
 paths:
+  /openapi.json:
+    get:
+      tags: [Meta]
+      summary: OpenAPI document
+      description: |
+        Unauthenticated. `info.version` is replaced at serve time with the
+        product version from root `package.json`.
+      operationId: getOpenApiDocument
+      security: []
+      responses:
+        "200":
+          description: OpenAPI 3.1 document
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /health:
+    get:
+      tags: [Meta]
+      summary: Liveness
+      description: |
+        Unauthenticated liveness and version. The same payload is also served
+        at origin `/health` (not under `/api/v1`) for gate health checks.
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Liveness payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /bootstrap:
+    post:
+      tags: [Meta]
+      summary: Bootstrap the intendant
+      description: |
+        Unauthenticated first-run. Creates the intendant account when none
+        exists and returns the generated password once. Subsequent calls
+        return `{ created: false }` without revealing credentials.
+        Rate-limited.
+      operationId: bootstrapIntendant
+      security: []
+      responses:
+        "200":
+          description: Bootstrap result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BootstrapResult"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/sign-in:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      description: |
+        Unauthenticated. Returns a session cookie, or `{ requiresMfa: true,
+        mfaToken }` when MFA is enabled. Rate-limited by IP and email.
+      operationId: signIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  description: Login identifier (mailbox address, or `intendant`)
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Session established, or MFA challenge
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: "`flaremail_session` when MFA is not required"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/OkResponse"
+                  - $ref: "#/components/schemas/MfaChallenge"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/sign-out:
+    post:
+      tags: [Auth]
+      summary: Sign out
+      description: Clears the current session cookie when present.
+      operationId: signOut
+      security: []
+      responses:
+        "200":
+          description: Signed out
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Cleared `flaremail_session` when a token was present
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current account
+      operationId: getMe
+      responses:
+        "200":
+          description: Signed-in account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [Auth]
+      summary: Update own profile
+      description: |
+        Recovery email cannot be changed here — use the recovery-email
+        endpoints. Locked profile fields are ignored.
+      operationId: updateMe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelfProfileUpdate"
+      responses:
+        "200":
+          description: Updated account detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/me/profile-picture:
+    put:
+      tags: [Auth]
+      summary: Upload own profile picture
+      operationId: uploadMyProfilePicture
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Updated picture metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profilePicture]
+                properties:
+                  profilePicture:
+                    $ref: "#/components/schemas/ProfilePicture"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Auth]
+      summary: Delete own profile picture
+      operationId: deleteMyProfilePicture
+      responses:
+        "200":
+          description: Picture removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profilePicture]
+                properties:
+                  profilePicture:
+                    type: "null"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/invite-preview:
+    get:
+      tags: [Auth]
+      summary: Preview an invite
+      description: Unauthenticated. Rate-limited by invite code.
+      operationId: previewInvite
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invite preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitePreview"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/activate:
+    post:
+      tags: [Auth]
+      summary: Activate an invite
+      description: Sets the password, optional profile fields, and signs in. Rate-limited.
+      operationId: activateInvite
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivateInviteRequest"
+      responses:
+        "200":
+          description: Activated and signed in
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: "`flaremail_session`"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/reset-preview:
+    get:
+      tags: [Auth]
+      summary: Preview a password-reset code
+      description: Unauthenticated. Rate-limited by code.
+      operationId: previewPasswordReset
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Address the code belongs to
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [address]
+                properties:
+                  address:
+                    type: string
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset email
+      description: |
+        Always returns `{ ok: true }` to avoid account enumeration. Rate-limited.
+      operationId: forgotPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address:
+                  type: string
+                  description: Mailbox address or login identifier
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with a code
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, password]
+              properties:
+                code:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/recovery-email/send:
+    post:
+      tags: [Auth]
+      summary: Send recovery-email verification code
+      description: Session-only.
+      operationId: sendRecoveryEmailCode
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/recovery-email/verify:
+    post:
+      tags: [Auth]
+      summary: Verify recovery email
+      description: Session-only.
+      operationId: verifyRecoveryEmail
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+      responses:
+        "200":
+          description: Recovery email verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/sessions:
+    get:
+      tags: [Auth]
+      summary: List own sessions
+      description: Session-only.
+      operationId: listMySessions
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SessionInfo"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Auth]
+      summary: Revoke own sessions
+      description: |
+        Session-only. By default keeps the current session. Pass
+        `includeCurrent=true` to sign out everywhere.
+      operationId: revokeMySessions
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: includeCurrent
+          in: query
+          schema:
+            type: string
+            enum: ["true"]
+      responses:
+        "200":
+          description: Sessions revoked
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Cleared cookie when the current session was revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRevokeResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/sessions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    delete:
+      tags: [Auth]
+      summary: Revoke one of own sessions
+      description: Session-only. Clears the cookie when revoking the current session.
+      operationId: revokeMySession
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Session revoked
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Cleared cookie when this was the current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRevokeResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/intendant/regenerate-password:
+    post:
+      tags: [Auth]
+      summary: Regenerate the intendant password
+      description: |
+        Intendant only. Returns a new random password and revokes all
+        intendant sessions. TOTP `code` is required when MFA is enabled.
+        Session-only.
+      operationId: regenerateIntendantPassword
+      security:
+        - sessionCookie: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: TOTP code when MFA is enabled
+      responses:
+        "200":
+          description: New password (shown once)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [password]
+                properties:
+                  password:
+                    type: string
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa:
+    get:
+      tags: [Auth]
+      summary: MFA status
+      description: Session-only.
+      operationId: getMfaStatus
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: MFA status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaStatus"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Auth]
+      summary: Disable MFA
+      description: |
+        Session-only. `code` is the recovery-email code when a recovery
+        address is set, otherwise a TOTP code.
+      operationId: disableMfa
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, code]
+              properties:
+                password:
+                  type: string
+                  format: password
+                code:
+                  type: string
+      responses:
+        "200":
+          description: MFA disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaStatus"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa/setup:
+    post:
+      tags: [Auth]
+      summary: Start MFA setup
+      description: Session-only. Returns a TOTP secret and otpauth URL.
+      operationId: setupMfa
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: TOTP secret
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [secret, otpauthUrl]
+                properties:
+                  secret:
+                    type: string
+                  otpauthUrl:
+                    type: string
+                    format: uri
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm MFA setup
+      description: Session-only.
+      operationId: confirmMfa
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  description: TOTP code
+      responses:
+        "200":
+          description: MFA enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaStatus"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa/disable/send-recovery-code:
+    post:
+      tags: [Auth]
+      summary: Send MFA-disable recovery code
+      description: Session-only. Requires a verified recovery email.
+      operationId: sendMfaDisableRecoveryCode
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/mfa/verify:
+    post:
+      tags: [Auth]
+      summary: Complete MFA sign-in
+      description: Unauthenticated. Exchanges an MFA token and TOTP code for a session cookie.
+      operationId: verifyMfaSignIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mfaToken, code]
+              properties:
+                mfaToken:
+                  type: string
+                code:
+                  type: string
+      responses:
+        "200":
+          description: Signed in
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: flaremail_session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys:
+    get:
+      tags: [Auth]
+      summary: List passkeys
+      description: Session-only.
+      operationId: listPasskeys
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Passkey list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PasskeySummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    delete:
+      tags: [Auth]
+      summary: Remove a passkey
+      description: Session-only. Requires the account password.
+      operationId: removePasskey
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Remaining passkeys
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PasskeySummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/register/options:
+    post:
+      tags: [Auth]
+      summary: Begin passkey registration
+      description: Session-only. Returns WebAuthn creation options and a challenge token.
+      operationId: beginPasskeyRegistration
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Registration options
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnChallenge"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/register/verify:
+    post:
+      tags: [Auth]
+      summary: Complete passkey registration
+      description: Session-only.
+      operationId: completePasskeyRegistration
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeToken, response]
+              properties:
+                challengeToken:
+                  type: string
+                response:
+                  type: object
+                  additionalProperties: true
+                  description: WebAuthn registration credential
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Updated passkey list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PasskeySummary"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/sign-in/options:
+    post:
+      tags: [Auth]
+      summary: Begin passkey sign-in
+      description: |
+        Unauthenticated. Omit `email` for discoverable credentials.
+        Rate-limited.
+      operationId: beginPasskeySignIn
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        "200":
+          description: Authentication options
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnChallenge"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/passkeys/sign-in/verify:
+    post:
+      tags: [Auth]
+      summary: Complete passkey sign-in
+      description: Unauthenticated. Rate-limited.
+      operationId: completePasskeySignIn
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeToken, response]
+              properties:
+                challengeToken:
+                  type: string
+                response:
+                  type: object
+                  additionalProperties: true
+                  description: WebAuthn assertion
+      responses:
+        "200":
+          description: Signed in
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: flaremail_session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts:
+    get:
+      tags: [Accounts]
+      summary: List accounts
+      description: Excludes the intendant. Non-platform principals see accounts on their domains only.
+      operationId: listAccounts
+      responses:
+        "200":
+          description: Account list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountListItem"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/invite:
+    post:
+      tags: [Accounts]
+      summary: Invite an account
+      operationId: inviteAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteAccountRequest"
+      responses:
+        "200":
+          description: Invite created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accountId, mailboxId, address, inviteCode, inviteId]
+                properties:
+                  accountId:
+                    type: string
+                    format: uuid
+                  mailboxId:
+                    type: string
+                    format: uuid
+                  address:
+                    type: string
+                  inviteCode:
+                    type: string
+                  inviteId:
+                    type: string
+                    format: uuid
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/invite/suggest-local-part:
+    post:
+      tags: [Accounts]
+      summary: Suggest an invite local-part
+      operationId: suggestInviteLocalPart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domainId]
+              properties:
+                domainId:
+                  type: string
+                  format: uuid
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+      responses:
+        "200":
+          description: Suggested local-part
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [localPart]
+                properties:
+                  localPart:
+                    type: ["string", "null"]
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/assign-role:
+    post:
+      tags: [Accounts]
+      summary: Assign an account role
+      operationId: assignAccountRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountId, role]
+              properties:
+                accountId:
+                  type: string
+                  format: uuid
+                role:
+                  $ref: "#/components/schemas/AccountRole"
+                domainIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        "200":
+          description: Role assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Accounts]
+      summary: Get account
+      operationId: getAccount
+      responses:
+        "200":
+          description: Account detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [Accounts]
+      summary: Update account profile
+      operationId: updateAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                profile:
+                  $ref: "#/components/schemas/ProfileFieldPatch"
+                lockedFields:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ProfileLockableField"
+      responses:
+        "200":
+          description: Updated account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Accounts]
+      summary: Remove account
+      operationId: removeAccount
+      responses:
+        "204":
+          description: Removed
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/assignments:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    patch:
+      tags: [Accounts]
+      summary: Update account assignments
+      description: |
+        Domain assignments, shared-mailbox assignments, and mailbox grants.
+        When `grantedMailboxIds` is set, only grants are updated.
+      operationId: updateAccountAssignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                domainIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                allSharedMailboxes:
+                  type: boolean
+                sharedMailboxIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                grantedMailboxIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        "200":
+          description: Updated account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDetail"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/identities:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Accounts]
+      summary: List identities for an account
+      operationId: listAccountIdentitiesForAccount
+      responses:
+        "200":
+          description: Identity overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountIdentitiesOverview"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/profile-picture:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Accounts]
+      summary: Download account profile picture
+      description: Unauthenticated. Returns WebP bytes.
+      operationId: getAccountProfilePicture
+      security: []
+      parameters:
+        - name: size
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [small, large]
+      responses:
+        "200":
+          description: Profile picture WebP
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [Accounts]
+      summary: Upload account profile picture
+      operationId: uploadAccountProfilePicture
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Updated picture metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profilePicture]
+                properties:
+                  profilePicture:
+                    $ref: "#/components/schemas/ProfilePicture"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Accounts]
+      summary: Delete account profile picture
+      operationId: deleteAccountProfilePicture
+      responses:
+        "200":
+          description: Picture removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [profilePicture]
+                properties:
+                  profilePicture:
+                    type: "null"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/suspend:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    post:
+      tags: [Accounts]
+      summary: Suspend account
+      operationId: suspendAccount
+      responses:
+        "200":
+          description: Suspended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/unsuspend:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    post:
+      tags: [Accounts]
+      summary: Unsuspend account
+      operationId: unsuspendAccount
+      responses:
+        "200":
+          description: Unsuspended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/password-reset-code:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    post:
+      tags: [Accounts]
+      summary: Create a password-reset code
+      operationId: createAccountPasswordResetCode
+      responses:
+        "200":
+          description: Reset code
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code]
+                properties:
+                  code:
+                    type: string
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/regenerate-invite:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    post:
+      tags: [Accounts]
+      summary: Regenerate invite code
+      description: Pending accounts only.
+      operationId: regenerateAccountInvite
+      responses:
+        "200":
+          description: New invite
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [inviteCode, inviteId]
+                properties:
+                  inviteCode:
+                    type: string
+                  inviteId:
+                    type: string
+                    format: uuid
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/sessions:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Accounts]
+      summary: List account sessions
+      description: Session-only. Requires security-management permission on the target.
+      operationId: listAccountSessions
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SessionInfo"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Accounts]
+      summary: Revoke all account sessions
+      description: Session-only.
+      operationId: revokeAllAccountSessions
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Sessions revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/sessions/{sessionId}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [Accounts]
+      summary: Revoke one account session
+      description: Session-only.
+      operationId: revokeAccountSession
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Session revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/mfa:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Accounts]
+      summary: Get account MFA status
+      description: Session-only.
+      operationId: getAccountMfaStatus
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: MFA status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaStatus"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Accounts]
+      summary: Disable account MFA
+      description: Session-only.
+      operationId: disableAccountMfa
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: MFA disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaStatus"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/mailbox-grants:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    post:
+      tags: [Accounts]
+      summary: Grant shared-mailbox access
+      operationId: grantSharedMailboxAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mailboxId]
+              properties:
+                mailboxId:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Grant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/mailbox-grants/{mailboxId}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+      - $ref: "#/components/parameters/MailboxId"
+    delete:
+      tags: [Accounts]
+      summary: Revoke shared-mailbox access
+      operationId: revokeSharedMailboxAccess
+      responses:
+        "204":
+          description: Revoked
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/manager-assignments:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    post:
+      tags: [Accounts]
+      summary: Grant a manager mailbox assignment
+      operationId: grantManagerMailboxAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mailboxId]
+              properties:
+                mailboxId:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /accounts/{id}/manager-assignments/{mailboxId}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+      - $ref: "#/components/parameters/MailboxId"
+    delete:
+      tags: [Accounts]
+      summary: Revoke a manager mailbox assignment
+      operationId: revokeManagerMailboxAssignment
+      responses:
+        "204":
+          description: Revoked
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /api-keys:
+    get:
+      tags: [API Keys]
+      summary: List API keys
+      description: Session-only. Returns the caller's keys and scopes they may grant.
+      operationId: listApiKeys
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: API keys and grantable scopes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, availableScopes]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ApiKey"
+                  availableScopes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ApiKeyScope"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [API Keys]
+      summary: Create an API key
+      description: |
+        Session-only. The plaintext secret is returned once. At least one
+        grantable scope is required.
+      operationId: createApiKey
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scopes]
+              properties:
+                name:
+                  type: string
+                  default: API key
+                scopes:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ApiKeyScope"
+                  minItems: 1
+      responses:
+        "200":
+          description: Created key (secret shown once)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedApiKey"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /api-keys/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    delete:
+      tags: [API Keys]
+      summary: Revoke an API key
+      description: Session-only. Revokes one of the caller's keys.
+      operationId: revokeApiKey
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /domains:
     get:
       tags: [Domains]
@@ -205,6 +1735,51 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /domains/{domainId}/local-part-policy:
+    parameters:
+      - name: domainId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Domains]
+      summary: Get local-part policy
+      operationId: getDomainLocalPartPolicy
+      responses:
+        "200":
+          description: Local-part policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalPartPolicy"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [Domains]
+      summary: Update local-part policy
+      operationId: updateDomainLocalPartPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enforced:
+                  type: boolean
+                pattern:
+                  type: ["string", "null"]
+      responses:
+        "200":
+          description: Updated policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalPartPolicy"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /mailboxes:
     get:
       tags: [Mailboxes]
@@ -272,10 +1847,19 @@ paths:
               properties:
                 isActive:
                   type: boolean
+                  description: Managers cannot change mailbox active state.
                 personalIdentityAllowance:
                   type: boolean
+                  description: >
+                    Shared mailboxes only. When true, senders may select
+                    identities owned by their primary mailbox while composing
+                    from this mailbox.
                 identityExport:
                   type: boolean
+                  description: >
+                    Shared mailboxes only. When true, this mailbox's identities
+                    may be selected when sending from other mailboxes the
+                    account can access.
       responses:
         "200":
           description: Updated mailbox
@@ -421,6 +2005,54 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /mailboxes/{mailboxId}/grants:
+    parameters:
+      - $ref: "#/components/parameters/MailboxId"
+    get:
+      tags: [Accounts]
+      summary: List mailbox grant holders
+      description: Shared mailboxes only.
+      operationId: listMailboxGrantHolders
+      responses:
+        "200":
+          description: Grant holders
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MailboxGrantHolder"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /mailboxes/{mailboxId}/manager-assignments:
+    parameters:
+      - $ref: "#/components/parameters/MailboxId"
+    get:
+      tags: [Accounts]
+      summary: List manager assignments for a mailbox
+      description: Shared mailboxes only.
+      operationId: listMailboxManagerAssignments
+      responses:
+        "200":
+          description: Manager assignments
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MailboxManagerAssignment"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /mailboxes/{mailboxId}/labels:
     parameters:
       - $ref: "#/components/parameters/MailboxId"
@@ -515,6 +2147,230 @@ paths:
       responses:
         "204":
           description: Deleted
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /templates:
+    get:
+      tags: [Templates]
+      summary: List email templates
+      description: |
+        Pass `manage=1` for templates the principal can manage (includes
+        `capabilities.canCreateGlobal`). Otherwise pass `mailboxId` for
+        templates available when composing from that mailbox (global + mailbox).
+      operationId: listEmailTemplates
+      parameters:
+        - name: manage
+          in: query
+          schema:
+            type: string
+            enum: ["1"]
+        - name: mailboxId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Template list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplateList"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [Templates]
+      summary: Create email template
+      description: Multipart HTML upload, max 1 MiB.
+      operationId: createEmailTemplate
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, file]
+              properties:
+                name:
+                  type: string
+                mailboxId:
+                  type: string
+                  format: uuid
+                  description: Omit for a global template
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /templates/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Templates]
+      summary: Get email template
+      operationId: getEmailTemplate
+      parameters:
+        - name: mailboxId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Template metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [Templates]
+      summary: Rename email template
+      operationId: updateEmailTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [Templates]
+      summary: Delete email template
+      operationId: deleteEmailTemplate
+      responses:
+        "204":
+          description: Deleted
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /templates/{id}/content:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+    get:
+      tags: [Templates]
+      summary: Download template HTML
+      operationId: getEmailTemplateContent
+      parameters:
+        - name: mailboxId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Raw HTML
+          content:
+            text/html:
+              schema:
+                type: string
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /system-templates:
+    get:
+      tags: [System Templates]
+      summary: List system email templates
+      description: Catalog of transactional types plus configured status and tags.
+      operationId: listSystemEmailTemplates
+      responses:
+        "200":
+          description: System template catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SystemEmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /system-templates/{key}:
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/SystemEmailTemplateKey"
+    put:
+      tags: [System Templates]
+      summary: Upload system email template HTML
+      description: Multipart upload, max 1 MiB.
+      operationId: uploadSystemEmailTemplate
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Updated catalog entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemEmailTemplate"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [System Templates]
+      summary: Revert system template to built-in plain text
+      operationId: deleteSystemEmailTemplate
+      responses:
+        "204":
+          description: Reverted
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /system-templates/{key}/content:
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/SystemEmailTemplateKey"
+    get:
+      tags: [System Templates]
+      summary: Download system template HTML
+      operationId: getSystemEmailTemplateContent
+      responses:
+        "200":
+          description: Raw HTML
+          content:
+            text/html:
+              schema:
+                type: string
         default:
           $ref: "#/components/responses/Problem"
 
@@ -739,6 +2595,33 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /messages/{id}/images/{imageId}:
+    parameters:
+      - $ref: "#/components/parameters/UuidId"
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Messages]
+      summary: Download a cached external image
+      description: |
+        Inline bytes for an HTML remote image cached on this message.
+        SVG is rejected.
+      operationId: downloadMessageExternalImage
+      responses:
+        "200":
+          description: Image bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: "#/components/responses/Problem"
+
   /threads:
     get:
       tags: [Threads]
@@ -931,7 +2814,7 @@ paths:
           type: string
         description: Cache-busting token (typically logoUpdatedAt ISO string).
     get:
-      tags: [Messages]
+      tags: [BIMI]
       summary: Download BIMI logo
       description: >
         Auth-gated WebP logo for a publishing BIMI domain. Requires a signed-in
@@ -949,6 +2832,106 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
 
+  /instance/settings:
+    get:
+      tags: [Instance]
+      summary: Get instance settings
+      operationId: getInstanceSettings
+      responses:
+        "200":
+          description: Organization settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstanceSettings"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [Instance]
+      summary: Update instance settings
+      description: |
+        At least one field required. Changing `organizationTabAccess` is
+        intendant-only.
+      operationId: updateInstanceSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstanceSettingsPatch"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstanceSettings"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /logs:
+    get:
+      tags: [Logs]
+      summary: List audit logs
+      description: Intendant and superadmins only.
+      operationId: listLogs
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/LogType"
+          description: Repeatable. Values may also be comma-separated.
+        - name: maxImportance
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+        - name: minImportance
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/Limit"
+        - name: before
+          in: query
+          schema:
+            type: string
+          description: Cursor (createdAt ISO of the last item from the previous page)
+        - name: accountId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Log page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogPage"
+        default:
+          $ref: "#/components/responses/Problem"
+
   /oidc-clients:
     get:
       tags: [OIDC]
@@ -957,15 +2940,35 @@ paths:
       responses:
         "200":
           description: OIDC client list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clients]
+                properties:
+                  clients:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OidcClient"
         default:
           $ref: "#/components/responses/Problem"
     post:
       tags: [OIDC]
       summary: Create OIDC client
       operationId: createOidcClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOidcClientRequest"
       responses:
         "201":
           description: Created client (clientSecret returned once when confidential)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OidcClientCreated"
         default:
           $ref: "#/components/responses/Problem"
 
@@ -984,15 +2987,28 @@ paths:
       responses:
         "200":
           description: OIDC client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OidcClient"
         default:
           $ref: "#/components/responses/Problem"
     patch:
       tags: [OIDC]
       summary: Update OIDC client
       operationId: updateOidcClient
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOidcClientRequest"
       responses:
         "200":
           description: Updated client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OidcClient"
         default:
           $ref: "#/components/responses/Problem"
     delete:
@@ -1002,6 +3018,83 @@ paths:
       responses:
         "204":
           description: Deleted
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /oidc-clients/{id}/logo:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [OIDC]
+      summary: Download OIDC client logo
+      description: Unauthenticated. Returns WebP bytes.
+      operationId: getOidcClientLogo
+      security: []
+      parameters:
+        - name: size
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [small, large]
+      responses:
+        "200":
+          description: Client logo WebP
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [OIDC]
+      summary: Upload OIDC client logo
+      operationId: uploadOidcClientLogo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Logo metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [logo]
+                properties:
+                  logo:
+                    $ref: "#/components/schemas/ProfilePicture"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [OIDC]
+      summary: Delete OIDC client logo
+      operationId: deleteOidcClientLogo
+      responses:
+        "200":
+          description: Logo removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [logo]
+                properties:
+                  logo:
+                    type: "null"
         default:
           $ref: "#/components/responses/Problem"
 
@@ -1020,6 +3113,16 @@ paths:
       responses:
         "200":
           description: New secret (once)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clientId, clientSecret]
+                properties:
+                  clientId:
+                    type: string
+                  clientSecret:
+                    type: string
         default:
           $ref: "#/components/responses/Problem"
 
@@ -1038,6 +3141,16 @@ paths:
       responses:
         "200":
           description: Consent grants
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [grants]
+                properties:
+                  grants:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OidcClientGrant"
         default:
           $ref: "#/components/responses/Problem"
 
@@ -1069,10 +3182,23 @@ paths:
     get:
       tags: [OIDC]
       summary: List my OIDC consent grants
+      description: Session-only. API keys cannot list connected apps.
       operationId: listMyOidcGrants
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: Connected apps
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [grants]
+                properties:
+                  grants:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OidcMyGrant"
         default:
           $ref: "#/components/responses/Problem"
 
@@ -1086,7 +3212,10 @@ paths:
     delete:
       tags: [OIDC]
       summary: Revoke my consent grant
+      description: Session-only. API keys cannot revoke connected apps.
       operationId: revokeMyOidcGrant
+      security:
+        - sessionCookie: []
       responses:
         "204":
           description: Revoked
@@ -1097,8 +3226,55 @@ paths:
     get:
       tags: [OIDC]
       summary: OAuth authorization endpoint
+      description: |
+        Unauthenticated. Redirects to login, consent, or the client with a
+        code. PKCE S256 is required. `response_type` must be `code`.
       operationId: oauthAuthorize
       security: []
+      parameters:
+        - name: pending
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Resume after login
+        - name: client_id
+          in: query
+          schema:
+            type: string
+        - name: redirect_uri
+          in: query
+          schema:
+            type: string
+            format: uri
+        - name: state
+          in: query
+          schema:
+            type: string
+        - name: nonce
+          in: query
+          schema:
+            type: string
+        - name: code_challenge
+          in: query
+          schema:
+            type: string
+        - name: code_challenge_method
+          in: query
+          schema:
+            type: string
+            enum: [S256]
+        - name: response_type
+          in: query
+          schema:
+            type: string
+            enum: [code]
+            default: code
+        - name: scope
+          in: query
+          schema:
+            type: string
+          description: Space-separated scopes. Default `openid profile email`.
       responses:
         "302":
           description: Redirect to login, consent, or client
@@ -1109,11 +3285,27 @@ paths:
     post:
       tags: [OIDC]
       summary: OAuth token endpoint
+      description: |
+        Unauthenticated. Accepts `application/x-www-form-urlencoded` or JSON.
+        Confidential clients may use HTTP Basic for `client_id`/`client_secret`.
       operationId: oauthToken
       security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/OidcTokenRequest"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OidcTokenRequest"
       responses:
         "200":
           description: Token response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OidcTokenResponse"
         default:
           $ref: "#/components/responses/Problem"
 
@@ -1126,6 +3318,17 @@ paths:
       responses:
         "200":
           description: Public ES256 JWKS
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [keys]
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
 
   /oauth/userinfo:
     get:
@@ -1135,6 +3338,21 @@ paths:
       responses:
         "200":
           description: User claims
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sub]
+                properties:
+                  sub:
+                    type: string
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  picture:
+                    type: string
+                    format: uri
         default:
           $ref: "#/components/responses/Problem"
 
@@ -1149,10 +3367,17 @@ paths:
     get:
       tags: [OIDC]
       summary: Pending authorization for consent UI
+      description: Session-only.
       operationId: getOidcPending
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: Pending details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OidcPendingAuthorization"
         default:
           $ref: "#/components/responses/Problem"
 
@@ -1160,25 +3385,80 @@ paths:
     post:
       tags: [OIDC]
       summary: Approve or deny pending authorization
+      description: Session-only.
       operationId: oauthConsent
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pendingId, decision]
+              properties:
+                pendingId:
+                  type: string
+                  format: uuid
+                decision:
+                  type: string
+                  enum: [approve, deny]
       responses:
         "200":
           description: Relaying-party redirect URL
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [redirectTo]
+                properties:
+                  redirectTo:
+                    type: string
+                    format: uri
         default:
           $ref: "#/components/responses/Problem"
 
+  /.well-known/openid-configuration:
+    servers:
+      - url: /
+        description: Origin (not under /api/v1)
+    get:
+      tags: [OIDC]
+      summary: OpenID Provider configuration
+      description: Unauthenticated discovery document.
+      operationId: openIdDiscovery
+      security: []
+      responses:
+        "200":
+          description: Discovery document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenIdConfiguration"
+
 components:
   securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: flaremail_session
+      description: |
+        Signed-in web session. HttpOnly, Secure, SameSite=Lax cookie set by
+        sign-in, invite activation, MFA verify, and passkey sign-in. Idle
+        lifetime is 7 days. Required for session-only operations (API keys,
+        MFA, passkeys, sessions, recovery email, and other security surfaces).
     bearerAuth:
       type: http
       scheme: bearer
       description: |
-        Use an API key in the `Authorization` header:
+        API key or OAuth access token in the `Authorization` header:
 
-        `Authorization: Bearer <api-key>`
+        `Authorization: Bearer <token>`
 
         User API keys start with `fmu_`. Effective access is the holder's
-        normal account permissions intersected with the key's scopes.
+        account permissions intersected with the key's scopes. OAuth access
+        tokens are issued by `POST /oauth/token`. API keys cannot call
+        session-only endpoints.
 
   parameters:
     UuidId:
@@ -1251,6 +3531,644 @@ components:
           type: string
           description: Application-specific error code
           example: validation-error
+
+    HealthStatus:
+      type: object
+      required: [ok, version]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        version:
+          type: string
+          description: Product version from root package.json
+          example: 0.9.6
+
+    BootstrapResult:
+      type: object
+      required: [created]
+      properties:
+        created:
+          type: boolean
+        password:
+          type: string
+          description: Generated intendant password. Present only when created is true.
+
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          const: true
+
+    AccountRole:
+      type: string
+      enum: [user, manager, admin, superadmin]
+
+    AccountStatus:
+      type: string
+      enum: [pending, active, suspended]
+
+    ProfileLockableField:
+      type: string
+      enum:
+        - firstName
+        - lastName
+        - recoveryAddress
+        - phone
+        - addressCountry
+        - addressState
+        - addressCity
+        - addressLine1
+        - addressLine2
+
+    ProfileAddress:
+      type: object
+      properties:
+        country:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        line1:
+          type: ["string", "null"]
+        line2:
+          type: ["string", "null"]
+
+    ProfilePayload:
+      type: ["object", "null"]
+      properties:
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        recoveryAddress:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          $ref: "#/components/schemas/ProfileAddress"
+
+    AccountCapabilities:
+      type: object
+      properties:
+        accessManagementPage:
+          type: boolean
+        accessAccountsTab:
+          type: boolean
+        accessOrganizationTab:
+          type: boolean
+        accessDomainsTab:
+          type: boolean
+        accessMailboxesTab:
+          type: boolean
+        manageMailboxes:
+          type: boolean
+        registerDomains:
+          type: boolean
+        assignRoles:
+          type: boolean
+        editOwnProfile:
+          type: boolean
+        editLocalPartPolicy:
+          type: boolean
+        manageSharedMailboxUsers:
+          type: boolean
+        manageUserMailboxGrants:
+          type: boolean
+        lockProfileFields:
+          type: boolean
+        manageAssignments:
+          type: boolean
+        manageManagerMailboxAssignments:
+          type: boolean
+        showsManagerMailboxGrantsTab:
+          type: boolean
+        accessTemplatesTab:
+          type: boolean
+        canCreateGlobalTemplates:
+          type: boolean
+        accessOidcClientsTab:
+          type: boolean
+        accessLogsTab:
+          type: boolean
+        manageableTargetRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+        suspendableTargetRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+        removableTargetRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+        inviteableRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountRole"
+
+    Me:
+      type: object
+      required:
+        - id
+        - isIntendant
+        - status
+        - loginIdentifier
+        - capabilities
+        - displayName
+      properties:
+        id:
+          type: string
+          format: uuid
+        isIntendant:
+          type: boolean
+        role:
+          oneOf:
+            - $ref: "#/components/schemas/AccountRole"
+            - type: "null"
+        status:
+          $ref: "#/components/schemas/AccountStatus"
+        loginIdentifier:
+          type: string
+        primaryMailboxId:
+          type: ["string", "null"]
+          format: uuid
+        domainIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        lockedFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileLockableField"
+        mfaEnabled:
+          type: boolean
+        mfaEnabledAt:
+          type: ["string", "null"]
+          format: date-time
+        securityRequirements:
+          type: object
+          properties:
+            recoveryEmail:
+              type: boolean
+            mfa:
+              type: boolean
+        organizationPolicies:
+          type: object
+          properties:
+            mfaRequired:
+              type: boolean
+            recoveryEmailRequired:
+              type: boolean
+        capabilities:
+          $ref: "#/components/schemas/AccountCapabilities"
+        profile:
+          $ref: "#/components/schemas/ProfilePayload"
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+        displayName:
+          type: string
+
+    InvitedBy:
+      type: ["object", "null"]
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        loginIdentifier:
+          type: string
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+        deleted:
+          type: boolean
+
+    AccountListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          oneOf:
+            - $ref: "#/components/schemas/AccountRole"
+            - type: "null"
+        status:
+          $ref: "#/components/schemas/AccountStatus"
+        loginIdentifier:
+          type: string
+        primaryMailboxId:
+          type: ["string", "null"]
+          format: uuid
+        isIntendant:
+          type: boolean
+        domainId:
+          type: ["string", "null"]
+          format: uuid
+        displayName:
+          type: string
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+
+    AccountDetail:
+      allOf:
+        - $ref: "#/components/schemas/AccountListItem"
+        - type: object
+          properties:
+            profile:
+              $ref: "#/components/schemas/ProfilePayload"
+            lockedFields:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProfileLockableField"
+            domainIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            allSharedMailboxes:
+              type: boolean
+            sharedMailboxIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            grantedMailboxIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            invitedBy:
+              $ref: "#/components/schemas/InvitedBy"
+
+    ProfileFieldPatch:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        recoveryAddress:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        address:
+          $ref: "#/components/schemas/ProfileAddress"
+        addressCountry:
+          type: ["string", "null"]
+        addressState:
+          type: ["string", "null"]
+        addressCity:
+          type: ["string", "null"]
+        addressLine1:
+          type: ["string", "null"]
+        addressLine2:
+          type: ["string", "null"]
+
+    SelfProfileUpdate:
+      allOf:
+        - $ref: "#/components/schemas/ProfileFieldPatch"
+        - type: object
+          properties:
+            profile:
+              $ref: "#/components/schemas/ProfileFieldPatch"
+
+    InvitePreview:
+      type: object
+      required: [address, lockedFields, requireRecoveryEmail]
+      properties:
+        address:
+          type: string
+        lockedFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileLockableField"
+        requireRecoveryEmail:
+          type: boolean
+        profile:
+          $ref: "#/components/schemas/ProfilePayload"
+
+    ActivateInviteRequest:
+      allOf:
+        - $ref: "#/components/schemas/ProfileFieldPatch"
+        - type: object
+          required: [code, password]
+          properties:
+            code:
+              type: string
+            password:
+              type: string
+              format: password
+            profile:
+              $ref: "#/components/schemas/ProfileFieldPatch"
+
+    InviteAccountRequest:
+      allOf:
+        - $ref: "#/components/schemas/ProfileFieldPatch"
+        - type: object
+          required: [domainId, localPart]
+          properties:
+            domainId:
+              type: string
+              format: uuid
+            localPart:
+              type: string
+            role:
+              $ref: "#/components/schemas/AccountRole"
+            lockedFields:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProfileLockableField"
+            sendInviteEmail:
+              type: boolean
+            assignedDomainIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            sharedMailboxIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            allSharedMailboxes:
+              type: boolean
+
+    MailboxGrantHolder:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        loginIdentifier:
+          type: string
+        displayName:
+          type: string
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+        role:
+          oneOf:
+            - $ref: "#/components/schemas/AccountRole"
+            - type: "null"
+        status:
+          $ref: "#/components/schemas/AccountStatus"
+
+    MailboxManagerAssignment:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        loginIdentifier:
+          type: string
+        displayName:
+          type: string
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+        role:
+          $ref: "#/components/schemas/AccountRole"
+        status:
+          $ref: "#/components/schemas/AccountStatus"
+        viaAllShared:
+          type: boolean
+
+    LocalPartPolicy:
+      type: object
+      required: [domainId, enforced]
+      properties:
+        domainId:
+          type: string
+          format: uuid
+        enforced:
+          type: boolean
+        pattern:
+          type: ["string", "null"]
+
+    ApiKeyScope:
+      type: string
+      enum:
+        - domains:list
+        - domains:create
+        - domains:read
+        - domains:update
+        - domains:delete
+        - domain_validation_runs:list
+        - domain_validation_runs:create
+        - domain_validation_runs:read
+        - domain_validation_runs:cancel
+        - domain_local_part_policies:read
+        - domain_local_part_policies:update
+        - mailboxes:list
+        - mailboxes:create
+        - mailboxes:read
+        - mailboxes:update
+        - mailboxes:delete
+        - identities:list
+        - identities:create
+        - identities:update
+        - identities:delete
+        - mailbox_grants:list
+        - mailbox_manager_assignments:list
+        - labels:list
+        - labels:create
+        - labels:read
+        - labels:update
+        - labels:delete
+        - templates:list
+        - templates:create
+        - templates:read
+        - templates:update
+        - templates:delete
+        - system_templates:list
+        - system_templates:read
+        - system_templates:update
+        - system_templates:delete
+        - messages:send
+        - drafts:list
+        - drafts:create
+        - drafts:update
+        - drafts:delete
+        - drafts:send
+        - messages:reply
+        - messages:forward
+        - messages:read_preview
+        - messages:read_raw
+        - messages:read
+        - messages:read_images
+        - threads:list
+        - threads:read
+        - threads:update
+        - search:read
+        - attachments:read
+        - accounts:list
+        - accounts:read
+        - accounts:update
+        - account_assignments:update
+        - accounts:invite
+        - accounts:suggest_local_part
+        - accounts:assign_role
+        - accounts:suspend
+        - accounts:unsuspend
+        - accounts:delete
+        - account_password_reset_codes:create
+        - account_invites:regenerate
+        - account_mailbox_grants:create
+        - account_mailbox_grants:delete
+        - account_manager_assignments:create
+        - account_manager_assignments:delete
+        - account_profile_pictures:read
+        - account_profile_pictures:update
+        - account_profile_pictures:delete
+        - profile:read
+        - profile:update
+        - profile_picture:read
+        - profile_picture:update
+        - profile_picture:delete
+        - oidc_clients:create
+        - oidc_clients:read
+        - oidc_clients:update
+        - oidc_clients:delete
+        - instance_settings:read
+        - instance_settings:update
+        - logs:list
+        - bimi:read
+
+    ApiKey:
+      type: object
+      required: [id, name, prefix, scopes, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prefix:
+          type: string
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    CreatedApiKey:
+      type: object
+      required: [id, secret, prefix, scopes]
+      properties:
+        id:
+          type: string
+          format: uuid
+        secret:
+          type: string
+          description: "Plaintext key (`fmu_…`). Shown only at creation."
+        prefix:
+          type: string
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
+
+    MfaChallenge:
+      type: object
+      required: [requiresMfa, mfaToken]
+      properties:
+        requiresMfa:
+          type: boolean
+          const: true
+        mfaToken:
+          type: string
+
+    MfaStatus:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+        enabledAt:
+          type: ["string", "null"]
+          format: date-time
+
+    PasskeySummary:
+      type: object
+      required: [id, createdAt, backedUp]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: ["string", "null"]
+          format: date-time
+        backedUp:
+          type: boolean
+
+    WebAuthnChallenge:
+      type: object
+      required: [options, challengeToken]
+      properties:
+        options:
+          type: object
+          additionalProperties: true
+          description: SimpleWebAuthn options JSON
+        challengeToken:
+          type: string
+
+    SessionInfo:
+      type: object
+      required: [id, current, createdAt, lastSeenAt, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        current:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        ipAddress:
+          type: ["string", "null"]
+        countryCode:
+          type: ["string", "null"]
+        browser:
+          oneOf:
+            - type: string
+              enum: [Edge, Chrome, Firefox, Safari]
+            - type: "null"
+        os:
+          oneOf:
+            - type: string
+              enum: [Windows, macOS, Android, iOS, Linux]
+            - type: "null"
+
+    SessionRevokeResponse:
+      type: object
+      required: [ok, signedOutCurrent]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        signedOutCurrent:
+          type: boolean
 
     Domain:
       type: object
@@ -1430,6 +4348,271 @@ components:
         name:
           type: string
         color:
+          type: ["string", "null"]
+
+    EmailTemplate:
+      type: object
+      required: [id, name, scope, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        mailboxId:
+          type: ["string", "null"]
+          format: uuid
+        scope:
+          type: string
+          enum: [global, mailbox]
+        mailboxAddress:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EmailTemplateList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailTemplate"
+        capabilities:
+          type: object
+          properties:
+            canCreateGlobal:
+              type: boolean
+          description: Present when listing with manage=1
+
+    SystemEmailTemplateKey:
+      type: string
+      enum: [invite, password_reset, recovery_verify, mfa_disable]
+
+    SystemEmailTemplate:
+      type: object
+      required: [key, label, description, subject, tags, configured]
+      properties:
+        key:
+          $ref: "#/components/schemas/SystemEmailTemplateKey"
+        label:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        tags:
+          type: array
+          items:
+            type: object
+            required: [name, description]
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+        configured:
+          type: boolean
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    OrganizationTabAccess:
+      type: string
+      enum: [intendant_only, intendant_and_superadmins]
+
+    RequireMfaScope:
+      type: string
+      enum:
+        - none
+        - all
+        - manager_and_above
+        - admin_and_above
+        - superadmin_and_above
+
+    LogRetentionDays:
+      type: integer
+      enum: [3, 7, 14, 30, 60, 90]
+
+    InstanceSettings:
+      type: object
+      properties:
+        organizationTabAccess:
+          $ref: "#/components/schemas/OrganizationTabAccess"
+        requireMfaScope:
+          $ref: "#/components/schemas/RequireMfaScope"
+        requireRecoveryEmail:
+          type: boolean
+        persistNoreplyOutboundEmails:
+          type: boolean
+        identitySelfServe:
+          type: boolean
+        customNameAllowance:
+          type: boolean
+        defaultIdentityNamePattern:
+          $ref: "#/components/schemas/IdentityNamePattern"
+        defaultIdentityCustomName:
+          type: ["string", "null"]
+        defaultIdentitySignatureHtml:
+          type: ["string", "null"]
+        logsEnabled:
+          type: boolean
+        maxImportanceStored:
+          type: integer
+          minimum: 0
+          maximum: 10
+        logRetentionDays:
+          $ref: "#/components/schemas/LogRetentionDays"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedByAccountId:
+          type: ["string", "null"]
+          format: uuid
+
+    InstanceSettingsPatch:
+      type: object
+      properties:
+        organizationTabAccess:
+          $ref: "#/components/schemas/OrganizationTabAccess"
+        requireMfaScope:
+          $ref: "#/components/schemas/RequireMfaScope"
+        requireRecoveryEmail:
+          type: boolean
+        persistNoreplyOutboundEmails:
+          type: boolean
+        identitySelfServe:
+          type: boolean
+        customNameAllowance:
+          type: boolean
+        defaultIdentityNamePattern:
+          $ref: "#/components/schemas/IdentityNamePattern"
+        defaultIdentityCustomName:
+          type: ["string", "null"]
+        defaultIdentitySignatureHtml:
+          type: ["string", "null"]
+        logsEnabled:
+          type: boolean
+        maxImportanceStored:
+          type: integer
+          minimum: 0
+          maximum: 10
+        logRetentionDays:
+          $ref: "#/components/schemas/LogRetentionDays"
+
+    LogType:
+      type: string
+      enum:
+        - auth
+        - accounts
+        - invites
+        - mailboxes
+        - mailing
+        - threads
+        - messages
+        - identities
+        - domains
+        - settings
+        - oidc
+        - api-keys
+
+    LogRefKind:
+      type: string
+      enum:
+        - account
+        - mailbox
+        - thread
+        - message
+        - domain
+        - identity
+        - invite
+        - oidc-client
+        - api-key
+        - external-address
+
+    LogResolvedAccountRef:
+      type: object
+      required: [kind, id, displayName, loginIdentifier, deleted]
+      properties:
+        kind:
+          type: string
+          const: account
+        id:
+          type: string
+        displayName:
+          type: string
+        loginIdentifier:
+          type: string
+        profilePicture:
+          $ref: "#/components/schemas/ProfilePicture"
+        deleted:
+          type: boolean
+
+    LogResolvedGenericRef:
+      type: object
+      required: [kind, id, label, deleted]
+      properties:
+        kind:
+          $ref: "#/components/schemas/LogRefKind"
+        id:
+          type: string
+        label:
+          type: string
+        deleted:
+          type: boolean
+
+    LogListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        importance:
+          type: integer
+          minimum: 0
+          maximum: 10
+        type:
+          $ref: "#/components/schemas/LogType"
+        summary:
+          type: string
+        refs:
+          type: object
+          additionalProperties:
+            oneOf:
+              - $ref: "#/components/schemas/LogResolvedAccountRef"
+              - $ref: "#/components/schemas/LogResolvedGenericRef"
+        actor:
+          oneOf:
+            - $ref: "#/components/schemas/LogResolvedAccountRef"
+            - type: "null"
+        context:
+          type: ["object", "null"]
+          properties:
+            ip:
+              type: string
+            userAgent:
+              type: string
+            method:
+              type: string
+            path:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    LogPage:
+      type: object
+      required: [items, nextBefore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogListItem"
+        nextBefore:
           type: ["string", "null"]
 
     IdentityNamePattern:
@@ -2068,3 +5251,277 @@ components:
                     nullable: true
         nextCursor:
           type: ["string", "null"]
+
+    OidcScope:
+      type: string
+      enum: [openid, profile, email, "mail:read", "mail:send"]
+
+    OidcClient:
+      type: object
+      required:
+        - id
+        - clientId
+        - name
+        - redirectUris
+        - allowedScopes
+        - m2mPermissions
+        - isConfidential
+        - requireConsent
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+        name:
+          type: string
+        redirectUris:
+          type: array
+          items:
+            type: string
+        allowedScopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/OidcScope"
+        m2mPermissions:
+          type: array
+          items:
+            type: string
+        isConfidential:
+          type: boolean
+        requireConsent:
+          type: boolean
+        homescreenUrl:
+          type: ["string", "null"]
+          format: uri
+        logo:
+          $ref: "#/components/schemas/ProfilePicture"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OidcClientCreated:
+      allOf:
+        - $ref: "#/components/schemas/OidcClient"
+        - type: object
+          properties:
+            clientSecret:
+              type: ["string", "null"]
+              description: Present once for confidential clients
+
+    CreateOidcClientRequest:
+      type: object
+      required: [name, redirectUris]
+      properties:
+        name:
+          type: string
+        redirectUris:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        allowedScopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/OidcScope"
+          default: [openid, profile, email]
+        m2mPermissions:
+          type: array
+          items:
+            type: string
+        isConfidential:
+          type: boolean
+          default: true
+        requireConsent:
+          type: boolean
+          default: true
+        homescreenUrl:
+          type: ["string", "null"]
+          format: uri
+
+    UpdateOidcClientRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        redirectUris:
+          type: array
+          items:
+            type: string
+        allowedScopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/OidcScope"
+        m2mPermissions:
+          type: array
+          items:
+            type: string
+        isConfidential:
+          type: boolean
+        requireConsent:
+          type: boolean
+        homescreenUrl:
+          type: ["string", "null"]
+          format: uri
+
+    OidcClientGrant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+        loginIdentifier:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        grantedAt:
+          type: string
+          format: date-time
+
+    OidcMyGrant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+        clientName:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        grantedAt:
+          type: string
+          format: date-time
+
+    OidcPendingAuthorization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+        clientRecordId:
+          type: string
+          format: uuid
+        clientName:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        redirectUri:
+          type: string
+        requireConsent:
+          type: boolean
+        homescreenUrl:
+          type: ["string", "null"]
+        logo:
+          $ref: "#/components/schemas/ProfilePicture"
+
+    OidcTokenRequest:
+      type: object
+      required: [grant_type, client_id]
+      properties:
+        grant_type:
+          type: string
+          enum: [authorization_code, refresh_token, client_credentials]
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        code:
+          type: string
+        redirect_uri:
+          type: string
+        code_verifier:
+          type: string
+        refresh_token:
+          type: string
+        scope:
+          type: string
+
+    OidcTokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in, scope]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          const: Bearer
+        expires_in:
+          type: integer
+          example: 3600
+        refresh_token:
+          type: string
+        id_token:
+          type: string
+        scope:
+          type: string
+
+    OpenIdConfiguration:
+      type: object
+      required:
+        - issuer
+        - authorization_endpoint
+        - token_endpoint
+        - userinfo_endpoint
+        - jwks_uri
+      properties:
+        issuer:
+          type: string
+          format: uri
+        authorization_endpoint:
+          type: string
+          format: uri
+        token_endpoint:
+          type: string
+          format: uri
+        userinfo_endpoint:
+          type: string
+          format: uri
+        jwks_uri:
+          type: string
+          format: uri
+        response_types_supported:
+          type: array
+          items:
+            type: string
+        grant_types_supported:
+          type: array
+          items:
+            type: string
+        code_challenge_methods_supported:
+          type: array
+          items:
+            type: string
+        scopes_supported:
+          type: array
+          items:
+            $ref: "#/components/schemas/OidcScope"
+        token_endpoint_auth_methods_supported:
+          type: array
+          items:
+            type: string
+        subject_types_supported:
+          type: array
+          items:
+            type: string
+        id_token_signing_alg_values_supported:
+          type: array
+          items:
+            type: string

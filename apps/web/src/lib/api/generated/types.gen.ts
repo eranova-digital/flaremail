@@ -15,6 +15,262 @@ export type ProblemDetails = {
     code?: string;
 };
 
+export type HealthStatus = {
+    ok: true;
+    /**
+     * Product version from root package.json
+     */
+    version: string;
+};
+
+export type BootstrapResult = {
+    created: boolean;
+    /**
+     * Generated intendant password. Present only when created is true.
+     */
+    password?: string;
+};
+
+export type OkResponse = {
+    ok: true;
+};
+
+export type AccountRole = 'user' | 'manager' | 'admin' | 'superadmin';
+
+export type AccountStatus = 'pending' | 'active' | 'suspended';
+
+export type ProfileLockableField = 'firstName' | 'lastName' | 'recoveryAddress' | 'phone' | 'addressCountry' | 'addressState' | 'addressCity' | 'addressLine1' | 'addressLine2';
+
+export type ProfileAddress = {
+    country?: string | null;
+    state?: string | null;
+    city?: string | null;
+    line1?: string | null;
+    line2?: string | null;
+};
+
+export type ProfilePayload = {
+    firstName?: string | null;
+    lastName?: string | null;
+    recoveryAddress?: string | null;
+    phone?: string | null;
+    address?: ProfileAddress;
+} | null;
+
+export type AccountCapabilities = {
+    accessManagementPage?: boolean;
+    accessAccountsTab?: boolean;
+    accessOrganizationTab?: boolean;
+    accessDomainsTab?: boolean;
+    accessMailboxesTab?: boolean;
+    manageMailboxes?: boolean;
+    registerDomains?: boolean;
+    assignRoles?: boolean;
+    editOwnProfile?: boolean;
+    editLocalPartPolicy?: boolean;
+    manageSharedMailboxUsers?: boolean;
+    manageUserMailboxGrants?: boolean;
+    lockProfileFields?: boolean;
+    manageAssignments?: boolean;
+    manageManagerMailboxAssignments?: boolean;
+    showsManagerMailboxGrantsTab?: boolean;
+    accessTemplatesTab?: boolean;
+    canCreateGlobalTemplates?: boolean;
+    accessOidcClientsTab?: boolean;
+    accessLogsTab?: boolean;
+    manageableTargetRoles?: Array<AccountRole>;
+    suspendableTargetRoles?: Array<AccountRole>;
+    removableTargetRoles?: Array<AccountRole>;
+    inviteableRoles?: Array<AccountRole>;
+};
+
+export type Me = {
+    id: string;
+    isIntendant: boolean;
+    role?: AccountRole | null;
+    status: AccountStatus;
+    loginIdentifier: string;
+    primaryMailboxId?: string | null;
+    domainIds?: Array<string>;
+    lockedFields?: Array<ProfileLockableField>;
+    mfaEnabled?: boolean;
+    mfaEnabledAt?: string | null;
+    securityRequirements?: {
+        recoveryEmail?: boolean;
+        mfa?: boolean;
+    };
+    organizationPolicies?: {
+        mfaRequired?: boolean;
+        recoveryEmailRequired?: boolean;
+    };
+    capabilities: AccountCapabilities;
+    profile?: ProfilePayload;
+    profilePicture?: ProfilePicture;
+    displayName: string;
+};
+
+export type InvitedBy = {
+    id?: string;
+    displayName?: string;
+    loginIdentifier?: string;
+    profilePicture?: ProfilePicture;
+    deleted?: boolean;
+} | null;
+
+export type AccountListItem = {
+    id?: string;
+    role?: AccountRole | null;
+    status?: AccountStatus;
+    loginIdentifier?: string;
+    primaryMailboxId?: string | null;
+    isIntendant?: boolean;
+    domainId?: string | null;
+    displayName?: string;
+    profilePicture?: ProfilePicture;
+};
+
+export type AccountDetail = AccountListItem & {
+    profile?: ProfilePayload;
+    lockedFields?: Array<ProfileLockableField>;
+    domainIds?: Array<string>;
+    allSharedMailboxes?: boolean;
+    sharedMailboxIds?: Array<string>;
+    grantedMailboxIds?: Array<string>;
+    invitedBy?: InvitedBy;
+};
+
+export type ProfileFieldPatch = {
+    firstName?: string;
+    lastName?: string;
+    recoveryAddress?: string | null;
+    phone?: string | null;
+    address?: ProfileAddress;
+    addressCountry?: string | null;
+    addressState?: string | null;
+    addressCity?: string | null;
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+};
+
+export type SelfProfileUpdate = ProfileFieldPatch & {
+    profile?: ProfileFieldPatch;
+};
+
+export type InvitePreview = {
+    address: string;
+    lockedFields: Array<ProfileLockableField>;
+    requireRecoveryEmail: boolean;
+    profile?: ProfilePayload;
+};
+
+export type ActivateInviteRequest = ProfileFieldPatch & {
+    code: string;
+    password: string;
+    profile?: ProfileFieldPatch;
+};
+
+export type InviteAccountRequest = ProfileFieldPatch & {
+    domainId: string;
+    localPart: string;
+    role?: AccountRole;
+    lockedFields?: Array<ProfileLockableField>;
+    sendInviteEmail?: boolean;
+    assignedDomainIds?: Array<string>;
+    sharedMailboxIds?: Array<string>;
+    allSharedMailboxes?: boolean;
+};
+
+export type MailboxGrantHolder = {
+    accountId?: string;
+    loginIdentifier?: string;
+    displayName?: string;
+    profilePicture?: ProfilePicture;
+    role?: AccountRole | null;
+    status?: AccountStatus;
+};
+
+export type MailboxManagerAssignment = {
+    accountId?: string;
+    loginIdentifier?: string;
+    displayName?: string;
+    profilePicture?: ProfilePicture;
+    role?: AccountRole;
+    status?: AccountStatus;
+    viaAllShared?: boolean;
+};
+
+export type LocalPartPolicy = {
+    domainId: string;
+    enforced: boolean;
+    pattern?: string | null;
+};
+
+export type ApiKeyScope = 'domains:list' | 'domains:create' | 'domains:read' | 'domains:update' | 'domains:delete' | 'domain_validation_runs:list' | 'domain_validation_runs:create' | 'domain_validation_runs:read' | 'domain_validation_runs:cancel' | 'domain_local_part_policies:read' | 'domain_local_part_policies:update' | 'mailboxes:list' | 'mailboxes:create' | 'mailboxes:read' | 'mailboxes:update' | 'mailboxes:delete' | 'identities:list' | 'identities:create' | 'identities:update' | 'identities:delete' | 'mailbox_grants:list' | 'mailbox_manager_assignments:list' | 'labels:list' | 'labels:create' | 'labels:read' | 'labels:update' | 'labels:delete' | 'templates:list' | 'templates:create' | 'templates:read' | 'templates:update' | 'templates:delete' | 'system_templates:list' | 'system_templates:read' | 'system_templates:update' | 'system_templates:delete' | 'messages:send' | 'drafts:list' | 'drafts:create' | 'drafts:update' | 'drafts:delete' | 'drafts:send' | 'messages:reply' | 'messages:forward' | 'messages:read_preview' | 'messages:read_raw' | 'messages:read' | 'messages:read_images' | 'threads:list' | 'threads:read' | 'threads:update' | 'search:read' | 'attachments:read' | 'accounts:list' | 'accounts:read' | 'accounts:update' | 'account_assignments:update' | 'accounts:invite' | 'accounts:suggest_local_part' | 'accounts:assign_role' | 'accounts:suspend' | 'accounts:unsuspend' | 'accounts:delete' | 'account_password_reset_codes:create' | 'account_invites:regenerate' | 'account_mailbox_grants:create' | 'account_mailbox_grants:delete' | 'account_manager_assignments:create' | 'account_manager_assignments:delete' | 'account_profile_pictures:read' | 'account_profile_pictures:update' | 'account_profile_pictures:delete' | 'profile:read' | 'profile:update' | 'profile_picture:read' | 'profile_picture:update' | 'profile_picture:delete' | 'oidc_clients:create' | 'oidc_clients:read' | 'oidc_clients:update' | 'oidc_clients:delete' | 'instance_settings:read' | 'instance_settings:update' | 'logs:list' | 'bimi:read';
+
+export type ApiKey = {
+    id: string;
+    name: string;
+    prefix: string;
+    scopes: Array<ApiKeyScope>;
+    createdAt: string;
+    lastUsedAt?: string | null;
+};
+
+export type CreatedApiKey = {
+    id: string;
+    /**
+     * Plaintext key (`fmu_…`). Shown only at creation.
+     */
+    secret: string;
+    prefix: string;
+    scopes: Array<ApiKeyScope>;
+};
+
+export type MfaChallenge = {
+    requiresMfa: true;
+    mfaToken: string;
+};
+
+export type MfaStatus = {
+    enabled: boolean;
+    enabledAt?: string | null;
+};
+
+export type PasskeySummary = {
+    id: string;
+    name?: string | null;
+    createdAt: string;
+    lastUsedAt?: string | null;
+    backedUp: boolean;
+};
+
+export type WebAuthnChallenge = {
+    /**
+     * SimpleWebAuthn options JSON
+     */
+    options: {
+        [key: string]: unknown;
+    };
+    challengeToken: string;
+};
+
+export type SessionInfo = {
+    id: string;
+    current: boolean;
+    createdAt: string;
+    lastSeenAt: string;
+    expiresAt: string;
+    ipAddress?: string | null;
+    countryCode?: string | null;
+    browser?: 'Edge' | 'Chrome' | 'Firefox' | 'Safari' | null;
+    os?: 'Windows' | 'macOS' | 'Android' | 'iOS' | 'Linux' | null;
+};
+
+export type SessionRevokeResponse = {
+    ok: true;
+    signedOutCurrent: boolean;
+};
+
 export type Domain = {
     id?: string;
     domain?: string;
@@ -101,6 +357,122 @@ export type Label = {
     mailboxId?: string;
     name?: string;
     color?: string | null;
+};
+
+export type EmailTemplate = {
+    id: string;
+    name: string;
+    mailboxId?: string | null;
+    scope: 'global' | 'mailbox';
+    mailboxAddress?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type EmailTemplateList = {
+    items: Array<EmailTemplate>;
+    /**
+     * Present when listing with manage=1
+     */
+    capabilities?: {
+        canCreateGlobal?: boolean;
+    };
+};
+
+export type SystemEmailTemplateKey = 'invite' | 'password_reset' | 'recovery_verify' | 'mfa_disable';
+
+export type SystemEmailTemplate = {
+    key: SystemEmailTemplateKey;
+    label: string;
+    description: string;
+    subject: string;
+    tags: Array<{
+        name: string;
+        description: string;
+    }>;
+    configured: boolean;
+    updatedAt?: string | null;
+};
+
+export type OrganizationTabAccess = 'intendant_only' | 'intendant_and_superadmins';
+
+export type RequireMfaScope = 'none' | 'all' | 'manager_and_above' | 'admin_and_above' | 'superadmin_and_above';
+
+export type LogRetentionDays = 3 | 7 | 14 | 30 | 60 | 90;
+
+export type InstanceSettings = {
+    organizationTabAccess?: OrganizationTabAccess;
+    requireMfaScope?: RequireMfaScope;
+    requireRecoveryEmail?: boolean;
+    persistNoreplyOutboundEmails?: boolean;
+    identitySelfServe?: boolean;
+    customNameAllowance?: boolean;
+    defaultIdentityNamePattern?: IdentityNamePattern;
+    defaultIdentityCustomName?: string | null;
+    defaultIdentitySignatureHtml?: string | null;
+    logsEnabled?: boolean;
+    maxImportanceStored?: number;
+    logRetentionDays?: LogRetentionDays;
+    updatedAt?: string;
+    updatedByAccountId?: string | null;
+};
+
+export type InstanceSettingsPatch = {
+    organizationTabAccess?: OrganizationTabAccess;
+    requireMfaScope?: RequireMfaScope;
+    requireRecoveryEmail?: boolean;
+    persistNoreplyOutboundEmails?: boolean;
+    identitySelfServe?: boolean;
+    customNameAllowance?: boolean;
+    defaultIdentityNamePattern?: IdentityNamePattern;
+    defaultIdentityCustomName?: string | null;
+    defaultIdentitySignatureHtml?: string | null;
+    logsEnabled?: boolean;
+    maxImportanceStored?: number;
+    logRetentionDays?: LogRetentionDays;
+};
+
+export type LogType = 'auth' | 'accounts' | 'invites' | 'mailboxes' | 'mailing' | 'threads' | 'messages' | 'identities' | 'domains' | 'settings' | 'oidc' | 'api-keys';
+
+export type LogRefKind = 'account' | 'mailbox' | 'thread' | 'message' | 'domain' | 'identity' | 'invite' | 'oidc-client' | 'api-key' | 'external-address';
+
+export type LogResolvedAccountRef = {
+    kind: 'account';
+    id: string;
+    displayName: string;
+    loginIdentifier: string;
+    profilePicture?: ProfilePicture;
+    deleted: boolean;
+};
+
+export type LogResolvedGenericRef = {
+    kind: LogRefKind;
+    id: string;
+    label: string;
+    deleted: boolean;
+};
+
+export type LogListItem = {
+    id?: string;
+    importance?: number;
+    type?: LogType;
+    summary?: string;
+    refs?: {
+        [key: string]: LogResolvedAccountRef | LogResolvedGenericRef;
+    };
+    actor?: LogResolvedAccountRef | null;
+    context?: {
+        ip?: string;
+        userAgent?: string;
+        method?: string;
+        path?: string;
+    } | null;
+    createdAt?: string;
+};
+
+export type LogPage = {
+    items: Array<LogListItem>;
+    nextBefore: string | null;
 };
 
 export type IdentityNamePattern = 'none' | 'first_name' | 'last_name' | 'first_name_last_name' | 'last_name_first_name' | 'first_initial_last_name' | 'last_name_first_initial' | 'first_name_last_initial' | 'last_initial_first_name' | 'custom';
@@ -431,6 +803,113 @@ export type DraftPage = {
     nextCursor: string | null;
 };
 
+export type OidcScope = 'openid' | 'profile' | 'email' | 'mail:read' | 'mail:send';
+
+export type OidcClient = {
+    id: string;
+    clientId: string;
+    name: string;
+    redirectUris: Array<string>;
+    allowedScopes: Array<OidcScope>;
+    m2mPermissions: Array<string>;
+    isConfidential: boolean;
+    requireConsent: boolean;
+    homescreenUrl?: string | null;
+    logo?: ProfilePicture;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type OidcClientCreated = OidcClient & {
+    /**
+     * Present once for confidential clients
+     */
+    clientSecret?: string | null;
+};
+
+export type CreateOidcClientRequest = {
+    name: string;
+    redirectUris: Array<string>;
+    allowedScopes?: Array<OidcScope>;
+    m2mPermissions?: Array<string>;
+    isConfidential?: boolean;
+    requireConsent?: boolean;
+    homescreenUrl?: string | null;
+};
+
+export type UpdateOidcClientRequest = {
+    name?: string;
+    redirectUris?: Array<string>;
+    allowedScopes?: Array<OidcScope>;
+    m2mPermissions?: Array<string>;
+    isConfidential?: boolean;
+    requireConsent?: boolean;
+    homescreenUrl?: string | null;
+};
+
+export type OidcClientGrant = {
+    id?: string;
+    accountId?: string;
+    loginIdentifier?: string;
+    scopes?: Array<string>;
+    grantedAt?: string;
+};
+
+export type OidcMyGrant = {
+    id?: string;
+    clientId?: string;
+    clientName?: string;
+    scopes?: Array<string>;
+    grantedAt?: string;
+};
+
+export type OidcPendingAuthorization = {
+    id?: string;
+    clientId?: string;
+    clientRecordId?: string;
+    clientName?: string;
+    scopes?: Array<string>;
+    redirectUri?: string;
+    requireConsent?: boolean;
+    homescreenUrl?: string | null;
+    logo?: ProfilePicture;
+};
+
+export type OidcTokenRequest = {
+    grant_type: 'authorization_code' | 'refresh_token' | 'client_credentials';
+    client_id: string;
+    client_secret?: string;
+    code?: string;
+    redirect_uri?: string;
+    code_verifier?: string;
+    refresh_token?: string;
+    scope?: string;
+};
+
+export type OidcTokenResponse = {
+    access_token: string;
+    token_type: 'Bearer';
+    expires_in: number;
+    refresh_token?: string;
+    id_token?: string;
+    scope: string;
+};
+
+export type OpenIdConfiguration = {
+    issuer: string;
+    authorization_endpoint: string;
+    token_endpoint: string;
+    userinfo_endpoint: string;
+    jwks_uri: string;
+    response_types_supported?: Array<string>;
+    grant_types_supported?: Array<string>;
+    code_challenge_methods_supported?: Array<string>;
+    scopes_supported?: Array<OidcScope>;
+    token_endpoint_auth_methods_supported?: Array<string>;
+    subject_types_supported?: Array<string>;
+    id_token_signing_alg_values_supported?: Array<string>;
+};
+
 export type UuidId = string;
 
 export type MailboxId = string;
@@ -440,6 +919,1666 @@ export type MailboxIdQuery = string;
 export type Cursor = string;
 
 export type Limit = number;
+
+export type GetOpenApiDocumentData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/openapi.json';
+};
+
+export type GetOpenApiDocumentResponses = {
+    /**
+     * OpenAPI 3.1 document
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetOpenApiDocumentResponse = GetOpenApiDocumentResponses[keyof GetOpenApiDocumentResponses];
+
+export type GetHealthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/health';
+};
+
+export type GetHealthResponses = {
+    /**
+     * Liveness payload
+     */
+    200: HealthStatus;
+};
+
+export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type BootstrapIntendantData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/bootstrap';
+};
+
+export type BootstrapIntendantErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type BootstrapIntendantError = BootstrapIntendantErrors[keyof BootstrapIntendantErrors];
+
+export type BootstrapIntendantResponses = {
+    /**
+     * Bootstrap result
+     */
+    200: BootstrapResult;
+};
+
+export type BootstrapIntendantResponse = BootstrapIntendantResponses[keyof BootstrapIntendantResponses];
+
+export type SignInData = {
+    body: {
+        /**
+         * Login identifier (mailbox address, or `intendant`)
+         */
+        email: string;
+        password: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/sign-in';
+};
+
+export type SignInErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type SignInError = SignInErrors[keyof SignInErrors];
+
+export type SignInResponses = {
+    /**
+     * Session established, or MFA challenge
+     */
+    200: OkResponse | MfaChallenge;
+};
+
+export type SignInResponse = SignInResponses[keyof SignInResponses];
+
+export type SignOutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/sign-out';
+};
+
+export type SignOutResponses = {
+    /**
+     * Signed out
+     */
+    200: OkResponse;
+};
+
+export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
+
+export type GetMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/me';
+};
+
+export type GetMeErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetMeError = GetMeErrors[keyof GetMeErrors];
+
+export type GetMeResponses = {
+    /**
+     * Signed-in account
+     */
+    200: Me;
+};
+
+export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
+
+export type UpdateMeData = {
+    body?: SelfProfileUpdate;
+    path?: never;
+    query?: never;
+    url: '/auth/me';
+};
+
+export type UpdateMeErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateMeError = UpdateMeErrors[keyof UpdateMeErrors];
+
+export type UpdateMeResponses = {
+    /**
+     * Updated account detail
+     */
+    200: AccountDetail;
+};
+
+export type UpdateMeResponse = UpdateMeResponses[keyof UpdateMeResponses];
+
+export type DeleteMyProfilePictureData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/me/profile-picture';
+};
+
+export type DeleteMyProfilePictureErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteMyProfilePictureError = DeleteMyProfilePictureErrors[keyof DeleteMyProfilePictureErrors];
+
+export type DeleteMyProfilePictureResponses = {
+    /**
+     * Picture removed
+     */
+    200: {
+        profilePicture: null;
+    };
+};
+
+export type DeleteMyProfilePictureResponse = DeleteMyProfilePictureResponses[keyof DeleteMyProfilePictureResponses];
+
+export type UploadMyProfilePictureData = {
+    body: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/me/profile-picture';
+};
+
+export type UploadMyProfilePictureErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UploadMyProfilePictureError = UploadMyProfilePictureErrors[keyof UploadMyProfilePictureErrors];
+
+export type UploadMyProfilePictureResponses = {
+    /**
+     * Updated picture metadata
+     */
+    200: {
+        profilePicture: ProfilePicture;
+    };
+};
+
+export type UploadMyProfilePictureResponse = UploadMyProfilePictureResponses[keyof UploadMyProfilePictureResponses];
+
+export type PreviewInviteData = {
+    body?: never;
+    path?: never;
+    query: {
+        code: string;
+    };
+    url: '/auth/invite-preview';
+};
+
+export type PreviewInviteErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type PreviewInviteError = PreviewInviteErrors[keyof PreviewInviteErrors];
+
+export type PreviewInviteResponses = {
+    /**
+     * Invite preview
+     */
+    200: InvitePreview;
+};
+
+export type PreviewInviteResponse = PreviewInviteResponses[keyof PreviewInviteResponses];
+
+export type ActivateInviteData = {
+    body: ActivateInviteRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/activate';
+};
+
+export type ActivateInviteErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ActivateInviteError = ActivateInviteErrors[keyof ActivateInviteErrors];
+
+export type ActivateInviteResponses = {
+    /**
+     * Activated and signed in
+     */
+    200: OkResponse;
+};
+
+export type ActivateInviteResponse = ActivateInviteResponses[keyof ActivateInviteResponses];
+
+export type PreviewPasswordResetData = {
+    body?: never;
+    path?: never;
+    query: {
+        code: string;
+    };
+    url: '/auth/reset-preview';
+};
+
+export type PreviewPasswordResetErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type PreviewPasswordResetError = PreviewPasswordResetErrors[keyof PreviewPasswordResetErrors];
+
+export type PreviewPasswordResetResponses = {
+    /**
+     * Address the code belongs to
+     */
+    200: {
+        address: string;
+    };
+};
+
+export type PreviewPasswordResetResponse = PreviewPasswordResetResponses[keyof PreviewPasswordResetResponses];
+
+export type ForgotPasswordData = {
+    body: {
+        /**
+         * Mailbox address or login identifier
+         */
+        address: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/forgot-password';
+};
+
+export type ForgotPasswordErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ForgotPasswordError = ForgotPasswordErrors[keyof ForgotPasswordErrors];
+
+export type ForgotPasswordResponses = {
+    /**
+     * Accepted
+     */
+    200: OkResponse;
+};
+
+export type ForgotPasswordResponse = ForgotPasswordResponses[keyof ForgotPasswordResponses];
+
+export type ResetPasswordData = {
+    body: {
+        code: string;
+        password: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/reset-password';
+};
+
+export type ResetPasswordErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ResetPasswordError = ResetPasswordErrors[keyof ResetPasswordErrors];
+
+export type ResetPasswordResponses = {
+    /**
+     * Password updated
+     */
+    200: OkResponse;
+};
+
+export type ResetPasswordResponse = ResetPasswordResponses[keyof ResetPasswordResponses];
+
+export type SendRecoveryEmailCodeData = {
+    body: {
+        email: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/recovery-email/send';
+};
+
+export type SendRecoveryEmailCodeErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type SendRecoveryEmailCodeError = SendRecoveryEmailCodeErrors[keyof SendRecoveryEmailCodeErrors];
+
+export type SendRecoveryEmailCodeResponses = {
+    /**
+     * Code sent
+     */
+    200: OkResponse;
+};
+
+export type SendRecoveryEmailCodeResponse = SendRecoveryEmailCodeResponses[keyof SendRecoveryEmailCodeResponses];
+
+export type VerifyRecoveryEmailData = {
+    body: {
+        email: string;
+        code: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/recovery-email/verify';
+};
+
+export type VerifyRecoveryEmailErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type VerifyRecoveryEmailError = VerifyRecoveryEmailErrors[keyof VerifyRecoveryEmailErrors];
+
+export type VerifyRecoveryEmailResponses = {
+    /**
+     * Recovery email verified
+     */
+    200: OkResponse;
+};
+
+export type VerifyRecoveryEmailResponse = VerifyRecoveryEmailResponses[keyof VerifyRecoveryEmailResponses];
+
+export type RevokeMySessionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        includeCurrent?: 'true';
+    };
+    url: '/auth/sessions';
+};
+
+export type RevokeMySessionsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RevokeMySessionsError = RevokeMySessionsErrors[keyof RevokeMySessionsErrors];
+
+export type RevokeMySessionsResponses = {
+    /**
+     * Sessions revoked
+     */
+    200: SessionRevokeResponse;
+};
+
+export type RevokeMySessionsResponse = RevokeMySessionsResponses[keyof RevokeMySessionsResponses];
+
+export type ListMySessionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/sessions';
+};
+
+export type ListMySessionsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListMySessionsError = ListMySessionsErrors[keyof ListMySessionsErrors];
+
+export type ListMySessionsResponses = {
+    /**
+     * Session list
+     */
+    200: {
+        items: Array<SessionInfo>;
+    };
+};
+
+export type ListMySessionsResponse = ListMySessionsResponses[keyof ListMySessionsResponses];
+
+export type RevokeMySessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/auth/sessions/{id}';
+};
+
+export type RevokeMySessionErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RevokeMySessionError = RevokeMySessionErrors[keyof RevokeMySessionErrors];
+
+export type RevokeMySessionResponses = {
+    /**
+     * Session revoked
+     */
+    200: SessionRevokeResponse;
+};
+
+export type RevokeMySessionResponse = RevokeMySessionResponses[keyof RevokeMySessionResponses];
+
+export type RegenerateIntendantPasswordData = {
+    body?: {
+        /**
+         * TOTP code when MFA is enabled
+         */
+        code?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/intendant/regenerate-password';
+};
+
+export type RegenerateIntendantPasswordErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RegenerateIntendantPasswordError = RegenerateIntendantPasswordErrors[keyof RegenerateIntendantPasswordErrors];
+
+export type RegenerateIntendantPasswordResponses = {
+    /**
+     * New password (shown once)
+     */
+    200: {
+        password: string;
+    };
+};
+
+export type RegenerateIntendantPasswordResponse = RegenerateIntendantPasswordResponses[keyof RegenerateIntendantPasswordResponses];
+
+export type DisableMfaData = {
+    body: {
+        password: string;
+        code: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mfa';
+};
+
+export type DisableMfaErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DisableMfaError = DisableMfaErrors[keyof DisableMfaErrors];
+
+export type DisableMfaResponses = {
+    /**
+     * MFA disabled
+     */
+    200: MfaStatus;
+};
+
+export type DisableMfaResponse = DisableMfaResponses[keyof DisableMfaResponses];
+
+export type GetMfaStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/mfa';
+};
+
+export type GetMfaStatusErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetMfaStatusError = GetMfaStatusErrors[keyof GetMfaStatusErrors];
+
+export type GetMfaStatusResponses = {
+    /**
+     * MFA status
+     */
+    200: MfaStatus;
+};
+
+export type GetMfaStatusResponse = GetMfaStatusResponses[keyof GetMfaStatusResponses];
+
+export type SetupMfaData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/mfa/setup';
+};
+
+export type SetupMfaErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type SetupMfaError = SetupMfaErrors[keyof SetupMfaErrors];
+
+export type SetupMfaResponses = {
+    /**
+     * TOTP secret
+     */
+    200: {
+        secret: string;
+        otpauthUrl: string;
+    };
+};
+
+export type SetupMfaResponse = SetupMfaResponses[keyof SetupMfaResponses];
+
+export type ConfirmMfaData = {
+    body: {
+        /**
+         * TOTP code
+         */
+        code: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mfa/confirm';
+};
+
+export type ConfirmMfaErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ConfirmMfaError = ConfirmMfaErrors[keyof ConfirmMfaErrors];
+
+export type ConfirmMfaResponses = {
+    /**
+     * MFA enabled
+     */
+    200: MfaStatus;
+};
+
+export type ConfirmMfaResponse = ConfirmMfaResponses[keyof ConfirmMfaResponses];
+
+export type SendMfaDisableRecoveryCodeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/mfa/disable/send-recovery-code';
+};
+
+export type SendMfaDisableRecoveryCodeErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type SendMfaDisableRecoveryCodeError = SendMfaDisableRecoveryCodeErrors[keyof SendMfaDisableRecoveryCodeErrors];
+
+export type SendMfaDisableRecoveryCodeResponses = {
+    /**
+     * Code sent
+     */
+    200: OkResponse;
+};
+
+export type SendMfaDisableRecoveryCodeResponse = SendMfaDisableRecoveryCodeResponses[keyof SendMfaDisableRecoveryCodeResponses];
+
+export type VerifyMfaSignInData = {
+    body: {
+        mfaToken: string;
+        code: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/mfa/verify';
+};
+
+export type VerifyMfaSignInErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type VerifyMfaSignInError = VerifyMfaSignInErrors[keyof VerifyMfaSignInErrors];
+
+export type VerifyMfaSignInResponses = {
+    /**
+     * Signed in
+     */
+    200: OkResponse;
+};
+
+export type VerifyMfaSignInResponse = VerifyMfaSignInResponses[keyof VerifyMfaSignInResponses];
+
+export type ListPasskeysData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/passkeys';
+};
+
+export type ListPasskeysErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListPasskeysError = ListPasskeysErrors[keyof ListPasskeysErrors];
+
+export type ListPasskeysResponses = {
+    /**
+     * Passkey list
+     */
+    200: {
+        items: Array<PasskeySummary>;
+    };
+};
+
+export type ListPasskeysResponse = ListPasskeysResponses[keyof ListPasskeysResponses];
+
+export type RemovePasskeyData = {
+    body: {
+        password: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/auth/passkeys/{id}';
+};
+
+export type RemovePasskeyErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RemovePasskeyError = RemovePasskeyErrors[keyof RemovePasskeyErrors];
+
+export type RemovePasskeyResponses = {
+    /**
+     * Remaining passkeys
+     */
+    200: {
+        items: Array<PasskeySummary>;
+    };
+};
+
+export type RemovePasskeyResponse = RemovePasskeyResponses[keyof RemovePasskeyResponses];
+
+export type BeginPasskeyRegistrationData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/passkeys/register/options';
+};
+
+export type BeginPasskeyRegistrationErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type BeginPasskeyRegistrationError = BeginPasskeyRegistrationErrors[keyof BeginPasskeyRegistrationErrors];
+
+export type BeginPasskeyRegistrationResponses = {
+    /**
+     * Registration options
+     */
+    200: WebAuthnChallenge;
+};
+
+export type BeginPasskeyRegistrationResponse = BeginPasskeyRegistrationResponses[keyof BeginPasskeyRegistrationResponses];
+
+export type CompletePasskeyRegistrationData = {
+    body: {
+        challengeToken: string;
+        /**
+         * WebAuthn registration credential
+         */
+        response: {
+            [key: string]: unknown;
+        };
+        name?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/passkeys/register/verify';
+};
+
+export type CompletePasskeyRegistrationErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CompletePasskeyRegistrationError = CompletePasskeyRegistrationErrors[keyof CompletePasskeyRegistrationErrors];
+
+export type CompletePasskeyRegistrationResponses = {
+    /**
+     * Updated passkey list
+     */
+    200: {
+        items: Array<PasskeySummary>;
+    };
+};
+
+export type CompletePasskeyRegistrationResponse = CompletePasskeyRegistrationResponses[keyof CompletePasskeyRegistrationResponses];
+
+export type BeginPasskeySignInData = {
+    body?: {
+        email?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/passkeys/sign-in/options';
+};
+
+export type BeginPasskeySignInErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type BeginPasskeySignInError = BeginPasskeySignInErrors[keyof BeginPasskeySignInErrors];
+
+export type BeginPasskeySignInResponses = {
+    /**
+     * Authentication options
+     */
+    200: WebAuthnChallenge;
+};
+
+export type BeginPasskeySignInResponse = BeginPasskeySignInResponses[keyof BeginPasskeySignInResponses];
+
+export type CompletePasskeySignInData = {
+    body: {
+        challengeToken: string;
+        /**
+         * WebAuthn assertion
+         */
+        response: {
+            [key: string]: unknown;
+        };
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/passkeys/sign-in/verify';
+};
+
+export type CompletePasskeySignInErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CompletePasskeySignInError = CompletePasskeySignInErrors[keyof CompletePasskeySignInErrors];
+
+export type CompletePasskeySignInResponses = {
+    /**
+     * Signed in
+     */
+    200: OkResponse;
+};
+
+export type CompletePasskeySignInResponse = CompletePasskeySignInResponses[keyof CompletePasskeySignInResponses];
+
+export type ListAccountsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/accounts';
+};
+
+export type ListAccountsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListAccountsError = ListAccountsErrors[keyof ListAccountsErrors];
+
+export type ListAccountsResponses = {
+    /**
+     * Account list
+     */
+    200: {
+        items: Array<AccountListItem>;
+    };
+};
+
+export type ListAccountsResponse = ListAccountsResponses[keyof ListAccountsResponses];
+
+export type InviteAccountData = {
+    body: InviteAccountRequest;
+    path?: never;
+    query?: never;
+    url: '/accounts/invite';
+};
+
+export type InviteAccountErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type InviteAccountError = InviteAccountErrors[keyof InviteAccountErrors];
+
+export type InviteAccountResponses = {
+    /**
+     * Invite created
+     */
+    200: {
+        accountId: string;
+        mailboxId: string;
+        address: string;
+        inviteCode: string;
+        inviteId: string;
+    };
+};
+
+export type InviteAccountResponse = InviteAccountResponses[keyof InviteAccountResponses];
+
+export type SuggestInviteLocalPartData = {
+    body: {
+        domainId: string;
+        firstName?: string;
+        lastName?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/accounts/invite/suggest-local-part';
+};
+
+export type SuggestInviteLocalPartErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type SuggestInviteLocalPartError = SuggestInviteLocalPartErrors[keyof SuggestInviteLocalPartErrors];
+
+export type SuggestInviteLocalPartResponses = {
+    /**
+     * Suggested local-part
+     */
+    200: {
+        localPart: string | null;
+    };
+};
+
+export type SuggestInviteLocalPartResponse = SuggestInviteLocalPartResponses[keyof SuggestInviteLocalPartResponses];
+
+export type AssignAccountRoleData = {
+    body: {
+        accountId: string;
+        role: AccountRole;
+        domainIds?: Array<string>;
+    };
+    path?: never;
+    query?: never;
+    url: '/accounts/assign-role';
+};
+
+export type AssignAccountRoleErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type AssignAccountRoleError = AssignAccountRoleErrors[keyof AssignAccountRoleErrors];
+
+export type AssignAccountRoleResponses = {
+    /**
+     * Role assigned
+     */
+    200: OkResponse;
+};
+
+export type AssignAccountRoleResponse = AssignAccountRoleResponses[keyof AssignAccountRoleResponses];
+
+export type RemoveAccountData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}';
+};
+
+export type RemoveAccountErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RemoveAccountError = RemoveAccountErrors[keyof RemoveAccountErrors];
+
+export type RemoveAccountResponses = {
+    /**
+     * Removed
+     */
+    204: void;
+};
+
+export type RemoveAccountResponse = RemoveAccountResponses[keyof RemoveAccountResponses];
+
+export type GetAccountData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}';
+};
+
+export type GetAccountErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetAccountError = GetAccountErrors[keyof GetAccountErrors];
+
+export type GetAccountResponses = {
+    /**
+     * Account detail
+     */
+    200: AccountDetail;
+};
+
+export type GetAccountResponse = GetAccountResponses[keyof GetAccountResponses];
+
+export type UpdateAccountData = {
+    body?: {
+        profile?: ProfileFieldPatch;
+        lockedFields?: Array<ProfileLockableField>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}';
+};
+
+export type UpdateAccountErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateAccountError = UpdateAccountErrors[keyof UpdateAccountErrors];
+
+export type UpdateAccountResponses = {
+    /**
+     * Updated account
+     */
+    200: AccountDetail;
+};
+
+export type UpdateAccountResponse = UpdateAccountResponses[keyof UpdateAccountResponses];
+
+export type UpdateAccountAssignmentsData = {
+    body?: {
+        domainIds?: Array<string>;
+        allSharedMailboxes?: boolean;
+        sharedMailboxIds?: Array<string>;
+        grantedMailboxIds?: Array<string>;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/assignments';
+};
+
+export type UpdateAccountAssignmentsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateAccountAssignmentsError = UpdateAccountAssignmentsErrors[keyof UpdateAccountAssignmentsErrors];
+
+export type UpdateAccountAssignmentsResponses = {
+    /**
+     * Updated account
+     */
+    200: AccountDetail;
+};
+
+export type UpdateAccountAssignmentsResponse = UpdateAccountAssignmentsResponses[keyof UpdateAccountAssignmentsResponses];
+
+export type ListAccountIdentitiesForAccountData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/identities';
+};
+
+export type ListAccountIdentitiesForAccountErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListAccountIdentitiesForAccountError = ListAccountIdentitiesForAccountErrors[keyof ListAccountIdentitiesForAccountErrors];
+
+export type ListAccountIdentitiesForAccountResponses = {
+    /**
+     * Identity overview
+     */
+    200: AccountIdentitiesOverview;
+};
+
+export type ListAccountIdentitiesForAccountResponse = ListAccountIdentitiesForAccountResponses[keyof ListAccountIdentitiesForAccountResponses];
+
+export type DeleteAccountProfilePictureData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/profile-picture';
+};
+
+export type DeleteAccountProfilePictureErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteAccountProfilePictureError = DeleteAccountProfilePictureErrors[keyof DeleteAccountProfilePictureErrors];
+
+export type DeleteAccountProfilePictureResponses = {
+    /**
+     * Picture removed
+     */
+    200: {
+        profilePicture: null;
+    };
+};
+
+export type DeleteAccountProfilePictureResponse = DeleteAccountProfilePictureResponses[keyof DeleteAccountProfilePictureResponses];
+
+export type GetAccountProfilePictureData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query: {
+        size: 'small' | 'large';
+    };
+    url: '/accounts/{id}/profile-picture';
+};
+
+export type GetAccountProfilePictureErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetAccountProfilePictureError = GetAccountProfilePictureErrors[keyof GetAccountProfilePictureErrors];
+
+export type GetAccountProfilePictureResponses = {
+    /**
+     * Profile picture WebP
+     */
+    200: Blob | File;
+};
+
+export type GetAccountProfilePictureResponse = GetAccountProfilePictureResponses[keyof GetAccountProfilePictureResponses];
+
+export type UploadAccountProfilePictureData = {
+    body: {
+        file: Blob | File;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/profile-picture';
+};
+
+export type UploadAccountProfilePictureErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UploadAccountProfilePictureError = UploadAccountProfilePictureErrors[keyof UploadAccountProfilePictureErrors];
+
+export type UploadAccountProfilePictureResponses = {
+    /**
+     * Updated picture metadata
+     */
+    200: {
+        profilePicture: ProfilePicture;
+    };
+};
+
+export type UploadAccountProfilePictureResponse = UploadAccountProfilePictureResponses[keyof UploadAccountProfilePictureResponses];
+
+export type SuspendAccountData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/suspend';
+};
+
+export type SuspendAccountErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type SuspendAccountError = SuspendAccountErrors[keyof SuspendAccountErrors];
+
+export type SuspendAccountResponses = {
+    /**
+     * Suspended
+     */
+    200: OkResponse;
+};
+
+export type SuspendAccountResponse = SuspendAccountResponses[keyof SuspendAccountResponses];
+
+export type UnsuspendAccountData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/unsuspend';
+};
+
+export type UnsuspendAccountErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UnsuspendAccountError = UnsuspendAccountErrors[keyof UnsuspendAccountErrors];
+
+export type UnsuspendAccountResponses = {
+    /**
+     * Unsuspended
+     */
+    200: OkResponse;
+};
+
+export type UnsuspendAccountResponse = UnsuspendAccountResponses[keyof UnsuspendAccountResponses];
+
+export type CreateAccountPasswordResetCodeData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/password-reset-code';
+};
+
+export type CreateAccountPasswordResetCodeErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CreateAccountPasswordResetCodeError = CreateAccountPasswordResetCodeErrors[keyof CreateAccountPasswordResetCodeErrors];
+
+export type CreateAccountPasswordResetCodeResponses = {
+    /**
+     * Reset code
+     */
+    200: {
+        code: string;
+    };
+};
+
+export type CreateAccountPasswordResetCodeResponse = CreateAccountPasswordResetCodeResponses[keyof CreateAccountPasswordResetCodeResponses];
+
+export type RegenerateAccountInviteData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/regenerate-invite';
+};
+
+export type RegenerateAccountInviteErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RegenerateAccountInviteError = RegenerateAccountInviteErrors[keyof RegenerateAccountInviteErrors];
+
+export type RegenerateAccountInviteResponses = {
+    /**
+     * New invite
+     */
+    200: {
+        inviteCode: string;
+        inviteId: string;
+    };
+};
+
+export type RegenerateAccountInviteResponse = RegenerateAccountInviteResponses[keyof RegenerateAccountInviteResponses];
+
+export type RevokeAllAccountSessionsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/sessions';
+};
+
+export type RevokeAllAccountSessionsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RevokeAllAccountSessionsError = RevokeAllAccountSessionsErrors[keyof RevokeAllAccountSessionsErrors];
+
+export type RevokeAllAccountSessionsResponses = {
+    /**
+     * Sessions revoked
+     */
+    200: OkResponse;
+};
+
+export type RevokeAllAccountSessionsResponse = RevokeAllAccountSessionsResponses[keyof RevokeAllAccountSessionsResponses];
+
+export type ListAccountSessionsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/sessions';
+};
+
+export type ListAccountSessionsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListAccountSessionsError = ListAccountSessionsErrors[keyof ListAccountSessionsErrors];
+
+export type ListAccountSessionsResponses = {
+    /**
+     * Session list
+     */
+    200: {
+        items: Array<SessionInfo>;
+    };
+};
+
+export type ListAccountSessionsResponse = ListAccountSessionsResponses[keyof ListAccountSessionsResponses];
+
+export type RevokeAccountSessionData = {
+    body?: never;
+    path: {
+        id: string;
+        sessionId: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/sessions/{sessionId}';
+};
+
+export type RevokeAccountSessionErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RevokeAccountSessionError = RevokeAccountSessionErrors[keyof RevokeAccountSessionErrors];
+
+export type RevokeAccountSessionResponses = {
+    /**
+     * Session revoked
+     */
+    200: OkResponse;
+};
+
+export type RevokeAccountSessionResponse = RevokeAccountSessionResponses[keyof RevokeAccountSessionResponses];
+
+export type DisableAccountMfaData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/mfa';
+};
+
+export type DisableAccountMfaErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DisableAccountMfaError = DisableAccountMfaErrors[keyof DisableAccountMfaErrors];
+
+export type DisableAccountMfaResponses = {
+    /**
+     * MFA disabled
+     */
+    200: MfaStatus;
+};
+
+export type DisableAccountMfaResponse = DisableAccountMfaResponses[keyof DisableAccountMfaResponses];
+
+export type GetAccountMfaStatusData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/mfa';
+};
+
+export type GetAccountMfaStatusErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetAccountMfaStatusError = GetAccountMfaStatusErrors[keyof GetAccountMfaStatusErrors];
+
+export type GetAccountMfaStatusResponses = {
+    /**
+     * MFA status
+     */
+    200: MfaStatus;
+};
+
+export type GetAccountMfaStatusResponse = GetAccountMfaStatusResponses[keyof GetAccountMfaStatusResponses];
+
+export type GrantSharedMailboxAccessData = {
+    body: {
+        mailboxId: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/mailbox-grants';
+};
+
+export type GrantSharedMailboxAccessErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GrantSharedMailboxAccessError = GrantSharedMailboxAccessErrors[keyof GrantSharedMailboxAccessErrors];
+
+export type GrantSharedMailboxAccessResponses = {
+    /**
+     * Grant created
+     */
+    200: OkResponse;
+};
+
+export type GrantSharedMailboxAccessResponse = GrantSharedMailboxAccessResponses[keyof GrantSharedMailboxAccessResponses];
+
+export type RevokeSharedMailboxAccessData = {
+    body?: never;
+    path: {
+        id: string;
+        mailboxId: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/mailbox-grants/{mailboxId}';
+};
+
+export type RevokeSharedMailboxAccessErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RevokeSharedMailboxAccessError = RevokeSharedMailboxAccessErrors[keyof RevokeSharedMailboxAccessErrors];
+
+export type RevokeSharedMailboxAccessResponses = {
+    /**
+     * Revoked
+     */
+    204: void;
+};
+
+export type RevokeSharedMailboxAccessResponse = RevokeSharedMailboxAccessResponses[keyof RevokeSharedMailboxAccessResponses];
+
+export type GrantManagerMailboxAssignmentData = {
+    body: {
+        mailboxId: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/manager-assignments';
+};
+
+export type GrantManagerMailboxAssignmentErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GrantManagerMailboxAssignmentError = GrantManagerMailboxAssignmentErrors[keyof GrantManagerMailboxAssignmentErrors];
+
+export type GrantManagerMailboxAssignmentResponses = {
+    /**
+     * Assignment created
+     */
+    200: OkResponse;
+};
+
+export type GrantManagerMailboxAssignmentResponse = GrantManagerMailboxAssignmentResponses[keyof GrantManagerMailboxAssignmentResponses];
+
+export type RevokeManagerMailboxAssignmentData = {
+    body?: never;
+    path: {
+        id: string;
+        mailboxId: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/manager-assignments/{mailboxId}';
+};
+
+export type RevokeManagerMailboxAssignmentErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RevokeManagerMailboxAssignmentError = RevokeManagerMailboxAssignmentErrors[keyof RevokeManagerMailboxAssignmentErrors];
+
+export type RevokeManagerMailboxAssignmentResponses = {
+    /**
+     * Revoked
+     */
+    204: void;
+};
+
+export type RevokeManagerMailboxAssignmentResponse = RevokeManagerMailboxAssignmentResponses[keyof RevokeManagerMailboxAssignmentResponses];
+
+export type ListApiKeysData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api-keys';
+};
+
+export type ListApiKeysErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListApiKeysError = ListApiKeysErrors[keyof ListApiKeysErrors];
+
+export type ListApiKeysResponses = {
+    /**
+     * API keys and grantable scopes
+     */
+    200: {
+        items: Array<ApiKey>;
+        availableScopes: Array<ApiKeyScope>;
+    };
+};
+
+export type ListApiKeysResponse = ListApiKeysResponses[keyof ListApiKeysResponses];
+
+export type CreateApiKeyData = {
+    body: {
+        name?: string;
+        scopes: Array<ApiKeyScope>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api-keys';
+};
+
+export type CreateApiKeyErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CreateApiKeyError = CreateApiKeyErrors[keyof CreateApiKeyErrors];
+
+export type CreateApiKeyResponses = {
+    /**
+     * Created key (secret shown once)
+     */
+    200: CreatedApiKey;
+};
+
+export type CreateApiKeyResponse = CreateApiKeyResponses[keyof CreateApiKeyResponses];
+
+export type RevokeApiKeyData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api-keys/{id}';
+};
+
+export type RevokeApiKeyErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type RevokeApiKeyError = RevokeApiKeyErrors[keyof RevokeApiKeyErrors];
+
+export type RevokeApiKeyResponses = {
+    /**
+     * Revoked
+     */
+    200: OkResponse;
+};
+
+export type RevokeApiKeyResponse = RevokeApiKeyResponses[keyof RevokeApiKeyResponses];
 
 export type ListDomainsData = {
     body?: never;
@@ -692,6 +2831,63 @@ export type CancelDomainValidationRunResponses = {
 
 export type CancelDomainValidationRunResponse = CancelDomainValidationRunResponses[keyof CancelDomainValidationRunResponses];
 
+export type GetDomainLocalPartPolicyData = {
+    body?: never;
+    path: {
+        domainId: string;
+    };
+    query?: never;
+    url: '/domains/{domainId}/local-part-policy';
+};
+
+export type GetDomainLocalPartPolicyErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetDomainLocalPartPolicyError = GetDomainLocalPartPolicyErrors[keyof GetDomainLocalPartPolicyErrors];
+
+export type GetDomainLocalPartPolicyResponses = {
+    /**
+     * Local-part policy
+     */
+    200: LocalPartPolicy;
+};
+
+export type GetDomainLocalPartPolicyResponse = GetDomainLocalPartPolicyResponses[keyof GetDomainLocalPartPolicyResponses];
+
+export type UpdateDomainLocalPartPolicyData = {
+    body?: {
+        enforced?: boolean;
+        pattern?: string | null;
+    };
+    path: {
+        domainId: string;
+    };
+    query?: never;
+    url: '/domains/{domainId}/local-part-policy';
+};
+
+export type UpdateDomainLocalPartPolicyErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateDomainLocalPartPolicyError = UpdateDomainLocalPartPolicyErrors[keyof UpdateDomainLocalPartPolicyErrors];
+
+export type UpdateDomainLocalPartPolicyResponses = {
+    /**
+     * Updated policy
+     */
+    200: LocalPartPolicy;
+};
+
+export type UpdateDomainLocalPartPolicyResponse = UpdateDomainLocalPartPolicyResponses[keyof UpdateDomainLocalPartPolicyResponses];
+
 export type ListMailboxesData = {
     body?: never;
     path?: never;
@@ -800,8 +2996,19 @@ export type GetMailboxResponse = GetMailboxResponses[keyof GetMailboxResponses];
 
 export type UpdateMailboxData = {
     body?: {
+        /**
+         * Managers cannot change mailbox active state.
+         */
         isActive?: boolean;
+        /**
+         * Shared mailboxes only. When true, senders may select identities owned by their primary mailbox while composing from this mailbox.
+         *
+         */
         personalIdentityAllowance?: boolean;
+        /**
+         * Shared mailboxes only. When true, this mailbox's identities may be selected when sending from other mailboxes the account can access.
+         *
+         */
         identityExport?: boolean;
     };
     path: {
@@ -993,6 +3200,64 @@ export type UpdateMailboxIdentityResponses = {
 
 export type UpdateMailboxIdentityResponse = UpdateMailboxIdentityResponses[keyof UpdateMailboxIdentityResponses];
 
+export type ListMailboxGrantHoldersData = {
+    body?: never;
+    path: {
+        mailboxId: string;
+    };
+    query?: never;
+    url: '/mailboxes/{mailboxId}/grants';
+};
+
+export type ListMailboxGrantHoldersErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListMailboxGrantHoldersError = ListMailboxGrantHoldersErrors[keyof ListMailboxGrantHoldersErrors];
+
+export type ListMailboxGrantHoldersResponses = {
+    /**
+     * Grant holders
+     */
+    200: {
+        items: Array<MailboxGrantHolder>;
+    };
+};
+
+export type ListMailboxGrantHoldersResponse = ListMailboxGrantHoldersResponses[keyof ListMailboxGrantHoldersResponses];
+
+export type ListMailboxManagerAssignmentsData = {
+    body?: never;
+    path: {
+        mailboxId: string;
+    };
+    query?: never;
+    url: '/mailboxes/{mailboxId}/manager-assignments';
+};
+
+export type ListMailboxManagerAssignmentsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListMailboxManagerAssignmentsError = ListMailboxManagerAssignmentsErrors[keyof ListMailboxManagerAssignmentsErrors];
+
+export type ListMailboxManagerAssignmentsResponses = {
+    /**
+     * Manager assignments
+     */
+    200: {
+        items: Array<MailboxManagerAssignment>;
+    };
+};
+
+export type ListMailboxManagerAssignmentsResponse = ListMailboxManagerAssignmentsResponses[keyof ListMailboxManagerAssignmentsResponses];
+
 export type ListLabelsData = {
     body?: never;
     path: {
@@ -1138,6 +3403,290 @@ export type UpdateLabelResponses = {
 };
 
 export type UpdateLabelResponse = UpdateLabelResponses[keyof UpdateLabelResponses];
+
+export type ListEmailTemplatesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        manage?: '1';
+        mailboxId?: string;
+    };
+    url: '/templates';
+};
+
+export type ListEmailTemplatesErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListEmailTemplatesError = ListEmailTemplatesErrors[keyof ListEmailTemplatesErrors];
+
+export type ListEmailTemplatesResponses = {
+    /**
+     * Template list
+     */
+    200: EmailTemplateList;
+};
+
+export type ListEmailTemplatesResponse = ListEmailTemplatesResponses[keyof ListEmailTemplatesResponses];
+
+export type CreateEmailTemplateData = {
+    body: {
+        name: string;
+        /**
+         * Omit for a global template
+         */
+        mailboxId?: string;
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/templates';
+};
+
+export type CreateEmailTemplateErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type CreateEmailTemplateError = CreateEmailTemplateErrors[keyof CreateEmailTemplateErrors];
+
+export type CreateEmailTemplateResponses = {
+    /**
+     * Created template
+     */
+    201: EmailTemplate;
+};
+
+export type CreateEmailTemplateResponse = CreateEmailTemplateResponses[keyof CreateEmailTemplateResponses];
+
+export type DeleteEmailTemplateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/templates/{id}';
+};
+
+export type DeleteEmailTemplateErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteEmailTemplateError = DeleteEmailTemplateErrors[keyof DeleteEmailTemplateErrors];
+
+export type DeleteEmailTemplateResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteEmailTemplateResponse = DeleteEmailTemplateResponses[keyof DeleteEmailTemplateResponses];
+
+export type GetEmailTemplateData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        mailboxId?: string;
+    };
+    url: '/templates/{id}';
+};
+
+export type GetEmailTemplateErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetEmailTemplateError = GetEmailTemplateErrors[keyof GetEmailTemplateErrors];
+
+export type GetEmailTemplateResponses = {
+    /**
+     * Template metadata
+     */
+    200: EmailTemplate;
+};
+
+export type GetEmailTemplateResponse = GetEmailTemplateResponses[keyof GetEmailTemplateResponses];
+
+export type UpdateEmailTemplateData = {
+    body: {
+        name: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/templates/{id}';
+};
+
+export type UpdateEmailTemplateErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateEmailTemplateError = UpdateEmailTemplateErrors[keyof UpdateEmailTemplateErrors];
+
+export type UpdateEmailTemplateResponses = {
+    /**
+     * Updated template
+     */
+    200: EmailTemplate;
+};
+
+export type UpdateEmailTemplateResponse = UpdateEmailTemplateResponses[keyof UpdateEmailTemplateResponses];
+
+export type GetEmailTemplateContentData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        mailboxId?: string;
+    };
+    url: '/templates/{id}/content';
+};
+
+export type GetEmailTemplateContentErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetEmailTemplateContentError = GetEmailTemplateContentErrors[keyof GetEmailTemplateContentErrors];
+
+export type GetEmailTemplateContentResponses = {
+    /**
+     * Raw HTML
+     */
+    200: string;
+};
+
+export type GetEmailTemplateContentResponse = GetEmailTemplateContentResponses[keyof GetEmailTemplateContentResponses];
+
+export type ListSystemEmailTemplatesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/system-templates';
+};
+
+export type ListSystemEmailTemplatesErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListSystemEmailTemplatesError = ListSystemEmailTemplatesErrors[keyof ListSystemEmailTemplatesErrors];
+
+export type ListSystemEmailTemplatesResponses = {
+    /**
+     * System template catalog
+     */
+    200: {
+        items: Array<SystemEmailTemplate>;
+    };
+};
+
+export type ListSystemEmailTemplatesResponse = ListSystemEmailTemplatesResponses[keyof ListSystemEmailTemplatesResponses];
+
+export type DeleteSystemEmailTemplateData = {
+    body?: never;
+    path: {
+        key: SystemEmailTemplateKey;
+    };
+    query?: never;
+    url: '/system-templates/{key}';
+};
+
+export type DeleteSystemEmailTemplateErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteSystemEmailTemplateError = DeleteSystemEmailTemplateErrors[keyof DeleteSystemEmailTemplateErrors];
+
+export type DeleteSystemEmailTemplateResponses = {
+    /**
+     * Reverted
+     */
+    204: void;
+};
+
+export type DeleteSystemEmailTemplateResponse = DeleteSystemEmailTemplateResponses[keyof DeleteSystemEmailTemplateResponses];
+
+export type UploadSystemEmailTemplateData = {
+    body: {
+        file: Blob | File;
+    };
+    path: {
+        key: SystemEmailTemplateKey;
+    };
+    query?: never;
+    url: '/system-templates/{key}';
+};
+
+export type UploadSystemEmailTemplateErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UploadSystemEmailTemplateError = UploadSystemEmailTemplateErrors[keyof UploadSystemEmailTemplateErrors];
+
+export type UploadSystemEmailTemplateResponses = {
+    /**
+     * Updated catalog entry
+     */
+    200: SystemEmailTemplate;
+};
+
+export type UploadSystemEmailTemplateResponse = UploadSystemEmailTemplateResponses[keyof UploadSystemEmailTemplateResponses];
+
+export type GetSystemEmailTemplateContentData = {
+    body?: never;
+    path: {
+        key: SystemEmailTemplateKey;
+    };
+    query?: never;
+    url: '/system-templates/{key}/content';
+};
+
+export type GetSystemEmailTemplateContentErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetSystemEmailTemplateContentError = GetSystemEmailTemplateContentErrors[keyof GetSystemEmailTemplateContentErrors];
+
+export type GetSystemEmailTemplateContentResponses = {
+    /**
+     * Raw HTML
+     */
+    200: string;
+};
+
+export type GetSystemEmailTemplateContentResponse = GetSystemEmailTemplateContentResponses[keyof GetSystemEmailTemplateContentResponses];
 
 export type SendMessageData = {
     body: SendMessageRequest;
@@ -1440,6 +3989,34 @@ export type DownloadRawMessageResponses = {
 
 export type DownloadRawMessageResponse = DownloadRawMessageResponses[keyof DownloadRawMessageResponses];
 
+export type DownloadMessageExternalImageData = {
+    body?: never;
+    path: {
+        id: string;
+        imageId: string;
+    };
+    query?: never;
+    url: '/messages/{id}/images/{imageId}';
+};
+
+export type DownloadMessageExternalImageErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DownloadMessageExternalImageError = DownloadMessageExternalImageErrors[keyof DownloadMessageExternalImageErrors];
+
+export type DownloadMessageExternalImageResponses = {
+    /**
+     * Image bytes
+     */
+    200: Blob | File;
+};
+
+export type DownloadMessageExternalImageResponse = DownloadMessageExternalImageResponses[keyof DownloadMessageExternalImageResponses];
+
 export type ListThreadsData = {
     body?: never;
     path?: never;
@@ -1685,6 +4262,97 @@ export type GetBimiLogoResponses = {
 
 export type GetBimiLogoResponse = GetBimiLogoResponses[keyof GetBimiLogoResponses];
 
+export type GetInstanceSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/instance/settings';
+};
+
+export type GetInstanceSettingsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetInstanceSettingsError = GetInstanceSettingsErrors[keyof GetInstanceSettingsErrors];
+
+export type GetInstanceSettingsResponses = {
+    /**
+     * Organization settings
+     */
+    200: InstanceSettings;
+};
+
+export type GetInstanceSettingsResponse = GetInstanceSettingsResponses[keyof GetInstanceSettingsResponses];
+
+export type UpdateInstanceSettingsData = {
+    body: InstanceSettingsPatch;
+    path?: never;
+    query?: never;
+    url: '/instance/settings';
+};
+
+export type UpdateInstanceSettingsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UpdateInstanceSettingsError = UpdateInstanceSettingsErrors[keyof UpdateInstanceSettingsErrors];
+
+export type UpdateInstanceSettingsResponses = {
+    /**
+     * Updated settings
+     */
+    200: InstanceSettings;
+};
+
+export type UpdateInstanceSettingsResponse = UpdateInstanceSettingsResponses[keyof UpdateInstanceSettingsResponses];
+
+export type ListLogsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        q?: string;
+        /**
+         * Repeatable. Values may also be comma-separated.
+         */
+        type?: Array<LogType>;
+        maxImportance?: number;
+        minImportance?: number;
+        from?: string;
+        to?: string;
+        limit?: number;
+        /**
+         * Cursor (createdAt ISO of the last item from the previous page)
+         */
+        before?: string;
+        accountId?: string;
+    };
+    url: '/logs';
+};
+
+export type ListLogsErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ListLogsError = ListLogsErrors[keyof ListLogsErrors];
+
+export type ListLogsResponses = {
+    /**
+     * Log page
+     */
+    200: LogPage;
+};
+
+export type ListLogsResponse = ListLogsResponses[keyof ListLogsResponses];
+
 export type ListOidcClientsData = {
     body?: never;
     path?: never;
@@ -1705,11 +4373,15 @@ export type ListOidcClientsResponses = {
     /**
      * OIDC client list
      */
-    200: unknown;
+    200: {
+        clients: Array<OidcClient>;
+    };
 };
 
+export type ListOidcClientsResponse = ListOidcClientsResponses[keyof ListOidcClientsResponses];
+
 export type CreateOidcClientData = {
-    body?: never;
+    body: CreateOidcClientRequest;
     path?: never;
     query?: never;
     url: '/oidc-clients';
@@ -1728,8 +4400,10 @@ export type CreateOidcClientResponses = {
     /**
      * Created client (clientSecret returned once when confidential)
      */
-    201: unknown;
+    201: OidcClientCreated;
 };
+
+export type CreateOidcClientResponse = CreateOidcClientResponses[keyof CreateOidcClientResponses];
 
 export type DeleteOidcClientData = {
     body?: never;
@@ -1780,11 +4454,13 @@ export type GetOidcClientResponses = {
     /**
      * OIDC client
      */
-    200: unknown;
+    200: OidcClient;
 };
 
+export type GetOidcClientResponse = GetOidcClientResponses[keyof GetOidcClientResponses];
+
 export type UpdateOidcClientData = {
-    body?: never;
+    body?: UpdateOidcClientRequest;
     path: {
         id: string;
     };
@@ -1805,8 +4481,99 @@ export type UpdateOidcClientResponses = {
     /**
      * Updated client
      */
-    200: unknown;
+    200: OidcClient;
 };
+
+export type UpdateOidcClientResponse = UpdateOidcClientResponses[keyof UpdateOidcClientResponses];
+
+export type DeleteOidcClientLogoData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/oidc-clients/{id}/logo';
+};
+
+export type DeleteOidcClientLogoErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type DeleteOidcClientLogoError = DeleteOidcClientLogoErrors[keyof DeleteOidcClientLogoErrors];
+
+export type DeleteOidcClientLogoResponses = {
+    /**
+     * Logo removed
+     */
+    200: {
+        logo: null;
+    };
+};
+
+export type DeleteOidcClientLogoResponse = DeleteOidcClientLogoResponses[keyof DeleteOidcClientLogoResponses];
+
+export type GetOidcClientLogoData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query: {
+        size: 'small' | 'large';
+    };
+    url: '/oidc-clients/{id}/logo';
+};
+
+export type GetOidcClientLogoErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type GetOidcClientLogoError = GetOidcClientLogoErrors[keyof GetOidcClientLogoErrors];
+
+export type GetOidcClientLogoResponses = {
+    /**
+     * Client logo WebP
+     */
+    200: Blob | File;
+};
+
+export type GetOidcClientLogoResponse = GetOidcClientLogoResponses[keyof GetOidcClientLogoResponses];
+
+export type UploadOidcClientLogoData = {
+    body: {
+        file: Blob | File;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/oidc-clients/{id}/logo';
+};
+
+export type UploadOidcClientLogoErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type UploadOidcClientLogoError = UploadOidcClientLogoErrors[keyof UploadOidcClientLogoErrors];
+
+export type UploadOidcClientLogoResponses = {
+    /**
+     * Logo metadata
+     */
+    200: {
+        logo: ProfilePicture;
+    };
+};
+
+export type UploadOidcClientLogoResponse = UploadOidcClientLogoResponses[keyof UploadOidcClientLogoResponses];
 
 export type RegenerateOidcClientSecretData = {
     body?: never;
@@ -1830,8 +4597,13 @@ export type RegenerateOidcClientSecretResponses = {
     /**
      * New secret (once)
      */
-    200: unknown;
+    200: {
+        clientId: string;
+        clientSecret: string;
+    };
 };
+
+export type RegenerateOidcClientSecretResponse = RegenerateOidcClientSecretResponses[keyof RegenerateOidcClientSecretResponses];
 
 export type ListOidcClientGrantsData = {
     body?: never;
@@ -1855,8 +4627,12 @@ export type ListOidcClientGrantsResponses = {
     /**
      * Consent grants
      */
-    200: unknown;
+    200: {
+        grants: Array<OidcClientGrant>;
+    };
 };
+
+export type ListOidcClientGrantsResponse = ListOidcClientGrantsResponses[keyof ListOidcClientGrantsResponses];
 
 export type AdminRevokeOidcClientGrantData = {
     body?: never;
@@ -1906,8 +4682,12 @@ export type ListMyOidcGrantsResponses = {
     /**
      * Connected apps
      */
-    200: unknown;
+    200: {
+        grants: Array<OidcMyGrant>;
+    };
 };
+
+export type ListMyOidcGrantsResponse = ListMyOidcGrantsResponses[keyof ListMyOidcGrantsResponses];
 
 export type RevokeMyOidcGrantData = {
     body?: never;
@@ -1939,7 +4719,23 @@ export type RevokeMyOidcGrantResponse = RevokeMyOidcGrantResponses[keyof RevokeM
 export type OauthAuthorizeData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Resume after login
+         */
+        pending?: string;
+        client_id?: string;
+        redirect_uri?: string;
+        state?: string;
+        nonce?: string;
+        code_challenge?: string;
+        code_challenge_method?: 'S256';
+        response_type?: 'code';
+        /**
+         * Space-separated scopes. Default `openid profile email`.
+         */
+        scope?: string;
+    };
     url: '/oauth/authorize';
 };
 
@@ -1962,7 +4758,7 @@ export type OauthAuthorizeResponses = {
 export type OauthAuthorizeResponse = OauthAuthorizeResponses[keyof OauthAuthorizeResponses];
 
 export type OauthTokenData = {
-    body?: never;
+    body: OidcTokenRequest;
     path?: never;
     query?: never;
     url: '/oauth/token';
@@ -1981,8 +4777,10 @@ export type OauthTokenResponses = {
     /**
      * Token response
      */
-    200: unknown;
+    200: OidcTokenResponse;
 };
+
+export type OauthTokenResponse = OauthTokenResponses[keyof OauthTokenResponses];
 
 export type OauthJwksData = {
     body?: never;
@@ -1995,8 +4793,14 @@ export type OauthJwksResponses = {
     /**
      * Public ES256 JWKS
      */
-    200: unknown;
+    200: {
+        keys: Array<{
+            [key: string]: unknown;
+        }>;
+    };
 };
+
+export type OauthJwksResponse = OauthJwksResponses[keyof OauthJwksResponses];
 
 export type OauthUserinfoData = {
     body?: never;
@@ -2018,8 +4822,15 @@ export type OauthUserinfoResponses = {
     /**
      * User claims
      */
-    200: unknown;
+    200: {
+        sub: string;
+        email?: string;
+        name?: string;
+        picture?: string;
+    };
 };
+
+export type OauthUserinfoResponse = OauthUserinfoResponses[keyof OauthUserinfoResponses];
 
 export type GetOidcPendingData = {
     body?: never;
@@ -2043,11 +4854,16 @@ export type GetOidcPendingResponses = {
     /**
      * Pending details
      */
-    200: unknown;
+    200: OidcPendingAuthorization;
 };
 
+export type GetOidcPendingResponse = GetOidcPendingResponses[keyof GetOidcPendingResponses];
+
 export type OauthConsentData = {
-    body?: never;
+    body: {
+        pendingId: string;
+        decision: 'approve' | 'deny';
+    };
     path?: never;
     query?: never;
     url: '/oauth/consent';
@@ -2066,9 +4882,29 @@ export type OauthConsentResponses = {
     /**
      * Relaying-party redirect URL
      */
-    200: unknown;
+    200: {
+        redirectTo: string;
+    };
 };
 
+export type OauthConsentResponse = OauthConsentResponses[keyof OauthConsentResponses];
+
+export type OpenIdDiscoveryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/.well-known/openid-configuration';
+};
+
+export type OpenIdDiscoveryResponses = {
+    /**
+     * Discovery document
+     */
+    200: OpenIdConfiguration;
+};
+
+export type OpenIdDiscoveryResponse = OpenIdDiscoveryResponses[keyof OpenIdDiscoveryResponses];
+
 export type ClientOptions = {
-    baseUrl: `${string}://${string}/api/v1` | (string & {});
+    baseUrl: `${string}://${string}/api/v1` | `${string}://${string}` | (string & {});
 };
