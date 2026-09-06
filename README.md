@@ -8,9 +8,9 @@
 
 Receive catch-all mail · shared mailboxes · web UI · versioned HTTP API
 
-**v0.9.6** — locale-aware dates and calendar, plus UI polish across auth, mail, and settings.
+**v0.9.8** — operator CLI for instance config, health, and deploy.
 
-[![Version](https://img.shields.io/badge/version-0.9.6-00aeef?style=flat-square)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.9.8-00aeef?style=flat-square)](./package.json)
 [![License](https://img.shields.io/badge/license-Source--Available-0a7ea4?style=flat-square)](./LICENSE)
 [![Runtime](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/workers/)
 [![Database](https://img.shields.io/badge/Postgres-Neon-00E699?style=flat-square&logo=postgresql&logoColor=white)](https://neon.tech/)
