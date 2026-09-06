@@ -1,5 +1,7 @@
-import { syncLocalDbEnv } from "./scripts/sync-local-db-env.mjs";
 import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
+
+import { syncLocalDbEnv } from "./scripts/sync-local-db-env.mjs";
+import { WORKER_SPECS } from "./vitest.worker-specs";
 
 // Worker tests must not write to Postgres. Sync DATABASE_URL only when present so
 // the Hyperdrive binding can initialize; never require a live DB for the suite.
@@ -11,7 +13,10 @@ if (!hasDb) {
 
 export default defineWorkersConfig({
 	test: {
+		name: "workers",
+		include: WORKER_SPECS,
 		fileParallelism: false,
+		maxWorkers: 1,
 		poolOptions: {
 			workers: {
 				wrangler: { configPath: "./wrangler.jsonc" },
