@@ -2,7 +2,7 @@
 
 Flaremail is self-hosted email on Cloudflare: a public **gate** serves the web app and proxies `/api/*` to a private **core** Worker that receives inbound mail, stores messages in Postgres and R2, and owns the HTTP API, crons, and bindings.
 
-This file is a **glossary** only. Implementation and deploy steps live in the [CLI README](../apps/cli/README.md). Hard decisions live in [adr/](./adr/).
+This file is a **glossary** only. Implementation and deploy steps live in the [CLI README](../apps/cli/README.md). Claim the **intendant** immediately after deploy: [first-claimer bootstrap](./first-claimer-bootstrap.md). Hard decisions live in [adr/](./adr/).
 
 ## Language
 
@@ -31,11 +31,15 @@ An authentication identity in the platform. Most **accounts** have exactly one *
 _Avoid_: user, login, operator
 
 **Intendant**:
-The first **account** created at deploy time. Platform configuration and management — no **primary mailbox**, no **mailbox grants**, no SSO. Exactly one per instance; role cannot be assigned to another **account**; cannot be deleted. Signs in with the literal identifier `intendant` (not an email address) and a deploy-time generated password. Can **regenerate** its own password (new random secret — never user-chosen). Can register **domains**, assign **admins**, assign any **role** (including **superadmin**), and register **OIDC clients**. May read and send mail on all **system mailboxes** and all **shared mailboxes** across all **domains** (see [ADR-0006](./adr/0006-system-mailbox-access-by-role.md)); cannot access user **primary mailboxes**.
-_Avoid_: root, superuser, system account
+The unique bootstrap **account** of an **instance**, created by the **first-claimer**. Platform configuration and management — no **primary mailbox**, no **mailbox grants**, no SSO. Exactly one per instance; role cannot be assigned to another **account**; cannot be deleted. Signs in with the literal identifier `intendant` (not an email address) and a generated password shown once at claim (never user-chosen). Can **regenerate** its own password (new random secret). Can register **domains**, assign **admins**, assign any **role** (including **superadmin**), and register **OIDC clients**. May read and send mail on all **system mailboxes** and all **shared mailboxes** across all **domains** (see [ADR-0006](./adr/0006-system-mailbox-access-by-role.md)); cannot access user **primary mailboxes**.
+_Avoid_: root, superuser, system account, recovery account (UI copy only)
+
+**First-claimer**:
+Whoever first creates the **intendant** on an unclaimed **instance**. After that claim, bootstrap cannot mint another **intendant**.
+_Avoid_: first boot, deployer (use **installing operator** for who deploys), root signup
 
 **Role**:
-The single permission tier held by an **account**: `user`, `manager`, `admin`, or `superadmin`. Each **account** holds exactly one **role**; higher tiers implicitly include lower-tier capabilities (e.g. an **admin** can use mail normally without a separate `user` **role**). The **intendant** is not a **role** — it is a unique bootstrap **account** outside this ladder.
+The single permission tier held by an **account**: `user`, `manager`, `admin`, or `superadmin`. Each **account** holds exactly one **role**; higher tiers implicitly include lower-tier capabilities (e.g. an **admin** can use mail normally without a separate `user` **role**). The **intendant** is not a **role** — it is a unique **first-claimer** bootstrap **account** outside this ladder.
 _Avoid_: permission, group, access level
 
 **Superadmin**:
@@ -357,4 +361,4 @@ _Avoid_: log TTL, audit retention
 
 **Dev:** How does the **intendant** sign in if it has no **mailbox**?
 
-**Expert:** With `email: "intendant"` and the generated deploy-time password — the string `intendant` is a reserved sign-in identifier, not an email address. The **intendant** manages **domains** and **accounts**, and can read/send from **system mailboxes** (e.g. `postmaster@`) but not from user inboxes.
+**Expert:** With `email: "intendant"` and the password shown once to the **first-claimer** — the string `intendant` is a reserved sign-in identifier, not an email address. The **intendant** manages **domains** and **accounts**, and can read/send from **system mailboxes** (e.g. `postmaster@`) but not from user inboxes.

@@ -16,7 +16,7 @@ Receive catch-all mail · shared mailboxes · web UI · versioned HTTP API
 [![Database](https://img.shields.io/badge/Postgres-Neon-00E699?style=flat-square&logo=postgresql&logoColor=white)](https://neon.tech/)
 [![UI](https://img.shields.io/badge/UI-React%20%2B%20Vite-149ECA?style=flat-square&logo=react&logoColor=white)](./apps/web)
 
-[Docs](./docs/README.md) · [API](./docs/API.md) · [Glossary](./docs/CONTEXT.md) · [License](./LICENSE) · [CLI](./apps/cli/README.md) · [Core](./apps/core/README.md) · [Gate](./apps/gate/README.md) · [Web](./apps/web/README.md)
+[Docs](./docs/README.md) · [API](./docs/API.md) · [Glossary](./docs/CONTEXT.md) · [Security](./SECURITY.md) · [License](./LICENSE) · [CLI](./apps/cli/README.md) · [Core](./apps/core/README.md) · [Gate](./apps/gate/README.md) · [Web](./apps/web/README.md)
 
 </div>
 
@@ -144,7 +144,7 @@ npx flaremail init
 npx flaremail deploy --yes
 ```
 
-Then open the **gate hostname** and complete intendant bootstrap if prompted ([ADR-0005](./docs/adr/0005-intendant-break-glass-account.md)).
+Then **immediately** open `https://<gate-hostname>/bootstrap` and complete **first-claimer** bootstrap. Until that succeeds, anyone who can reach the **gate hostname** can claim the **instance**. Store the password shown once. Procedure: [`docs/first-claimer-bootstrap.md`](./docs/first-claimer-bootstrap.md). Security: [`SECURITY.md`](./SECURITY.md).
 
 `flaremail.conf.jsonc` is the only **instance** file (gitignored). Do not edit generated `.env` or `wrangler.jsonc`. TTY: `npx flaremail` for the TUI.
 

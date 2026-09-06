@@ -95,10 +95,12 @@ paths:
       tags: [Meta]
       summary: Bootstrap the intendant
       description: |
-        Unauthenticated first-run. Creates the intendant account when none
+        First-claimer. Unauthenticated. Creates the intendant when none
         exists and returns the generated password once. Subsequent calls
         return `{ created: false }` without revealing credentials.
-        Rate-limited.
+        Rate-limited. Operators must call this immediately after first
+        deploy — until then anyone who can reach the gate can claim the
+        instance.
       operationId: bootstrapIntendant
       security: []
       responses:

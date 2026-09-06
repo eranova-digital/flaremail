@@ -35,7 +35,7 @@ src/
 
 | Area | Examples |
 |------|----------|
-| Public | `/login`, `/bootstrap`, `/activate`, `/reset-password` |
+| Public | `/login`, `/bootstrap` (**first-claimer**), `/activate`, `/reset-password` |
 | OAuth / security | `/oauth/consent`, `/security-compliance` |
 | App shell | `/`, `/settings`, `/management` |
 | Mailbox | `/m/:mailboxId/...` (compose, threads, folders, labels) |

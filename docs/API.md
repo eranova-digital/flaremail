@@ -32,7 +32,9 @@ Versioned API:
 | GET | `/api/v1/openapi.json` | No | OpenAPI document (`info.version` = root `package.json`) |
 | GET | `/api/v1/health` | No | Liveness + version (gate-accessible) |
 | GET | `/health` | No | Same payload as `/api/v1/health` (also via gate) |
-| POST | `/api/v1/bootstrap` | No | First-run intendant create (`{ created: false }` thereafter) |
+| POST | `/api/v1/bootstrap` | No | **First-claimer**: create **intendant** if none exists; password returned once. `{ created: false }` thereafter |
+
+Until an **instance** is claimed, this endpoint is the break-glass create. Call it immediately after the first deploy ([procedure](./first-claimer-bootstrap.md), [SECURITY.md](../SECURITY.md)). Subsequent calls are inert.
 
 ---
 

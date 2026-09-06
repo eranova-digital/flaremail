@@ -25,7 +25,7 @@ Implement first-party authentication: sign-in endpoint, session issuance and val
 13. As a pending **account** holder, I want sign-in rejected until activation completes, so that invitees cannot access before setup.
 14. As the platform, I want failed sign-in attempts rate-limited, so that brute force is mitigated.
 15. As a **user**, I want clear error messages distinguishing wrong password vs suspended vs pending, so that I know what action to take.
-16. As a deployer, I want the intendant password surfaced once at bootstrap, so that I can store it in a secrets manager.
+16. As an **installing operator**, I want the **intendant** password surfaced once at **first-claimer** bootstrap, so that I can store it in a secrets manager.
 
 ## Implementation Decisions
 
@@ -39,7 +39,7 @@ Implement first-party authentication: sign-in endpoint, session issuance and val
 - Password reset via recovery: send email to **recovery address** with one-time token (distinct from invite code and password reset code).
 - **Password reset code**: manager/admin generates `XXXX-XXXX` style code; single use; allows new password set without login.
 - Intendant regenerate: authenticated intendant-only endpoint; returns new password once in response body; invalidates old password.
-- Public routes: sign-in, invite activation, password reset request/confirm, health, openapi.
+- Public routes: **first-claimer** bootstrap, sign-in, invite activation, password reset request/confirm, health, openapi.
 - Session TTL and refresh: sliding expiration (e.g. 7 days sliding, 30 days absolute) — exact values implementation choice.
 
 ## Testing Decisions
@@ -63,4 +63,4 @@ Implement first-party authentication: sign-in endpoint, session issuance and val
 
 - Depends on: Accounts & schema spec.
 - Blocks: RBAC middleware, web auth UI.
-- ADRs: 0004, 0005.
+- ADRs: 0004, 0005, 0015. Procedure: [`docs/first-claimer-bootstrap.md`](../../first-claimer-bootstrap.md).

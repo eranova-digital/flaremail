@@ -26,12 +26,13 @@ Add authentication flows to the React web app: login page, logout, invite activa
 14. As a **user**, I want to manage my **API keys** in settings (basic list/create/revoke), so that I do not need another UI spec for keys.
 15. As a **user**, I want to change my password in account settings, so that I can rotate credentials.
 16. As a **user**, I want to edit unlocked **profile fields** in settings, so that my information stays current.
+17. As an **installing operator**, I want a bootstrap page after first deploy, so that I can become the **first-claimer** and receive the **intendant** password once.
 
 ## Implementation Decisions
 
 - Auth provider at app root: session state, current account profile, role.
 - API client: `credentials: 'include'` for cookies; remove `API_BEARER_TOKEN` from web env.
-- Routes: `/login`, `/logout`, `/activate`, `/forgot-password`, `/reset-password`, protected `/*` mail routes.
+- Routes: `/login`, `/logout`, `/bootstrap`, `/activate`, `/forgot-password`, `/reset-password`, protected `/*` mail routes.
 - Post-login redirect: return URL or default inbox (primary mailbox).
 - Role-aware navigation: hide platform admin links from `user`/`manager` (coarse; full admin UI separate spec).
 - TanStack Query: invalidate on login/logout; 401 interceptor → login.
@@ -57,3 +58,4 @@ Add authentication flows to the React web app: login page, logout, invite activa
 
 - Depends on: First-party auth, RBAC (for 403 handling in UI), API keys endpoints.
 - Coordinate with OpenAPI client regeneration after auth endpoints added.
+- **First-claimer** UI: `/bootstrap`. Procedure: [`docs/first-claimer-bootstrap.md`](../../first-claimer-bootstrap.md).

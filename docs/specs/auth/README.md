@@ -30,7 +30,8 @@ Design specs for accounts, sessions, API keys, RBAC, OIDC IdP, and related UI. I
 
 - [ADR-0003](../../adr/0003-oidc-subject-is-account-id.md) — OIDC `sub` is account ID
 - [ADR-0004](../../adr/0004-first-party-session-vs-oidc-idp.md) — Session vs OIDC IdP
-- [ADR-0005](../../adr/0005-intendant-break-glass-account.md) — Intendant bootstrap
+- [ADR-0005](../../adr/0005-intendant-break-glass-account.md) — Intendant break-glass account
+- [ADR-0015](../../adr/0015-first-claimer-bootstrap.md) — First-claimer bootstrap (not deploy-time)
 - [ADR-0006](../../adr/0006-system-mailbox-access-by-role.md) — System mailbox access by role
 - [ADR-0007](../../adr/0007-oidc-token-signing-es256.md) — ES256 token signing
 - [ADR-0008](../../adr/0008-pkce-required-all-clients.md) — PKCE required
