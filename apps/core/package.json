@@ -10,7 +10,7 @@
 		"dev": "node scripts/with-env.mjs wrangler dev",
 		"start": "node scripts/with-env.mjs wrangler dev",
 		"typegen": "wrangler types",
-		"test": "vitest",
+		"test": "vitest run --maxWorkers=1",
 		"apigen": "node -e \"const fs=require('fs');const YAML=require('yaml');fs.mkdirSync('src/openapi',{recursive:true});fs.writeFileSync('src/openapi/spec.json',JSON.stringify(YAML.parse(fs.readFileSync('openapi.yaml','utf8')),null,2));\"",
 		"cf-typegen": "wrangler types",
 		"db:generate": "drizzle-kit generate",
