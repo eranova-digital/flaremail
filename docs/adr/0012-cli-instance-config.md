@@ -1,4 +1,10 @@
-# CLI owns instance config; Wrangler files are generated
+# ADR-0012: CLI owns instance config; Wrangler files are generated
+
+## Status
+
+Accepted
+
+## Context
 
 FlareMail is self-hosted: each **instance** has account-specific Hyperdrive ids, a **gate hostname**, secrets, and Cloudflare tokens. Those used to live in committed `wrangler.jsonc` plus two `.env` files, so git mixed product structure with one operator's deployment.
 

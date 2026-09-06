@@ -193,6 +193,7 @@ Auth design: [`docs/specs/auth/`](./docs/specs/auth/). Agents: [`AGENTS.md`](./A
 | `npx flaremail` | TUI |
 | `npx flaremail init` / `sync` / `status` / `doctor` / `apply` / `deploy` / `dev` | CLI |
 | `npm run deploy` / `dev` | Aliases for `flaremail deploy --yes` / `flaremail dev` |
+| `npm run core:deploy` / `gate:deploy` | Aliases for `flaremail deploy --core/--gate --yes` |
 | `npm run web:dev` / `web:test` / `core:test` | UI and Worker tests |
 | `npm run db:*` / `apigen` / `typegen` | Schema and codegen |
 

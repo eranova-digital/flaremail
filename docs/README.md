@@ -18,6 +18,7 @@ Canonical docs for Flaremail beyond the app READMEs.
 | Core | [../apps/core/README.md](../apps/core/README.md) |
 | Gate | [../apps/gate/README.md](../apps/gate/README.md) |
 | Web | [../apps/web/README.md](../apps/web/README.md) |
+| 3p-demo | [../apps/3p-demo/README.md](../apps/3p-demo/README.md) |
 
 ## How to use these docs
 

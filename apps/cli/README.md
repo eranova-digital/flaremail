@@ -134,7 +134,12 @@ npx flaremail deploy --yes
 
 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs `npx flaremail sync --from-example` then tests (no Cloudflare token).
 
-[`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) writes conf from secret `FLAREMAIL_CONF` and runs `npx flaremail deploy --yes` with `CLOUDFLARE_API_TOKEN`. GitHub Environment: `production` (`main`), `staging` (`development`).
+[`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) writes conf from secret `FLAREMAIL_CONF` and runs `npx flaremail deploy --yes`. GitHub Environment: `production` (`main`), `staging` (`development`). Set these environment secrets — not Wrangler login in CI:
+
+| Secret | Value |
+|--------|--------|
+| `FLAREMAIL_CONF` | Full `flaremail.conf.jsonc` contents |
+| `CLOUDFLARE_API_TOKEN` | Same token as `cloudflare.apiToken` (overrides conf) |
 
 ---
 

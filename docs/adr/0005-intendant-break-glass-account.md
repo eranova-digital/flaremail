@@ -22,7 +22,7 @@ Each Flaremail instance is single-tenant. Someone must bootstrap the platform: r
 
 - **Account** schema must allow null **primary mailbox** for the intendant only.
 - Sign-in endpoint must accept the reserved `intendant` identifier.
-- Bootstrap runbooks document deploy-time password capture and regeneration.
+- First-boot UI surfaces the deploy-time password once; regeneration is in-app. Instance install is [`apps/cli/README.md`](../../apps/cli/README.md), not a Wrangler runbook.
 - OIDC and mail APIs reject intendant tokens for user-scoped operations that require a **primary mailbox**.
 
 ## Amendment (2026-07-12)

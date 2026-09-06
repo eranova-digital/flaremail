@@ -30,6 +30,6 @@ Operators add **domains** before Cloudflare Email Routing DNS is fully provision
 ## Consequences
 
 - New tables: validation runs, checks, log events.
-- `index.ts` gains `scheduled()` handler and cron in `wrangler.jsonc`.
+- `index.ts` gains `scheduled()` handler; cron lives in the CLI Wrangler template (generated `wrangler.jsonc`, see [ADR-0012](./0012-cli-instance-config.md)).
 - Inbound email path checks for validation tokens before normal persistence.
 - Settings UI shows badge, recheck, and expandable run detail.

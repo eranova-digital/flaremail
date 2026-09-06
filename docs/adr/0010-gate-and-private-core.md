@@ -21,6 +21,6 @@ Flaremail needs a browser UI and a Worker that handles Email Routing, outbound s
 
 ## Consequences
 
-- Deploy order: core, then gate.
-- Installing operators attach the **gate hostname** to gate and Email Routing to core.
+- Deploy order: core, then gate (`npx flaremail deploy` does this).
+- The CLI attaches the **gate hostname** to gate and Email Routing catch-all to core. Operators do not do this in the dashboard. See [`apps/cli/README.md`](../../apps/cli/README.md).
 - Gate stays thin — no auth or business logic at the edge.
