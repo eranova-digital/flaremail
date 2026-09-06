@@ -278,7 +278,16 @@
 		"something-went-wrong": "Etwas ist schiefgelaufen",
 		"invalid-phone-number": "Die Telefonnummer muss eine gültige internationale Nummer im E.164-Format sein (z. B. +14155552671)",
 		"recovery-email-hosted-domain": "Die Wiederherstellungs-E-Mail darf keine von diesem Mailserver gehostete Domain verwenden",
-		"recovery-email-hosted-mailbox": "Die Wiederherstellungs-E-Mail darf kein Postfach auf diesem Mailserver verwenden"
+		"recovery-email-hosted-mailbox": "Die Wiederherstellungs-E-Mail darf kein Postfach auf diesem Mailserver verwenden",
+		"invalid-search-query": "Ungültige Suchanfrage",
+		"unknown-search-operator": "Unbekannter Suchoperator",
+		"empty-search-operator-value": "Leerer Suchoperatorwert",
+		"unclosed-search-quote": "Unvollständiges Anführungszeichen in der Suchanfrage",
+		"unclosed-search-paren": "Unvollständige Klammer in der Suchanfrage",
+		"invalid-search-date": "Ungültiges Suchdatum",
+		"invalid-search-folder": "Ungültiger Suchordner",
+		"invalid-search-is-value": "Ungültiger is:-Wert",
+		"invalid-search-has-value": "Ungültiger has:-Wert"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "{{count}} Entwurf",
 			"draftCount_few": "{{count}} Entwürfe",
 			"draftCount_other": "{{count}} Entwürfe",
-			"emptyDrafts": "Keine Entwürfe."
+			"emptyDrafts": "Keine Entwürfe.",
+			"searchPlaceholder": "Mail durchsuchen",
+			"searchAria": "Mail durchsuchen",
+			"searchTitle": "Suche",
+			"emptySearch": "Keine passenden Threads.",
+			"hitCount_one": "{{count}} passende Nachricht",
+			"hitCount_few": "{{count}} passende Nachrichten",
+			"hitCount_other": "{{count}} passende Nachrichten",
+			"clearSearch": "Suche löschen"
 		},
 		"threadActions": {
 			"markUnread": "Als ungelesen markieren",

@@ -278,7 +278,16 @@
 		"something-went-wrong": "Une erreur s'est produite",
 		"invalid-phone-number": "Le numéro de téléphone doit être un numéro international valide au format E.164 (p. ex. +14155552671)",
 		"recovery-email-hosted-domain": "L’e-mail de récupération ne peut pas utiliser un domaine hébergé par ce serveur de messagerie",
-		"recovery-email-hosted-mailbox": "L’e-mail de récupération ne peut pas utiliser une boîte aux lettres de ce serveur de messagerie"
+		"recovery-email-hosted-mailbox": "L’e-mail de récupération ne peut pas utiliser une boîte aux lettres de ce serveur de messagerie",
+		"invalid-search-query": "Requête de recherche invalide",
+		"unknown-search-operator": "Opérateur de recherche inconnu",
+		"empty-search-operator-value": "Valeur d’opérateur vide",
+		"unclosed-search-quote": "Guillemet non fermé dans la requête",
+		"unclosed-search-paren": "Parenthèse non fermée dans la requête",
+		"invalid-search-date": "Date de recherche invalide",
+		"invalid-search-folder": "Dossier de recherche invalide",
+		"invalid-search-is-value": "Valeur is: invalide",
+		"invalid-search-has-value": "Valeur has: invalide"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "{{count}} brouillon",
 			"draftCount_few": "{{count}} brouillons",
 			"draftCount_other": "{{count}} brouillons",
-			"emptyDrafts": "Aucun brouillon."
+			"emptyDrafts": "Aucun brouillon.",
+			"searchPlaceholder": "Rechercher dans la messagerie",
+			"searchAria": "Rechercher dans la messagerie",
+			"searchTitle": "Recherche",
+			"emptySearch": "Aucun fil correspondant.",
+			"hitCount_one": "{{count}} message correspondant",
+			"hitCount_few": "{{count}} messages correspondants",
+			"hitCount_other": "{{count}} messages correspondants",
+			"clearSearch": "Effacer la recherche"
 		},
 		"threadActions": {
 			"markUnread": "Marquer comme non lu",

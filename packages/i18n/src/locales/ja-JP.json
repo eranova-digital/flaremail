@@ -278,7 +278,16 @@
 		"something-went-wrong": "問題が発生しました",
 		"invalid-phone-number": "電話番号は E.164 形式の有効な国際番号である必要があります（例: +14155552671）",
 		"recovery-email-hosted-domain": "復旧用メールに、このメールサーバーがホストするドメインは使用できません",
-		"recovery-email-hosted-mailbox": "復旧用メールに、このメールサーバー上のメールボックスは使用できません"
+		"recovery-email-hosted-mailbox": "復旧用メールに、このメールサーバー上のメールボックスは使用できません",
+		"invalid-search-query": "検索クエリが無効です",
+		"unknown-search-operator": "不明な検索演算子です",
+		"empty-search-operator-value": "検索演算子の値が空です",
+		"unclosed-search-quote": "検索クエリの引用符が閉じられていません",
+		"unclosed-search-paren": "検索クエリの括弧が閉じられていません",
+		"invalid-search-date": "検索日付が無効です",
+		"invalid-search-folder": "検索フォルダーが無効です",
+		"invalid-search-is-value": "is: の値が無効です",
+		"invalid-search-has-value": "has: の値が無効です"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "{{count}} 件の下書き",
 			"draftCount_few": "{{count}} 件の下書き",
 			"draftCount_other": "{{count}} 件の下書き",
-			"emptyDrafts": "下書きはありません。"
+			"emptyDrafts": "下書きはありません。",
+			"searchPlaceholder": "メールを検索",
+			"searchAria": "メールを検索",
+			"searchTitle": "検索",
+			"emptySearch": "一致するスレッドはありません。",
+			"hitCount_one": "{{count}} 件の一致するメッセージ",
+			"hitCount_few": "{{count}} 件の一致するメッセージ",
+			"hitCount_other": "{{count}} 件の一致するメッセージ",
+			"clearSearch": "検索をクリア"
 		},
 		"threadActions": {
 			"markUnread": "未読にする",

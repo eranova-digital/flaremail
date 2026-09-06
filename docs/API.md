@@ -538,7 +538,12 @@ POST /search
 }
 ```
 
-v1 search: free-text `ILIKE` on `subject`, `textBody`, `from`, `to` within the mailbox. Returns **message hits** with `threadId` and cursor pagination.
+v1 search: a **search query** (plain text plus operators) over the selected mailbox.
+Default scope is every folder except trash and spam. Returns **search results**:
+each item is a **thread** with nested **search hits** (matching messages). Cursor
+pagination is per result, ordered by the newest hit (or thread `lastMessageAt`
+when there are no hits). See [ADR-0013](./adr/0013-search-returns-grouped-threads.md)
+and [ADR-0014](./adr/0014-mail-search-query-language.md).
 
 ---
 

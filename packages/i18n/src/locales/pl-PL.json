@@ -278,7 +278,16 @@
 		"something-went-wrong": "Coś poszło nie tak",
 		"invalid-phone-number": "Numer telefonu musi być prawidłowym numerem międzynarodowym w formacie E.164 (np. +14155552671)",
 		"recovery-email-hosted-domain": "E-mail odzyskiwania nie może używać domeny hostowanej na tym serwerze poczty",
-		"recovery-email-hosted-mailbox": "E-mail odzyskiwania nie może używać skrzynki na tym serwerze poczty"
+		"recovery-email-hosted-mailbox": "E-mail odzyskiwania nie może używać skrzynki na tym serwerze poczty",
+		"invalid-search-query": "Nieprawidłowe zapytanie wyszukiwania",
+		"unknown-search-operator": "Nieznany operator wyszukiwania",
+		"empty-search-operator-value": "Pusta wartość operatora wyszukiwania",
+		"unclosed-search-quote": "Niezamknięty cudzysłów w zapytaniu",
+		"unclosed-search-paren": "Niezamknięty nawias w zapytaniu",
+		"invalid-search-date": "Nieprawidłowa data wyszukiwania",
+		"invalid-search-folder": "Nieprawidłowy folder wyszukiwania",
+		"invalid-search-is-value": "Nieprawidłowa wartość is:",
+		"invalid-search-has-value": "Nieprawidłowa wartość has:"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "{{count}} szkic",
 			"draftCount_few": "{{count}} szkice",
 			"draftCount_other": "{{count}} szkiców",
-			"emptyDrafts": "Brak szkiców."
+			"emptyDrafts": "Brak szkiców.",
+			"searchPlaceholder": "Szukaj poczty",
+			"searchAria": "Szukaj poczty",
+			"searchTitle": "Wyszukiwanie",
+			"emptySearch": "Brak pasujących wątków.",
+			"hitCount_one": "{{count}} pasująca wiadomość",
+			"hitCount_few": "{{count}} pasujące wiadomości",
+			"hitCount_other": "{{count}} pasujących wiadomości",
+			"clearSearch": "Wyczyść wyszukiwanie"
 		},
 		"threadActions": {
 			"markUnread": "Oznacz jako nieprzeczytane",

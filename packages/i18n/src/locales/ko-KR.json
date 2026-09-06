@@ -278,7 +278,16 @@
 		"something-went-wrong": "문제가 발생했습니다",
 		"invalid-phone-number": "전화번호는 E.164 형식의 유효한 국제번호여야 합니다(예: +14155552671)",
 		"recovery-email-hosted-domain": "복구 이메일은 이 메일 서버가 호스팅하는 도메인을 사용할 수 없습니다",
-		"recovery-email-hosted-mailbox": "복구 이메일은 이 메일 서버의 메일함을 사용할 수 없습니다"
+		"recovery-email-hosted-mailbox": "복구 이메일은 이 메일 서버의 메일함을 사용할 수 없습니다",
+		"invalid-search-query": "잘못된 검색 쿼리입니다",
+		"unknown-search-operator": "알 수 없는 검색 연산자입니다",
+		"empty-search-operator-value": "검색 연산자 값이 비어 있습니다",
+		"unclosed-search-quote": "검색 쿼리의 따옴표가 닫히지 않았습니다",
+		"unclosed-search-paren": "검색 쿼리의 괄호가 닫히지 않았습니다",
+		"invalid-search-date": "잘못된 검색 날짜입니다",
+		"invalid-search-folder": "잘못된 검색 폴더입니다",
+		"invalid-search-is-value": "잘못된 is: 값입니다",
+		"invalid-search-has-value": "잘못된 has: 값입니다"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "임시보관함 {{count}}개",
 			"draftCount_few": "임시보관함 {{count}}개",
 			"draftCount_other": "임시보관함 {{count}}개",
-			"emptyDrafts": "임시보관함이 없습니다."
+			"emptyDrafts": "임시보관함이 없습니다.",
+			"searchPlaceholder": "메일 검색",
+			"searchAria": "메일 검색",
+			"searchTitle": "검색",
+			"emptySearch": "일치하는 스레드가 없습니다.",
+			"hitCount_one": "일치하는 메시지 {{count}}개",
+			"hitCount_few": "일치하는 메시지 {{count}}개",
+			"hitCount_other": "일치하는 메시지 {{count}}개",
+			"clearSearch": "검색 지우기"
 		},
 		"threadActions": {
 			"markUnread": "읽지 않음으로 표시",

@@ -278,7 +278,16 @@
 		"something-went-wrong": "Algo deu errado",
 		"invalid-phone-number": "O número de telefone deve ser um número internacional válido no formato E.164 (ex.: +14155552671)",
 		"recovery-email-hosted-domain": "O e-mail de recuperação não pode usar um domínio hospedado neste servidor de e-mail",
-		"recovery-email-hosted-mailbox": "O e-mail de recuperação não pode usar uma caixa neste servidor de e-mail"
+		"recovery-email-hosted-mailbox": "O e-mail de recuperação não pode usar uma caixa neste servidor de e-mail",
+		"invalid-search-query": "Consulta de pesquisa inválida",
+		"unknown-search-operator": "Operador de pesquisa desconhecido",
+		"empty-search-operator-value": "Valor de operador de pesquisa vazio",
+		"unclosed-search-quote": "Aspas não fechadas na consulta",
+		"unclosed-search-paren": "Parêntese não fechado na consulta",
+		"invalid-search-date": "Data de pesquisa inválida",
+		"invalid-search-folder": "Pasta de pesquisa inválida",
+		"invalid-search-is-value": "Valor is: inválido",
+		"invalid-search-has-value": "Valor has: inválido"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "{{count}} rascunho",
 			"draftCount_few": "{{count}} rascunhos",
 			"draftCount_other": "{{count}} rascunhos",
-			"emptyDrafts": "Nenhum rascunho."
+			"emptyDrafts": "Nenhum rascunho.",
+			"searchPlaceholder": "Pesquisar e-mail",
+			"searchAria": "Pesquisar e-mail",
+			"searchTitle": "Pesquisa",
+			"emptySearch": "Nenhuma conversa correspondente.",
+			"hitCount_one": "{{count}} mensagem correspondente",
+			"hitCount_few": "{{count}} mensagens correspondentes",
+			"hitCount_other": "{{count}} mensagens correspondentes",
+			"clearSearch": "Limpar pesquisa"
 		},
 		"threadActions": {
 			"markUnread": "Marcar como não lida",

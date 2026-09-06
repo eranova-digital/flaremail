@@ -278,7 +278,16 @@
 		"something-went-wrong": "Qualcosa è andato storto",
 		"invalid-phone-number": "Il numero di telefono deve essere un numero internazionale valido in formato E.164 (ad es. +14155552671)",
 		"recovery-email-hosted-domain": "L’e-mail di recupero non può usare un dominio ospitato da questo server di posta",
-		"recovery-email-hosted-mailbox": "L’e-mail di recupero non può usare una casella su questo server di posta"
+		"recovery-email-hosted-mailbox": "L’e-mail di recupero non può usare una casella su questo server di posta",
+		"invalid-search-query": "Query di ricerca non valida",
+		"unknown-search-operator": "Operatore di ricerca sconosciuto",
+		"empty-search-operator-value": "Valore operatore di ricerca vuoto",
+		"unclosed-search-quote": "Virgolette non chiuse nella query",
+		"unclosed-search-paren": "Parentesi non chiusa nella query",
+		"invalid-search-date": "Data di ricerca non valida",
+		"invalid-search-folder": "Cartella di ricerca non valida",
+		"invalid-search-is-value": "Valore is: non valido",
+		"invalid-search-has-value": "Valore has: non valido"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "{{count}} bozza",
 			"draftCount_few": "{{count}} bozze",
 			"draftCount_other": "{{count}} bozze",
-			"emptyDrafts": "Nessuna bozza."
+			"emptyDrafts": "Nessuna bozza.",
+			"searchPlaceholder": "Cerca nella posta",
+			"searchAria": "Cerca nella posta",
+			"searchTitle": "Ricerca",
+			"emptySearch": "Nessuna conversazione corrispondente.",
+			"hitCount_one": "{{count}} messaggio corrispondente",
+			"hitCount_few": "{{count}} messaggi corrispondenti",
+			"hitCount_other": "{{count}} messaggi corrispondenti",
+			"clearSearch": "Cancella ricerca"
 		},
 		"threadActions": {
 			"markUnread": "Segna come non letto",

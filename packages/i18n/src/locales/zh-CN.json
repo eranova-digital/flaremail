@@ -278,7 +278,16 @@
 		"something-went-wrong": "出了点问题",
 		"invalid-phone-number": "电话号码必须是有效的 E.164 国际号码（例如 +14155552671）",
 		"recovery-email-hosted-domain": "恢复邮箱不能使用此邮件服务器托管的域名",
-		"recovery-email-hosted-mailbox": "恢复邮箱不能使用此邮件服务器上的邮箱"
+		"recovery-email-hosted-mailbox": "恢复邮箱不能使用此邮件服务器上的邮箱",
+		"invalid-search-query": "搜索查询无效",
+		"unknown-search-operator": "未知搜索运算符",
+		"empty-search-operator-value": "搜索运算符值为空",
+		"unclosed-search-quote": "搜索查询中的引号未闭合",
+		"unclosed-search-paren": "搜索查询中的括号未闭合",
+		"invalid-search-date": "搜索日期无效",
+		"invalid-search-folder": "搜索文件夹无效",
+		"invalid-search-is-value": "is: 值无效",
+		"invalid-search-has-value": "has: 值无效"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "{{count}} 封草稿",
 			"draftCount_few": "{{count}} 封草稿",
 			"draftCount_other": "{{count}} 封草稿",
-			"emptyDrafts": "没有草稿。"
+			"emptyDrafts": "没有草稿。",
+			"searchPlaceholder": "搜索邮件",
+			"searchAria": "搜索邮件",
+			"searchTitle": "搜索",
+			"emptySearch": "没有匹配的会话。",
+			"hitCount_one": "{{count}} 封匹配的邮件",
+			"hitCount_few": "{{count}} 封匹配的邮件",
+			"hitCount_other": "{{count}} 封匹配的邮件",
+			"clearSearch": "清除搜索"
 		},
 		"threadActions": {
 			"markUnread": "标为未读",

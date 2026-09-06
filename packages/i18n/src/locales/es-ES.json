@@ -278,7 +278,16 @@
 		"something-went-wrong": "Algo salió mal",
 		"invalid-phone-number": "El número de teléfono debe ser un número internacional válido en formato E.164 (p. ej. +14155552671)",
 		"recovery-email-hosted-domain": "El correo de recuperación no puede usar un dominio alojado en este servidor de correo",
-		"recovery-email-hosted-mailbox": "El correo de recuperación no puede usar un buzón de este servidor de correo"
+		"recovery-email-hosted-mailbox": "El correo de recuperación no puede usar un buzón de este servidor de correo",
+		"invalid-search-query": "Consulta de búsqueda no válida",
+		"unknown-search-operator": "Operador de búsqueda desconocido",
+		"empty-search-operator-value": "Valor de operador de búsqueda vacío",
+		"unclosed-search-quote": "Comillas sin cerrar en la consulta",
+		"unclosed-search-paren": "Paréntesis sin cerrar en la consulta",
+		"invalid-search-date": "Fecha de búsqueda no válida",
+		"invalid-search-folder": "Carpeta de búsqueda no válida",
+		"invalid-search-is-value": "Valor is: no válido",
+		"invalid-search-has-value": "Valor has: no válido"
 	},
 	"auth": {
 		"session": {
@@ -582,7 +591,15 @@
 			"draftCount_one": "{{count}} borrador",
 			"draftCount_few": "{{count}} borradores",
 			"draftCount_other": "{{count}} borradores",
-			"emptyDrafts": "No hay borradores."
+			"emptyDrafts": "No hay borradores.",
+			"searchPlaceholder": "Buscar correo",
+			"searchAria": "Buscar correo",
+			"searchTitle": "Búsqueda",
+			"emptySearch": "No hay conversaciones coincidentes.",
+			"hitCount_one": "{{count}} mensaje coincidente",
+			"hitCount_few": "{{count}} mensajes coincidentes",
+			"hitCount_other": "{{count}} mensajes coincidentes",
+			"clearSearch": "Borrar búsqueda"
 		},
 		"threadActions": {
 			"markUnread": "Marcar como no leído",
