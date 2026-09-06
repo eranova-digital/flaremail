@@ -51,7 +51,7 @@ export function buildSandboxedHtmlSrcDoc(
 		themeCss,
 		'table[role="presentation"], table[border="0"] { border: none !important; }',
 		"a { color: #2563eb; }",
-		"img { max-width: 100%; height: auto; }",
+		"img { max-width: 100%; max-height: 20rem; height: auto; object-fit: contain; }",
 		bodyCss,
 	]
 		.filter(Boolean)

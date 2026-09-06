@@ -32,7 +32,7 @@ export function SeenByAvatarGroup({
 	size?: "sm" | "md";
 	showLabel?: boolean;
 }) {
-	const { t } = useTranslation("mail");
+	const { t, i18n } = useTranslation("mail");
 	const unknownLabel = t("threadList.unknown");
 	const list = seenBy ?? [];
 	if (list.length === 0) {
@@ -45,19 +45,46 @@ export function SeenByAvatarGroup({
 	const avatarClassName = size === "sm" ? "size-4 text-[8px]" : "size-5 text-[10px]";
 	const labelClassName = size === "sm" ? "text-[9px]" : "text-[10px]";
 	const overflowClassName = size === "sm" ? "size-4 text-[8px]" : "size-5 text-[10px]";
+	const names = list.map((viewer) => viewerDisplayName(viewer, unknownLabel)).join(", ");
+	const latestSeenAt = list.reduce<string | undefined>((latest, viewer) => {
+		if (!viewer.seenAt) {
+			return latest;
+		}
+		if (!latest || viewer.seenAt > latest) {
+			return viewer.seenAt;
+		}
+		return latest;
+	}, undefined);
+	const latestTime = latestSeenAt
+		? new Date(latestSeenAt).toLocaleTimeString(i18n.language, {
+				hour: "2-digit",
+				minute: "2-digit",
+			})
+		: null;
+	const groupLabel = latestTime
+		? `${t("seenBy")} ${names} · ${latestTime}`
+		: `${t("seenBy")} ${names}`;
 
 	return (
-		<div className={cn("flex shrink-0 items-center", showLabel && "gap-1.5", className)}>
-			{showLabel ? (
-				<span className={cn("text-muted-foreground shrink-0", labelClassName)}>
-					{t("seenBy")}
-				</span>
-			) : null}
-			<div className="flex items-center -space-x-2">
-				{visible.map((viewer) => (
-					<Tooltip key={viewer.accountId}>
-						<TooltipTrigger asChild>
-							<span className="ring-background inline-flex rounded-full ring-2">
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<div
+					role="group"
+					tabIndex={0}
+					aria-label={groupLabel}
+					className={cn("flex shrink-0 items-center", showLabel && "gap-1.5", className)}
+				>
+					{showLabel ? (
+						<span className={cn("text-muted-foreground shrink-0", labelClassName)}>
+							{t("seenBy")}
+						</span>
+					) : null}
+					<div className="flex items-center -space-x-2">
+						{visible.map((viewer) => (
+							<span
+								key={viewer.accountId}
+								className="ring-background inline-flex rounded-full ring-2"
+							>
 								<ProfileAvatar
 									accountId={viewer.accountId ?? ""}
 									seed={viewer.loginIdentifier ?? viewer.accountId ?? ""}
@@ -66,22 +93,22 @@ export function SeenByAvatarGroup({
 									className={avatarClassName}
 								/>
 							</span>
-						</TooltipTrigger>
-						<TooltipContent>{viewerDisplayName(viewer, unknownLabel)}</TooltipContent>
-					</Tooltip>
-				))}
+						))}
 
-				{extra > 0 ? (
-					<span
-						className={cn(
-							"ring-background bg-muted text-muted-foreground inline-flex items-center justify-center rounded-full font-semibold ring-2",
-							overflowClassName,
-						)}
-					>
-						+{extra}
-					</span>
-				) : null}
-			</div>
-		</div>
+						{extra > 0 ? (
+							<span
+								className={cn(
+									"ring-background bg-muted text-muted-foreground inline-flex items-center justify-center rounded-full font-semibold ring-2",
+									overflowClassName,
+								)}
+							>
+								+{extra}
+							</span>
+						) : null}
+					</div>
+				</div>
+			</TooltipTrigger>
+			<TooltipContent className="max-w-xs">{groupLabel}</TooltipContent>
+		</Tooltip>
 	);
 }
