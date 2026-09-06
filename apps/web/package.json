@@ -19,6 +19,7 @@
 		"@flaremail/identity-name-pattern": "*",
 		"@flaremail/local-part-policy": "*",
 		"@flaremail/mail-quoting": "*",
+		"@flaremail/mail-search-query": "*",
 		"@floating-ui/dom": "^1.7.6",
 		"@hey-api/client-fetch": "^0.13.1",
 		"@radix-ui/react-dropdown-menu": "^2.1.15",
