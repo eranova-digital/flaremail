@@ -68,9 +68,9 @@ export function SharedMailboxManagerEditor({
 	return (
 		<section className="space-y-4">
 			<div>
-				<h2 className="text-base font-medium">{t("mailboxes.managerGrants.title")}</h2>
+				<h2 className="text-base font-medium">{t("sharedMailboxUsers.managers.title")}</h2>
 				<p className="text-muted-foreground text-sm">
-					{t("mailboxes.managerGrants.description")}
+					{t("sharedMailboxUsers.managers.description")}
 				</p>
 			</div>
 

@@ -47,6 +47,7 @@ export function IdentityCard({
 	const displayName = identityDisplayName(identity, t("identities.noName"));
 	const hasSignature = Boolean(identity.signatureHtml?.trim());
 	const address = mailboxAddress?.trim() || null;
+	const editable = Boolean(actions);
 
 	return (
 		<Card
@@ -85,7 +86,7 @@ export function IdentityCard({
 				<div
 					className={cn(
 						"rounded-lg border px-3 py-2.5",
-						hasSignature
+						hasSignature || !editable
 							? "bg-muted/40 border-border/80"
 							: "border-dashed bg-transparent",
 					)}

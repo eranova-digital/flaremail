@@ -12,7 +12,7 @@ export function CheckStatusBadge({
 	const { t } = useTranslation("management");
 
 	if (status === "passed") {
-		return <Badge variant="default">{t("domainValidation.status.passed")}</Badge>;
+		return <Badge variant="success">{t("domainValidation.status.passed")}</Badge>;
 	}
 	if (status === "failed") {
 		return (

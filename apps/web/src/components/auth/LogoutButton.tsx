@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { cn } from "@/lib/utils";
 
 type LogoutButtonProps = {
 	className?: string;
@@ -15,6 +16,7 @@ export function LogoutButton({ className }: LogoutButtonProps) {
 	const { signOut } = useAuth();
 	const navigate = useNavigate();
 	const [submitting, setSubmitting] = useState(false);
+	const label = t("logout.signOut");
 
 	const handleClick = async () => {
 		setSubmitting(true);
@@ -28,14 +30,15 @@ export function LogoutButton({ className }: LogoutButtonProps) {
 
 	return (
 		<Button
-			variant="outline"
+			variant="ghost"
 			size="sm"
 			onClick={handleClick}
 			disabled={submitting}
-			className={className}
+			aria-label={label}
+			className={cn("px-2 sm:px-3", className)}
 		>
 			<LogOut className="size-4" />
-			{t("logout.signOut")}
+			<span className="hidden sm:inline">{label}</span>
 		</Button>
 	);
 }

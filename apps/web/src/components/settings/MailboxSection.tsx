@@ -340,7 +340,7 @@ function MailboxRow({
 
 	return (
 		<li className="space-y-2 p-4">
-			<div className="flex items-center justify-between gap-3">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div className="min-w-0 space-y-1">
 					<p className="truncate font-medium">{mailbox.address}</p>
 					<div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
