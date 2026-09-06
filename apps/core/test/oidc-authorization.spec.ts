@@ -1,6 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
@@ -19,6 +18,15 @@ import {
 
 const REDIRECT_URI = "https://app.example/callback";
 const WEB_ORIGIN = "https://mail.example.com";
+
+const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
+const skipLiveDb =
+	!databaseUrl || databaseUrl.includes("vitest_unused");
+
+const env = {
+	HYPERDRIVE: { connectionString: databaseUrl },
+	OIDC_SIGNING_JWK: process.env.OIDC_SIGNING_JWK ?? "",
+} as Env;
 
 function createPkcePair() {
 	const verifier = randomBytes(32).toString("base64url");
@@ -105,7 +113,7 @@ function tokenExchangeRequest() {
 	});
 }
 
-describe("OIDC authorization service", () => {
+describe.skipIf(skipLiveDb)("OIDC authorization service", () => {
 	it("rejects authorization when PKCE challenge is missing", async () => {
 		await withDb(env, async (db) => {
 			const client = await createTestClient(db);
