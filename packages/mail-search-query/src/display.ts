@@ -91,11 +91,19 @@ export function tokenSource(token: LexToken): string {
 	}
 }
 
+export function operatorTokenSource(token: Extract<SearchDisplayToken, { type: "op" }>): string {
+	return `${token.negated ? "-" : ""}${formatOperatorSource(token.name, token.value)}`;
+}
+
 /**
- * Operator terms become pills once a delimiter (space / && / || / paren)
- * commits them. The trailing token stays draft text so `from:ali` can be finished.
+ * Only operator terms become pills. Consecutive plain-text words stay one run.
+ * The trailing token stays in the input while editing; pass `commitTrailingOp`
+ * after blur so a completed `from:x` at the end becomes a pill.
  */
-export function splitSearchField(query: string): SearchFieldModel {
+export function splitSearchField(
+	query: string,
+	options: { commitTrailingOp?: boolean } = {},
+): SearchFieldModel {
 	if (!query.trim()) {
 		return { valid: true, tokens: [], draft: query };
 	}
@@ -109,33 +117,52 @@ export function splitSearchField(query: string): SearchFieldModel {
 		throw error;
 	}
 
-	const tokens = lexSearchQuery(query.trimStart());
-	const leading = query.match(/^\s*/)?.[0] ?? "";
+	const tokens = mergeTextTokens(toDisplayTokens(lexSearchQuery(query.trimStart())));
 	const trailingSpace = /\s$/.test(query);
-	if (trailingSpace || tokens.length === 0) {
+	if (tokens.length === 0) {
+		return { valid: true, tokens: [], draft: query };
+	}
+
+	const onlyText = tokens.every((token) => token.type === "text");
+	if (onlyText) {
+		return { valid: true, tokens: [], draft: query };
+	}
+
+	const last = tokens[tokens.length - 1]!;
+	if (last.type === "text" && !trailingSpace) {
 		return {
 			valid: true,
-			tokens: toDisplayTokens(tokens),
-			draft: trailingSpace ? "" : query,
+			tokens: tokens.slice(0, -1),
+			draft: last.value,
 		};
 	}
 
-	let cut = tokens.length;
-	if (tokens[cut - 1]?.type === "op" || tokens[cut - 1]?.type === "text") {
-		cut -= 1;
-		if (tokens[cut - 1]?.type === "not") {
-			cut -= 1;
-		}
+	const commitOp = trailingSpace || options.commitTrailingOp === true;
+	if (last.type === "op" && !commitOp) {
+		return {
+			valid: true,
+			tokens: tokens.slice(0, -1),
+			draft: operatorTokenSource(last),
+		};
 	}
 
-	const committed = tokens.slice(0, cut);
-	const draftTokens = tokens.slice(cut);
-	const draft = draftTokens.map(tokenSource).join("");
-	return {
-		valid: true,
-		tokens: toDisplayTokens(committed),
-		draft: leading && committed.length === 0 ? leading + draft : draft,
-	};
+	return { valid: true, tokens, draft: "" };
+}
+
+function mergeTextTokens(tokens: SearchDisplayToken[]): SearchDisplayToken[] {
+	const out: SearchDisplayToken[] = [];
+	for (const token of tokens) {
+		const prev = out[out.length - 1];
+		if (token.type === "text" && prev?.type === "text") {
+			out[out.length - 1] = {
+				type: "text",
+				value: `${prev.value} ${token.value}`,
+			};
+			continue;
+		}
+		out.push(token);
+	}
+	return out;
 }
 
 function toDisplayTokens(tokens: LexToken[]): SearchDisplayToken[] {
@@ -151,7 +178,12 @@ function toDisplayTokens(tokens: LexToken[]): SearchDisplayToken[] {
 			}
 		}
 		if (token.type === "op") {
-			out.push({ type: "op", name: token.name, value: token.value, negated: false });
+			out.push({
+				type: "op",
+				name: token.name,
+				value: token.value,
+				negated: false,
+			});
 			continue;
 		}
 		out.push(token);

@@ -33,6 +33,7 @@ export { lexSearchQuery, type LexToken } from "./lex";
 export { parseSearchQuery } from "./parse";
 export {
 	formatOperatorSource,
+	operatorTokenSource,
 	serializeDisplayTokens,
 	splitSearchField,
 	tokenSource,

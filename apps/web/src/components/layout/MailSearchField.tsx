@@ -1,5 +1,5 @@
 import { Search, X } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	formatOperatorSource,
@@ -27,7 +27,8 @@ export function MailSearchField({
 }: MailSearchFieldProps) {
 	const { t } = useTranslation("mail");
 	const inputRef = useRef<HTMLInputElement>(null);
-	const model = splitSearchField(value);
+	const [focused, setFocused] = useState(false);
+	const model = splitSearchField(value, { commitTrailingOp: !focused });
 	const tokens = model.valid ? model.tokens : [];
 	const draft = model.valid ? model.draft : value;
 
@@ -65,6 +66,7 @@ export function MailSearchField({
 			className={cn(
 				"border-input bg-background focus-within:ring-primary flex min-w-0 items-center gap-1 rounded-md border px-2 py-1 shadow-sm focus-within:ring-1",
 			)}
+			onClick={() => inputRef.current?.focus()}
 		>
 			<Search className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
 			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
@@ -80,10 +82,12 @@ export function MailSearchField({
 					ref={inputRef}
 					value={draft}
 					onChange={(event) => setDraft(event.target.value)}
+					onFocus={() => setFocused(true)}
 					onKeyDown={(event) => {
 						if (event.key === "Enter") {
 							event.preventDefault();
-							onSubmit();
+							inputRef.current?.blur();
+							return;
 						}
 						if (
 							event.key === "Backspace" &&
@@ -95,7 +99,10 @@ export function MailSearchField({
 							onChange(serializeDisplayTokens(tokens.slice(0, -1), ""));
 						}
 					}}
-					onBlur={onSubmit}
+					onBlur={() => {
+						setFocused(false);
+						onSubmit();
+					}}
 					placeholder={tokens.length === 0 ? t("threadList.searchPlaceholder") : undefined}
 					aria-label={t("threadList.searchAria")}
 					className="placeholder:text-muted-foreground min-w-[6rem] flex-1 bg-transparent py-0.5 text-sm outline-none"
@@ -152,6 +159,10 @@ function DisplayToken({
 		);
 	}
 
+	if (token.type === "text") {
+		return <span className="px-0.5 text-sm">{token.value}</span>;
+	}
+
 	const glue =
 		token.type === "and"
 			? "&&"
@@ -161,9 +172,7 @@ function DisplayToken({
 					? "-"
 					: token.type === "lparen"
 						? "("
-						: token.type === "rparen"
-							? ")"
-							: token.value;
+						: ")";
 
 	return <span className="text-muted-foreground px-0.5 text-xs">{glue}</span>;
 }

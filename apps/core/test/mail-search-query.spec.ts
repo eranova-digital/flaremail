@@ -156,7 +156,7 @@ describe("resolveSearchDateBound", () => {
 });
 
 describe("splitSearchField", () => {
-	it("keeps the trailing operator token as draft", () => {
+	it("keeps the trailing operator token as draft while editing", () => {
 		expect(splitSearchField("from:ali")).toEqual({
 			valid: true,
 			tokens: [],
@@ -169,6 +169,41 @@ describe("splitSearchField", () => {
 			valid: true,
 			tokens: [{ type: "op", name: "from", value: "alice", negated: false }],
 			draft: "",
+		});
+	});
+
+	it("keeps plain text before a trailing operator in the field, not as a pill", () => {
+		expect(splitSearchField("tesla from:sales")).toEqual({
+			valid: true,
+			tokens: [{ type: "text", value: "tesla" }],
+			draft: "from:sales",
+		});
+	});
+
+	it("pills a trailing operator after blur", () => {
+		expect(splitSearchField("tesla from:sales", { commitTrailingOp: true })).toEqual({
+			valid: true,
+			tokens: [
+				{ type: "text", value: "tesla" },
+				{ type: "op", name: "from", value: "sales", negated: false },
+			],
+			draft: "",
+		});
+	});
+
+	it("does not split a plain-text phrase into tokens", () => {
+		expect(splitSearchField("test drive")).toEqual({
+			valid: true,
+			tokens: [],
+			draft: "test drive",
+		});
+	});
+
+	it("pills a leading operator and keeps trailing text in the draft", () => {
+		expect(splitSearchField("from:sales tesla")).toEqual({
+			valid: true,
+			tokens: [{ type: "op", name: "from", value: "sales", negated: false }],
+			draft: "tesla",
 		});
 	});
 
