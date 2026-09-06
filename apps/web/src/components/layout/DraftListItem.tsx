@@ -37,7 +37,7 @@ export function DraftListItem({ draft, selected, onSelect }: DraftListItemProps)
 				onClick={onSelect}
 				className={cn(
 					"hover:bg-accent/60 group w-full cursor-pointer border-b px-4 py-3 text-left transition-colors",
-					selected && "bg-accent",
+					selected && "bg-primary/10 border-l-primary border-l-2",
 				)}
 			>
 				<div className="flex items-start justify-between gap-2">
