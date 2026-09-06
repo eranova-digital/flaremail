@@ -1,4 +1,5 @@
 import { render } from "ink";
+import React from "react";
 
 import type { RepoPaths } from "../paths.js";
 import { App } from "./App.js";

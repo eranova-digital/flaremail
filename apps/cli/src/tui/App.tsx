@@ -1,5 +1,5 @@
 import { Box, Text, useApp, useInput } from "ink";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { applyInfrastructure } from "../apply.js";
 import { createCloudflareAdapter } from "../cloudflare.js";
