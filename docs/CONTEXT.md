@@ -2,7 +2,7 @@
 
 Flaremail is self-hosted email on Cloudflare: a public **gate** serves the web app and proxies `/api/*` to a private **core** Worker that receives inbound mail, stores messages in Postgres and R2, and owns the HTTP API, crons, and bindings.
 
-This file is a **glossary** only. Implementation and deploy steps live in the [root README](../README.md) and app READMEs. Hard decisions live in [adr/](./adr/).
+This file is a **glossary** only. Implementation and deploy steps live in the [CLI README](../apps/cli/README.md). Hard decisions live in [adr/](./adr/).
 
 ## Language
 
@@ -254,7 +254,7 @@ Someone who runs or uses a Flaremail instance. Includes authenticated **accounts
 _Avoid_: user, admin account
 
 **Installing operator**:
-The **operator** who deploys and configures Flaremail (Cloudflare, Neon/Hyperdrive, env, **gate hostname**, Email Routing). Not necessarily a signed-in **account** yet.
+The **operator** who deploys and configures a FlareMail **instance** (Cloudflare, Neon, **gate hostname**, Email Routing) via the CLI. Not necessarily a signed-in **account** yet.
 _Avoid_: IT person, self-hoster, deployer, sysadmin (as the product term)
 
 **Domain readiness**:

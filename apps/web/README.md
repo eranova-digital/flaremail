@@ -51,9 +51,9 @@ Browser → same origin /api/v1/... → gate → core
 | Env var | Role |
 |---------|------|
 | `API_URL` | Base path for the client — production/default: `/api/v1` |
-| `API_PROXY_TARGET` | Dev only: where Vite proxies `/api` (`web:dev`) |
+| `API_PROXY_TARGET` | Dev only: where Vite proxies `/api` (`web:dev`) — written by `flaremail sync` from conf |
 
-`vite.config.ts` proxies `/api` → `API_PROXY_TARGET`. Prefer pointing that at a **deployed gate hostname**. For local gate+core, use `http://localhost:8787`.
+`vite.config.ts` proxies `/api` → `API_PROXY_TARGET`. Prefer the deployed **gate hostname**. For local gate+core (`npx flaremail dev`), use `http://localhost:8787` via conf `web.apiProxyTarget`.
 
 Credentials: session cookies with `credentials: "include"`; same-origin via gate avoids CORS.
 
@@ -70,11 +70,10 @@ Credentials: session cookies with `credentials: "include"`; same-origin via gate
 
 ```bash
 npx flaremail sync
-# API_PROXY_TARGET comes from conf (gate hostname)
 npm run web:dev
 ```
 
-Open `http://localhost:5173`. API calls go through the Vite proxy to the gate (or local Workers).
+Do not edit `apps/web/.env` — it is generated from `flaremail.conf.jsonc`. Open `http://localhost:5173`. API calls go through the Vite proxy to the gate (or local Workers).
 
 ```bash
 npm run web:build    # tsc + vite → dist/ (consumed by gate deploy)
@@ -88,12 +87,13 @@ After changing `apps/core/openapi.yaml`, run `npm run apigen` from the repo root
 
 ## Production
 
-Do not deploy this package as its own Worker. `npm run gate:deploy` / `npm run deploy` builds this app and publishes `dist/` with gate.
+Do not deploy this package as its own Worker. `npx flaremail deploy --gate --yes` (or full `deploy`) builds this app and publishes `dist/` with gate.
 
 ---
 
 ## Related docs
 
+- [CLI](../cli/README.md) — instance config and deploy
 - [Root README](../../README.md)
 - [Gate](../gate/README.md) — how assets and `/api` are served
 - [Core](../core/README.md) — API behavior
