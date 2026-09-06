@@ -144,7 +144,7 @@ export function ResetPasswordPage() {
 						: t("resetPassword.password.description");
 
 	return (
-		<AuthPageShell title={title} description={description} align="start">
+		<AuthPageShell title={title} description={description}>
 			<Card className="rounded-xl py-6 shadow-sm">
 				<CardContent>
 					{step === "choose" ? (
