@@ -14,6 +14,10 @@ _Avoid_: zone, site, gate hostname
 The public host attached to the **gate** Worker (web UI + `/api` proxy). Not a Flaremail **Domain** record; may share a zone with mail **Domains** or live on a different host (e.g. `mail.acme.com` vs `acme.com`).
 _Avoid_: Domain Y, web domain, app domain, front door domain
 
+**Instance**:
+One deployed FlareMail: a **core** Worker, a **gate** Worker, and the Cloudflare / database resources they bind. Distinct from a mail **Domain** (an **instance** may serve many **Domains**).
+_Avoid_: deployment (as the product noun), environment, tenant, site
+
 **Gate**:
 The public edge Worker that serves the web SPA and proxies `/api/*` to **core**. Not the mail/API Worker.
 _Avoid_: edge, CDN, frontend worker, web worker

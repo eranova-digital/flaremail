@@ -69,9 +69,8 @@ Credentials: session cookies with `credentials: "include"`; same-origin via gate
 ## Local development
 
 ```bash
-cp apps/web/.env.example apps/web/.env
-# API_URL=/api/v1
-# API_PROXY_TARGET=https://your-gate-hostname   # recommended
+npx flaremail sync
+# API_PROXY_TARGET comes from conf (gate hostname)
 npm run web:dev
 ```
 

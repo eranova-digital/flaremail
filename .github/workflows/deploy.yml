@@ -1,0 +1,35 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, development]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/development'
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Write instance config
+        env:
+          FLAREMAIL_CONF_JSONC: ${{ secrets.FLAREMAIL_CONF }}
+        run: |
+          if [ -z "$FLAREMAIL_CONF_JSONC" ]; then
+            echo "Missing FLAREMAIL_CONF secret"
+            exit 1
+          fi
+          printf '%s\n' "$FLAREMAIL_CONF_JSONC" > flaremail.conf.jsonc
+      - run: npx flaremail deploy --yes
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

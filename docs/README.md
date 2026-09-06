@@ -14,6 +14,7 @@ Canonical docs for Flaremail beyond the app READMEs.
 | App | README |
 |-----|--------|
 | Monorepo | [../README.md](../README.md) |
+| CLI | [../apps/cli/README.md](../apps/cli/README.md) |
 | Core | [../apps/core/README.md](../apps/core/README.md) |
 | Gate | [../apps/gate/README.md](../apps/gate/README.md) |
 | Web | [../apps/web/README.md](../apps/web/README.md) |

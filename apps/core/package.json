@@ -2,8 +2,11 @@
 	"name": "@flaremail/core",
 	"version": "0.9.6",
 	"private": true,
+	"license": "SEE LICENSE IN LICENSE",
 	"scripts": {
-		"deploy": "npm run db:migrate && node scripts/deploy-with-secrets.mjs",
+		"deploy": "flaremail deploy --core --yes",
+		"predev": "node --import tsx ../../apps/cli/src/index.ts sync --if-missing",
+		"pretest": "node --import tsx ../../apps/cli/src/index.ts sync --from-example --if-missing",
 		"dev": "node scripts/with-env.mjs wrangler dev",
 		"start": "node scripts/with-env.mjs wrangler dev",
 		"typegen": "wrangler types",

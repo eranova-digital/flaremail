@@ -49,11 +49,10 @@ Browser origin = **gate hostname**. SPA uses `API_URL=/api/v1`. Session cookies 
 
 ## Build and deploy
 
-Gate does not build the UI itself; root `gate:deploy` does:
+Gate does not build the UI itself; `flaremail deploy` / root `gate:deploy` does:
 
 ```bash
-npm run web:build          # apps/web → apps/web/dist
-npm run deploy -w @flaremail/gate
+npx flaremail deploy --gate --yes
 ```
 
 Or from the monorepo root: `npm run gate:deploy` / `npm run deploy`.
