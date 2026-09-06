@@ -18,6 +18,8 @@ export const queryKeys = {
 		labelId: string,
 		folder: ThreadFolder,
 	) => ["threads-by-label", mailboxId, labelId, folder] as const,
+	search: (mailboxId: string, query: string) =>
+		["search", mailboxId, query] as const,
 	thread: (mailboxId: string, threadId: string) =>
 		["thread", mailboxId, threadId] as const,
 	threadMessages: (mailboxId: string, threadId: string) =>

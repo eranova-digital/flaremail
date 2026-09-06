@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Passkey-Anmeldung konnte nicht verifiziert werden",
 		"invalid-passkey-response": "Ungültige Passkey-Antwort",
 		"invalid-password": "Ungültiges Passwort",
+		"intendant-cannot-change-password": "Der Intendant kann dieses Passwort nicht ändern",
+		"new-password-must-differ": "Das neue Passwort muss sich vom aktuellen unterscheiden",
+		"current-and-new-password-required": "currentPassword und newPassword sind erforderlich",
 		"invalid-recovery-email": "Ungültige Wiederherstellungs-E-Mail-Adresse",
 		"recovery-email-in-use": "Diese Wiederherstellungs-E-Mail wird bereits von einem anderen Konto verwendet",
 		"no-recovery-email-configured": "Keine Wiederherstellungs-E-Mail konfiguriert",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "Etwas ist schiefgelaufen",
 		"invalid-phone-number": "Die Telefonnummer muss eine gültige internationale Nummer im E.164-Format sein (z. B. +14155552671)",
 		"recovery-email-hosted-domain": "Die Wiederherstellungs-E-Mail darf keine von diesem Mailserver gehostete Domain verwenden",
-		"recovery-email-hosted-mailbox": "Die Wiederherstellungs-E-Mail darf kein Postfach auf diesem Mailserver verwenden"
+		"recovery-email-hosted-mailbox": "Die Wiederherstellungs-E-Mail darf kein Postfach auf diesem Mailserver verwenden",
+		"invalid-search-query": "Ungültige Suchanfrage",
+		"unknown-search-operator": "Unbekannter Suchoperator",
+		"empty-search-operator-value": "Leerer Suchoperatorwert",
+		"unclosed-search-quote": "Unvollständiges Anführungszeichen in der Suchanfrage",
+		"unclosed-search-paren": "Unvollständige Klammer in der Suchanfrage",
+		"invalid-search-date": "Ungültiges Suchdatum",
+		"invalid-search-folder": "Ungültiger Suchordner",
+		"invalid-search-is-value": "Ungültiger is:-Wert",
+		"invalid-search-has-value": "Ungültiger has:-Wert"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "{{count}} Thread",
 			"threadCount_few": "{{count}} Threads",
 			"threadCount_other": "{{count}} Threads",
+			"resultCount_one": "{{count}} Ergebnis",
+			"resultCount_few": "{{count}} Ergebnisse",
+			"resultCount_other": "{{count}} Ergebnisse",
 			"emptyFolder": "Keine Threads in {{folder}}.",
 			"emptyLabel": "Keine Threads mit diesem Label.",
 			"noSubject": "(kein Betreff)",
@@ -579,7 +594,15 @@
 			"draftCount_one": "{{count}} Entwurf",
 			"draftCount_few": "{{count}} Entwürfe",
 			"draftCount_other": "{{count}} Entwürfe",
-			"emptyDrafts": "Keine Entwürfe."
+			"emptyDrafts": "Keine Entwürfe.",
+			"searchPlaceholder": "Mail durchsuchen",
+			"searchAria": "Mail durchsuchen",
+			"searchTitle": "Suche",
+			"emptySearch": "Keine passenden Threads.",
+			"hitCount_one": "{{count}} passende Nachricht",
+			"hitCount_few": "{{count}} passende Nachrichten",
+			"hitCount_other": "{{count}} passende Nachrichten",
+			"clearSearch": "Suche löschen"
 		},
 		"threadActions": {
 			"markUnread": "Als ungelesen markieren",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "Geben Sie zur Bestätigung einen Code aus Ihrer Authenticator-App ein.",
 			"authenticatorCode": "Authenticator-Code",
 			"cancel": "Abbrechen"
+		},
+		"changePassword": {
+			"title": "Passwort ändern",
+			"description": "Wählen Sie ein neues Passwort. Andere angemeldete Sitzungen werden abgemeldet.",
+			"currentPassword": "Aktuelles Passwort",
+			"newPassword": "Neues Passwort",
+			"confirmPassword": "Neues Passwort bestätigen",
+			"authenticatorCode": "Authenticator-Code",
+			"mfaHint": "Geben Sie zur Bestätigung einen Code aus Ihrer Authenticator-App ein.",
+			"submit": "Passwort ändern",
+			"changing": "Wird geändert…",
+			"success": "Passwort geändert. Andere Sitzungen wurden abgemeldet."
 		}
 	},
 	"management": {

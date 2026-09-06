@@ -1,6 +1,6 @@
 {
 	"name": "@flaremail/core",
-	"version": "0.9.8",
+	"version": "1.0.0",
 	"private": true,
 	"license": "SEE LICENSE IN LICENSE",
 	"scripts": {
@@ -42,6 +42,7 @@
 		"@flaremail/identity-name-pattern": "*",
 		"@flaremail/local-part-policy": "*",
 		"@flaremail/mail-quoting": "*",
+		"@flaremail/mail-search-query": "*",
 		"drizzle-orm": "^0.45.2",
 		"jose": "^6.2.3",
 		"mailauth": "^5.0.2",

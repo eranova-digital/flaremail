@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "La connexion par passkey n'a pas pu être vérifiée",
 		"invalid-passkey-response": "Réponse de passkey invalide",
 		"invalid-password": "Mot de passe invalide",
+		"intendant-cannot-change-password": "L'intendant ne peut pas modifier ce mot de passe",
+		"new-password-must-differ": "Le nouveau mot de passe doit être différent du mot de passe actuel",
+		"current-and-new-password-required": "currentPassword et newPassword sont requis",
 		"invalid-recovery-email": "Adresse e-mail de récupération invalide",
 		"recovery-email-in-use": "Cet e-mail de récupération est déjà utilisé par un autre compte",
 		"no-recovery-email-configured": "Aucun e-mail de récupération configuré",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "Une erreur s'est produite",
 		"invalid-phone-number": "Le numéro de téléphone doit être un numéro international valide au format E.164 (p. ex. +14155552671)",
 		"recovery-email-hosted-domain": "L’e-mail de récupération ne peut pas utiliser un domaine hébergé par ce serveur de messagerie",
-		"recovery-email-hosted-mailbox": "L’e-mail de récupération ne peut pas utiliser une boîte aux lettres de ce serveur de messagerie"
+		"recovery-email-hosted-mailbox": "L’e-mail de récupération ne peut pas utiliser une boîte aux lettres de ce serveur de messagerie",
+		"invalid-search-query": "Requête de recherche invalide",
+		"unknown-search-operator": "Opérateur de recherche inconnu",
+		"empty-search-operator-value": "Valeur d’opérateur vide",
+		"unclosed-search-quote": "Guillemet non fermé dans la requête",
+		"unclosed-search-paren": "Parenthèse non fermée dans la requête",
+		"invalid-search-date": "Date de recherche invalide",
+		"invalid-search-folder": "Dossier de recherche invalide",
+		"invalid-search-is-value": "Valeur is: invalide",
+		"invalid-search-has-value": "Valeur has: invalide"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "{{count}} conversation",
 			"threadCount_few": "{{count}} conversations",
 			"threadCount_other": "{{count}} conversations",
+			"resultCount_one": "{{count}} résultat",
+			"resultCount_few": "{{count}} résultats",
+			"resultCount_other": "{{count}} résultats",
 			"emptyFolder": "Aucune conversation dans {{folder}}.",
 			"emptyLabel": "Aucune conversation avec ce libellé.",
 			"noSubject": "(sans objet)",
@@ -579,7 +594,15 @@
 			"draftCount_one": "{{count}} brouillon",
 			"draftCount_few": "{{count}} brouillons",
 			"draftCount_other": "{{count}} brouillons",
-			"emptyDrafts": "Aucun brouillon."
+			"emptyDrafts": "Aucun brouillon.",
+			"searchPlaceholder": "Rechercher dans la messagerie",
+			"searchAria": "Rechercher dans la messagerie",
+			"searchTitle": "Recherche",
+			"emptySearch": "Aucun fil correspondant.",
+			"hitCount_one": "{{count}} message correspondant",
+			"hitCount_few": "{{count}} messages correspondants",
+			"hitCount_other": "{{count}} messages correspondants",
+			"clearSearch": "Effacer la recherche"
 		},
 		"threadActions": {
 			"markUnread": "Marquer comme non lu",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "Saisissez un code de votre application d’authentification pour confirmer.",
 			"authenticatorCode": "Code d’authentificateur",
 			"cancel": "Annuler"
+		},
+		"changePassword": {
+			"title": "Changer le mot de passe",
+			"description": "Choisissez un nouveau mot de passe. Les autres sessions connectées seront déconnectées.",
+			"currentPassword": "Mot de passe actuel",
+			"newPassword": "Nouveau mot de passe",
+			"confirmPassword": "Confirmer le nouveau mot de passe",
+			"authenticatorCode": "Code d'authentification",
+			"mfaHint": "Saisissez un code de votre application d'authentification pour confirmer.",
+			"submit": "Changer le mot de passe",
+			"changing": "Modification…",
+			"success": "Mot de passe modifié. Les autres sessions ont été déconnectées."
 		}
 	},
 	"management": {

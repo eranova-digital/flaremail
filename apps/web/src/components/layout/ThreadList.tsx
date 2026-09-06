@@ -6,6 +6,7 @@ import {
 	Menu,
 	Pencil,
 	RefreshCw,
+	Search,
 	Send,
 	ShieldAlert,
 	Tag,
@@ -14,8 +15,10 @@ import {
 import { useState, type ComponentType, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { parseSearchQuery, SearchQueryError } from '@flaremail/mail-search-query';
 
 import { DraftListItem } from '@/components/layout/DraftListItem';
+import { MailSearchField } from '@/components/layout/MailSearchField';
 import { useMailboxNavOptional } from '@/components/layout/MailboxNavContext';
 import { ThreadListItem } from '@/components/layout/ThreadListItem';
 import { Badge } from '@/components/ui/badge';
@@ -23,10 +26,12 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDrafts } from '@/hooks/use-drafts';
 import { useLabels } from '@/hooks/use-labels';
+import { useMailSearchParam } from '@/hooks/use-mail-search-param';
+import { useSearch } from '@/hooks/use-search';
 import { useThreadsByLabel } from '@/hooks/use-threads-by-label';
 import { useThreads } from '@/hooks/use-threads';
 import { FOLDER_LABELS, FOLDERS, isThreadFolder } from '@/lib/folders';
-import type { Thread, ThreadFolder } from '@/lib/api/client';
+import type { MessagePreview, SearchResult, Thread, ThreadFolder } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/api/errors';
 import { DEFAULT_LABEL_COLOR } from '@/lib/label-colors';
 import { composePath, threadPath } from '@/lib/mailbox-routes';
@@ -102,10 +107,27 @@ function useActiveFolder(): ThreadFolder {
 	return 'inbox';
 }
 
+type MailSearchState = ReturnType<typeof useMailSearchParam>;
+
+function MailSearchBar({ search }: { search: MailSearchState }) {
+	return (
+		<div className="border-b px-3 pt-0 pb-3 sm:px-4">
+			<MailSearchField
+				value={search.draft}
+				onChange={search.setDraft}
+				onSubmit={search.flush}
+				onClear={search.clear}
+			/>
+		</div>
+	);
+}
+
 function DraftMessageList({
 	mailboxId,
+	search,
 }: {
 	mailboxId: string;
+	search: MailSearchState;
 }) {
 	const { t } = useTranslation('mail');
 	const navigate = useNavigate();
@@ -118,7 +140,7 @@ function DraftMessageList({
 
 	return (
 		<>
-			<div className="flex items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+			<div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1 sm:px-4">
 				<div className="flex min-w-0 items-center gap-1">
 					<NavMenuButton />
 					<h2 className="truncate font-medium">{FOLDER_LABELS.drafts}</h2>
@@ -141,6 +163,7 @@ function DraftMessageList({
 					) : null}
 				</div>
 			</div>
+			<MailSearchBar search={search} />
 			<div className="flex min-h-0 max-w-full flex-1 flex-col overflow-y-auto">
 				{draftsQuery.isLoading ? (
 					<div className="space-y-2 p-3">
@@ -203,11 +226,13 @@ function FolderThreadList({
 	threadId,
 	activeFolder,
 	labels,
+	search,
 }: {
 	mailboxId: string;
 	threadId?: string;
 	activeFolder: ThreadFolder;
 	labels: ReturnType<typeof useLabels>['data'];
+	search: MailSearchState;
 }) {
 	const { t } = useTranslation('mail');
 	const navigate = useNavigate();
@@ -217,7 +242,7 @@ function FolderThreadList({
 
 	return (
 		<>
-			<div className="flex items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+			<div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1 sm:px-4">
 				<div className="flex min-w-0 items-center gap-1">
 					<NavMenuButton />
 					<h2 className="truncate font-medium">{FOLDER_LABELS[activeFolder]}</h2>
@@ -241,6 +266,7 @@ function FolderThreadList({
 					) : null}
 				</div>
 			</div>
+			<MailSearchBar search={search} />
 			<div className="flex min-h-0 max-w-full flex-1 flex-col overflow-y-auto">
 				{threadsQuery.isLoading ? (
 					<div className="space-y-2 p-3">
@@ -258,15 +284,16 @@ function FolderThreadList({
 				) : (
 					<ul>
 						{threads.map((thread) => (
-							<ThreadListItem
-								key={thread.id}
-								thread={thread}
-								selected={thread.id === threadId}
-								labels={labels}
-								onSelect={() =>
-									navigate(threadPath(mailboxId, thread.id!, { folder: activeFolder }))
-								}
-							/>
+							<li key={thread.id}>
+								<ThreadListItem
+									thread={thread}
+									selected={thread.id === threadId}
+									labels={labels}
+									onSelect={() =>
+										navigate(threadPath(mailboxId, thread.id!, { folder: activeFolder }))
+									}
+								/>
+							</li>
 						))}
 					</ul>
 				)}
@@ -341,15 +368,16 @@ function LabelFolderSection({
 					) : (
 						<ul>
 							{threads.map((thread) => (
-								<ThreadListItem
-									key={thread.id}
-									thread={thread}
-									selected={thread.id === threadId}
-									labels={labels}
-									onSelect={() =>
-									navigate(threadPath(mailboxId, thread.id!, { labelId }))
-								}
-								/>
+								<li key={thread.id}>
+									<ThreadListItem
+										thread={thread}
+										selected={thread.id === threadId}
+										labels={labels}
+										onSelect={() =>
+											navigate(threadPath(mailboxId, thread.id!, { labelId }))
+										}
+									/>
+								</li>
 							))}
 						</ul>
 					)}
@@ -367,11 +395,13 @@ function LabelThreadList({
 	labelId,
 	threadId,
 	labels,
+	search,
 }: {
 	mailboxId: string;
 	labelId: string;
 	threadId?: string;
 	labels: ReturnType<typeof useLabels>['data'];
+	search: MailSearchState;
 }) {
 	const { t } = useTranslation('mail');
 	const folderQueries = useThreadsByLabel(mailboxId, labelId);
@@ -402,7 +432,7 @@ function LabelThreadList({
 
 	return (
 		<>
-			<div className="flex items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+			<div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1 sm:px-4">
 				<div className="flex min-w-0 items-center gap-1">
 					<NavMenuButton />
 					<div className="flex min-w-0 items-center gap-2">
@@ -432,6 +462,7 @@ function LabelThreadList({
 					</Badge>
 				</div>
 			</div>
+			<MailSearchBar search={search} />
 			<div className="flex min-h-0 max-w-full flex-1 flex-col overflow-y-auto">
 				{isAnyLoading ? (
 					<div className="space-y-2 p-3">
@@ -472,10 +503,198 @@ function LabelThreadList({
 	);
 }
 
+function searchParseError(query: string): SearchQueryError | null {
+	try {
+		parseSearchQuery(query);
+		return null;
+	} catch (error) {
+		return error instanceof SearchQueryError ? error : null;
+	}
+}
+
+function SearchHitRow({
+	hit,
+	selected,
+	onSelect,
+}: {
+	hit: MessagePreview;
+	selected: boolean;
+	onSelect: () => void;
+}) {
+	const { t, i18n } = useTranslation('mail');
+	return (
+		<button
+			type="button"
+			onClick={onSelect}
+			className={cn(
+				'hover:bg-accent/70 w-full cursor-pointer px-3 py-2 text-left text-sm',
+				selected && 'bg-primary/10',
+			)}
+		>
+			<div className="flex items-baseline justify-between gap-2">
+				<p className="text-muted-foreground min-w-0 truncate text-xs">{hit.from}</p>
+				<span className="text-muted-foreground shrink-0 text-xs whitespace-nowrap">
+					{hit.receivedAt
+						? new Date(hit.receivedAt).toLocaleString(i18n.language, {
+								month: 'short',
+								day: 'numeric',
+								hour: 'numeric',
+								minute: '2-digit',
+							})
+						: ''}
+				</span>
+			</div>
+			<p className="truncate">
+				{hit.subject || t('threadList.noSubject')}
+				{hit.preview ? (
+					<span className="text-muted-foreground font-normal">
+						{' — '}
+						{hit.preview}
+					</span>
+				) : null}
+			</p>
+		</button>
+	);
+}
+
+function SearchThreadList({
+	mailboxId,
+	threadId,
+	labelId,
+	query,
+	labels,
+	search,
+}: {
+	mailboxId: string;
+	threadId?: string;
+	labelId?: string;
+	query: string;
+	labels: ReturnType<typeof useLabels>['data'];
+	search: MailSearchState;
+}) {
+	const { t } = useTranslation('mail');
+	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const parseError = searchParseError(query);
+	const searchQuery = useSearch(mailboxId, query);
+	const selectedMessageId = searchParams.get('messageId');
+	const items = searchQuery.data?.items ?? [];
+
+	const openResult = (result: SearchResult, messageId?: string | null) => {
+		const thread = result.thread;
+		if (!thread.id) {
+			return;
+		}
+		const hitId = messageId ?? result.hits[0]?.id ?? null;
+		navigate(
+			threadPath(mailboxId, thread.id, {
+				folder: thread.folder,
+				labelId,
+				messageId: hitId,
+				q: query,
+			}),
+		);
+	};
+
+	return (
+		<>
+			<div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1 sm:px-4">
+				<div className="flex min-w-0 items-center gap-1">
+					<NavMenuButton />
+					<h2 className="truncate font-medium">{t('threadList.searchTitle')}</h2>
+				</div>
+				<div className="flex shrink-0 items-center gap-2">
+					<Button
+						variant="ghost"
+						size="icon"
+						className="size-8"
+						aria-label={t('threadList.refresh')}
+						disabled={searchQuery.isFetching || Boolean(parseError)}
+						onClick={() => void searchQuery.refetch()}
+					>
+						<RefreshCw className={cn('size-4', searchQuery.isFetching && 'animate-spin')} />
+					</Button>
+					{!searchQuery.isLoading && !searchQuery.isError && !parseError ? (
+						<Badge variant="secondary" className="max-w-[9rem] truncate sm:max-w-none">
+							{t('threadList.resultCount', { count: items.length })}
+						</Badge>
+					) : null}
+				</div>
+			</div>
+			<MailSearchBar search={search} />
+			<div className="flex min-h-0 max-w-full flex-1 flex-col overflow-y-auto">
+				{parseError ? (
+					<div className="text-destructive p-4 text-sm">
+						{t(parseError.code, { ns: 'errors' })}
+					</div>
+				) : searchQuery.isLoading ? (
+					<div className="space-y-2 p-3">
+						{Array.from({ length: 6 }).map((_, index) => (
+							<Skeleton key={index} className="h-16 w-full" />
+						))}
+					</div>
+				) : searchQuery.isError ? (
+					<div className="text-destructive p-4 text-sm">{getErrorMessage(searchQuery.error)}</div>
+				) : items.length === 0 ? (
+					<EmptyListState icon={Search} message={t('threadList.emptySearch')} />
+				) : (
+					<ul>
+						{items.map((result) => {
+							const thread = result.thread;
+							const hits = result.hits;
+							const showNestedHits =
+								hits.length > 0 && (thread.messageCount ?? 0) > 1;
+							return (
+								<li key={thread.id} className="border-b">
+									<ThreadListItem
+										thread={thread}
+										selected={
+											thread.id === threadId &&
+											(!showNestedHits || !selectedMessageId)
+										}
+										labels={labels}
+										onSelect={() => openResult(result)}
+										bordered={false}
+									/>
+									{showNestedHits ? (
+										<div className="border-border/70 bg-muted/40 mx-3 mb-2 ml-16 overflow-hidden rounded-md border">
+											<p className="text-muted-foreground px-3 pt-2 pb-1 text-[10px] font-medium tracking-wide uppercase">
+												{t('threadList.hitCount', { count: hits.length })}
+											</p>
+											<ul>
+												{hits.map((hit, index) => (
+													<li
+														key={hit.id}
+														className={cn(index > 0 && 'border-border/60 border-t')}
+													>
+														<SearchHitRow
+															hit={hit}
+															selected={
+																thread.id === threadId && selectedMessageId === hit.id
+															}
+															onSelect={() => openResult(result, hit.id)}
+														/>
+													</li>
+												))}
+											</ul>
+										</div>
+									) : null}
+								</li>
+							);
+						})}
+					</ul>
+				)}
+			</div>
+		</>
+	);
+}
+
 export function ThreadList() {
 	const { mailboxId, threadId, labelId } = useParams();
 	const activeFolder = useActiveFolder();
 	const labelsQuery = useLabels(mailboxId ?? '');
+	const search = useMailSearchParam();
+	const searching = search.q.trim().length > 0;
 
 	if (!mailboxId) {
 		return null;
@@ -483,21 +702,32 @@ export function ThreadList() {
 
 	return (
 		<div className="flex h-full w-full flex-col">
-			{labelId ? (
+			{searching ? (
+				<SearchThreadList
+					mailboxId={mailboxId}
+					threadId={threadId}
+					labelId={labelId}
+					query={search.q}
+					labels={labelsQuery.data}
+					search={search}
+				/>
+			) : labelId ? (
 				<LabelThreadList
 					mailboxId={mailboxId}
 					labelId={labelId}
 					threadId={threadId}
 					labels={labelsQuery.data}
+					search={search}
 				/>
 			) : activeFolder === 'drafts' ? (
-				<DraftMessageList mailboxId={mailboxId} />
+				<DraftMessageList mailboxId={mailboxId} search={search} />
 			) : (
 				<FolderThreadList
 					mailboxId={mailboxId}
 					threadId={threadId}
 					activeFolder={activeFolder}
 					labels={labelsQuery.data}
+					search={search}
 				/>
 			)}
 		</div>

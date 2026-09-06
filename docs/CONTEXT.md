@@ -2,7 +2,7 @@
 
 Flaremail is self-hosted email on Cloudflare: a public **gate** serves the web app and proxies `/api/*` to a private **core** Worker that receives inbound mail, stores messages in Postgres and R2, and owns the HTTP API, crons, and bindings.
 
-This file is a **glossary** only. Implementation and deploy steps live in the [CLI README](../apps/cli/README.md). Hard decisions live in [adr/](./adr/).
+This file is a **glossary** only. Implementation and deploy steps live in the [CLI README](../apps/cli/README.md). Claim the **intendant** immediately after deploy: [first-claimer bootstrap](./first-claimer-bootstrap.md). Hard decisions live in [adr/](./adr/).
 
 ## Language
 
@@ -31,11 +31,15 @@ An authentication identity in the platform. Most **accounts** have exactly one *
 _Avoid_: user, login, operator
 
 **Intendant**:
-The first **account** created at deploy time. Platform configuration and management — no **primary mailbox**, no **mailbox grants**, no SSO. Exactly one per instance; role cannot be assigned to another **account**; cannot be deleted. Signs in with the literal identifier `intendant` (not an email address) and a deploy-time generated password. Can **regenerate** its own password (new random secret — never user-chosen). Can register **domains**, assign **admins**, assign any **role** (including **superadmin**), and register **OIDC clients**. May read and send mail on all **system mailboxes** and all **shared mailboxes** across all **domains** (see [ADR-0006](./adr/0006-system-mailbox-access-by-role.md)); cannot access user **primary mailboxes**.
-_Avoid_: root, superuser, system account
+The unique bootstrap **account** of an **instance**, created by the **first-claimer**. Platform configuration and management — no **primary mailbox**, no **mailbox grants**, no SSO. Exactly one per instance; role cannot be assigned to another **account**; cannot be deleted. Signs in with the literal identifier `intendant` (not an email address) and a generated password shown once at claim (never user-chosen). Can **regenerate** its own password (new random secret). Can register **domains**, assign **admins**, assign any **role** (including **superadmin**), and register **OIDC clients**. May read and send mail on all **system mailboxes** and all **shared mailboxes** across all **domains** (see [ADR-0006](./adr/0006-system-mailbox-access-by-role.md)); cannot access user **primary mailboxes**.
+_Avoid_: root, superuser, system account, recovery account (UI copy only)
+
+**First-claimer**:
+Whoever first creates the **intendant** on an unclaimed **instance**. After that claim, bootstrap cannot mint another **intendant**.
+_Avoid_: first boot, deployer (use **installing operator** for who deploys), root signup
 
 **Role**:
-The single permission tier held by an **account**: `user`, `manager`, `admin`, or `superadmin`. Each **account** holds exactly one **role**; higher tiers implicitly include lower-tier capabilities (e.g. an **admin** can use mail normally without a separate `user` **role**). The **intendant** is not a **role** — it is a unique bootstrap **account** outside this ladder.
+The single permission tier held by an **account**: `user`, `manager`, `admin`, or `superadmin`. Each **account** holds exactly one **role**; higher tiers implicitly include lower-tier capabilities (e.g. an **admin** can use mail normally without a separate `user` **role**). The **intendant** is not a **role** — it is a unique **first-claimer** bootstrap **account** outside this ladder.
 _Avoid_: permission, group, access level
 
 **Superadmin**:
@@ -63,7 +67,7 @@ The link between a scoped role (**admin** or **manager**) and the **domain**(s) 
 _Avoid_: tenant, scope, permission set
 
 **Primary mailbox**:
-The one **mailbox** that uniquely identifies an **account**. Every **account** has exactly one; it is how the person is known in email (e.g. `patrick@acme.com`).
+The one **mailbox** that uniquely identifies an **account**. Every **account** except the **intendant** has exactly one; it is how the person is known in email (e.g. `patrick@acme.com`).
 _Avoid_: actualMailboxId, owner mailbox
 
 **Mailbox grant**:
@@ -134,6 +138,10 @@ _Avoid_: activation link, signup token
 A one-time code issued by a **manager** or **admin** when an **account** has no **recovery address** and needs a forgotten password reset. Distinct from an **invite code**. Self-service password reset via **recovery address** is available only when one is set.
 _Avoid_: recovery code, reset token
 
+**Password change**:
+A signed-in non-intendant **account** holder replacing their own password with a new user-chosen one, after proving the current password (and MFA when enabled). Distinct from forgotten-password reset (via **recovery address** or **password reset code**) and from **intendant** regenerate (random secret, never user-chosen).
+_Avoid_: password update, password rotation, set password
+
 **Recovery address**:
 An external email address on an **account** (optional **profile field**), often set when the **invite code** is auto-sent. Enables self-service password reset. Not accepted at sign-in. Sign-in uses the **primary mailbox** address (or the reserved identifier `intendant`). Can be added later by **admin**+ if missing.
 _Avoid_: backup email, secondary email, login email
@@ -201,6 +209,26 @@ Which mailboxes can see a message, tracked in `message_mailboxes`. Populated fro
 A single email stored in the system, whether inbound, outbound, draft, or failed send.
 _Avoid_: email (as a stored entity id), delivery
 
+**Attachment**:
+A file part of a **message** with disposition `attachment`. Distinct from an inline part (CID image, signature logo).
+_Avoid_: inline image, file, part
+
+**Search**:
+Finding **messages** in the selected **mailbox** that match a **search query**. Never other **mailboxes**. Default scope is every **folder** except trash and spam. Distinct from browsing by **folder** or **label**.
+_Avoid_: mail search, filter, thread search
+
+**Search query**:
+The string that drives **search**. Plain text and operators; juxtaposition and `&&` are AND, `||` is OR, `-` is NOT; parentheses group; quotes mark a phrase or a spaced operator value.
+_Avoid_: filter string, q
+
+**Search hit**:
+A **message** that matches the message-level part of a **search query** (thread operators stripped). AND of message operators must hold on that same **message**. Operators that describe the **thread** (`in:`, `label:`, `is:read` / `is:unread` / `is:starred`) constrain the **search result**; they do not create hits.
+_Avoid_: match, result (for the message)
+
+**Search result**:
+A **thread** that satisfies the query's thread-level operators and, when the query has a message-level part, contains one or more **search hits**. Shown once in the threadlist, with those hits grouped under it (no nested hits when the query is thread-only).
+_Avoid_: hit, message result, conversation result
+
 **BIMI logo**:
 The brand mark for an external sending domain asserted via BIMI. Shown as a sender avatar only when the inbound **message** passes DMARC alignment for that domain and the **organizational domain** publishes an enforcing DMARC policy (`quarantine` or `reject`). Distinct from an **account** profile picture and from a **client profile picture**. Cached per publishing domain and shared across messages that resolve to it.
 _Avoid_: favicon, profile picture, avatar (as the stored entity), sender icon
@@ -246,7 +274,7 @@ A persistent entity exposed with conventional CRUD (domains, mailboxes, labels).
 _Avoid_: entity, record
 
 **API key**:
-A long-lived credential any **account** can create and manage for non-interactive API access. Scoped to that **account** — carries exactly the permissions of its holder's **role** and assignments, no more.
+A long-lived credential any **account** can create and manage for non-interactive API access. Prefix `fmu_`. Effective access is the intersection of the holder's **role** and assignments and the **scopes** selected on the key — never more than the holder could do in a **session**. Security operations (recovery address, sessions, API keys, MFA, passkeys, password change) are session-only.
 _Avoid_: bearer token, personal access token, service token
 
 **Operator**:
@@ -333,4 +361,4 @@ _Avoid_: log TTL, audit retention
 
 **Dev:** How does the **intendant** sign in if it has no **mailbox**?
 
-**Expert:** With `email: "intendant"` and the generated deploy-time password — the string `intendant` is a reserved sign-in identifier, not an email address. The **intendant** manages **domains** and **accounts**, and can read/send from **system mailboxes** (e.g. `postmaster@`) but not from user inboxes.
+**Expert:** With `email: "intendant"` and the password shown once to the **first-claimer** — the string `intendant` is a reserved sign-in identifier, not an email address. The **intendant** manages **domains** and **accounts**, and can read/send from **system mailboxes** (e.g. `postmaster@`) but not from user inboxes.

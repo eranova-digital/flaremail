@@ -2,17 +2,17 @@
 
 ## Problem Statement
 
-Flaremail V1 has no **account** model. A single shared API token grants full access to every **domain**, **mailbox**, and **message**. The platform cannot support per-person login, role-based administration, invite-based onboarding, or SSO identity.
+At the time this spec was written, Flaremail had no **account** model. A single shared API token granted full access to every **domain**, **mailbox**, and **message**.
 
 Operators need a persistent identity layer that links people (**accounts**) to **primary mailboxes**, optional **mailbox grants**, **roles**, and profile data — without overloading the existing mail schema.
 
 ## Solution
 
-Introduce an **accounts** domain in Postgres: **accounts**, profile fields, **roles**, **domain assignments**, **shared mailbox assignments**, **invites**, **local part policies**, and links to existing **mailboxes**. Bootstrap the **intendant** at deploy time.
+Introduce an **accounts** domain in Postgres: **accounts**, profile fields, **roles**, **domain assignments**, **shared mailbox assignments**, **invites**, **local part policies**, and links to existing **mailboxes**. The **intendant** is created by **first-claimer** (`POST /api/v1/bootstrap`), not at deploy.
 
 ## User Stories
 
-1. As a deployer, I want an **intendant** **account** created automatically at first boot, so that I can configure the instance without pre-creating mail infrastructure.
+1. As an **installing operator**, I want to claim the **intendant** immediately after deploy via first-claimer bootstrap, so that I can configure the **instance** without pre-creating mail infrastructure and so that nobody else can claim it.
 2. As an **intendant**, I want to sign in with `intendant` and a generated password, so that I can access platform settings without a **mailbox**.
 3. As an **intendant**, I want to regenerate my password, so that I can rotate credentials without choosing a custom password.
 4. As a **superadmin**, I want a normal **primary mailbox** linked to my **account**, so that I can both administer the platform and use email.
@@ -54,7 +54,7 @@ Introduce an **accounts** domain in Postgres: **accounts**, profile fields, **ro
 - **Local part policy** templates: `{first_name}`, `{last_name}`, `{last_name_initial}` at minimum.
 - Profile V1 fields: first name, last name, recovery address (optional), address (country, state/county, city, line1, line2) optional, phone optional.
 - Services layer: `AccountService`, `InviteService`, `RoleAssignmentService` following ADR-0001 layering.
-- Intendant bootstrap runs only via `POST /api/v1/bootstrap` when no intendant account exists; password returned once in the response.
+- Intendant bootstrap is **first-claimer**: `POST /api/v1/bootstrap` when no intendant exists; password returned once. Not created at deploy.
 - **Account removal** cascades: revoke grants, hard-delete primary mailbox per existing **hard delete** rules, delete account row but retain ID in tombstone or use non-reused UUID generation.
 
 ## Testing Decisions
@@ -76,4 +76,4 @@ Introduce an **accounts** domain in Postgres: **accounts**, profile fields, **ro
 
 - Depends on: nothing (foundation spec).
 - Blocks: all other auth specs.
-- Terminology: `docs/CONTEXT.md`, ADR-0005.
+- Terminology: `docs/CONTEXT.md`, ADR-0005, ADR-0015. Procedure: [`docs/first-claimer-bootstrap.md`](../../first-claimer-bootstrap.md).

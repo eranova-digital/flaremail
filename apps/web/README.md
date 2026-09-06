@@ -8,7 +8,7 @@ Package: `apps/web`
 
 ## Responsibilities
 
-- Sign-in, bootstrap, activate, password reset, OIDC consent, security compliance
+- Sign-in, bootstrap, activate, password reset, signed-in password change, OIDC consent, security compliance
 - Mail UI: folders, threads, compose (TipTap), labels, search
 - Settings and management (domains, mailboxes, accounts, identities, OIDC clients, …)
 - Typed API client generated from core’s OpenAPI
@@ -35,9 +35,9 @@ src/
 
 | Area | Examples |
 |------|----------|
-| Public | `/login`, `/bootstrap`, `/activate`, `/reset-password` |
+| Public | `/login`, `/bootstrap` (**first-claimer**), `/activate`, `/reset-password` |
 | OAuth / security | `/oauth/consent`, `/security-compliance` |
-| App shell | `/`, `/settings`, `/management` |
+| App shell | `/`, `/settings` (account), `/management` (admin) |
 | Mailbox | `/m/:mailboxId/...` (compose, threads, folders, labels) |
 
 Auth gates in the router enforce session and security-compliance before mail routes.

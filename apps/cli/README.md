@@ -59,7 +59,7 @@ npx flaremail deploy --yes
 
 `init` can generate `SESSION_SECRET` and the OIDC signing JWK. List mail **Domains** in `mailDomains` so Email Routing catch-all → **core** is applied. Outbound SPF/DKIM is reported by `doctor` and is **not** rewritten.
 
-3. Open the **gate hostname**. Complete intendant bootstrap if prompted.
+3. **Immediately** open `https://<gate-hostname>/bootstrap` and complete **first-claimer** bootstrap. Until that succeeds, anyone who can reach the **gate hostname** can claim the **instance**. Store the password shown once — it is not printed by deploy. Procedure: [`docs/first-claimer-bootstrap.md`](../../docs/first-claimer-bootstrap.md). Security step: [`SECURITY.md`](../../SECURITY.md).
 
 Alternatively copy [`flaremail.conf.example.jsonc`](../../flaremail.conf.example.jsonc) → `flaremail.conf.jsonc`, edit, then `npx flaremail sync` / `deploy`.
 
@@ -140,6 +140,8 @@ npx flaremail deploy --yes
 |--------|--------|
 | `FLAREMAIL_CONF` | Full `flaremail.conf.jsonc` contents |
 | `CLOUDFLARE_API_TOKEN` | Same token as `cloudflare.apiToken` (overrides conf) |
+
+The first production deploy leaves the **instance** unclaimed. **Bootstrap immediately** on the **gate hostname** ([first-claimer](../../docs/first-claimer-bootstrap.md)) — CI does not create the **intendant**.
 
 ---
 

@@ -171,5 +171,4 @@ apps/core/wrangler.jsonc
 apps/gate/wrangler.jsonc
 
 .cursor
-.product-demo/
-.screenshots/
+.gitignored/

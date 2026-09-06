@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "패스키 로그인을 확인할 수 없습니다",
 		"invalid-passkey-response": "잘못된 패스키 응답입니다",
 		"invalid-password": "잘못된 비밀번호입니다",
+		"intendant-cannot-change-password": "인텐던트는 이 비밀번호를 변경할 수 없습니다",
+		"new-password-must-differ": "새 비밀번호는 현재 비밀번호와 달라야 합니다",
+		"current-and-new-password-required": "currentPassword와 newPassword가 필요합니다",
 		"invalid-recovery-email": "잘못된 복구 이메일 주소입니다",
 		"recovery-email-in-use": "이 복구 이메일은 이미 다른 계정에서 사용 중입니다",
 		"no-recovery-email-configured": "복구 이메일이 구성되지 않았습니다",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "문제가 발생했습니다",
 		"invalid-phone-number": "전화번호는 E.164 형식의 유효한 국제번호여야 합니다(예: +14155552671)",
 		"recovery-email-hosted-domain": "복구 이메일은 이 메일 서버가 호스팅하는 도메인을 사용할 수 없습니다",
-		"recovery-email-hosted-mailbox": "복구 이메일은 이 메일 서버의 메일함을 사용할 수 없습니다"
+		"recovery-email-hosted-mailbox": "복구 이메일은 이 메일 서버의 메일함을 사용할 수 없습니다",
+		"invalid-search-query": "잘못된 검색 쿼리입니다",
+		"unknown-search-operator": "알 수 없는 검색 연산자입니다",
+		"empty-search-operator-value": "검색 연산자 값이 비어 있습니다",
+		"unclosed-search-quote": "검색 쿼리의 따옴표가 닫히지 않았습니다",
+		"unclosed-search-paren": "검색 쿼리의 괄호가 닫히지 않았습니다",
+		"invalid-search-date": "잘못된 검색 날짜입니다",
+		"invalid-search-folder": "잘못된 검색 폴더입니다",
+		"invalid-search-is-value": "잘못된 is: 값입니다",
+		"invalid-search-has-value": "잘못된 has: 값입니다"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "스레드 {{count}}개",
 			"threadCount_few": "스레드 {{count}}개",
 			"threadCount_other": "스레드 {{count}}개",
+			"resultCount_one": "결과 {{count}}개",
+			"resultCount_few": "결과 {{count}}개",
+			"resultCount_other": "결과 {{count}}개",
 			"emptyFolder": "{{folder}}에 스레드가 없습니다.",
 			"emptyLabel": "이 라벨의 스레드가 없습니다.",
 			"noSubject": "(제목 없음)",
@@ -579,7 +594,15 @@
 			"draftCount_one": "임시보관함 {{count}}개",
 			"draftCount_few": "임시보관함 {{count}}개",
 			"draftCount_other": "임시보관함 {{count}}개",
-			"emptyDrafts": "임시보관함이 없습니다."
+			"emptyDrafts": "임시보관함이 없습니다.",
+			"searchPlaceholder": "메일 검색",
+			"searchAria": "메일 검색",
+			"searchTitle": "검색",
+			"emptySearch": "일치하는 스레드가 없습니다.",
+			"hitCount_one": "일치하는 메시지 {{count}}개",
+			"hitCount_few": "일치하는 메시지 {{count}}개",
+			"hitCount_other": "일치하는 메시지 {{count}}개",
+			"clearSearch": "검색 지우기"
 		},
 		"threadActions": {
 			"markUnread": "읽지 않음으로 표시",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "확인하려면 인증 앱의 코드를 입력하세요.",
 			"authenticatorCode": "인증 코드",
 			"cancel": "취소"
+		},
+		"changePassword": {
+			"title": "비밀번호 변경",
+			"description": "새 비밀번호를 선택하세요. 다른 로그인 세션은 로그아웃됩니다.",
+			"currentPassword": "현재 비밀번호",
+			"newPassword": "새 비밀번호",
+			"confirmPassword": "새 비밀번호 확인",
+			"authenticatorCode": "인증 코드",
+			"mfaHint": "확인하려면 인증 앱의 코드를 입력하세요.",
+			"submit": "비밀번호 변경",
+			"changing": "변경 중…",
+			"success": "비밀번호가 변경되었습니다. 다른 세션은 로그아웃되었습니다."
 		}
 	},
 	"management": {

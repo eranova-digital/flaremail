@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Autentificarea cu passkey nu a putut fi verificată",
 		"invalid-passkey-response": "Răspuns passkey invalid",
 		"invalid-password": "Parolă invalidă",
+		"intendant-cannot-change-password": "Intendantul nu poate schimba această parolă",
+		"new-password-must-differ": "Parola nouă trebuie să fie diferită de parola curentă",
+		"current-and-new-password-required": "Parola curentă și parola nouă sunt obligatorii",
 		"invalid-recovery-email": "Adresă de e-mail de recuperare invalidă",
 		"recovery-email-in-use": "Acest e-mail de recuperare este deja folosit de alt cont",
 		"no-recovery-email-configured": "Nu este configurat un e-mail de recuperare",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "Ceva nu a mers bine",
 		"invalid-phone-number": "Numărul de telefon trebuie să fie un număr internațional valid în format E.164 (ex. +14155552671)",
 		"recovery-email-hosted-domain": "E-mailul de recuperare nu poate folosi un domeniu găzduit de acest server de e-mail",
-		"recovery-email-hosted-mailbox": "E-mailul de recuperare nu poate folosi o cutie poștală de pe acest server de e-mail"
+		"recovery-email-hosted-mailbox": "E-mailul de recuperare nu poate folosi o cutie poștală de pe acest server de e-mail",
+		"invalid-search-query": "Interogare de căutare invalidă",
+		"unknown-search-operator": "Operator de căutare necunoscut",
+		"empty-search-operator-value": "Valoare goală pentru operator",
+		"unclosed-search-quote": "Ghilimele neînchise în interogare",
+		"unclosed-search-paren": "Paranteză neînchisă în interogare",
+		"invalid-search-date": "Dată de căutare invalidă",
+		"invalid-search-folder": "Folder de căutare invalid",
+		"invalid-search-is-value": "Valoare is: invalidă",
+		"invalid-search-has-value": "Valoare has: invalidă"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "{{count}} conversație",
 			"threadCount_few": "{{count}} conversații",
 			"threadCount_other": "{{count}} conversații",
+			"resultCount_one": "{{count}} rezultat",
+			"resultCount_few": "{{count}} rezultate",
+			"resultCount_other": "{{count}} rezultate",
 			"emptyFolder": "Nicio conversație în {{folder}}.",
 			"emptyLabel": "Nicio conversație cu această etichetă.",
 			"noSubject": "(fără subiect)",
@@ -579,7 +594,15 @@
 			"draftCount_one": "{{count}} ciornă",
 			"draftCount_few": "{{count}} ciorne",
 			"draftCount_other": "{{count}} de ciorne",
-			"emptyDrafts": "Nicio ciornă."
+			"emptyDrafts": "Nicio ciornă.",
+			"searchPlaceholder": "Caută mail",
+			"searchAria": "Caută mail",
+			"searchTitle": "Căutare",
+			"emptySearch": "Niciun fir potrivit.",
+			"hitCount_one": "{{count}} mesaj potrivit",
+			"hitCount_few": "{{count}} mesaje potrivite",
+			"hitCount_other": "{{count}} mesaje potrivite",
+			"clearSearch": "Șterge căutarea"
 		},
 		"threadActions": {
 			"markUnread": "Marchează ca necitit",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "Introdu un cod din aplicația de autentificare pentru a confirma.",
 			"authenticatorCode": "Cod autentificator",
 			"cancel": "Anulează"
+		},
+		"changePassword": {
+			"title": "Schimbă parola",
+			"description": "Alegeți o parolă nouă. Celelalte sesiuni autentificate vor fi deconectate.",
+			"currentPassword": "Parola curentă",
+			"newPassword": "Parolă nouă",
+			"confirmPassword": "Confirmă parola nouă",
+			"authenticatorCode": "Cod autentificator",
+			"mfaHint": "Introduceți un cod din aplicația de autentificare pentru confirmare.",
+			"submit": "Schimbă parola",
+			"changing": "Se schimbă…",
+			"success": "Parola a fost schimbată. Celelalte sesiuni au fost deconectate."
 		}
 	},
 	"management": {

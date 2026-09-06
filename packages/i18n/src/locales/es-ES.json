@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "No se pudo verificar el inicio de sesión con passkey",
 		"invalid-passkey-response": "Respuesta de passkey no válida",
 		"invalid-password": "Contraseña no válida",
+		"intendant-cannot-change-password": "El intendant no puede cambiar esta contraseña",
+		"new-password-must-differ": "La nueva contraseña debe ser distinta de la actual",
+		"current-and-new-password-required": "Se requieren currentPassword y newPassword",
 		"invalid-recovery-email": "Correo de recuperación no válido",
 		"recovery-email-in-use": "Este correo de recuperación ya está en uso por otra cuenta",
 		"no-recovery-email-configured": "No hay correo de recuperación configurado",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "Algo salió mal",
 		"invalid-phone-number": "El número de teléfono debe ser un número internacional válido en formato E.164 (p. ej. +14155552671)",
 		"recovery-email-hosted-domain": "El correo de recuperación no puede usar un dominio alojado en este servidor de correo",
-		"recovery-email-hosted-mailbox": "El correo de recuperación no puede usar un buzón de este servidor de correo"
+		"recovery-email-hosted-mailbox": "El correo de recuperación no puede usar un buzón de este servidor de correo",
+		"invalid-search-query": "Consulta de búsqueda no válida",
+		"unknown-search-operator": "Operador de búsqueda desconocido",
+		"empty-search-operator-value": "Valor de operador de búsqueda vacío",
+		"unclosed-search-quote": "Comillas sin cerrar en la consulta",
+		"unclosed-search-paren": "Paréntesis sin cerrar en la consulta",
+		"invalid-search-date": "Fecha de búsqueda no válida",
+		"invalid-search-folder": "Carpeta de búsqueda no válida",
+		"invalid-search-is-value": "Valor is: no válido",
+		"invalid-search-has-value": "Valor has: no válido"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "{{count}} hilo",
 			"threadCount_few": "{{count}} hilos",
 			"threadCount_other": "{{count}} hilos",
+			"resultCount_one": "{{count}} resultado",
+			"resultCount_few": "{{count}} resultados",
+			"resultCount_other": "{{count}} resultados",
 			"emptyFolder": "No hay hilos en {{folder}}.",
 			"emptyLabel": "No hay hilos con esta etiqueta.",
 			"noSubject": "(sin asunto)",
@@ -579,7 +594,15 @@
 			"draftCount_one": "{{count}} borrador",
 			"draftCount_few": "{{count}} borradores",
 			"draftCount_other": "{{count}} borradores",
-			"emptyDrafts": "No hay borradores."
+			"emptyDrafts": "No hay borradores.",
+			"searchPlaceholder": "Buscar correo",
+			"searchAria": "Buscar correo",
+			"searchTitle": "Búsqueda",
+			"emptySearch": "No hay conversaciones coincidentes.",
+			"hitCount_one": "{{count}} mensaje coincidente",
+			"hitCount_few": "{{count}} mensajes coincidentes",
+			"hitCount_other": "{{count}} mensajes coincidentes",
+			"clearSearch": "Borrar búsqueda"
 		},
 		"threadActions": {
 			"markUnread": "Marcar como no leído",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "Introduce un código de tu app de autenticación para confirmar.",
 			"authenticatorCode": "Código del autenticador",
 			"cancel": "Cancelar"
+		},
+		"changePassword": {
+			"title": "Cambiar contraseña",
+			"description": "Elige una contraseña nueva. Se cerrarán las demás sesiones iniciadas.",
+			"currentPassword": "Contraseña actual",
+			"newPassword": "Nueva contraseña",
+			"confirmPassword": "Confirmar nueva contraseña",
+			"authenticatorCode": "Código del autenticador",
+			"mfaHint": "Introduce un código de tu aplicación de autenticación para confirmar.",
+			"submit": "Cambiar contraseña",
+			"changing": "Cambiando…",
+			"success": "Contraseña cambiada. Se han cerrado las demás sesiones."
 		}
 	},
 	"management": {

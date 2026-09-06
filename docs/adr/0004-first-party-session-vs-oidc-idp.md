@@ -16,7 +16,7 @@ Use four distinct credential channels:
 
 1. **Session** — first-party web app only. **Accounts** sign in via email/password (or the reserved `intendant` identifier). The server issues a session credential (cookie or equivalent). Not OIDC.
 
-2. **API key** — per-**account** long-lived credentials. Any **account** can create and revoke keys. Keys inherit exactly the holder's **role** and assignments.
+2. **API key** — per-**account** long-lived credentials. Any **account** can create and revoke keys. Keys authenticate as the holder; effective access is the intersection of the holder's **role**/assignments and the scopes selected on the key. Security operations (recovery, sessions, API keys, MFA, passkeys, password change) remain session-only.
 
 3. **OIDC user tokens** — third-party relying parties. Authorization Code + PKCE, refresh tokens. User access tokens may call the Flaremail mail API when the authorize request includes required scopes (e.g. `mail:read`, `mail:send`). Identity claims follow ADR-0003.
 

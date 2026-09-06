@@ -3,8 +3,10 @@ info:
   title: Flaremail API
   version: 1.0.0
   description: |
-    HTTP API for Flaremail, self-hosted email on Cloudflare. Production clients
+    HTTP API for Flaremail, self-hosted email on Cloudflare.     Production clients
     call the **gate** hostname; gate proxies `/api/*` and `/health` to **core**.
+    OIDC discovery (`/.well-known/openid-configuration`) is served by core
+    and is not forwarded by gate — configure `/api/v1/oauth/*` URLs explicitly.
 
     Versioned prefix: `/api/v1`. Live spec: `GET /api/v1/openapi.json`
     (`info.version` is the product version from root `package.json`).
@@ -95,10 +97,12 @@ paths:
       tags: [Meta]
       summary: Bootstrap the intendant
       description: |
-        Unauthenticated first-run. Creates the intendant account when none
+        First-claimer. Unauthenticated. Creates the intendant when none
         exists and returns the generated password once. Subsequent calls
         return `{ created: false }` without revealing credentials.
-        Rate-limited.
+        Rate-limited. Operators must call this immediately after first
+        deploy — until then anyone who can reach the gate can claim the
+        instance.
       operationId: bootstrapIntendant
       security: []
       responses:
@@ -525,6 +529,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SessionRevokeResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change own password
+      description: |
+        Signed-in non-intendant **password change**. Requires the current
+        password. TOTP `code` is required when MFA is enabled. The new
+        password must meet the usual strength rules and must differ from
+        the current password. Revokes other sessions; keeps the current
+        session. Session-only. The intendant must use regenerate-password.
+      operationId: changePassword
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                code:
+                  type: string
+                  description: TOTP code when MFA is enabled
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
         default:
           $ref: "#/components/responses/Problem"
 
@@ -2755,8 +2802,13 @@ paths:
   /search:
     post:
       tags: [Search]
-      summary: Search messages
+      summary: Search threads
       operationId: searchMessages
+      description: >
+        Search the selected mailbox. The query language is documented in
+        CONTEXT.md (Search query). Default scope is every folder except trash
+        and spam (`in:any` includes them). Each item is a thread plus the
+        matching messages (hits are empty for thread-only queries).
       requestBody:
         required: true
         content:
@@ -3425,7 +3477,10 @@ paths:
     get:
       tags: [OIDC]
       summary: OpenID Provider configuration
-      description: Unauthenticated discovery document.
+      description: |
+        Unauthenticated discovery document on **core**. Gate does not proxy
+        `/.well-known/*`; relying parties should use `/api/v1/oauth/*` on the
+        gate hostname instead.
       operationId: openIdDiscovery
       security: []
       responses:
@@ -3542,7 +3597,7 @@ components:
         version:
           type: string
           description: Product version from root package.json
-          example: 0.9.8
+          example: 1.0.0
 
     BootstrapResult:
       type: object
@@ -5218,15 +5273,23 @@ components:
         items:
           type: array
           items:
-            allOf:
-              - $ref: "#/components/schemas/MessagePreview"
-              - type: object
-                properties:
-                  threadId:
-                    type: string
-                    format: uuid
+            $ref: "#/components/schemas/SearchResult"
         nextCursor:
           type: ["string", "null"]
+
+    SearchResult:
+      type: object
+      required: [thread, hits]
+      properties:
+        thread:
+          $ref: "#/components/schemas/Thread"
+        hits:
+          type: array
+          description: >
+            Messages in this thread that match the message-level part of the
+            query, newest first. Empty when the query is thread-only.
+          items:
+            $ref: "#/components/schemas/MessagePreview"
 
     DraftPage:
       type: object

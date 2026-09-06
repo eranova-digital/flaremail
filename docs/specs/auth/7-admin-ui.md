@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-**Intendant**, **superadmin**, **admin**, and **manager** **roles** need UI to perform administrative actions defined in the domain model — invites, role changes, suspensions, **shared mailbox** management, **local part policy**, **OIDC clients** — without raw API calls.
+At the time this spec was written, elevated **roles** had no UI to perform administrative actions defined in the domain model — invites, role changes, suspensions, **shared mailbox** management, **local part policy**, **OIDC clients** — without raw API calls.
 
 ## Solution
 
@@ -54,11 +54,11 @@ Add administration sections to the web app, gated by **role** and assignments. S
 
 ## Implementation Decisions
 
-- Route structure: `/admin/platform/*` (intendant/superadmin), `/admin/domains/:domainId/*` (admin/manager scoped).
-- Platform pages: domains list/create, account list, role assignment, OIDC clients CRUD, intendant password regenerate.
-- Domain pages: accounts, invites, mailboxes, shared mailboxes, managers assignment, local part policy editor.
+- Route structure: `/management` (platform + domain admin, gated by **role**), `/settings` (account security, profile, API keys). Nested: `/management/mailboxes/:mailboxId/users`, `/management/domains/:domainId/validation`.
+- Platform surfaces: domains list/create, account list, role assignment, OIDC clients CRUD, **logs**, organization settings, intendant password regenerate.
+- Domain surfaces: accounts, invites, mailboxes, shared mailboxes, managers assignment, local part policy editor.
 - Manager view: subset of domain pages without mailbox create/delete, role promotion above manager, or account removal.
-- Forms call new admin API endpoints (or existing v1 routes once RBAC applied).
+- Forms call admin API endpoints (v1 routes with RBAC).
 - Wildcard `*` shared mailbox assignment shown clearly in UI.
 - Local part policy: template builder with `{first_name}`, `{last_name}`, `{last_name_initial}` preview.
 - Invite flow: choose domain (from assignments), local part (validated), profile fields with lock toggles, send option.
@@ -72,8 +72,6 @@ Add administration sections to the web app, gated by **role** and assignments. S
 
 ## Out of Scope
 
-- Domain readiness validation UI changes (existing feature stays).
-- Audit log viewer.
 - Bulk import CSV.
 - Billing.
 

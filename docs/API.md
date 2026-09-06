@@ -32,7 +32,9 @@ Versioned API:
 | GET | `/api/v1/openapi.json` | No | OpenAPI document (`info.version` = root `package.json`) |
 | GET | `/api/v1/health` | No | Liveness + version (gate-accessible) |
 | GET | `/health` | No | Same payload as `/api/v1/health` (also via gate) |
-| POST | `/api/v1/bootstrap` | No | First-run intendant create (`{ created: false }` thereafter) |
+| POST | `/api/v1/bootstrap` | No | **First-claimer**: create **intendant** if none exists; password returned once. `{ created: false }` thereafter |
+
+Until an **instance** is claimed, this endpoint is the break-glass create. Call it immediately after the first deploy ([procedure](./first-claimer-bootstrap.md), [SECURITY.md](../SECURITY.md)). Subsequent calls are inert.
 
 ---
 
@@ -61,7 +63,7 @@ Create and revoke them from the web app under `/settings?tab=security`.
 
 Profile scopes (`profile:*`, `profile_picture:*`) cover name, address, phone, and
 profile picture changes for the key holder. Security operations — recovery email,
-sessions, API keys, MFA, and passkeys — are session-only and cannot be granted to
+sessions, API keys, MFA, passkeys, and password change — are session-only and cannot be granted to
 API keys.
 
 Example:
@@ -101,6 +103,7 @@ API key endpoints require a signed-in session:
 | POST | `/auth/mfa/verify` | No | Complete MFA sign-in |
 | GET / POST / DELETE | `/auth/passkeys*` | Mixed | WebAuthn register and sign-in |
 | GET / DELETE | `/auth/sessions` | Session | List / revoke sessions |
+| POST | `/auth/change-password` | Session | Change own password |
 | POST | `/auth/recovery-email/*` | Session | Verify recovery address |
 | POST | `/auth/intendant/regenerate-password` | Intendant session | New random password |
 
@@ -537,7 +540,12 @@ POST /search
 }
 ```
 
-v1 search: free-text `ILIKE` on `subject`, `textBody`, `from`, `to` within the mailbox. Returns **message hits** with `threadId` and cursor pagination.
+v1 search: a **search query** (plain text plus operators) over the selected mailbox.
+Default scope is every folder except trash and spam. Returns **search results**:
+each item is a **thread** with nested **search hits** (matching messages). Cursor
+pagination is per result, ordered by the newest hit (or thread `lastMessageAt`
+when there are no hits). See [ADR-0013](./adr/0013-search-returns-grouped-threads.md)
+and [ADR-0014](./adr/0014-mail-search-query-language.md).
 
 ---
 
@@ -548,6 +556,31 @@ v1 search: free-text `ILIKE` on `subject`, `textBody`, `from`, `to` within the m
 | GET | `/attachments/:id` | Download inbound attachment bytes |
 
 Outbound attachments are embedded in send/reply/forward/draft bodies (base64) — there is no separate upload endpoint.
+
+---
+
+## Identities
+
+Send personas (**name pattern** + optional **signature**). The From address is always the sending **mailbox**. See [`CONTEXT.md`](./CONTEXT.md).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/identities` | Overview for the signed-in account |
+| GET / POST | `/mailboxes/:mailboxId/identities` | List / create mailbox-owned identities |
+| GET | `/mailboxes/:mailboxId/identities/available` | Identities selectable when composing from that mailbox |
+| GET / PATCH / DELETE | `/mailboxes/:mailboxId/identities/:id` | One identity |
+
+Instance **default identity** and identity policies live on `GET / PATCH /instance/settings`.
+
+---
+
+## BIMI
+
+Auth-gated brand marks for inbound senders ([ADR-0011](./adr/0011-bimi-inbound-brand-marks.md)).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/bimi/:domain/logo?size=` | WebP logo (`small` or `large`). Session or API key with `bimi:read`. **404** if none. |
 
 ---
 
@@ -583,13 +616,22 @@ Intendant and superadmins. Cursor is `before` (ISO `createdAt` of the last item)
 
 ## OIDC
 
-Flaremail is an OpenID Provider. Discovery is **not** under `/api/v1`:
+Flaremail is an OpenID Provider. Protocol endpoints live under `/api/v1` and are reachable on the **gate hostname** (gate proxies all `/api/*`):
 
-```
-GET /.well-known/openid-configuration
-```
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/oauth/authorize` | Authorization Code + PKCE |
+| POST | `/oauth/token` | Token (`authorization_code`, `refresh_token`, `client_credentials`) |
+| GET | `/oauth/jwks` | Public ES256 JWK set |
+| GET | `/oauth/userinfo` | UserInfo |
+| GET | `/oauth/pending/:id` | Pending authorization for the web consent UI |
+| POST | `/oauth/consent` | Approve or deny consent |
 
-Admin CRUD is `/oidc-clients`. Authorization, token, JWKS, userinfo, pending consent, and connected-app revoke live under `/oauth/*` and `/me/oidc-grants`. See the OpenAPI document for request/response schemas.
+Admin CRUD is `/oidc-clients` (intendant / superadmin). Connected-app grants: `/me/oidc-grants` (session-only). Tokens are ES256 ([ADR-0007](./adr/0007-oidc-token-signing-es256.md)); PKCE `S256` is required for every authorization-code client ([ADR-0008](./adr/0008-pkce-required-all-clients.md)).
+
+Discovery (`GET /.well-known/openid-configuration`) is implemented on **core** at the origin root — not under `/api/v1`. Gate forwards only `/api/*` and `/health`, so that path is **not** reachable on the gate hostname. Relying parties should set authorize, token, JWKS, and userinfo URLs explicitly (see [`apps/3p-demo`](../apps/3p-demo/README.md)).
+
+See the OpenAPI document for request/response schemas.
 
 ---
 

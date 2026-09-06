@@ -34,7 +34,7 @@ System mailboxes remain immutable (no edit/delete) for all roles.
 | **superadmin** | **Primary mailbox** + all **shared mailboxes** on the instance | Same |
 | **intendant** | All **system mailboxes** + all **shared mailboxes** | Same |
 
-The **intendant** still has no **primary mailbox**, no **mailbox grants**, and no SSO participation. It cannot read or send from user, shared, or non-system mailboxes.
+The **intendant** still has no **primary mailbox**, no **mailbox grants**, and no SSO participation. It cannot read or send from user **primary mailboxes**.
 
 ### Enforcement
 

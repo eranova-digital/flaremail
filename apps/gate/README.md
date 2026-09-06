@@ -12,8 +12,9 @@ Package: `apps/gate` · CF name: `flaremail-gate`
 |---------|----------|
 | Static assets | Wrangler `assets.directory` → `../web/dist` |
 | SPA routes | `not_found_handling: single-page-application` |
-| API | `run_worker_first: ["/api/*", "/health"]` → `env.CORE.fetch(request)` |
+| API | `run_worker_first: ["/api/*", "/health"]` → `env.CORE.fetch(request)` — includes `/api/v1/oauth/*` |
 | Everything else under `/api` miss | Worker returns 404 (assets/SPA handle non-API) |
+| `/.well-known/*` | **Not** forwarded. OIDC discovery is on core only; RPs must use `/api/v1/oauth/*` URLs (see [`docs/API.md`](../../docs/API.md#oidc)). |
 
 Non-responsibilities: business logic, auth decisions, mail, database. Gate is intentionally thin ([ADR-0010](../../docs/adr/0010-gate-and-private-core.md)).
 

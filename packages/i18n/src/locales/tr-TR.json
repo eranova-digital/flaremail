@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Passkey ile oturum açma doğrulanamadı",
 		"invalid-passkey-response": "Geçersiz passkey yanıtı",
 		"invalid-password": "Geçersiz şifre",
+		"intendant-cannot-change-password": "Intendant bu parolayı değiştiremez",
+		"new-password-must-differ": "Yeni parola mevcut paroladan farklı olmalıdır",
+		"current-and-new-password-required": "currentPassword ve newPassword gerekli",
 		"invalid-recovery-email": "Geçersiz kurtarma e-posta adresi",
 		"recovery-email-in-use": "Bu kurtarma e-postası başka bir hesap tarafından zaten kullanılıyor",
 		"no-recovery-email-configured": "Kurtarma e-postası yapılandırılmamış",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "Bir şeyler ters gitti",
 		"invalid-phone-number": "Telefon numarası E.164 biçiminde geçerli bir uluslararası numara olmalıdır (örn. +14155552671)",
 		"recovery-email-hosted-domain": "Kurtarma e-postası bu posta sunucusunun barındırdığı bir etki alanını kullanamaz",
-		"recovery-email-hosted-mailbox": "Kurtarma e-postası bu posta sunucusundaki bir kutuyu kullanamaz"
+		"recovery-email-hosted-mailbox": "Kurtarma e-postası bu posta sunucusundaki bir kutuyu kullanamaz",
+		"invalid-search-query": "Geçersiz arama sorgusu",
+		"unknown-search-operator": "Bilinmeyen arama operatörü",
+		"empty-search-operator-value": "Boş arama operatörü değeri",
+		"unclosed-search-quote": "Sorguda kapatılmamış tırnak",
+		"unclosed-search-paren": "Sorguda kapatılmamış parantez",
+		"invalid-search-date": "Geçersiz arama tarihi",
+		"invalid-search-folder": "Geçersiz arama klasörü",
+		"invalid-search-is-value": "Geçersiz is: değeri",
+		"invalid-search-has-value": "Geçersiz has: değeri"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "{{count}} konuşma",
 			"threadCount_few": "{{count}} konuşma",
 			"threadCount_other": "{{count}} konuşma",
+			"resultCount_one": "{{count}} sonuç",
+			"resultCount_few": "{{count}} sonuç",
+			"resultCount_other": "{{count}} sonuç",
 			"emptyFolder": "{{folder}} klasöründe konuşma yok.",
 			"emptyLabel": "Bu etiketle konuşma yok.",
 			"noSubject": "(konu yok)",
@@ -579,7 +594,15 @@
 			"draftCount_one": "{{count}} taslak",
 			"draftCount_few": "{{count}} taslak",
 			"draftCount_other": "{{count}} taslak",
-			"emptyDrafts": "Taslak yok."
+			"emptyDrafts": "Taslak yok.",
+			"searchPlaceholder": "Posta ara",
+			"searchAria": "Posta ara",
+			"searchTitle": "Arama",
+			"emptySearch": "Eşleşen konuşma yok.",
+			"hitCount_one": "{{count}} eşleşen ileti",
+			"hitCount_few": "{{count}} eşleşen ileti",
+			"hitCount_other": "{{count}} eşleşen ileti",
+			"clearSearch": "Aramayı temizle"
 		},
 		"threadActions": {
 			"markUnread": "Okunmadı olarak işaretle",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "Onaylamak için kimlik doğrulayıcı uygulamanızdan bir kod girin.",
 			"authenticatorCode": "Kimlik doğrulayıcı kodu",
 			"cancel": "İptal"
+		},
+		"changePassword": {
+			"title": "Parolayı değiştir",
+			"description": "Yeni bir parola seçin. Diğer oturumlar kapatılacak.",
+			"currentPassword": "Mevcut parola",
+			"newPassword": "Yeni parola",
+			"confirmPassword": "Yeni parolayı onayla",
+			"authenticatorCode": "Doğrulayıcı kodu",
+			"mfaHint": "Onaylamak için kimlik doğrulama uygulamanızdaki kodu girin.",
+			"submit": "Parolayı değiştir",
+			"changing": "Değiştiriliyor…",
+			"success": "Parola değiştirildi. Diğer oturumlar kapatıldı."
 		}
 	},
 	"management": {

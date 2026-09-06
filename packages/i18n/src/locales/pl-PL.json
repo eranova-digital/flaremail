@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Nie udało się zweryfikować logowania passkey",
 		"invalid-passkey-response": "Nieprawidłowa odpowiedź passkey",
 		"invalid-password": "Nieprawidłowe hasło",
+		"intendant-cannot-change-password": "Intendant nie może zmienić tego hasła",
+		"new-password-must-differ": "Nowe hasło musi różnić się od obecnego",
+		"current-and-new-password-required": "Wymagane są currentPassword i newPassword",
 		"invalid-recovery-email": "Nieprawidłowy adres e-mail odzyskiwania",
 		"recovery-email-in-use": "Ten e-mail odzyskiwania jest już używany przez inne konto",
 		"no-recovery-email-configured": "Nie skonfigurowano e-maila odzyskiwania",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "Coś poszło nie tak",
 		"invalid-phone-number": "Numer telefonu musi być prawidłowym numerem międzynarodowym w formacie E.164 (np. +14155552671)",
 		"recovery-email-hosted-domain": "E-mail odzyskiwania nie może używać domeny hostowanej na tym serwerze poczty",
-		"recovery-email-hosted-mailbox": "E-mail odzyskiwania nie może używać skrzynki na tym serwerze poczty"
+		"recovery-email-hosted-mailbox": "E-mail odzyskiwania nie może używać skrzynki na tym serwerze poczty",
+		"invalid-search-query": "Nieprawidłowe zapytanie wyszukiwania",
+		"unknown-search-operator": "Nieznany operator wyszukiwania",
+		"empty-search-operator-value": "Pusta wartość operatora wyszukiwania",
+		"unclosed-search-quote": "Niezamknięty cudzysłów w zapytaniu",
+		"unclosed-search-paren": "Niezamknięty nawias w zapytaniu",
+		"invalid-search-date": "Nieprawidłowa data wyszukiwania",
+		"invalid-search-folder": "Nieprawidłowy folder wyszukiwania",
+		"invalid-search-is-value": "Nieprawidłowa wartość is:",
+		"invalid-search-has-value": "Nieprawidłowa wartość has:"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "{{count}} wątek",
 			"threadCount_few": "{{count}} wątki",
 			"threadCount_other": "{{count}} wątków",
+			"resultCount_one": "{{count}} wynik",
+			"resultCount_few": "{{count}} wyniki",
+			"resultCount_other": "{{count}} wyników",
 			"emptyFolder": "Brak wątków w {{folder}}.",
 			"emptyLabel": "Brak wątków z tą etykietą.",
 			"noSubject": "(brak tematu)",
@@ -579,7 +594,15 @@
 			"draftCount_one": "{{count}} szkic",
 			"draftCount_few": "{{count}} szkice",
 			"draftCount_other": "{{count}} szkiców",
-			"emptyDrafts": "Brak szkiców."
+			"emptyDrafts": "Brak szkiców.",
+			"searchPlaceholder": "Szukaj poczty",
+			"searchAria": "Szukaj poczty",
+			"searchTitle": "Wyszukiwanie",
+			"emptySearch": "Brak pasujących wątków.",
+			"hitCount_one": "{{count}} pasująca wiadomość",
+			"hitCount_few": "{{count}} pasujące wiadomości",
+			"hitCount_other": "{{count}} pasujących wiadomości",
+			"clearSearch": "Wyczyść wyszukiwanie"
 		},
 		"threadActions": {
 			"markUnread": "Oznacz jako nieprzeczytane",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "Wprowadź kod z aplikacji uwierzytelniającej, aby potwierdzić.",
 			"authenticatorCode": "Kod uwierzytelniający",
 			"cancel": "Anuluj"
+		},
+		"changePassword": {
+			"title": "Zmień hasło",
+			"description": "Wybierz nowe hasło. Inne zalogowane sesje zostaną wylogowane.",
+			"currentPassword": "Obecne hasło",
+			"newPassword": "Nowe hasło",
+			"confirmPassword": "Potwierdź nowe hasło",
+			"authenticatorCode": "Kod uwierzytelniający",
+			"mfaHint": "Wpisz kod z aplikacji uwierzytelniającej, aby potwierdzić.",
+			"submit": "Zmień hasło",
+			"changing": "Zmienianie…",
+			"success": "Hasło zostało zmienione. Inne sesje zostały wylogowane."
 		}
 	},
 	"management": {

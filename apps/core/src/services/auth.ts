@@ -346,6 +346,104 @@ export async function regenerateIntendantPassword(
 	return password;
 }
 
+export async function changePassword(
+	db: Database,
+	input: {
+		accountId: string;
+		currentPassword: string;
+		newPassword: string;
+		code?: string;
+		encryptionKey: string;
+		currentSessionId: string;
+	},
+	logContext?: LogContext | null,
+) {
+	if (!input.currentSessionId) {
+		throw new Error("This endpoint requires an authenticated session");
+	}
+
+	const [account] = await db
+		.select()
+		.from(accounts)
+		.where(eq(accounts.id, input.accountId))
+		.limit(1);
+	if (!account) {
+		throw new Error("Account not found");
+	}
+	if (account.isIntendant) {
+		throw new Error("The intendant cannot change this password");
+	}
+	if (!account.passwordHash) {
+		throw new Error("Invalid password");
+	}
+
+	const currentValid = await verifyPassword(
+		input.currentPassword,
+		account.passwordHash,
+	);
+	if (!currentValid) {
+		await safeEmitLog(db, {
+			importance: 2,
+			type: "auth",
+			summary: "{actor} failed to change their password",
+			refs: accountLogRef(input.accountId),
+			actorAccountId: input.accountId,
+			context: logContext,
+		});
+		throw new Error("Invalid password");
+	}
+
+	const mfaEnabled = await isMfaEnabled(db, input.accountId);
+	if (mfaEnabled) {
+		const code = input.code?.trim() ?? "";
+		if (!code) {
+			throw new Error("Authenticator code is required");
+		}
+		const valid = await verifyAccountTotpCode(db, {
+			accountId: input.accountId,
+			code,
+			encryptionKey: input.encryptionKey,
+		});
+		if (!valid) {
+			await safeEmitLog(db, {
+				importance: 2,
+				type: "auth",
+				summary: "{actor} failed to change their password",
+				refs: accountLogRef(input.accountId),
+				actorAccountId: input.accountId,
+				context: logContext,
+			});
+			throw new Error("Invalid authentication code");
+		}
+	}
+
+	if (input.newPassword === input.currentPassword) {
+		throw new Error("New password must be different from the current password");
+	}
+
+	assertStrongPassword(input.newPassword);
+
+	await db
+		.update(accounts)
+		.set({
+			passwordHash: await hashPassword(input.newPassword),
+			updatedAt: new Date(),
+		})
+		.where(eq(accounts.id, input.accountId));
+	await revokeAllSessions(db, input.accountId, {
+		includeCurrent: false,
+		currentSessionId: input.currentSessionId,
+	});
+	await safeEmitLog(db, {
+		importance: 3,
+		type: "auth",
+		summary: "{actor} changed their password",
+		refs: accountLogRef(input.accountId),
+		actorAccountId: input.accountId,
+		context: logContext,
+	});
+}
+
 export async function createPasswordResetCode(
 	db: Database,
 	input: { accountId: string; createdByAccountId: string },

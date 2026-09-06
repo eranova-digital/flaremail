@@ -35,6 +35,17 @@ export function regenerateIntendantPassword(input?: {
 	);
 }
 
+export function changePassword(input: {
+	currentPassword: string;
+	newPassword: string;
+	code?: string;
+}): Promise<{ ok: true }> {
+	return apiRequest<{ ok: true }>("/auth/change-password", {
+		method: "POST",
+		body: JSON.stringify(input),
+	});
+}
+
 export function fetchMe(): Promise<Account> {
 	return apiRequest<Account>("/auth/me");
 }

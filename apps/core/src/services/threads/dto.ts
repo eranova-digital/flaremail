@@ -142,10 +142,3 @@ export function toThreadDto(
 		bimiDomains,
 	};
 }
-
-export function toSearchHit(message: Message) {
-	return {
-		...toMessagePreview(message),
-		threadId: message.threadId,
-	};
-}

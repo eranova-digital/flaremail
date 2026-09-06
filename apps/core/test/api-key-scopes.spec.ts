@@ -79,11 +79,17 @@ describe("API key scopes", () => {
 		const sessions = authRoutes.find(
 			(route) => route.method === "GET" && route.path === "/api/v1/auth/sessions",
 		);
+		const changePassword = authRoutes.find(
+			(route) =>
+				route.method === "POST" &&
+				route.path === "/api/v1/auth/change-password",
+		);
 		const me = authRoutes.find(
 			(route) => route.method === "GET" && route.path === "/api/v1/auth/me",
 		);
 		expect(apiKeys?.scopes).toBeUndefined();
 		expect(sessions?.scopes).toBeUndefined();
+		expect(changePassword?.scopes).toBeUndefined();
 		expect(me?.scopes).toEqual(["profile:read"]);
 	});
 

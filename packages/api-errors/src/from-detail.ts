@@ -103,6 +103,12 @@ const DETAIL_TO_CODE: Record<string, ApiErrorCode> = {
 	"Password must be at least 8 characters and include a letter and a number":
 		"password-too-weak",
 	"Invalid password": "invalid-password",
+	"The intendant cannot change this password":
+		"intendant-cannot-change-password",
+	"New password must be different from the current password":
+		"new-password-must-differ",
+	"currentPassword and newPassword are required":
+		"current-and-new-password-required",
 	"Invalid recovery email address": "invalid-recovery-email",
 	"Recovery email cannot use a mailbox domain hosted by this instance":
 		"recovery-email-hosted-domain",
@@ -137,6 +143,15 @@ const DETAIL_TO_CODE: Record<string, ApiErrorCode> = {
 	"from must be a valid ISO datetime": "from-must-be-iso-datetime",
 	"to must be a valid ISO datetime": "to-must-be-iso-datetime",
 	"Search query is required": "search-query-required",
+	"Invalid search query": "invalid-search-query",
+	"Unknown search operator": "unknown-search-operator",
+	"Empty search operator value": "empty-search-operator-value",
+	"Unclosed quote in search query": "unclosed-search-quote",
+	"Unclosed parenthesis in search query": "unclosed-search-paren",
+	"Invalid search date": "invalid-search-date",
+	"Invalid search folder": "invalid-search-folder",
+	"Invalid search is: value": "invalid-search-is-value",
+	"Invalid search has: value": "invalid-search-has-value",
 	"Invalid domain name": "invalid-domain-name",
 	"Invalid mailbox address": "invalid-mailbox-address",
 	"Invalid mailbox local part": "invalid-mailbox-local-part",

@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Не удалось проверить вход с ключом доступа",
 		"invalid-passkey-response": "Недействительный ответ ключа доступа",
 		"invalid-password": "Недействительный пароль",
+		"intendant-cannot-change-password": "Интендант не может изменить этот пароль",
+		"new-password-must-differ": "Новый пароль должен отличаться от текущего",
+		"current-and-new-password-required": "Требуются currentPassword и newPassword",
 		"invalid-recovery-email": "Недействительный адрес для восстановления",
 		"recovery-email-in-use": "Этот адрес для восстановления уже используется другой учётной записью",
 		"no-recovery-email-configured": "Адрес для восстановления не настроен",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "Что-то пошло не так",
 		"invalid-phone-number": "Номер телефона должен быть действительным международным номером в формате E.164 (например, +14155552671)",
 		"recovery-email-hosted-domain": "Адрес восстановления не может использовать домен, размещённый на этом почтовом сервере",
-		"recovery-email-hosted-mailbox": "Адрес восстановления не может использовать ящик на этом почтовом сервере"
+		"recovery-email-hosted-mailbox": "Адрес восстановления не может использовать ящик на этом почтовом сервере",
+		"invalid-search-query": "Некорректный поисковый запрос",
+		"unknown-search-operator": "Неизвестный оператор поиска",
+		"empty-search-operator-value": "Пустое значение оператора поиска",
+		"unclosed-search-quote": "Незакрытая кавычка в запросе",
+		"unclosed-search-paren": "Незакрытая скобка в запросе",
+		"invalid-search-date": "Некорректная дата поиска",
+		"invalid-search-folder": "Некорректная папка поиска",
+		"invalid-search-is-value": "Некорректное значение is:",
+		"invalid-search-has-value": "Некорректное значение has:"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "{{count}} переписка",
 			"threadCount_few": "{{count}} переписки",
 			"threadCount_other": "{{count}} переписок",
+			"resultCount_one": "{{count}} результат",
+			"resultCount_few": "{{count}} результата",
+			"resultCount_other": "{{count}} результатов",
 			"emptyFolder": "В папке {{folder}} нет переписок.",
 			"emptyLabel": "Нет переписок с этой меткой.",
 			"noSubject": "(без темы)",
@@ -579,7 +594,15 @@
 			"draftCount_one": "{{count}} черновик",
 			"draftCount_few": "{{count}} черновика",
 			"draftCount_other": "{{count}} черновиков",
-			"emptyDrafts": "Черновиков нет."
+			"emptyDrafts": "Черновиков нет.",
+			"searchPlaceholder": "Поиск почты",
+			"searchAria": "Поиск почты",
+			"searchTitle": "Поиск",
+			"emptySearch": "Нет подходящих цепочек.",
+			"hitCount_one": "{{count}} подходящее сообщение",
+			"hitCount_few": "{{count}} подходящих сообщения",
+			"hitCount_other": "{{count}} подходящих сообщений",
+			"clearSearch": "Очистить поиск"
 		},
 		"threadActions": {
 			"markUnread": "Пометить как непрочитанное",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "Введите код из приложения-аутентификатора для подтверждения.",
 			"authenticatorCode": "Код аутентификатора",
 			"cancel": "Отмена"
+		},
+		"changePassword": {
+			"title": "Сменить пароль",
+			"description": "Выберите новый пароль. Другие сеансы будут завершены.",
+			"currentPassword": "Текущий пароль",
+			"newPassword": "Новый пароль",
+			"confirmPassword": "Подтвердите новый пароль",
+			"authenticatorCode": "Код аутентификатора",
+			"mfaHint": "Введите код из приложения-аутентификатора для подтверждения.",
+			"submit": "Сменить пароль",
+			"changing": "Изменение…",
+			"success": "Пароль изменён. Другие сеансы завершены."
 		}
 	},
 	"management": {

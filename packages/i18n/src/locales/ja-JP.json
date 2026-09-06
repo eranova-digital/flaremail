@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "パスキーによるサインインを確認できませんでした",
 		"invalid-passkey-response": "パスキーの応答が無効です",
 		"invalid-password": "パスワードが無効です",
+		"intendant-cannot-change-password": "インテンダントはこのパスワードを変更できません",
+		"new-password-must-differ": "新しいパスワードは現在のパスワードと異なる必要があります",
+		"current-and-new-password-required": "currentPassword と newPassword が必要です",
 		"invalid-recovery-email": "復旧用メールアドレスが無効です",
 		"recovery-email-in-use": "この復旧用メールは既に別のアカウントで使用されています",
 		"no-recovery-email-configured": "復旧用メールが設定されていません",
@@ -275,7 +278,16 @@
 		"something-went-wrong": "問題が発生しました",
 		"invalid-phone-number": "電話番号は E.164 形式の有効な国際番号である必要があります（例: +14155552671）",
 		"recovery-email-hosted-domain": "復旧用メールに、このメールサーバーがホストするドメインは使用できません",
-		"recovery-email-hosted-mailbox": "復旧用メールに、このメールサーバー上のメールボックスは使用できません"
+		"recovery-email-hosted-mailbox": "復旧用メールに、このメールサーバー上のメールボックスは使用できません",
+		"invalid-search-query": "検索クエリが無効です",
+		"unknown-search-operator": "不明な検索演算子です",
+		"empty-search-operator-value": "検索演算子の値が空です",
+		"unclosed-search-quote": "検索クエリの引用符が閉じられていません",
+		"unclosed-search-paren": "検索クエリの括弧が閉じられていません",
+		"invalid-search-date": "検索日付が無効です",
+		"invalid-search-folder": "検索フォルダーが無効です",
+		"invalid-search-is-value": "is: の値が無効です",
+		"invalid-search-has-value": "has: の値が無効です"
 	},
 	"auth": {
 		"session": {
@@ -568,6 +580,9 @@
 			"threadCount_one": "{{count}} 件のスレッド",
 			"threadCount_few": "{{count}} 件のスレッド",
 			"threadCount_other": "{{count}} 件のスレッド",
+			"resultCount_one": "{{count}} 件の結果",
+			"resultCount_few": "{{count}} 件の結果",
+			"resultCount_other": "{{count}} 件の結果",
 			"emptyFolder": "{{folder}} にスレッドはありません。",
 			"emptyLabel": "このラベルのスレッドはありません。",
 			"noSubject": "（件名なし）",
@@ -579,7 +594,15 @@
 			"draftCount_one": "{{count}} 件の下書き",
 			"draftCount_few": "{{count}} 件の下書き",
 			"draftCount_other": "{{count}} 件の下書き",
-			"emptyDrafts": "下書きはありません。"
+			"emptyDrafts": "下書きはありません。",
+			"searchPlaceholder": "メールを検索",
+			"searchAria": "メールを検索",
+			"searchTitle": "検索",
+			"emptySearch": "一致するスレッドはありません。",
+			"hitCount_one": "{{count}} 件の一致するメッセージ",
+			"hitCount_few": "{{count}} 件の一致するメッセージ",
+			"hitCount_other": "{{count}} 件の一致するメッセージ",
+			"clearSearch": "検索をクリア"
 		},
 		"threadActions": {
 			"markUnread": "未読にする",
@@ -1107,6 +1130,18 @@
 			"confirmMfaHint": "確認のため認証アプリのコードを入力してください。",
 			"authenticatorCode": "認証コード",
 			"cancel": "キャンセル"
+		},
+		"changePassword": {
+			"title": "パスワードを変更",
+			"description": "新しいパスワードを選びます。他のログイン中のセッションはサインアウトされます。",
+			"currentPassword": "現在のパスワード",
+			"newPassword": "新しいパスワード",
+			"confirmPassword": "新しいパスワード（確認）",
+			"authenticatorCode": "認証コード",
+			"mfaHint": "確認のため、認証アプリのコードを入力してください。",
+			"submit": "パスワードを変更",
+			"changing": "変更しています…",
+			"success": "パスワードを変更しました。他のセッションはサインアウトされました。"
 		}
 	},
 	"management": {
