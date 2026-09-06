@@ -2499,7 +2499,9 @@ export const runThreadAction = <ThrowOnError extends boolean = false>(options: O
 };
 
 /**
- * Search messages
+ * Search threads
+ * Search the selected mailbox. The query language is documented in CONTEXT.md (Search query). Default scope is every folder except trash and spam (`in:any` includes them). Each item is a thread plus the matching messages (hits are empty for thread-only queries).
+ *
  */
 export const searchMessages = <ThrowOnError extends boolean = false>(options: Options<SearchMessagesData, ThrowOnError>) => {
     return (options.client ?? _heyApiClient).post<SearchMessagesResponses, SearchMessagesErrors, ThrowOnError>({

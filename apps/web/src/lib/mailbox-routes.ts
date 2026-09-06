@@ -4,6 +4,7 @@ type ThreadRouteOptions = {
 	folder?: ThreadFolder;
 	labelId?: string | null;
 	messageId?: string | null;
+	q?: string | null;
 };
 
 export function labelListPath(mailboxId: string, labelId: string): string {
@@ -18,6 +19,9 @@ export function threadPath(
 	const search = new URLSearchParams();
 	if (options?.messageId) {
 		search.set("messageId", options.messageId);
+	}
+	if (options?.q) {
+		search.set("q", options.q);
 	}
 
 	if (options?.labelId) {
