@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Autentificarea cu passkey nu a putut fi verificată",
 		"invalid-passkey-response": "Răspuns passkey invalid",
 		"invalid-password": "Parolă invalidă",
+		"intendant-cannot-change-password": "Intendantul nu poate schimba această parolă",
+		"new-password-must-differ": "Parola nouă trebuie să fie diferită de parola curentă",
+		"current-and-new-password-required": "Parola curentă și parola nouă sunt obligatorii",
 		"invalid-recovery-email": "Adresă de e-mail de recuperare invalidă",
 		"recovery-email-in-use": "Acest e-mail de recuperare este deja folosit de alt cont",
 		"no-recovery-email-configured": "Nu este configurat un e-mail de recuperare",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Introdu un cod din aplicația de autentificare pentru a confirma.",
 			"authenticatorCode": "Cod autentificator",
 			"cancel": "Anulează"
+		},
+		"changePassword": {
+			"title": "Schimbă parola",
+			"description": "Alegeți o parolă nouă. Celelalte sesiuni autentificate vor fi deconectate.",
+			"currentPassword": "Parola curentă",
+			"newPassword": "Parolă nouă",
+			"confirmPassword": "Confirmă parola nouă",
+			"authenticatorCode": "Cod autentificator",
+			"mfaHint": "Introduceți un cod din aplicația de autentificare pentru confirmare.",
+			"submit": "Schimbă parola",
+			"changing": "Se schimbă…",
+			"success": "Parola a fost schimbată. Celelalte sesiuni au fost deconectate."
 		}
 	},
 	"management": {

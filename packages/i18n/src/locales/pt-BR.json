@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "O login com passkey não pôde ser verificado",
 		"invalid-passkey-response": "Resposta de passkey inválida",
 		"invalid-password": "Senha inválida",
+		"intendant-cannot-change-password": "O intendant não pode alterar esta senha",
+		"new-password-must-differ": "A nova senha deve ser diferente da senha atual",
+		"current-and-new-password-required": "currentPassword e newPassword são obrigatórios",
 		"invalid-recovery-email": "Endereço de e-mail de recuperação inválido",
 		"recovery-email-in-use": "Este e-mail de recuperação já está em uso por outra conta",
 		"no-recovery-email-configured": "Nenhum e-mail de recuperação configurado",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Digite um código do seu app autenticador para confirmar.",
 			"authenticatorCode": "Código do autenticador",
 			"cancel": "Cancelar"
+		},
+		"changePassword": {
+			"title": "Alterar senha",
+			"description": "Escolha uma nova senha. As outras sessões conectadas serão encerradas.",
+			"currentPassword": "Senha atual",
+			"newPassword": "Nova senha",
+			"confirmPassword": "Confirmar nova senha",
+			"authenticatorCode": "Código do autenticador",
+			"mfaHint": "Digite um código do seu aplicativo autenticador para confirmar.",
+			"submit": "Alterar senha",
+			"changing": "Alterando…",
+			"success": "Senha alterada. As outras sessões foram encerradas."
 		}
 	},
 	"management": {

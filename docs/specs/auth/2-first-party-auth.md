@@ -35,6 +35,7 @@ Implement first-party authentication: sign-in endpoint, session issuance and val
 - Session delivery: HttpOnly Secure SameSite cookie for web; document header alternative for API testing if needed.
 - Session validation middleware feeds **principal resolution** seam (shared with API keys and OIDC).
 - Invite activation endpoint: `{ invite_code, password, profile_updates? }` → activates account, creates session optional.
+- **Password change**: authenticated non-intendant endpoint `{ currentPassword, newPassword, code? }`. Requires the current password and TOTP when MFA is enabled. New password must meet strength rules and differ from the current one. Revokes other **sessions**; keeps the current **session**. Session-only.
 - Password reset via recovery: send email to **recovery address** with one-time token (distinct from invite code and password reset code).
 - **Password reset code**: manager/admin generates `XXXX-XXXX` style code; single use; allows new password set without login.
 - Intendant regenerate: authenticated intendant-only endpoint; returns new password once in response body; invalidates old password.
@@ -47,6 +48,7 @@ Implement first-party authentication: sign-in endpoint, session issuance and val
 - Test suspended and pending rejection without testing hash algorithm internals.
 - Test invite activation flow end-to-end with fixture account.
 - Test intendant sign-in and regenerate separately from normal accounts.
+- Test password change separately from reset and intendant regenerate (wrong current password, MFA required, other sessions revoked).
 - Prior art: worker Vitest; mock env and DB; consider miniflare/workers pool for cookie handling.
 
 ## Out of Scope

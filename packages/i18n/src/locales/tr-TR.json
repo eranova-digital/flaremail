@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Passkey ile oturum açma doğrulanamadı",
 		"invalid-passkey-response": "Geçersiz passkey yanıtı",
 		"invalid-password": "Geçersiz şifre",
+		"intendant-cannot-change-password": "Intendant bu parolayı değiştiremez",
+		"new-password-must-differ": "Yeni parola mevcut paroladan farklı olmalıdır",
+		"current-and-new-password-required": "currentPassword ve newPassword gerekli",
 		"invalid-recovery-email": "Geçersiz kurtarma e-posta adresi",
 		"recovery-email-in-use": "Bu kurtarma e-postası başka bir hesap tarafından zaten kullanılıyor",
 		"no-recovery-email-configured": "Kurtarma e-postası yapılandırılmamış",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Onaylamak için kimlik doğrulayıcı uygulamanızdan bir kod girin.",
 			"authenticatorCode": "Kimlik doğrulayıcı kodu",
 			"cancel": "İptal"
+		},
+		"changePassword": {
+			"title": "Parolayı değiştir",
+			"description": "Yeni bir parola seçin. Diğer oturumlar kapatılacak.",
+			"currentPassword": "Mevcut parola",
+			"newPassword": "Yeni parola",
+			"confirmPassword": "Yeni parolayı onayla",
+			"authenticatorCode": "Doğrulayıcı kodu",
+			"mfaHint": "Onaylamak için kimlik doğrulama uygulamanızdaki kodu girin.",
+			"submit": "Parolayı değiştir",
+			"changing": "Değiştiriliyor…",
+			"success": "Parola değiştirildi. Diğer oturumlar kapatıldı."
 		}
 	},
 	"management": {

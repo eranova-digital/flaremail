@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "패스키 로그인을 확인할 수 없습니다",
 		"invalid-passkey-response": "잘못된 패스키 응답입니다",
 		"invalid-password": "잘못된 비밀번호입니다",
+		"intendant-cannot-change-password": "인텐던트는 이 비밀번호를 변경할 수 없습니다",
+		"new-password-must-differ": "새 비밀번호는 현재 비밀번호와 달라야 합니다",
+		"current-and-new-password-required": "currentPassword와 newPassword가 필요합니다",
 		"invalid-recovery-email": "잘못된 복구 이메일 주소입니다",
 		"recovery-email-in-use": "이 복구 이메일은 이미 다른 계정에서 사용 중입니다",
 		"no-recovery-email-configured": "복구 이메일이 구성되지 않았습니다",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "확인하려면 인증 앱의 코드를 입력하세요.",
 			"authenticatorCode": "인증 코드",
 			"cancel": "취소"
+		},
+		"changePassword": {
+			"title": "비밀번호 변경",
+			"description": "새 비밀번호를 선택하세요. 다른 로그인 세션은 로그아웃됩니다.",
+			"currentPassword": "현재 비밀번호",
+			"newPassword": "새 비밀번호",
+			"confirmPassword": "새 비밀번호 확인",
+			"authenticatorCode": "인증 코드",
+			"mfaHint": "확인하려면 인증 앱의 코드를 입력하세요.",
+			"submit": "비밀번호 변경",
+			"changing": "변경 중…",
+			"success": "비밀번호가 변경되었습니다. 다른 세션은 로그아웃되었습니다."
 		}
 	},
 	"management": {

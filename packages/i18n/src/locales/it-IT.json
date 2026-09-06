@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "L'accesso con passkey non è stato verificato",
 		"invalid-passkey-response": "Risposta passkey non valida",
 		"invalid-password": "Password non valida",
+		"intendant-cannot-change-password": "L'intendant non può cambiare questa password",
+		"new-password-must-differ": "La nuova password deve essere diversa da quella attuale",
+		"current-and-new-password-required": "currentPassword e newPassword sono obbligatori",
 		"invalid-recovery-email": "Indirizzo e-mail di recupero non valido",
 		"recovery-email-in-use": "Questa e-mail di recupero è già in uso da un altro account",
 		"no-recovery-email-configured": "Nessuna e-mail di recupero configurata",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Inserisci un codice dall’app di autenticazione per confermare.",
 			"authenticatorCode": "Codice autenticatore",
 			"cancel": "Annulla"
+		},
+		"changePassword": {
+			"title": "Cambia password",
+			"description": "Scegli una nuova password. Le altre sessioni connesse verranno disconnesse.",
+			"currentPassword": "Password attuale",
+			"newPassword": "Nuova password",
+			"confirmPassword": "Conferma nuova password",
+			"authenticatorCode": "Codice autenticatore",
+			"mfaHint": "Inserisci un codice dalla tua app di autenticazione per confermare.",
+			"submit": "Cambia password",
+			"changing": "Modifica in corso…",
+			"success": "Password modificata. Le altre sessioni sono state disconnesse."
 		}
 	},
 	"management": {

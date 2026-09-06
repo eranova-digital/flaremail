@@ -109,6 +109,11 @@ const en = {
 	"passkey-sign-in-failed": "Passkey sign-in could not be verified",
 	"invalid-passkey-response": "Invalid passkey response",
 	"invalid-password": "Invalid password",
+	"intendant-cannot-change-password": "The intendant cannot change this password",
+	"new-password-must-differ":
+		"New password must be different from the current password",
+	"current-and-new-password-required":
+		"currentPassword and newPassword are required",
 	"invalid-recovery-email": "Invalid recovery email address",
 	"recovery-email-in-use":
 		"This recovery email is already in use by another account",
@@ -329,6 +334,12 @@ const ro = {
 		"Autentificarea cu passkey nu a putut fi verificată",
 	"invalid-passkey-response": "Răspuns passkey invalid",
 	"invalid-password": "Parolă invalidă",
+	"intendant-cannot-change-password":
+		"Intendantul nu poate schimba această parolă",
+	"new-password-must-differ":
+		"Parola nouă trebuie să fie diferită de parola curentă",
+	"current-and-new-password-required":
+		"Parola curentă și parola nouă sunt obligatorii",
 	"invalid-recovery-email": "Adresă de e-mail de recuperare invalidă",
 	"recovery-email-in-use":
 		"Acest e-mail de recuperare este deja folosit de alt cont",

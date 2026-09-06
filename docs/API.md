@@ -61,7 +61,7 @@ Create and revoke them from the web app under `/settings?tab=security`.
 
 Profile scopes (`profile:*`, `profile_picture:*`) cover name, address, phone, and
 profile picture changes for the key holder. Security operations — recovery email,
-sessions, API keys, MFA, and passkeys — are session-only and cannot be granted to
+sessions, API keys, MFA, passkeys, and password change — are session-only and cannot be granted to
 API keys.
 
 Example:
@@ -101,6 +101,7 @@ API key endpoints require a signed-in session:
 | POST | `/auth/mfa/verify` | No | Complete MFA sign-in |
 | GET / POST / DELETE | `/auth/passkeys*` | Mixed | WebAuthn register and sign-in |
 | GET / DELETE | `/auth/sessions` | Session | List / revoke sessions |
+| POST | `/auth/change-password` | Session | Change own password |
 | POST | `/auth/recovery-email/*` | Session | Verify recovery address |
 | POST | `/auth/intendant/regenerate-password` | Intendant session | New random password |
 

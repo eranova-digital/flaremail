@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Nie udało się zweryfikować logowania passkey",
 		"invalid-passkey-response": "Nieprawidłowa odpowiedź passkey",
 		"invalid-password": "Nieprawidłowe hasło",
+		"intendant-cannot-change-password": "Intendant nie może zmienić tego hasła",
+		"new-password-must-differ": "Nowe hasło musi różnić się od obecnego",
+		"current-and-new-password-required": "Wymagane są currentPassword i newPassword",
 		"invalid-recovery-email": "Nieprawidłowy adres e-mail odzyskiwania",
 		"recovery-email-in-use": "Ten e-mail odzyskiwania jest już używany przez inne konto",
 		"no-recovery-email-configured": "Nie skonfigurowano e-maila odzyskiwania",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Wprowadź kod z aplikacji uwierzytelniającej, aby potwierdzić.",
 			"authenticatorCode": "Kod uwierzytelniający",
 			"cancel": "Anuluj"
+		},
+		"changePassword": {
+			"title": "Zmień hasło",
+			"description": "Wybierz nowe hasło. Inne zalogowane sesje zostaną wylogowane.",
+			"currentPassword": "Obecne hasło",
+			"newPassword": "Nowe hasło",
+			"confirmPassword": "Potwierdź nowe hasło",
+			"authenticatorCode": "Kod uwierzytelniający",
+			"mfaHint": "Wpisz kod z aplikacji uwierzytelniającej, aby potwierdzić.",
+			"submit": "Zmień hasło",
+			"changing": "Zmienianie…",
+			"success": "Hasło zostało zmienione. Inne sesje zostały wylogowane."
 		}
 	},
 	"management": {

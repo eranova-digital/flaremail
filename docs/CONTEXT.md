@@ -134,6 +134,10 @@ _Avoid_: activation link, signup token
 A one-time code issued by a **manager** or **admin** when an **account** has no **recovery address** and needs a forgotten password reset. Distinct from an **invite code**. Self-service password reset via **recovery address** is available only when one is set.
 _Avoid_: recovery code, reset token
 
+**Password change**:
+A signed-in non-intendant **account** holder replacing their own password with a new user-chosen one, after proving the current password (and MFA when enabled). Distinct from forgotten-password reset (via **recovery address** or **password reset code**) and from **intendant** regenerate (random secret, never user-chosen).
+_Avoid_: password update, password rotation, set password
+
 **Recovery address**:
 An external email address on an **account** (optional **profile field**), often set when the **invite code** is auto-sent. Enables self-service password reset. Not accepted at sign-in. Sign-in uses the **primary mailbox** address (or the reserved identifier `intendant`). Can be added later by **admin**+ if missing.
 _Avoid_: backup email, secondary email, login email

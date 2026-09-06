@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "无法验证通行密钥登录",
 		"invalid-passkey-response": "通行密钥响应无效",
 		"invalid-password": "密码无效",
+		"intendant-cannot-change-password": "主管账户无法更改此密码",
+		"new-password-must-differ": "新密码必须与当前密码不同",
+		"current-and-new-password-required": "需要 currentPassword 和 newPassword",
 		"invalid-recovery-email": "恢复邮箱地址无效",
 		"recovery-email-in-use": "此恢复邮箱已被其他账户使用",
 		"no-recovery-email-configured": "未配置恢复邮箱",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "输入身份验证应用中的验证码以确认。",
 			"authenticatorCode": "身份验证器验证码",
 			"cancel": "取消"
+		},
+		"changePassword": {
+			"title": "更改密码",
+			"description": "选择新密码。其他已登录会话将被退出。",
+			"currentPassword": "当前密码",
+			"newPassword": "新密码",
+			"confirmPassword": "确认新密码",
+			"authenticatorCode": "验证器代码",
+			"mfaHint": "请输入验证器应用中的代码以确认。",
+			"submit": "更改密码",
+			"changing": "正在更改…",
+			"success": "密码已更改。其他会话已退出。"
 		}
 	},
 	"management": {

@@ -8,7 +8,7 @@ Package: `apps/web`
 
 ## Responsibilities
 
-- Sign-in, bootstrap, activate, password reset, OIDC consent, security compliance
+- Sign-in, bootstrap, activate, password reset, signed-in password change, OIDC consent, security compliance
 - Mail UI: folders, threads, compose (TipTap), labels, search
 - Settings and management (domains, mailboxes, accounts, identities, OIDC clients, …)
 - Typed API client generated from core’s OpenAPI

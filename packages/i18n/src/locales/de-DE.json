@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Passkey-Anmeldung konnte nicht verifiziert werden",
 		"invalid-passkey-response": "Ungültige Passkey-Antwort",
 		"invalid-password": "Ungültiges Passwort",
+		"intendant-cannot-change-password": "Der Intendant kann dieses Passwort nicht ändern",
+		"new-password-must-differ": "Das neue Passwort muss sich vom aktuellen unterscheiden",
+		"current-and-new-password-required": "currentPassword und newPassword sind erforderlich",
 		"invalid-recovery-email": "Ungültige Wiederherstellungs-E-Mail-Adresse",
 		"recovery-email-in-use": "Diese Wiederherstellungs-E-Mail wird bereits von einem anderen Konto verwendet",
 		"no-recovery-email-configured": "Keine Wiederherstellungs-E-Mail konfiguriert",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Geben Sie zur Bestätigung einen Code aus Ihrer Authenticator-App ein.",
 			"authenticatorCode": "Authenticator-Code",
 			"cancel": "Abbrechen"
+		},
+		"changePassword": {
+			"title": "Passwort ändern",
+			"description": "Wählen Sie ein neues Passwort. Andere angemeldete Sitzungen werden abgemeldet.",
+			"currentPassword": "Aktuelles Passwort",
+			"newPassword": "Neues Passwort",
+			"confirmPassword": "Neues Passwort bestätigen",
+			"authenticatorCode": "Authenticator-Code",
+			"mfaHint": "Geben Sie zur Bestätigung einen Code aus Ihrer Authenticator-App ein.",
+			"submit": "Passwort ändern",
+			"changing": "Wird geändert…",
+			"success": "Passwort geändert. Andere Sitzungen wurden abgemeldet."
 		}
 	},
 	"management": {

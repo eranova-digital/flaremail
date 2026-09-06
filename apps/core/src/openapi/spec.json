@@ -846,6 +846,71 @@
         }
       }
     },
+    "/auth/change-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Change own password",
+        "description": "Signed-in non-intendant **password change**. Requires the current\npassword. TOTP `code` is required when MFA is enabled. The new\npassword must meet the usual strength rules and must differ from\nthe current password. Revokes other sessions; keeps the current\nsession. Session-only. The intendant must use regenerate-password.\n",
+        "operationId": "changePassword",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "currentPassword",
+                  "newPassword"
+                ],
+                "properties": {
+                  "currentPassword": {
+                    "type": "string"
+                  },
+                  "newPassword": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "TOTP code when MFA is enabled"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/auth/intendant/regenerate-password": {
       "post": {
         "tags": [

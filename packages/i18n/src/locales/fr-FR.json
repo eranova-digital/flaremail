@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "La connexion par passkey n'a pas pu être vérifiée",
 		"invalid-passkey-response": "Réponse de passkey invalide",
 		"invalid-password": "Mot de passe invalide",
+		"intendant-cannot-change-password": "L'intendant ne peut pas modifier ce mot de passe",
+		"new-password-must-differ": "Le nouveau mot de passe doit être différent du mot de passe actuel",
+		"current-and-new-password-required": "currentPassword et newPassword sont requis",
 		"invalid-recovery-email": "Adresse e-mail de récupération invalide",
 		"recovery-email-in-use": "Cet e-mail de récupération est déjà utilisé par un autre compte",
 		"no-recovery-email-configured": "Aucun e-mail de récupération configuré",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Saisissez un code de votre application d’authentification pour confirmer.",
 			"authenticatorCode": "Code d’authentificateur",
 			"cancel": "Annuler"
+		},
+		"changePassword": {
+			"title": "Changer le mot de passe",
+			"description": "Choisissez un nouveau mot de passe. Les autres sessions connectées seront déconnectées.",
+			"currentPassword": "Mot de passe actuel",
+			"newPassword": "Nouveau mot de passe",
+			"confirmPassword": "Confirmer le nouveau mot de passe",
+			"authenticatorCode": "Code d'authentification",
+			"mfaHint": "Saisissez un code de votre application d'authentification pour confirmer.",
+			"submit": "Changer le mot de passe",
+			"changing": "Modification…",
+			"success": "Mot de passe modifié. Les autres sessions ont été déconnectées."
 		}
 	},
 	"management": {

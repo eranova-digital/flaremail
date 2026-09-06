@@ -11,6 +11,7 @@ import { TotpCodeInput, isTotpCodeComplete } from "@/components/auth/TotpCodeInp
 import { SessionsSection } from "@/components/settings/SessionsSection";
 import { PasskeysSection } from "@/components/settings/PasskeysSection";
 import { IntendantPasswordSection } from "@/components/settings/IntendantPasswordSection";
+import { PasswordChangeSection } from "@/components/settings/PasswordChangeSection";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,6 +60,7 @@ export function SecuritySection() {
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
+	const [sessionListEpoch, setSessionListEpoch] = useState(0);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -425,7 +427,12 @@ export function SecuritySection() {
 
 			{account.isIntendant ? (
 				<IntendantPasswordSection mfaEnabled={enabled} />
-			) : null}
+			) : (
+				<PasswordChangeSection
+					mfaEnabled={enabled}
+					onChanged={() => setSessionListEpoch((current) => current + 1)}
+				/>
+			)}
 
 			<PasskeysSection />
 
@@ -445,7 +452,7 @@ export function SecuritySection() {
 				revokeKey={revokeApiKey}
 			/>
 
-			<SessionsSection />
+			<SessionsSection key={sessionListEpoch} />
 		</div>
 	);
 }

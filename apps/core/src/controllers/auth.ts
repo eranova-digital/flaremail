@@ -4,12 +4,13 @@ import { extractSessionMetadata } from "../lib/auth/session-metadata";
 import { handleRouteError } from "../lib/http/handle-route-error";
 import { jsonResponse } from "../lib/http/json";
 import { parseJsonBody } from "../lib/http/parse-body";
-import { validationError } from "../lib/http/problem";
+import { problemResponse, requestInstance, validationError } from "../lib/http/problem";
 import { rejectIfAuthFailureLimited } from "../lib/http/rate-limit";
 import type { RouteContext } from "../lib/http/router";
 import { updateAccountProfile } from "../services/accounts";
 import {
 	activateInvite,
+	changePassword,
 	getMe,
 	previewInvite,
 	previewPasswordReset,
@@ -435,6 +436,61 @@ export async function handleRegenerateIntendantPassword(context: RouteContext) {
 			),
 		);
 		return jsonResponse({ password });
+	} catch (error) {
+		return handleRouteError(error, context.request);
+	}
+}
+
+export async function handleChangePassword(context: RouteContext) {
+	if (
+		context.principal.kind !== "session" ||
+		!context.principal.accountId ||
+		!context.principal.sessionId
+	) {
+		return problemResponse(
+			403,
+			"This endpoint requires an authenticated session",
+			{
+				code: "session-required",
+				instance: requestInstance(context.request),
+			},
+		);
+	}
+
+	const body = await parseJsonBody(context.request);
+	if (body instanceof Response) {
+		return body;
+	}
+	const value = (body ?? {}) as Record<string, unknown>;
+	if (
+		typeof value.currentPassword !== "string" ||
+		typeof value.newPassword !== "string"
+	) {
+		return validationError(
+			context.request,
+			"currentPassword and newPassword are required",
+		);
+	}
+
+	const code =
+		typeof value.code === "string" ? value.code.trim() : undefined;
+
+	try {
+		await withDb(context.env, (db) =>
+			changePassword(
+				db,
+				{
+					accountId: context.principal.accountId!,
+					currentPassword: value.currentPassword as string,
+					newPassword: value.newPassword as string,
+					code,
+					encryptionKey: sessionSecretForEnv(context.env),
+					currentSessionId: context.principal.sessionId!,
+				},
+				parseLogContextFromRequest(context.request),
+			),
+		);
+		return jsonResponse({ ok: true });
 	} catch (error) {
 		return handleRouteError(error, context.request);
 	}

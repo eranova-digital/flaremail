@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "Passkey sign-in could not be verified",
 		"invalid-passkey-response": "Invalid passkey response",
 		"invalid-password": "Invalid password",
+		"intendant-cannot-change-password": "The intendant cannot change this password",
+		"new-password-must-differ": "New password must be different from the current password",
+		"current-and-new-password-required": "currentPassword and newPassword are required",
 		"invalid-phone-number": "Phone number must be a valid international number in E.164 format (e.g. +14155552671)",
 		"invalid-recovery-email": "Invalid recovery email address",
 		"recovery-email-hosted-domain": "Recovery email cannot use a domain hosted by this mail server",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Enter a code from your authenticator app to confirm.",
 			"authenticatorCode": "Authenticator code",
 			"cancel": "Cancel"
+		},
+		"changePassword": {
+			"title": "Change password",
+			"description": "Choose a new password. Other signed-in sessions will be signed out.",
+			"currentPassword": "Current password",
+			"newPassword": "New password",
+			"confirmPassword": "Confirm new password",
+			"authenticatorCode": "Authenticator code",
+			"mfaHint": "Enter a code from your authenticator app to confirm.",
+			"submit": "Change password",
+			"changing": "Changing…",
+			"success": "Password changed. Other sessions have been signed out."
 		}
 	},
 	"management": {

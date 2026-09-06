@@ -188,6 +188,9 @@
 		"passkey-sign-in-failed": "No se pudo verificar el inicio de sesión con passkey",
 		"invalid-passkey-response": "Respuesta de passkey no válida",
 		"invalid-password": "Contraseña no válida",
+		"intendant-cannot-change-password": "El intendant no puede cambiar esta contraseña",
+		"new-password-must-differ": "La nueva contraseña debe ser distinta de la actual",
+		"current-and-new-password-required": "Se requieren currentPassword y newPassword",
 		"invalid-recovery-email": "Correo de recuperación no válido",
 		"recovery-email-in-use": "Este correo de recuperación ya está en uso por otra cuenta",
 		"no-recovery-email-configured": "No hay correo de recuperación configurado",
@@ -1107,6 +1110,18 @@
 			"confirmMfaHint": "Introduce un código de tu app de autenticación para confirmar.",
 			"authenticatorCode": "Código del autenticador",
 			"cancel": "Cancelar"
+		},
+		"changePassword": {
+			"title": "Cambiar contraseña",
+			"description": "Elige una contraseña nueva. Se cerrarán las demás sesiones iniciadas.",
+			"currentPassword": "Contraseña actual",
+			"newPassword": "Nueva contraseña",
+			"confirmPassword": "Confirmar nueva contraseña",
+			"authenticatorCode": "Código del autenticador",
+			"mfaHint": "Introduce un código de tu aplicación de autenticación para confirmar.",
+			"submit": "Cambiar contraseña",
+			"changing": "Cambiando…",
+			"success": "Contraseña cambiada. Se han cerrado las demás sesiones."
 		}
 	},
 	"management": {

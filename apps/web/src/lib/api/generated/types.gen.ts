@@ -1407,6 +1407,40 @@ export type RevokeMySessionResponses = {
 
 export type RevokeMySessionResponse = RevokeMySessionResponses[keyof RevokeMySessionResponses];
 
+export type ChangePasswordData = {
+    body: {
+        currentPassword: string;
+        newPassword: string;
+        /**
+         * TOTP code when MFA is enabled
+         */
+        code?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/change-password';
+};
+
+export type ChangePasswordErrors = {
+    /**
+     * RFC 9457 problem response
+     */
+    default: ProblemDetails;
+};
+
+export type ChangePasswordError = ChangePasswordErrors[keyof ChangePasswordErrors];
+
+export type ChangePasswordResponses = {
+    /**
+     * Password changed
+     */
+    200: {
+        ok: true;
+    };
+};
+
+export type ChangePasswordResponse = ChangePasswordResponses[keyof ChangePasswordResponses];
+
 export type RegenerateIntendantPasswordData = {
     body?: {
         /**

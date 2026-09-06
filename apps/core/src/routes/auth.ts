@@ -1,6 +1,7 @@
 import type { RouteDefinition } from "../lib/http/router";
 import {
 	handleActivateInvite,
+	handleChangePassword,
 	handleForgotPassword,
 	handleGetMe,
 	handlePreviewInvite,
@@ -272,6 +273,12 @@ export const authRoutes: RouteDefinition[] = [
 		path: `${prefix}/auth/sessions`,
 		action: "authenticated",
 		handler: handleRevokeAllSessions,
+	},
+	{
+		method: "POST",
+		path: `${prefix}/auth/change-password`,
+		action: "authenticated",
+		handler: handleChangePassword,
 	},
 	{
 		method: "POST",

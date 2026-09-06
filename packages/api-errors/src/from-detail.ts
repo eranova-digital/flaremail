@@ -103,6 +103,12 @@ const DETAIL_TO_CODE: Record<string, ApiErrorCode> = {
 	"Password must be at least 8 characters and include a letter and a number":
 		"password-too-weak",
 	"Invalid password": "invalid-password",
+	"The intendant cannot change this password":
+		"intendant-cannot-change-password",
+	"New password must be different from the current password":
+		"new-password-must-differ",
+	"currentPassword and newPassword are required":
+		"current-and-new-password-required",
 	"Invalid recovery email address": "invalid-recovery-email",
 	"Recovery email cannot use a mailbox domain hosted by this instance":
 		"recovery-email-hosted-domain",
