@@ -5,8 +5,8 @@ Canonical docs for Flaremail beyond the app READMEs.
 | Doc | Purpose |
 |-----|---------|
 | [CONTEXT.md](./CONTEXT.md) | Ubiquitous language (glossary only — no implementation detail) |
-| [API.md](./API.md) | Human-readable HTTP API (v1) |
-| [SECURITY.md](../SECURITY.md) | Vulnerability reporting, supported versions, operator security steps |
+| [API.md](./API.md) | Human-readable HTTP API (v1); OpenAPI is the runtime contract |
+| [SECURITY.md](../SECURITY.md) | Vulnerability reporting and operator security steps |
 | [first-claimer-bootstrap.md](./first-claimer-bootstrap.md) | Claim the **intendant** immediately after deploy |
 | [adr/](./adr/) | Architecture decision records |
 | [specs/auth/](./specs/auth/) | Auth & authorization design specs |

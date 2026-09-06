@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-Organizations want employees to sign into third-party apps (CRM X) with their Flaremail **account**. Flaremail must act as an OAuth2/OIDC identity provider, not consume external IdPs.
+At the time this spec was written, organizations could not sign employees into third-party apps with a Flaremail **account**. Flaremail needed to act as an OAuth2/OIDC identity provider, not consume external IdPs.
 
 ## Solution
 
@@ -19,7 +19,7 @@ Implement OIDC provider endpoints: discovery, authorize, token, JWKS, userinfo. 
 7. As CRM X, I want refresh tokens, so that sessions persist without frequent re-login.
 8. As a **suspended account** holder, I want OIDC authorize to fail immediately, so that SSO is cut off.
 9. As CRM X, I want to request scopes like `openid`, `profile`, `email`, `mail:read`, `mail:send`, so that I can access identity and optionally mail API.
-10. As CRM X, I want OIDC discovery document at well-known URL, so that integration is standard.
+10. As CRM X, I want OIDC protocol endpoints (authorize, token, JWKS, userinfo) on the **gate hostname**, so that integration is standard without calling **core** directly.
 11. As CRM X backend, I want Client Credentials token with configured service permissions, so that I can sync data without a user present.
 12. As a **user**, I want to see a consent screen listing requested scopes when authorizing CRM X, so that I understand what I grant.
 13. As a platform, I want PKCE required for public clients, so that authorization code interception is mitigated.
@@ -28,7 +28,8 @@ Implement OIDC provider endpoints: discovery, authorize, token, JWKS, userinfo. 
 
 ## Implementation Decisions
 
-- Endpoints: `/.well-known/openid-configuration`, `/api/v1/oauth/authorize`, `/api/v1/oauth/token`, `/api/v1/oauth/jwks`, `/api/v1/oauth/userinfo`, plus `/api/v1/oauth/pending/:id` and `/api/v1/oauth/consent` for the web consent UI.
+- Endpoints: `/api/v1/oauth/authorize`, `/api/v1/oauth/token`, `/api/v1/oauth/jwks`, `/api/v1/oauth/userinfo`, plus `/api/v1/oauth/pending/:id` and `/api/v1/oauth/consent` for the web consent UI. These are reachable on the **gate hostname** (`/api/*` proxy).
+- Discovery document is implemented at `/.well-known/openid-configuration` on **core**. Gate does not forward `/.well-known/*`, so relying parties must configure authorize/token/JWKS/userinfo URLs explicitly (see `apps/3p-demo`).
 - **OIDC client** table: client_id, client_secret_hash (confidential), redirect_uris[], allowed_scopes[], m2m_permissions[], is_confidential, require_consent (default true), created_by account.
 - Authorization Code + PKCE (**S256 required for all clients**, ADR-0008); refresh token rotation with family reuse detection.
 - ID/access tokens signed **ES256** via `OIDC_SIGNING_JWK` (ADR-0007); JWKS publishes the public key only.

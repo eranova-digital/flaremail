@@ -37,5 +37,5 @@ Superseded in part by [ADR-0015](./0015-first-claimer-bootstrap.md):
 
 Superseded in part by [ADR-0006](./0006-system-mailbox-access-by-role.md):
 
-- The **intendant** may read and send mail on **system mailboxes** only (`postmaster@`, `noreply@`, and system-managed aliases such as `abuse@`).
-- The **intendant** still cannot hold a **primary mailbox**, **mailbox grants**, or participate in SSO.
+- The **intendant** may read and send mail on **system mailboxes** (`postmaster@`, `noreply@`, and system-managed aliases such as `abuse@`) and on all **shared mailboxes**.
+- The **intendant** still cannot hold a **primary mailbox**, **mailbox grants**, or participate in SSO, and cannot access user **primary mailboxes**.

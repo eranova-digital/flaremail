@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-Flaremail V1 has no **account** model. A single shared API token grants full access to every **domain**, **mailbox**, and **message**. The platform cannot support per-person login, role-based administration, invite-based onboarding, or SSO identity.
+At the time this spec was written, Flaremail had no **account** model. A single shared API token granted full access to every **domain**, **mailbox**, and **message**.
 
 Operators need a persistent identity layer that links people (**accounts**) to **primary mailboxes**, optional **mailbox grants**, **roles**, and profile data — without overloading the existing mail schema.
 

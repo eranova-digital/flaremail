@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-The web app embeds a static `API_BEARER_TOKEN` at build time. There is no login, logout, invite activation, or password recovery UI. Users cannot access Flaremail as themselves.
+At the time this spec was written, the web app embedded a static `API_BEARER_TOKEN` at build time and had no login, logout, invite activation, or password recovery UI.
 
 ## Solution
 
@@ -31,13 +31,14 @@ Add authentication flows to the React web app: login page, logout, invite activa
 ## Implementation Decisions
 
 - Auth provider at app root: session state, current account profile, role.
-- API client: `credentials: 'include'` for cookies; remove `API_BEARER_TOKEN` from web env.
-- Routes: `/login`, `/logout`, `/bootstrap`, `/activate`, `/forgot-password`, `/reset-password`, protected `/*` mail routes.
+- API client: `credentials: 'include'` for cookies; no static bearer token in web env.
+- Routes: `/login` (includes forgot-password), `/bootstrap`, `/activate`, `/reset-password`, `/oauth/consent`, `/security-compliance`, `/settings`, `/management`, protected mail routes `/m/:mailboxId/...`. Sign-out is `POST /auth/sign-out` (no `/logout` page).
 - Post-login redirect: return URL or default inbox (primary mailbox).
 - Role-aware navigation: hide platform admin links from `user`/`manager` (coarse; full admin UI separate spec).
 - TanStack Query: invalidate on login/logout; 401 interceptor → login.
-- Intendant post-login: redirect to `/` (mailbox picker); **system mailboxes** appear in the switcher. Platform admin remains at `/settings`.
+- Intendant post-login: redirect to `/` (mailbox picker); **system mailboxes** appear in the switcher. Platform admin is `/management`; account security is `/settings`.
 - Activation form: invite code (from URL query `?code=` optional), password, confirm password, profile fields per locks.
+- MFA, passkeys, and OIDC consent are in-app (not deferred).
 - Match existing web design system and component patterns.
 
 ## Testing Decisions
@@ -50,8 +51,6 @@ Add authentication flows to the React web app: login page, logout, invite activa
 ## Out of Scope
 
 - Admin dashboards for invites/roles/OIDC (admin UI spec).
-- OIDC consent screen (server-rendered or separate; may be worker HTML in OIDC spec).
-- MFA.
 - "Sign in with Google".
 
 ## Further Notes

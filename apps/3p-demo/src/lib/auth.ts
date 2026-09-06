@@ -6,7 +6,7 @@ import { db } from '@/db/client';
 import * as schema from '@/db/auth-schema';
 
 const flaremailWebUrl = process.env.FLAREMAIL_WEB_URL ?? 'http://localhost:5173';
-const flaremailApiUrl = process.env.FLAREMAIL_API_URL ?? 'https://your-worker.workers.dev';
+const flaremailApiUrl = process.env.FLAREMAIL_API_URL ?? 'https://mail.example.com';
 const userInfoUrl = `${flaremailApiUrl}/api/v1/oauth/userinfo`;
 
 export const auth = betterAuth({
@@ -26,7 +26,7 @@ export const auth = betterAuth({
 					clientSecret: process.env.FLAREMAIL_CLIENT_SECRET ?? '',
 					// Browser authorize via Flaremail web (:5173); Vite proxies /api to the Worker.
 					authorizationUrl: `${flaremailWebUrl}/api/v1/oauth/authorize`,
-					// Token + userinfo + issuer against the deployed Worker.
+					// Token + userinfo + issuer against the deployed gate hostname.
 					tokenUrl: `${flaremailApiUrl}/api/v1/oauth/token`,
 					userInfoUrl,
 					issuer: flaremailApiUrl,

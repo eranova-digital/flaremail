@@ -67,7 +67,7 @@ The link between a scoped role (**admin** or **manager**) and the **domain**(s) 
 _Avoid_: tenant, scope, permission set
 
 **Primary mailbox**:
-The one **mailbox** that uniquely identifies an **account**. Every **account** has exactly one; it is how the person is known in email (e.g. `patrick@acme.com`).
+The one **mailbox** that uniquely identifies an **account**. Every **account** except the **intendant** has exactly one; it is how the person is known in email (e.g. `patrick@acme.com`).
 _Avoid_: actualMailboxId, owner mailbox
 
 **Mailbox grant**:
@@ -274,7 +274,7 @@ A persistent entity exposed with conventional CRUD (domains, mailboxes, labels).
 _Avoid_: entity, record
 
 **API key**:
-A long-lived credential any **account** can create and manage for non-interactive API access. Scoped to that **account** — carries exactly the permissions of its holder's **role** and assignments, no more.
+A long-lived credential any **account** can create and manage for non-interactive API access. Prefix `fmu_`. Effective access is the intersection of the holder's **role** and assignments and the **scopes** selected on the key — never more than the holder could do in a **session**. Security operations (recovery address, sessions, API keys, MFA, passkeys, password change) are session-only.
 _Avoid_: bearer token, personal access token, service token
 
 **Operator**:

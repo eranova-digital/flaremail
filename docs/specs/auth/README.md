@@ -1,6 +1,8 @@
 # Authentication specs
 
-Design specs for accounts, sessions, API keys, RBAC, OIDC IdP, and related UI. Implemented in **core** (HTTP) and **web** (UI). These docs are the narrative source for auth behaviour; OpenAPI and code are the runtime contract.
+Design specs for accounts, sessions, API keys, RBAC, OIDC IdP, and related UI. Implemented in **core** (HTTP) and **web** (UI).
+
+**Problem statements** describe the pre-auth baseline. **Implementation decisions**, permission matrices, and route tables must match the runtime contract: OpenAPI (`apps/core/openapi.yaml`) and code. When a spec disagrees with OpenAPI, OpenAPI wins.
 
 ## Dependency order
 

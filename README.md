@@ -116,7 +116,7 @@ apps/
   gate/     Public Worker — SPA assets + /api proxy
   web/      React SPA source (built into gate)
   3p-demo/  Optional OIDC relying-party demo
-packages/   Shared libraries (i18n, mail quoting, …)
+packages/   Shared libraries (api-errors, i18n, identity-name-pattern, local-part-policy, mail-quoting, mail-search-query, email-html-prepare)
 docs/       Glossary, ADRs, API, auth specs
 ```
 

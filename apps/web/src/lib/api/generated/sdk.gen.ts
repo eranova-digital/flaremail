@@ -46,10 +46,12 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
 
 /**
  * Bootstrap the intendant
- * Unauthenticated first-run. Creates the intendant account when none
+ * First-claimer. Unauthenticated. Creates the intendant when none
  * exists and returns the generated password once. Subsequent calls
  * return `{ created: false }` without revealing credentials.
- * Rate-limited.
+ * Rate-limited. Operators must call this immediately after first
+ * deploy — until then anyone who can reach the gate can claim the
+ * instance.
  *
  */
 export const bootstrapIntendant = <ThrowOnError extends boolean = false>(options?: Options<BootstrapIntendantData, ThrowOnError>) => {
@@ -3014,7 +3016,10 @@ export const oauthConsent = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * OpenID Provider configuration
- * Unauthenticated discovery document.
+ * Unauthenticated discovery document on **core**. Gate does not proxy
+ * `/.well-known*`; relying parties should use `/api/v1/oauth*` on the
+ * gate hostname instead.
+ *
  */
 export const openIdDiscovery = <ThrowOnError extends boolean = false>(options?: Options<OpenIdDiscoveryData, ThrowOnError>) => {
     return (options?.client ?? _heyApiClient).get<OpenIdDiscoveryResponses, unknown, ThrowOnError>({

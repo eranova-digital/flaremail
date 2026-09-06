@@ -37,7 +37,7 @@ src/
 |------|----------|
 | Public | `/login`, `/bootstrap` (**first-claimer**), `/activate`, `/reset-password` |
 | OAuth / security | `/oauth/consent`, `/security-compliance` |
-| App shell | `/`, `/settings`, `/management` |
+| App shell | `/`, `/settings` (account), `/management` (admin) |
 | Mailbox | `/m/:mailboxId/...` (compose, threads, folders, labels) |
 
 Auth gates in the router enforce session and security-compliance before mail routes.

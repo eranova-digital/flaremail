@@ -12,7 +12,7 @@ Do this in the same sitting as the first deploy (including the first CI deploy t
 
 1. Deploy (`npx flaremail deploy --yes`).
 2. Open `https://<gate-hostname>/bootstrap` at once.
-3. Create the **intendant** (UI: recovery account).
+3. Create the **intendant** (the UI labels this the recovery account; the product term is **intendant**).
 4. Copy the password into a secrets manager. It is shown only this once.
 5. Sign in with identifier `intendant` and that password.
 

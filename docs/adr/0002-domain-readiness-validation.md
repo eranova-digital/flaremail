@@ -17,7 +17,7 @@ Operators add **domains** before Cloudflare Email Routing DNS is fully provision
 - Derived badge: `checking` | `fail` | `healthy` | `unhealthy`.
 - One active run per domain; short-circuit remaining checks on critical failure.
 - Loop emails carry a per-run token in body (primary) and `X-Flaremail-Validation-Token` header; inbound handler **consumes** them (not stored as mailbox messages). CF Email Sending does not allow custom `Message-ID`.
-- Receive wait: 10-minute deadline; Worker **scheduled** cron (`* * * * *`) processes timeouts. UI polls while `checking`.
+- Receive wait: 10-minute deadline; Worker **scheduled** cron (`*/2 * * * *`) processes timeouts. UI polls while `checking`.
 - Validation never blocks mail or mutates `isActive`.
 
 ## Considered options

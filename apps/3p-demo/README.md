@@ -48,7 +48,7 @@ Open http://localhost:3000 and click **Sign in with Flaremail**.
 | Env | Default | Why |
 |-----|---------|-----|
 | `FLAREMAIL_WEB_URL` | `http://localhost:5173` | Browser authorize (session cookie on the web origin; Vite proxies `/api` to the gate) |
-| `FLAREMAIL_API_URL` | *(required)* gate hostname origin | Server-side token + userinfo + issuer |
+| `FLAREMAIL_API_URL` | *(required)* gate hostname origin | Server-side token + userinfo + issuer. Gate does not serve `/.well-known/openid-configuration`; this demo sets those URLs explicitly. |
 | `BETTER_AUTH_URL` | `http://localhost:3000` | This app |
 
 ## Scripts
