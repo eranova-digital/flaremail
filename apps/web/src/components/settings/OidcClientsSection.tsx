@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Copy, Loader2, Plus, Trash2 } from "lucide-react";
+import { AppWindow, Copy, Loader2, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { ProfileAvatar } from "@/components/ProfileAvatar";
@@ -275,11 +275,19 @@ export function OidcClientsSection() {
 					<Skeleton className="h-24 w-full" />
 				</div>
 			) : clients.length === 0 ? (
-				<p className="text-muted-foreground text-sm">{t("oidc.empty")}</p>
+				<Card className="gap-0 rounded-xl py-0 shadow-sm">
+					<CardContent className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+						<AppWindow
+							className="text-muted-foreground/60 size-6"
+							aria-hidden
+						/>
+						<p className="text-muted-foreground text-sm">{t("oidc.empty")}</p>
+					</CardContent>
+				</Card>
 			) : (
 				<div className="space-y-3">
 					{clients.map((client) => (
-						<Card key={client.id}>
+						<Card key={client.id} className="rounded-xl shadow-sm">
 							<CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
 								<div className="flex items-start gap-3">
 									<ProfileAvatar

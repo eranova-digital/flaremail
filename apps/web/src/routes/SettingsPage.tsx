@@ -67,11 +67,19 @@ export function SettingsPage() {
 			<Tabs value={activeTab} onValueChange={handleTabChange}>
 				<TabsList>
 					{showProfile ? (
-						<TabsTrigger value="profile">{t("tabs.profile")}</TabsTrigger>
+						<TabsTrigger value="profile" className="px-2.5">
+							{t("tabs.profile")}
+						</TabsTrigger>
 					) : null}
-					<TabsTrigger value="identities">{t("tabs.identities")}</TabsTrigger>
-					<TabsTrigger value="preferences">{t("tabs.preferences")}</TabsTrigger>
-					<TabsTrigger value="security">{t("tabs.security")}</TabsTrigger>
+					<TabsTrigger value="identities" className="px-2.5">
+						{t("tabs.identities")}
+					</TabsTrigger>
+					<TabsTrigger value="preferences" className="px-2.5">
+						{t("tabs.preferences")}
+					</TabsTrigger>
+					<TabsTrigger value="security" className="px-2.5">
+						{t("tabs.security")}
+					</TabsTrigger>
 				</TabsList>
 				{showProfile ? (
 					<TabsContent value="profile">

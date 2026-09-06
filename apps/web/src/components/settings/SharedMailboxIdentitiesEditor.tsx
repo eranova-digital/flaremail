@@ -38,8 +38,8 @@ export function SharedMailboxIdentitiesEditor({
 						{getErrorMessage(policyMutation.error)}
 					</Alert>
 				) : null}
-				<div className="space-y-4 rounded-xl border p-4">
-					<div className="flex items-start justify-between gap-4">
+				<div className="divide-y rounded-xl border">
+					<div className="flex items-start justify-between gap-4 p-4">
 						<div className="space-y-1">
 							<p className="text-sm font-medium">
 								{t("sharedMailboxUsers.identityPolicy.allowPersonal")}
@@ -48,16 +48,18 @@ export function SharedMailboxIdentitiesEditor({
 								{t("sharedMailboxUsers.identityPolicy.allowPersonalDesc")}
 							</p>
 						</div>
-						<Switch
-							checked={mailbox.personalIdentityAllowance ?? false}
-							disabled={policyMutation.isPending}
-							onCheckedChange={(checked) =>
-								policyMutation.mutate({ personalIdentityAllowance: checked })
-							}
-							aria-label={t("sharedMailboxUsers.identityPolicy.allowPersonal")}
-						/>
+						<div className="flex min-h-11 shrink-0 items-center">
+							<Switch
+								checked={mailbox.personalIdentityAllowance ?? false}
+								disabled={policyMutation.isPending}
+								onCheckedChange={(checked) =>
+									policyMutation.mutate({ personalIdentityAllowance: checked })
+								}
+								aria-label={t("sharedMailboxUsers.identityPolicy.allowPersonal")}
+							/>
+						</div>
 					</div>
-					<div className="flex items-start justify-between gap-4">
+					<div className="flex items-start justify-between gap-4 p-4">
 						<div className="space-y-1">
 							<p className="text-sm font-medium">
 								{t("sharedMailboxUsers.identityPolicy.export")}
@@ -66,14 +68,16 @@ export function SharedMailboxIdentitiesEditor({
 								{t("sharedMailboxUsers.identityPolicy.exportDesc")}
 							</p>
 						</div>
-						<Switch
-							checked={mailbox.identityExport ?? false}
-							disabled={policyMutation.isPending}
-							onCheckedChange={(checked) =>
-								policyMutation.mutate({ identityExport: checked })
-							}
-							aria-label={t("sharedMailboxUsers.identityPolicy.export")}
-						/>
+						<div className="flex min-h-11 shrink-0 items-center">
+							<Switch
+								checked={mailbox.identityExport ?? false}
+								disabled={policyMutation.isPending}
+								onCheckedChange={(checked) =>
+									policyMutation.mutate({ identityExport: checked })
+								}
+								aria-label={t("sharedMailboxUsers.identityPolicy.export")}
+							/>
+						</div>
 					</div>
 				</div>
 			</section>

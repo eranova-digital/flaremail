@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import { IdentityCard } from "@/components/settings/IdentityCard";
 import { IdentityForm } from "@/components/settings/IdentityForm";
@@ -19,6 +20,7 @@ import type { IdentityInput } from "@/lib/identities/api";
 
 export function IdentitiesSection() {
 	const { t } = useTranslation("settings");
+	const { t: tm } = useTranslation("management");
 	const { account } = useAuth();
 	const overviewQuery = useAccountIdentities();
 	const primaryMailboxId =
@@ -167,7 +169,7 @@ export function IdentitiesSection() {
 					/>
 				) : canManage ? (
 					<Button
-						variant="outline"
+						variant="secondary"
 						disabled={busy}
 						onClick={() => {
 							setEditingId(null);
@@ -187,13 +189,20 @@ export function IdentitiesSection() {
 							{t("identities.defaultTitle")}
 						</h3>
 						<p className="text-muted-foreground text-xs">
-							{t("identities.defaultHint")}
+							{tm("accounts.identities.defaultDesc")}
 						</p>
 					</div>
 					<IdentityCard
 						identity={defaultIdentity}
 						mailboxAddress={primaryAddress}
-						description={t("identities.defaultCardDescription")}
+						description={
+							<Link
+								to="/management?tab=organization#default-identity"
+								className="hover:text-foreground underline-offset-2 hover:underline"
+							>
+								{t("identities.defaultCardDescription")}
+							</Link>
+						}
 					/>
 				</div>
 			) : null}

@@ -125,7 +125,7 @@ export function ProfileFieldsGrid({
 				{field("phone")}
 			</div>
 			<div className="space-y-3">
-				<p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+				<p className="text-muted-foreground text-xs font-medium">
 					{t("profile.fields.addressHeading")}
 				</p>
 				<div className="grid gap-3">

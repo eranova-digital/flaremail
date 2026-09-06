@@ -186,7 +186,7 @@ export function MailboxIdentitiesManager({
 				/>
 			) : canManage ? (
 				<Button
-					variant="outline"
+					variant="secondary"
 					disabled={busy}
 					onClick={() => {
 						setEditingId(null);

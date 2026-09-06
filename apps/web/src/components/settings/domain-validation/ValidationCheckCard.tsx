@@ -77,7 +77,9 @@ export function ValidationCheckCard({
 			</p>
 
 			{check.code ? (
-				<p className="text-muted-foreground mt-2 font-mono text-xs">{check.code}</p>
+				<p className="text-muted-foreground/70 mt-2 font-mono text-[10px] tracking-wide">
+					{check.code}
+				</p>
 			) : null}
 			</CardContent>
 		</Card>

@@ -44,9 +44,9 @@ function LogRow({ item }: { item: LogListItem }) {
 	const { t, i18n } = useTranslation("management");
 
 	return (
-		<li className="hover:bg-muted/40 px-4 py-3.5 transition-colors sm:px-5">
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-				<div className="min-w-0 flex-1 space-y-2">
+		<li className="hover:bg-muted/40 px-4 py-2.5 transition-colors sm:px-5">
+			<div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+				<div className="min-w-0 flex-1 space-y-1.5">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge
 							variant={importanceVariant(item.importance)}
@@ -69,7 +69,7 @@ function LogRow({ item }: { item: LogListItem }) {
 					</div>
 					<LogSummary summary={item.summary} refs={item.refs} />
 				</div>
-				<div className="text-muted-foreground flex shrink-0 flex-col gap-0.5 text-xs sm:items-end sm:text-right">
+				<div className="text-foreground/70 flex shrink-0 flex-col gap-0.5 text-xs sm:items-end sm:text-right">
 					<time dateTime={item.createdAt}>
 						{formatLogTimestamp(item.createdAt, i18n.language)}
 					</time>
@@ -358,8 +358,8 @@ export function LogsSection() {
 			) : null}
 
 			{!query.isLoading && !query.isError && items.length === 0 ? (
-				<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-16 text-center">
-					<ScrollText className="size-8 opacity-40" aria-hidden />
+				<div className="text-muted-foreground flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-12 text-center">
+					<ScrollText className="text-muted-foreground/60 size-6" aria-hidden />
 					<p className="text-sm font-medium text-foreground">
 						{t("logs.emptyTitle")}
 					</p>

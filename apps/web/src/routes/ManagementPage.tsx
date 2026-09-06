@@ -201,24 +201,40 @@ export function ManagementPage() {
 			<Tabs value={activeTab} onValueChange={handleTabChange}>
 				<TabsList>
 					{showDomains ? (
-						<TabsTrigger value="domains">{t("tabs.domains")}</TabsTrigger>
+						<TabsTrigger value="domains" className="px-2.5">
+							{t("tabs.domains")}
+						</TabsTrigger>
 					) : null}
 					{showMailboxes ? (
-						<TabsTrigger value="mailboxes">{t("tabs.mailboxes")}</TabsTrigger>
+						<TabsTrigger value="mailboxes" className="px-2.5">
+							{t("tabs.mailboxes")}
+						</TabsTrigger>
 					) : null}
 					{showAccounts ? (
-						<TabsTrigger value="accounts">{t("tabs.accounts")}</TabsTrigger>
+						<TabsTrigger value="accounts" className="px-2.5">
+							{t("tabs.accounts")}
+						</TabsTrigger>
 					) : null}
 					{showTemplates ? (
-						<TabsTrigger value="templates">{t("tabs.templates")}</TabsTrigger>
+						<TabsTrigger value="templates" className="px-2.5">
+							{t("tabs.templates")}
+						</TabsTrigger>
 					) : null}
 					{showOrganization ? (
-						<TabsTrigger value="organization">{t("tabs.organization")}</TabsTrigger>
+						<TabsTrigger value="organization" className="px-2.5">
+							{t("tabs.organization")}
+						</TabsTrigger>
 					) : null}
 					{showOidc ? (
-						<TabsTrigger value="oidc">{t("tabs.oidc")}</TabsTrigger>
+						<TabsTrigger value="oidc" className="px-2.5">
+							{t("tabs.oidc")}
+						</TabsTrigger>
 					) : null}
-					{showLogs ? <TabsTrigger value="logs">{t("tabs.logs")}</TabsTrigger> : null}
+					{showLogs ? (
+						<TabsTrigger value="logs" className="px-2.5">
+							{t("tabs.logs")}
+						</TabsTrigger>
+					) : null}
 				</TabsList>
 				{showDomains ? (
 					<TabsContent value="domains">

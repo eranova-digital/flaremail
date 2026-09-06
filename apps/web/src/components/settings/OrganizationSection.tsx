@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Loader2 } from "lucide-react";
+import { Building2, Fingerprint, Loader2, ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { ComposeEditor } from "@/components/compose/ComposeEditor";
@@ -189,10 +189,13 @@ export function OrganizationSection() {
 
 			<Card className="rounded-xl shadow-sm">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base">{t("organization.accessSecurity")}</CardTitle>
+					<CardTitle className="flex items-center gap-2 text-base">
+						<Building2 className="text-muted-foreground size-4" aria-hidden />
+						{t("organization.accessSecurity")}
+					</CardTitle>
 				</CardHeader>
 				<CardContent className="divide-y p-0">
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.tabAccess.label")}
 							description={
@@ -223,7 +226,7 @@ export function OrganizationSection() {
 							}
 						/>
 					</div>
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.requireMfa.label")}
 							description={t("organization.requireMfa.description")}
@@ -250,7 +253,7 @@ export function OrganizationSection() {
 							}
 						/>
 					</div>
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.requireRecoveryEmail.label")}
 							description={t("organization.requireRecoveryEmail.description")}
@@ -269,7 +272,7 @@ export function OrganizationSection() {
 							}
 						/>
 					</div>
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.persistNoreply.label")}
 							description={t("organization.persistNoreply.description")}
@@ -293,10 +296,13 @@ export function OrganizationSection() {
 
 			<Card className="rounded-xl shadow-sm">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base">{t("organization.identitiesCard")}</CardTitle>
+					<CardTitle className="flex items-center gap-2 text-base">
+						<Fingerprint className="text-muted-foreground size-4" aria-hidden />
+						{t("organization.identitiesCard")}
+					</CardTitle>
 				</CardHeader>
 				<CardContent className="divide-y p-0">
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.identitySelfServe.label")}
 							description={t("organization.identitySelfServe.description")}
@@ -315,7 +321,7 @@ export function OrganizationSection() {
 							}
 						/>
 					</div>
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.customNames.label")}
 							description={t("organization.customNames.description")}
@@ -334,7 +340,7 @@ export function OrganizationSection() {
 							}
 						/>
 					</div>
-					<div id="default-identity" className="space-y-4 px-6 py-4 scroll-mt-4">
+					<div id="default-identity" className="space-y-4 px-6 py-3 scroll-mt-4">
 						<div className="space-y-1">
 							<p className="text-sm font-medium">{t("organization.defaultIdentity.label")}</p>
 							<p className="text-muted-foreground text-xs leading-relaxed">
@@ -440,10 +446,13 @@ export function OrganizationSection() {
 
 			<Card className="rounded-xl shadow-sm">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base">{t("organization.logsCard")}</CardTitle>
+					<CardTitle className="flex items-center gap-2 text-base">
+						<ScrollText className="text-muted-foreground size-4" aria-hidden />
+						{t("organization.logsCard")}
+					</CardTitle>
 				</CardHeader>
 				<CardContent className="divide-y p-0">
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.logsEnabled.label")}
 							description={t("organization.logsEnabled.description")}
@@ -462,7 +471,7 @@ export function OrganizationSection() {
 							}
 						/>
 					</div>
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.maxImportance.label")}
 							description={t("organization.maxImportance.description")}
@@ -489,7 +498,7 @@ export function OrganizationSection() {
 							}
 						/>
 					</div>
-					<div className="px-6 py-4">
+					<div className="px-6 py-3">
 						<SettingRow
 							label={t("organization.retention.label")}
 							description={t("organization.retention.description")}

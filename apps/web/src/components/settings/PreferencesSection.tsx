@@ -1,6 +1,7 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Select,
@@ -98,11 +99,11 @@ export function PreferencesSection() {
 
 	return (
 		<div className="space-y-6">
-			<div className="space-y-2">
+			<div className="space-y-3">
 				<h2 className="text-lg font-semibold">{t("preferences.title")}</h2>
-				<p className="text-muted-foreground max-w-prose text-sm">
-					{t("preferences.description")}
-				</p>
+				<Alert tone="info">
+					<p>{t("preferences.description")}</p>
+				</Alert>
 			</div>
 
 			<Card className="rounded-xl shadow-sm">
@@ -124,7 +125,7 @@ export function PreferencesSection() {
 						}}
 					>
 						<SelectTrigger
-							className="max-w-sm"
+							className="max-w-sm rounded-lg"
 							aria-label={t("preferences.language.title")}
 						>
 							<SelectValue />
