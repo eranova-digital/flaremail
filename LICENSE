@@ -1,0 +1,244 @@
+FlareMail Source-Available License
+Version 1.0
+
+Copyright (c) 2026 EXAGROUP S.R.L.
+
+1. Definitions
+
+For purposes of this License:
+
+"Software" means the FlareMail software, including its source code, object
+code, documentation, configuration files, scripts, and other materials
+distributed under this License.
+
+"Licensor" means EXAGROUP S.R.L. and any copyright holders authorized to
+grant rights under this License.
+
+"You" means an individual or legal entity exercising rights granted by this
+License.
+
+"Internal Use" means use of the Software by You for the internal operations
+of Your own organization, including use by Your employees, contractors, and
+other persons acting on Your behalf, provided that the Software is not
+operated or made available for the purpose of providing a FlareMail-based
+service to an unrelated third party.
+
+"Third Party" means any individual or legal entity other than You and
+persons acting on Your behalf.
+
+"Deployment Service" means a service provided to a Third Party for
+compensation, directly or indirectly, consisting substantially of
+installing, configuring, provisioning, integrating, or deploying the
+Software for that Third Party, whether on infrastructure owned by the
+Third Party, Your infrastructure, or infrastructure controlled by another
+party.
+
+"Managed Service" means a service provided to a Third Party for
+compensation, directly or indirectly, consisting substantially of hosting,
+operating, administering, monitoring, maintaining, updating, or otherwise
+managing the Software for that Third Party.
+
+"Commercial Service" means a Deployment Service or a Managed Service.
+
+"Independently Distinct Work" means a derivative work based on the Software
+that has undergone substantial modifications such that, considered as a
+whole, it is no longer recognizable as FlareMail to a reasonable person
+familiar with the Software. Cosmetic changes, rebranding alone,
+configuration, packaging, localization, dependency updates, theme or UI
+skinning, or minor feature additions do not make a work Independently
+Distinct. Removing FlareMail trademarks, logos, or product names without
+substantial functional and architectural change does not make a work
+Independently Distinct.
+
+"Authorized Provider" means the Licensor or a Third Party that has received
+explicit written authorization from the Licensor to provide Deployment
+Services or Managed Services involving the Software.
+
+2. Copyright License
+
+Subject to the terms and conditions of this License, the Licensor grants
+You a perpetual, worldwide, non-exclusive, royalty-free, non-transferable
+license to:
+
+  (a) use the Software;
+  (b) reproduce the Software;
+  (c) inspect and study the source code of the Software;
+  (d) modify the Software;
+  (e) create derivative works based on the Software;
+  (f) compile and execute modified versions of the Software; and
+  (g) redistribute the Software and modified versions of the Software,
+
+provided that all such activities comply with the restrictions in
+Section 4.
+
+3. Permitted Use
+
+You may use the Software for Internal Use, including for commercial
+purposes.
+
+You may deploy the Software on infrastructure that You own, control, or
+have permission to use.
+
+You may modify the Software for Your own purposes.
+
+You may create and distribute derivative works of the Software, provided
+that such distribution remains subject to this License unless You have
+received separate written authorization from the Licensor.
+
+You may use the Software as part of Your own products or systems, provided
+that doing so does not constitute a prohibited Commercial Service under
+Section 4.
+
+You may provide advice, training, architecture guidance, code review, or
+other professional assistance relating to the Software, including for
+compensation, provided that such assistance does not itself constitute a
+Deployment Service or Managed Service.
+
+4. Restricted Commercial Services
+
+Without prior written authorization from the Licensor, You may not provide,
+sell, license, resell, or otherwise offer to a Third Party any Commercial
+Service involving the Software or a modified version of the Software that
+is not an Independently Distinct Work.
+
+Without limiting the foregoing, You may not, for compensation or other
+commercial consideration:
+
+  (a) deploy or install the Software for a Third Party;
+  (b) configure or provision the Software for a Third Party as a paid
+      deployment engagement;
+  (c) host the Software on behalf of a Third Party;
+  (d) operate or administer the Software on behalf of a Third Party;
+  (e) provide ongoing maintenance or management of a Third Party's
+      FlareMail deployment as a service; or
+  (f) provide a managed, hosted, or outsourced version of the Software to
+      a Third Party.
+
+This restriction applies to the Software and to modified, integrated,
+repackaged, or rebranded versions that remain recognizable as FlareMail,
+including when provided under a different service name.
+
+Exception. Section 4 does not prohibit You from providing Commercial
+Services that involve only an Independently Distinct Work. Such services
+remain subject to Section 8 (Trademarks and Branding): You must not use
+FlareMail marks or imply that the Independently Distinct Work or Your
+service is FlareMail or is provided by the Licensor.
+
+Calling a prohibited Commercial Service "consulting," "technical
+assistance," "implementation," "integration," "DevOps," "hosting,"
+"support," "maintenance," "managed infrastructure," or another similar
+term does not remove the restriction where the substance of the service is
+a Deployment Service or Managed Service involving the Software or a
+modified version that is not an Independently Distinct Work.
+
+5. Authorized Providers
+
+The Licensor may, at its sole discretion, authorize individuals or
+organizations to provide Commercial Services involving the Software.
+
+Such authorization must be granted explicitly and in writing by the
+Licensor.
+
+Authorization may be limited by geography, customer, service type,
+duration, or any other condition specified by the Licensor.
+
+Nothing in this License grants You the status of an Authorized Provider.
+
+6. Redistribution
+
+You may redistribute the Software or modified versions of the Software
+provided that:
+
+  (a) the copyright notices and this License are preserved;
+  (b) recipients receive a copy of this License;
+  (c) You do not represent Your distribution as an official distribution
+      of FlareMail unless authorized by the Licensor; and
+  (d) You do not grant recipients rights that conflict with this License.
+
+Redistribution of the Software does not grant the recipient permission to
+provide prohibited Commercial Services, except as permitted for an
+Independently Distinct Work under Section 4.
+
+7. Source Code and Modifications
+
+You may modify the source code for any lawful purpose permitted by this
+License.
+
+If You distribute a modified version of the Software, You must clearly
+indicate that You have modified the Software.
+
+You must not represent modified Software as an official release of
+FlareMail unless authorized by the Licensor.
+
+8. Trademarks and Branding
+
+This License does not grant You any rights to trademarks, service marks,
+trade names, logos, or other branding belonging to the Licensor.
+
+"FlareMail" and associated logos and branding remain the property of their
+respective owners.
+
+You may accurately state that Your software is based on or derived from
+FlareMail, but You may not imply that Your modified version, service,
+organization, or product is officially affiliated with, endorsed by, or
+provided by FlareMail or the Licensor without prior written authorization.
+
+9. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, OR ANY WARRANTY
+THAT THE SOFTWARE WILL OPERATE WITHOUT INTERRUPTION OR ERROR.
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSOR AND
+CONTRIBUTORS SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM OR RELATED TO THE SOFTWARE OR THE USE OR INABILITY
+TO USE THE SOFTWARE.
+
+10. Termination
+
+The rights granted under this License terminate automatically if You
+materially violate its terms.
+
+Upon termination, You must cease exercising the rights granted by this
+License, except that termination does not affect rights lawfully granted
+to recipients who are not themselves in violation of this License.
+
+The Licensor may reinstate Your rights at its sole discretion.
+
+11. No Additional Restrictions
+
+Except as expressly permitted by this License, You may not impose
+additional restrictions on the rights granted to recipients of the
+Software.
+
+12. Reservation of Rights
+
+All rights not expressly granted under this License are reserved by the
+Licensor.
+
+In particular, the Licensor exclusively reserves the right to provide,
+authorize, license, or commercially exploit Deployment Services and
+Managed Services involving the Software or modified versions that are not
+Independently Distinct Works, subject to any separate agreements the
+Licensor may enter into and subject to the Independently Distinct Work
+exception in Section 4.
+
+13. Severability
+
+If any provision of this License is held to be unenforceable or invalid
+under applicable law, that provision shall be enforced to the maximum
+extent permissible and the remaining provisions shall remain in full force
+and effect.
+
+14. Entire Agreement
+
+This License constitutes the entire agreement concerning the rights
+granted in the Software under this License and supersedes any conflicting
+terms concerning those rights, except where the Licensor has entered into
+a separate written agreement expressly granting additional rights.
+
+---
+
+FlareMail Source-Available License v1.0
+Copyright (c) 2026 EXAGROUP S.R.L.
