@@ -14,6 +14,9 @@ export default defineWorkersConfig({
 		poolOptions: {
 			workers: {
 				wrangler: { configPath: "./wrangler.jsonc" },
+				// EMAIL is `remote: true` in wrangler.jsonc for wrangler dev.
+				// CI has no Wrangler login; keep Vitest on local simulations.
+				remoteBindings: false,
 			},
 		},
 	},
