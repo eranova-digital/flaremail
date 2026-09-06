@@ -18,9 +18,6 @@ export default defineWorkersConfig({
 				// EMAIL is `remote: true` in wrangler.jsonc for wrangler dev.
 				// CI has no Wrangler login; keep Vitest on local simulations.
 				remoteBindings: false,
-				// One workerd for the suite. Default isolation starts a process per
-				// file and GitHub Actions kills the job before Vitest prints a summary.
-				singleWorker: true,
 			},
 		},
 	},
