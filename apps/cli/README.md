@@ -47,7 +47,7 @@ Env overrides: `FLAREMAIL_CONF` (path to conf), `CLOUDFLARE_API_TOKEN` (override
 
 ## First install
 
-Needs a **Cloudflare** account, a **Neon** project (direct Postgres URL, not the serverless HTTP endpoint), and **Node.js 20+**.
+Needs a **Cloudflare** account, a **Neon** project (direct Postgres URL, not the serverless HTTP endpoint), and **Node.js 22+**.
 
 1. Create a [Cloudflare API token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/) with Workers, Hyperdrive, R2, Email Routing, Workers custom domains, and zone DNS read.
 2. Clone, `npm install`, then:
