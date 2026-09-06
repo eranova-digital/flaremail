@@ -1,8 +1,7 @@
-import { SignJWT } from "jose";
 import { describe, expect, it, vi } from "vitest";
 
 import { safeEmitLog } from "../src/lib/logs/emit";
-import { recordFailedMfaSignInAttempt } from "../src/services/mfa";
+import { recordFailedMfaSignInAttempt, createMfaChallengeToken } from "../src/services/mfa";
 
 vi.mock("../src/lib/logs/emit", () => ({
 	safeEmitLog: vi.fn().mockResolvedValue(undefined),
@@ -29,11 +28,7 @@ describe("MFA sign-in attribution", () => {
 	it("looks up the account before attributing a failed sign-in", async () => {
 		const encryptionKey = "test-encryption-key-with-enough-length";
 		const accountId = crypto.randomUUID();
-		const token = await new SignJWT({ accountId, typ: "mfa_challenge" })
-			.setProtectedHeader({ alg: "HS256" })
-			.setIssuedAt()
-			.setExpirationTime(Math.floor(Date.now() / 1000) + 300)
-			.sign(new TextEncoder().encode(encryptionKey));
+		const token = await createMfaChallengeToken(accountId, encryptionKey);
 
 		const selectChain = {
 			from: vi.fn().mockReturnThis(),
