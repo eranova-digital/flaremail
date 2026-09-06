@@ -1,5 +1,5 @@
 import { ChevronDown, Mail, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDomains } from "@/hooks/use-domains";
 import { useMailboxes } from "@/hooks/use-mailboxes";
 import { setLastMailboxId } from "@/lib/mailbox-preference";
@@ -31,6 +32,33 @@ import {
 	buildDomainNamesById,
 	type MailboxDomainGroup,
 } from "@/lib/sort-mailboxes";
+
+function useTruncatedText(text: string) {
+	const ref = useRef<HTMLSpanElement>(null);
+	const [truncated, setTruncated] = useState(false);
+
+	useLayoutEffect(() => {
+		const el = ref.current;
+		if (!el) {
+			return;
+		}
+
+		const check = () => {
+			setTruncated(el.scrollWidth > el.clientWidth + 1);
+		};
+		check();
+
+		if (typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const observer = new ResizeObserver(check);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [text]);
+
+	return { ref, truncated };
+}
 
 function isSystemMailbox(mailbox: Mailbox): boolean {
 	return (
@@ -75,24 +103,22 @@ function MailboxGroupList({
 					{group.domainName}
 				</DropdownMenuLabel>
 				{group.mailboxes.map((mailbox) => (
-					<DropdownMenuItem
+					<MailboxMenuItem
 						key={mailbox.id}
-						onClick={() => mailbox.id && onSelect(mailbox.id)}
-					>
-						<MailboxOptionLabel mailbox={mailbox} />
-					</DropdownMenuItem>
+						mailbox={mailbox}
+						onSelect={onSelect}
+					/>
 				))}
 			</DropdownMenuGroup>
 		));
 	}
 
 	return mailboxes.map((mailbox) => (
-		<DropdownMenuItem
+		<MailboxMenuItem
 			key={mailbox.id}
-			onClick={() => mailbox.id && onSelect(mailbox.id)}
-		>
-			<MailboxOptionLabel mailbox={mailbox} />
-		</DropdownMenuItem>
+			mailbox={mailbox}
+			onSelect={onSelect}
+		/>
 	));
 }
 
@@ -127,6 +153,23 @@ function SystemMailboxesFooter({
 	);
 }
 
+function MailboxMenuItem({
+	mailbox,
+	onSelect,
+}: {
+	mailbox: Mailbox;
+	onSelect: (mailboxId: string) => void;
+}) {
+	return (
+		<DropdownMenuItem
+			title={mailbox.address}
+			onClick={() => mailbox.id && onSelect(mailbox.id)}
+		>
+			<MailboxOptionLabel mailbox={mailbox} />
+		</DropdownMenuItem>
+	);
+}
+
 function MailboxOptionLabel({ mailbox }: { mailbox: Mailbox }) {
 	const { t } = useTranslation("mail");
 	const isSystem = isSystemMailbox(mailbox);
@@ -138,7 +181,7 @@ function MailboxOptionLabel({ mailbox }: { mailbox: Mailbox }) {
 				isSystem && "text-muted-foreground",
 			)}
 		>
-			<span className="truncate">{mailbox.address}</span>
+			<span className="min-w-0 truncate">{mailbox.address}</span>
 			{isSystem ? (
 				<Badge
 					variant="secondary"
@@ -177,6 +220,9 @@ export function MailboxSwitcher({ onNavigate }: { onNavigate?: () => void }) {
 	const systemMailboxes = mailboxes.filter((mailbox) => isSystemMailbox(mailbox));
 	const hasSystemMailboxes = systemMailboxes.length > 0;
 	const activeIsSystem = active ? isSystemMailbox(active) : false;
+	const { ref: addressRef, truncated: addressTruncated } = useTruncatedText(
+		active?.address ?? "",
+	);
 
 	useEffect(() => {
 		if (mailboxesQuery.isLoading || domainsQuery.isLoading) {
@@ -220,22 +266,29 @@ export function MailboxSwitcher({ onNavigate }: { onNavigate?: () => void }) {
 
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="outline"
-					className="w-full justify-between gap-2 font-normal"
-				>
-					<span className="flex min-w-0 items-center gap-2">
-						{activeIsSystem ? (
-							<ShieldCheck className="size-4 shrink-0" />
-						) : (
-							<Mail className="size-4 shrink-0" />
-						)}
-						<span className="truncate">{active.address}</span>
-					</span>
-					<ChevronDown className="size-4 shrink-0 opacity-50" />
-				</Button>
-			</DropdownMenuTrigger>
+			<Tooltip open={addressTruncated ? undefined : false}>
+				<TooltipTrigger asChild>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="outline"
+							className="w-full justify-between gap-2 font-normal"
+						>
+							<span className="flex min-w-0 items-center gap-2">
+								{activeIsSystem ? (
+									<ShieldCheck className="size-4 shrink-0" />
+								) : (
+									<Mail className="size-4 shrink-0" />
+								)}
+								<span ref={addressRef} className="min-w-0 truncate">
+									{active.address}
+								</span>
+							</span>
+							<ChevronDown className="size-4 shrink-0 opacity-50" />
+						</Button>
+					</DropdownMenuTrigger>
+				</TooltipTrigger>
+				<TooltipContent>{active.address}</TooltipContent>
+			</Tooltip>
 			<DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
 				<MailboxGroupList
 					mailboxes={normalMailboxes}

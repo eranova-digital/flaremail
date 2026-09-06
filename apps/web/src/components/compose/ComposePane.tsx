@@ -55,15 +55,15 @@ function ComposeFieldRow({
 	children: ReactNode;
 }) {
 	return (
-		<div className="flex min-w-0 items-start gap-3 px-3 py-2 sm:px-4">
+		<div className="flex min-w-0 items-center gap-3 px-3 py-1.5 sm:px-4">
 			<label
 				htmlFor={htmlFor}
-				className="text-muted-foreground w-12 shrink-0 pt-2 text-sm sm:w-14"
+				className="text-muted-foreground w-14 shrink-0 text-sm"
 			>
 				{label}
 			</label>
 			<div className="min-w-0 flex-1">{children}</div>
-			{actions ? <div className="flex shrink-0 items-center gap-0.5 pt-0.5">{actions}</div> : null}
+			{actions ? <div className="flex shrink-0 items-center gap-0.5">{actions}</div> : null}
 		</div>
 	);
 }
@@ -497,7 +497,6 @@ export function ComposePane({
 					<Button
 						type="button"
 						variant="ghost"
-						size="sm"
 						onClick={() => void handleCancel()}
 						disabled={busy}
 					>
@@ -508,7 +507,6 @@ export function ComposePane({
 				<Button
 					type="button"
 					variant="ghost"
-					size="sm"
 					onClick={onClose}
 					disabled={compose.isSending}
 				>
@@ -519,8 +517,7 @@ export function ComposePane({
 			{showDraftActions ? (
 				<Button
 					type="button"
-					variant="ghost"
-					size="sm"
+					variant="outline"
 					onClick={() => void handleSave()}
 					disabled={!compose.canSave || compose.isSaving || compose.isSending}
 				>

@@ -4,13 +4,14 @@ import {
 	FileText,
 	Inbox,
 	Menu,
+	Pencil,
 	RefreshCw,
 	Send,
 	ShieldAlert,
 	Tag,
 	Trash2,
 } from 'lucide-react';
-import { useState, type ComponentType } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -43,14 +44,17 @@ const FOLDER_ICONS: Record<ThreadFolder, typeof Inbox> = {
 function EmptyListState({
 	icon: Icon,
 	message,
+	action,
 }: {
 	icon: ComponentType<{ className?: string }>;
 	message: string;
+	action?: ReactNode;
 }) {
 	return (
-		<div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-			<Icon className="size-8 opacity-40" aria-hidden />
-			<p className="text-sm">{message}</p>
+		<div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+			<Icon className="text-muted-foreground size-8 opacity-40" aria-hidden />
+			<p className="text-muted-foreground text-sm">{message}</p>
+			{action}
 		</div>
 	);
 }
@@ -147,7 +151,16 @@ function DraftMessageList({
 				) : draftsQuery.isError ? (
 					<div className="text-destructive p-4 text-sm">{getErrorMessage(draftsQuery.error)}</div>
 				) : drafts.length === 0 ? (
-					<EmptyListState icon={FileText} message={t('threadList.emptyDrafts')} />
+					<EmptyListState
+						icon={FileText}
+						message={t('threadList.emptyDrafts')}
+						action={
+							<Button onClick={() => navigate(composePath(mailboxId, { folder: 'drafts' }))}>
+								<Pencil />
+								{t('sidebar.compose')}
+							</Button>
+						}
+					/>
 				) : (
 					<ul>
 						{drafts.map((draft) => (
