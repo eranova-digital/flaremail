@@ -16,7 +16,7 @@ info:
     Auth is a signed-in session cookie **or** an API key Bearer token. Some
     security operations are session-only and reject API keys.
   license:
-    name: Proprietary
+    name: FlareMail Source-Available License
 
 servers:
   - url: /api/v1
@@ -3542,7 +3542,7 @@ components:
         version:
           type: string
           description: Product version from root package.json
-          example: 0.9.6
+          example: 0.9.8
 
     BootstrapResult:
       type: object

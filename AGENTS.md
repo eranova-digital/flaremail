@@ -2,6 +2,10 @@
 
 STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Always retrieve current documentation before any Workers, KV, R2, D1, Durable Objects, Queues, Vectorize, AI, or Agents SDK task.
 
+## FlareMail
+
+Do not run `wrangler deploy` or edit `wrangler.jsonc` / app `.env` files by hand. Instance config is `flaremail.conf.jsonc`. Operators and CI use `npx flaremail` — see [`apps/cli/README.md`](./apps/cli/README.md). After changing CLI Wrangler templates, `npx flaremail sync` then `npm run typegen`.
+
 ## Docs
 
 - https://developers.cloudflare.com/workers/
@@ -11,13 +15,14 @@ For all limits and quotas, retrieve from the product's `/platform/limits/` page.
 
 ## Commands
 
+These are Cloudflare platform commands. For FlareMail deploys, use `npx flaremail`, not `wrangler deploy`.
+
 | Command | Purpose |
 |---------|---------|
-| `npx wrangler dev` | Local development |
-| `npx wrangler deploy` | Deploy to Cloudflare |
+| `npx wrangler dev` | Local Worker (via `npx flaremail dev`) |
 | `npx wrangler types` | Generate TypeScript types |
 
-Run `wrangler types` after changing bindings in wrangler.jsonc.
+Run `wrangler types` after `flaremail sync` if CLI Wrangler templates changed.
 
 ## Node.js Compatibility
 

@@ -7,21 +7,16 @@ Third-party Next.js app that signs in with **Flaremail as an OIDC provider** (be
 | App | URL |
 |-----|-----|
 | 3p-demo | http://localhost:3000 |
-| Flaremail web | http://localhost:5173 |
-| Flaremail Worker | your deployed Worker URL (e.g. `https://your-worker.workers.dev`) |
+| Flaremail web (Vite) | http://localhost:5173 |
+| Flaremail **instance** | your **gate hostname** (e.g. `https://mail.example.com`) |
 
 ## Prerequisites
 
-1. Deployed Worker reachable at your Worker URL, with `WEB_ORIGIN=http://localhost:5173` (so login/consent redirect to the local SPA, not the Worker host).
-2. Flaremail web running locally with proxy to that Worker:
+1. A deployed FlareMail **instance** ([CLI](../cli/README.md)). For local Vite against that instance, `web.apiProxyTarget` in `flaremail.conf.jsonc` should be the gate hostname, then `npx flaremail sync`.
+2. Flaremail web running locally:
 
 ```bash
-# apps/web/.env
-API_URL=/api/v1
-API_PROXY_TARGET=https://your-worker.workers.dev
-```
-
-```bash
+npx flaremail sync
 npm run web:dev
 ```
 
@@ -34,9 +29,12 @@ npm run web:dev
 
 ## Setup
 
+This demo has its **own** `.env` (not the FlareMail instance conf):
+
 ```bash
 cp apps/3p-demo/.env.example apps/3p-demo/.env
-# set FLAREMAIL_API_URL to your Worker, plus CLIENT_ID / SECRET / BETTER_AUTH_SECRET
+# FLAREMAIL_API_URL = gate hostname origin
+# plus CLIENT_ID / SECRET / BETTER_AUTH_SECRET
 
 npm install
 npm run 3p-demo:db:push
@@ -49,8 +47,8 @@ Open http://localhost:3000 and click **Sign in with Flaremail**.
 
 | Env | Default | Why |
 |-----|---------|-----|
-| `FLAREMAIL_WEB_URL` | `http://localhost:5173` | Browser authorize (session cookie on the web origin; Vite proxies `/api` to the Worker) |
-| `FLAREMAIL_API_URL` | *(required)* your Worker origin | Server-side token + userinfo + issuer |
+| `FLAREMAIL_WEB_URL` | `http://localhost:5173` | Browser authorize (session cookie on the web origin; Vite proxies `/api` to the gate) |
+| `FLAREMAIL_API_URL` | *(required)* gate hostname origin | Server-side token + userinfo + issuer |
 | `BETTER_AUTH_URL` | `http://localhost:3000` | This app |
 
 ## Scripts

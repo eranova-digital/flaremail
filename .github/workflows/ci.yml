@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx flaremail sync --from-example
+      - run: npm run test -w @flaremail/cli
+      - run: npm run core:test
+      - run: npm run web:test

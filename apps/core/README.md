@@ -77,21 +77,15 @@ POST /api/v1/... (send | reply | forward | draft send)
 | Neon (via Hyperdrive) | Domains, accounts, mailboxes, threads, messages metadata, logs, OIDC, … |
 | R2 (`BUCKET`) | `raw/<id>.eml`, attachment bytes, profile pictures, … |
 
-Local `wrangler dev` does not use real Hyperdrive. `scripts/with-env.mjs` + `sync-local-db-env.mjs` map `DATABASE_URL` into Wrangler’s local Hyperdrive stub. Vitest must not write to Postgres.
+Local `wrangler dev` (via `npx flaremail dev`) does not use real Hyperdrive. Generated `apps/core/.env` `DATABASE_URL` is mapped into Wrangler’s local Hyperdrive stub. Vitest must not write to Postgres.
 
 ---
 
 ## Configuration
 
-| File | Purpose |
-|------|---------|
-| `wrangler.jsonc` | Worker name, Hyperdrive id, R2, crons, rate limits, `vars.WEB_ORIGIN`, `secrets.required` |
-| `.env` | `DATABASE_URL`, `SESSION_SECRET`, `OIDC_SIGNING_JWK` (gitignored) |
-| `.env.example` | Template for installing operators |
+Do not configure this Worker by hand. Use [`apps/cli`](../cli/README.md) (`flaremail.conf.jsonc`). Generated `wrangler.jsonc` and `.env` are gitignored.
 
-`WEB_ORIGIN` must be the public **gate hostname** URL (same origin as the SPA).
-
-Deploy uploads **only** keys in `secrets.required` (see `scripts/deploy-with-secrets.mjs`). Never put `DATABASE_URL` in Cloudflare secrets.
+Deploy with `npx flaremail deploy --core --yes` (or full `deploy`). Never put `DATABASE_URL` in Cloudflare secrets.
 
 ---
 
@@ -99,20 +93,19 @@ Deploy uploads **only** keys in `secrets.required` (see `scripts/deploy-with-sec
 
 | Command | What |
 |---------|------|
-| `npm run core:dev` | `wrangler dev` with local DB env sync |
-| `npm run core:deploy` | `db:migrate` + filtered secrets deploy |
+| `npx flaremail dev` | Local core + gate (materializes conf first) |
+| `npx flaremail deploy --core --yes` | Migrate + deploy this Worker |
 | `npm run core:test` | Vitest (Workers pool) |
 | `npm run core:apigen` | YAML → `src/openapi/spec.json` |
-| `npm run core:typegen` | `wrangler types` |
+| `npm run typegen` | `wrangler types` (after `flaremail sync`) |
 | `npm run db:*` | Drizzle generate / migrate / studio / … |
-
-Inside this package: `npm run deploy`, `dev`, `test`, `db:migrate`, etc.
 
 ---
 
 ## Related docs
 
-- [Root README](../../README.md) — install and update
+- [CLI](../cli/README.md) — instance config and deploy
+- [Root README](../../README.md)
 - [Gate](../gate/README.md) — public proxy
 - [CONTEXT](../../docs/CONTEXT.md) — domain language
 - Auth specs: [`docs/specs/auth/`](../../docs/specs/auth/)

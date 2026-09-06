@@ -1,0 +1,52 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx flaremail sync --from-example
+      - run: npm run test -w @flaremail/cli
+      - run: npm run core:test
+      - run: npm run web:test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Write instance config
+        env:
+          FLAREMAIL_CONF_JSONC: ${{ secrets.FLAREMAIL_CONF }}
+        run: |
+          if [ -z "$FLAREMAIL_CONF_JSONC" ]; then
+            echo "Missing FLAREMAIL_CONF secret on the production environment"
+            exit 1
+          fi
+          printenv FLAREMAIL_CONF_JSONC > flaremail.conf.jsonc
+      - run: npx flaremail deploy --yes
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -1,6 +1,6 @@
 {
 	"name": "@flaremail/identity-name-pattern",
-	"version": "0.9.6",
+	"version": "0.9.8",
 	"private": true,
 	"type": "module",
 	"main": "src/index.ts",

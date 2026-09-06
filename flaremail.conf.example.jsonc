@@ -1,0 +1,47 @@
+/**
+ * Example FlareMail instance config. Copy to flaremail.conf.jsonc (gitignored)
+ * or run `npx flaremail init`. Never commit real credentials.
+ *
+ * Used by `flaremail sync --from-example` so tests can generate wrangler.jsonc
+ * without a live Cloudflare account.
+ */
+{
+	"cloudflare": {
+		"accountId": "00000000000000000000000000000000",
+		"apiToken": ""
+	},
+	"gate": {
+		"workerName": "flaremail-gate",
+		"hostname": "mail.example.com"
+	},
+	"core": {
+		"workerName": "flaremail-core"
+	},
+	"database": {
+		"url": "postgresql://vitest:vitest@127.0.0.1:5432/vitest_unused",
+		"hyperdrive": {
+			"name": "flaremail-db",
+			"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		}
+	},
+	"r2": {
+		"bucketName": "flaremail-bucket"
+	},
+	"secrets": {
+		"SESSION_SECRET": "example-session-secret-at-least-32-chars",
+		"OIDC_SIGNING_JWK": {
+			"kty": "EC",
+			"crv": "P-256",
+			"alg": "ES256",
+			"use": "sig",
+			"kid": "flaremail",
+			"x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+			"y": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+			"d": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+		}
+	},
+	"mailDomains": ["example.com"],
+	"web": {
+		"apiProxyTarget": "https://mail.example.com"
+	}
+}

@@ -1,9 +1,11 @@
 {
 	"name": "@flaremail/gate",
-	"version": "0.9.6",
+	"version": "0.9.8",
 	"private": true,
+	"license": "SEE LICENSE IN LICENSE",
 	"scripts": {
-		"deploy": "wrangler deploy",
+		"deploy": "flaremail deploy --gate --yes",
+		"predev": "node --import tsx ../../apps/cli/src/index.ts sync --if-missing",
 		"dev": "wrangler dev",
 		"typegen": "wrangler types",
 		"cf-typegen": "wrangler types"

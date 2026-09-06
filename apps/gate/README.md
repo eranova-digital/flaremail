@@ -29,7 +29,7 @@ Incoming request
   └─ otherwise            →  static asset or SPA index.html fallback
 ```
 
-`src/index.ts` only handles the `/api/*` and `/health` branches. Asset routing is configured in `wrangler.jsonc`, not in application code.
+`src/index.ts` only handles the `/api/*` and `/health` branches. Asset routing is in the **generated** Wrangler config (from the CLI), not in application code.
 
 ### Service binding
 
@@ -37,8 +37,8 @@ Incoming request
 "services": [{ "binding": "CORE", "service": "flaremail-core" }]
 ```
 
-- Deploy **core before gate** so the binding target exists.
-- Locally, run `gate:dev` and `core:dev` together (`npm run dev` from the repo root) so Wrangler marks the binding `connected`.
+- Deploy **core before gate** so the binding target exists (`npx flaremail deploy` does this).
+- Locally, `npx flaremail dev` runs both so Wrangler marks the binding `connected`.
 - Forward the incoming `Request` as-is (method, path, query, headers, body, cookies). No path rewrite, no auth on gate.
 
 ### Same-origin model
@@ -49,18 +49,14 @@ Browser origin = **gate hostname**. SPA uses `API_URL=/api/v1`. Session cookies 
 
 ## Build and deploy
 
-Gate does not build the UI itself; root `gate:deploy` does:
+Do not deploy gate with Wrangler by hand. The CLI builds `apps/web` and deploys gate:
 
 ```bash
-npm run web:build          # apps/web → apps/web/dist
-npm run deploy -w @flaremail/gate
+npx flaremail deploy --yes          # core then gate
+npx flaremail deploy --gate --yes   # web build + gate only
 ```
 
-Or from the monorepo root: `npm run gate:deploy` / `npm run deploy`.
-
-Assets must exist at `apps/web/dist` before `wrangler deploy` for gate. Empty or stale `dist` ships a broken UI.
-
-Gate typically has **no** Worker secrets.
+See [`apps/cli`](../cli/README.md). Gate typically has **no** Worker secrets. The **gate hostname** custom domain comes from conf.
 
 ---
 
@@ -68,14 +64,15 @@ Gate typically has **no** Worker secrets.
 
 | Command | What |
 |---------|------|
-| `npm run gate:dev` | `wrangler dev` for this Worker |
-| `npm run gate:deploy` | Build web + deploy gate |
-| `npm run typegen -w @flaremail/gate` | Regenerate `worker-configuration.d.ts` |
+| `npx flaremail dev` | Local core + gate |
+| `npx flaremail deploy --gate --yes` | Build web + deploy this Worker |
+| `npm run typegen -w @flaremail/gate` | Regenerate `worker-configuration.d.ts` (after `flaremail sync`) |
 
 ---
 
 ## Related docs
 
+- [CLI](../cli/README.md) — instance config and deploy
 - [Root README](../../README.md)
 - [Core](../core/README.md) — API and mail
 - [Web](../web/README.md) — SPA source

@@ -15,5 +15,6 @@ Short records of hard-to-reverse choices. Format: title, context/decision/why (s
 | [0009](./0009-logs-in-postgres.md) | Logs stored in Postgres |
 | [0010](./0010-gate-and-private-core.md) | Gate and private core |
 | [0011](./0011-bimi-inbound-brand-marks.md) | BIMI inbound brand marks |
+| [0012](./0012-cli-instance-config.md) | CLI owns instance config; Wrangler files are generated |
 
 New ADRs: next number, kebab-case slug, link from this table.
