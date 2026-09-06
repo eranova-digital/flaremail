@@ -5864,7 +5864,7 @@
           "version": {
             "type": "string",
             "description": "Product version from root package.json",
-            "example": "0.9.8"
+            "example": "1.0.0"
           }
         }
       },

@@ -4,6 +4,7 @@ Canonical docs for Flaremail beyond the app READMEs.
 
 | Doc | Purpose |
 |-----|---------|
+| [CHANGELOG.md](../CHANGELOG.md) | Product version history (Keep a Changelog) |
 | [CONTEXT.md](./CONTEXT.md) | Ubiquitous language (glossary only — no implementation detail) |
 | [API.md](./API.md) | Human-readable HTTP API (v1); OpenAPI is the runtime contract |
 | [SECURITY.md](../SECURITY.md) | Vulnerability reporting and operator security steps |
