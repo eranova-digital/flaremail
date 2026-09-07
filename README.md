@@ -137,7 +137,7 @@ docs/       Glossary, ADRs, API, auth specs
 You need a **Cloudflare** account, a **Neon** project, and **Node.js 22+**. Full command reference: [`apps/cli`](./apps/cli/README.md).
 
 ```bash
-git clone https://github.com/pxtrickb/flaremail.git
+git clone https://github.com/eranova-digital/flaremail.git
 cd flaremail
 npm install
 npx flaremail init
