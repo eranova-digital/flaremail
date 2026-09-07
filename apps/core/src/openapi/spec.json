@@ -3,7 +3,7 @@
   "info": {
     "title": "Flaremail API",
     "version": "1.0.0",
-    "description": "HTTP API for Flaremail, self-hosted email on Cloudflare.     Production clients\ncall the **gate** hostname; gate proxies `/api/*` and `/health` to **core**.\nOIDC discovery (`/.well-known/openid-configuration`) is served by core\nand is not forwarded by gate — configure `/api/v1/oauth/*` URLs explicitly.\n\nVersioned prefix: `/api/v1`. Live spec: `GET /api/v1/openapi.json`\n(`info.version` is the product version from root `package.json`).\n\nErrors use RFC 9457 Problem Details (`application/problem+json`). List\nendpoints use cursor pagination (`limit` default 50, max 100;\n`nextCursor` is null on the last page) unless noted.\n\nAuth is a signed-in session cookie **or** an API key Bearer token. Some\nsecurity operations are session-only and reject API keys.\n",
+    "description": "HTTP API for Flaremail, self-hosted email on Cloudflare. Production clients\ncall the **gate** hostname; gate proxies `/api/*` and `/health` to **core**.\nOIDC discovery (`/.well-known/openid-configuration`) is served by core\nand is not forwarded by gate — configure `/api/v1/oauth/*` URLs explicitly.\n\nVersioned prefix: `/api/v1`. Live spec: `GET /api/v1/openapi.json`\n(`info.version` is the product version from root `package.json`).\n\nErrors use RFC 9457 Problem Details (`application/problem+json`). List\nendpoints use cursor pagination (`limit` default 50, max 100;\n`nextCursor` is null on the last page) unless noted.\n\nAuth is a signed-in session cookie **or** an API key Bearer token. Some\nsecurity operations are session-only and reject API keys.\n",
     "license": {
       "name": "FlareMail Source-Available License"
     }

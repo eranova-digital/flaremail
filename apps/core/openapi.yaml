@@ -3,7 +3,7 @@ info:
   title: Flaremail API
   version: 1.0.0
   description: |
-    HTTP API for Flaremail, self-hosted email on Cloudflare.     Production clients
+    HTTP API for Flaremail, self-hosted email on Cloudflare. Production clients
     call the **gate** hostname; gate proxies `/api/*` and `/health` to **core**.
     OIDC discovery (`/.well-known/openid-configuration`) is served by core
     and is not forwarded by gate — configure `/api/v1/oauth/*` URLs explicitly.
