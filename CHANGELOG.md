@@ -33,5 +33,5 @@ First stable release of FlareMail: self-hosted email for your domains on Cloudfl
 
 - A new instance has no **intendant** until someone claims it. `POST /api/v1/bootstrap` is unauthenticated until that succeeds — complete first-claimer bootstrap in the same sitting as the first deploy. See [SECURITY.md](./SECURITY.md) and [first-claimer bootstrap](./docs/first-claimer-bootstrap.md).
 
-[unreleased]: https://github.com/pxtrickb/flaremail/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/pxtrickb/flaremail/releases/tag/v1.0.0
+[unreleased]: https://github.com/eranova-digital/flaremail/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/eranova-digital/flaremail/releases/tag/v1.0.0
